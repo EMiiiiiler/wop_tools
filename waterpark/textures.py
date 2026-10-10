@@ -325,6 +325,15 @@ def make_textures(W):
     sign('sign_lifeguard', 'LIFEGUARD', (220, 40, 40), (255, 255, 255))
     sign('sign_grotto', '???', (20, 30, 40), (120, 230, 255))
     sign('sign_tall', 'YOU MUST BE THIS TALL', (250, 220, 60), (40, 40, 60))
+    sign('sign_cannon', 'SKY CANNON', (230, 70, 30), (255, 245, 210), 'NEXT STOP: PARADISE ISLE')
+    sign('sign_isle', 'PARADISE ISLE', (30, 150, 140), (255, 255, 255), 'POPULATION: YOU')
+    sign('sign_rapids_jet', 'RAPIDS!', (30, 120, 200), (255, 255, 255), 'HOLD ON TO YOUR DUCK')
+    # hot-air balloon envelope stripes + rainbow bands + invisible mover helper
+    W.save('balloon', stripes((240, 70, 60), (255, 210, 60), 8))
+    W.save('balloon_b', stripes((60, 150, 230), (250, 250, 245), 8))
+    for i, c in enumerate(((255, 40, 40), (255, 140, 20), (255, 230, 30), (60, 220, 60), (40, 150, 255), (70, 60, 220), (170, 60, 220))):
+        W.save(f'rainbow{i}', np.full((64, 64, 3), c, np.float32) * 0.6)
+    W.save('nodraw_ns', C((255, 0, 255)) + np.zeros((64, 64, 3), np.float32))
     # depth markers
     for dname, txt in (('depth_1', '1 m'), ('depth_2', '2 m'), ('depth_5', '5 m')):
         im = Image.new('RGB', (128, 64), (235, 240, 240)); d = ImageDraw.Draw(im)
@@ -720,6 +729,39 @@ textures/waterpark/foam
 }
 
 '''
+    for nme in ('balloon', 'balloon_b'):
+        S += lm_shader(nme)
+    for i in range(7):
+        S += f'''textures/waterpark/rainbow{i}
+{{
+	qer_editorimage textures/waterpark/rainbow{i}
+	qer_trans 0.4
+	surfaceparm trans
+	surfaceparm nonsolid
+	surfaceparm nolightmap
+	surfaceparm nomarks
+	surfaceparm noimpact
+	cull none
+	{{
+		map textures/waterpark/rainbow{i}
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sin 0.75 0.15 {i * 0.1:.1f} 0.1
+	}}
+}}
+
+'''
+    S += '''textures/waterpark/nodraw_ns
+{
+	qer_editorimage textures/waterpark/nodraw_ns
+	qer_trans 0.3
+	surfaceparm nodraw
+	surfaceparm nonsolid
+	surfaceparm trans
+	surfaceparm nomarks
+	surfaceparm nolightmap
+}
+
+'''
     S += '''levelshots/waterparkB
 {
 	nomipmaps
@@ -737,7 +779,7 @@ textures/waterpark/foam
 
 def make_arena(out):
     open(os.path.join(out, 'scripts', 'waterpark.arena'), 'w').write(
-        '{\nmap "waterpark"\nlongname "Splash World: Cloud Lagoon"\ntype "ffa lps team ft ctkd"\nfraglimit "25"\ntimelimit "15"\n}\n')
+        '{\nmap "waterpark"\nlongname "Splash World: Cloud Lagoon Deluxe"\ntype "ffa lps team ft ctkd"\nfraglimit "25"\ntimelimit "15"\n}\n')
 
 
 def make_all(out):

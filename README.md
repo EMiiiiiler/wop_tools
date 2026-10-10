@@ -8,7 +8,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   `sign_box()`/`fit_face()` for exactly-fitted, never-mirrored sign textures, `Map` writer.
 - `md3tool.py` - MD3 reader. `python3 md3tool.py bounds <models root> md3bounds.json` rebuilds the bounds table.
 - `md3bounds.json` - real bounds of every WoP map object (place models with `origin z = surface - zmin*scale`).
-- `waterpark/` - generator for *Splash World: Cloud Lagoon* (`OUT=dir python3 build_waterpark.py`), plus dev
+- `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`), plus dev
   `compile.sh` / `render.sh`. `textures.py` makes all textures, the shader and the arena.
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
 
@@ -19,10 +19,12 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   bspc .aas directly; `--points "x,y,z;..."` for extra spots).
 - `sightlines.py map out.png` - long eye-level sightlines (brushes + model boxes block), with a top-down plot.
 - `check_entities.py` - quick entity-in-solid check (superseded by audit_map).
+  audit_map also checks misc_externalmodel support and the Nipper (start weapon) ammo count.
 
 ## Preview
 - `preview/bsp2scene.py` - compiled .bsp -> self-contained three.js page (lightmaps, vertex-lit models, sky,
-  item markers, camera buttons). `--threeurl` for a CDN build, `--three` to inline a local one.
+  item markers, camera buttons). Brush movers with an origin are put back in place, and mover `model2`s and
+  `misc_externalmodel`s (not baked into the bsp) are loaded from the md3s in the --vfs folders. `--threeurl` for a CDN build, `--three` to inline a local one.
 - `preview/shoot.py` - headless Chromium screenshots of that page from Q3 camera positions.
 - `preview/levelshots.py` - WoP-style levelshots (`<map>.jpg` cover, `<map>A.jpg`, animated `<map>B1..B3`).
 
@@ -42,3 +44,13 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   dedicated server with `+set bot_minplayers 8 +set g_log games.log` is a cheap end-to-end bot test.
 - The WoP repo stores assets in LFS; fetch single files from
   `https://media.githubusercontent.com/media/PadWorld-Entertainment/worldofpadman/main/<path>`.
+
+## Movers and pushers (learned on the waterpark)
+- A model that should move without being solid: brush entity with a small `nodraw_ns` brush + `model2`
+  (no modelscale for model2). Use `func_pendulum` (rocking) or `func_rotating`; bspc turns every
+  `func_bobbing` into a bot "funcbob" platform, even a nonsolid one, so bots try to ride floating ducks.
+  Pendulum swing period comes from the brush's depth below the origin; `speed` is the swing in degrees.
+- `func_train` needs an origin brush; path_corner origins are where that origin goes.
+- Water/slide currents: `trigger_multiple` (wait 0.25-0.5) -> `target_push` with `angles "pitch yaw 0"`
+  (pitch > 0 = down) and `speed`; it sets the velocity, so keep zones short and away from exits.
+- A jump pad that leaves the island needs a gap in the perimeter clip above rail height.

@@ -33,11 +33,12 @@ wopmap.TEXSCALE.update({T('deck'): (1, 1), T('path'): (0.5, 0.5), T('rock'): (1,
                         T('water'): (0.5, 0.5), T('stucco_sand'): (0.5, 0.5), T('teak'): (0.5, 0.5),
                         T('spray'): (0.5, 0.5), T('waterfall'): (1, 1), ROOFT: (0.5, 0.5)})
 
-M = Map({'message': 'Splash World: Cloud Lagoon', '_ambient': '6', 'gridsize': '96 96 128',
+M = Map({'message': 'Splash World: Cloud Lagoon Deluxe', '_ambient': '6', 'gridsize': '96 96 128',
          '_blocksize': '0', 'enableBreath': '1'})
 A = M.add
 ISL = (-2048, -1792, 2048, 1792)
 ZB = -448                     # bottom of the deck columns
+CANNON_GAP = (1376, 1504)     # y span of the east edge left open (above z 80) for the sky cannon
 HOLES = []                    # (rect, wall_tex, fill function)
 ZONES = []                    # (rect, top texture)
 SPOTS = {'weapon': [], 'ammo': [], 'item': [], 'spawn': []}
@@ -350,7 +351,9 @@ def perimeter(skip):
     A(box((ISL[0] - 16, ISL[1] - 16, 0), (ISL[2] + 16, ISL[1], H), CLIP))
     A(box((ISL[0] - 16, ISL[3], 0), (ISL[2] + 16, ISL[3] + 16, H), CLIP))
     A(box((ISL[0] - 16, ISL[1], 0), (ISL[0], ISL[3], H), CLIP))
-    A(box((ISL[2], ISL[1], 0), (ISL[2] + 16, ISL[3], H), CLIP))
+    gy0, gy1 = CANNON_GAP                      # sky cannon flight path: clip only up to z 80 there
+    A(box((ISL[2], ISL[1], 0), (ISL[2] + 16, gy0, H), CLIP)); A(box((ISL[2], gy1, 0), (ISL[2] + 16, ISL[3], H), CLIP))
+    A(box((ISL[2], gy0, 0), (ISL[2] + 16, gy1, 80), CLIP))
     # rocky outcrops hugging the cliffs (below deck level, outside the island footprint)
     import random
     rnd = random.Random(21)
@@ -390,7 +393,7 @@ def skybox():
 def floating_islets():
     import random
     rnd = random.Random(9)
-    for (cx, cy, cz, r) in ((-2900, 1700, 200, 260), (2800, -2100, -100, 320), (2950, 1500, 420, 200), (-2700, -2500, -300, 240)):
+    for (cx, cy, cz, r) in ((-2900, 1700, 200, 260), (2800, -2100, -100, 320), (-2700, -2500, -300, 240)):
         top = [(cx + r * math.cos(a), cy + r * math.sin(a), cz) for a in [k * 2 * math.pi / 9 for k in range(9)]]
         A(hull(top + [(x, y, cz - 40) for x, y, _ in top], {'top': GRASS, 'side': T('rock'), 'bot': T('rock')}))
         A(hull([(x, y, cz - 40) for x, y, _ in top] + [(cx + rnd.uniform(-50, 50), cy, cz - r * 1.8)], T('rock')))
@@ -976,7 +979,7 @@ def pirate_cove():
     clipbox((1270, 925, -40), (1330, 995, 34))
     for (bx, by, mname) in ((1250, 1700, 'pad_soccerball'), (1700, 1680, 'pad_basketball'), (1990, 1100, 'pad_soccerball')):
         mdl(f'pad_ball/{mname}.md3', bx, by, 0, scale=0.35)
-    mdl('pad_ddmix/jail/skull.md3', 1960, 1500, 0, scale=0.22, angle=200)
+    mdl('pad_ddmix/jail/skull.md3', 1995, 1215, 0, scale=0.22, angle=200)
     for (px, py, s) in ((1130, 760, 1), (1990, 900, 2), (1990, 1320, 3), (1300, 1720, 4), (1840, 1720, 5), (1600, 760, 6)):
         palm(px, py, 0, h=220 + (s % 3) * 25, lean=(20 - s * 8, 14 - s * 3), seed=s)
     item('ammo_bubbleg', 1990, 1600, 0)
@@ -1164,8 +1167,11 @@ def plaza():
         wp = [(cx + rr * math.cos(a), cy + rr * math.sin(a), z) for a in (a0, a1) for rr in (58, R0) for z in (0, 12)]
         A(hull(wp, T('water_pool')))
     A(cyl(cx, cy, 56, 0, 72, {'top': T('coping'), 'side': WALLB}, 16))
-    mdl('pad_statues/statue_super.md3', cx, cy, 72, scale=0.7, angle=90)
-    clipbox((cx - 40, cy - 40, 72), (cx + 40, cy + 40, 250))
+    # spinning gold Padman (func_rotating with a model2; idea from the hand-edited v1 map)
+    M.ent('func_rotating', (cx, cy, 72), brushes=[box((cx - 8, cy - 8, 72), (cx + 8, cy + 8, 88), T('nodraw_ns'))],
+          model2='models/mapobjects/ente/padstatue_gold.md3', speed=30)
+    clipbox((cx - 44, cy - 44, 72), (cx + 44, cy + 44, 300))
+    light(cx, cy - 150, 330, 260, '1 0.85 0.5')
     for k in range(4):
         a = k * math.pi / 2 + math.pi / 4
         px, py = cx + 120 * math.cos(a), cy + 120 * math.sin(a)
@@ -1278,7 +1284,7 @@ def scatter_east_west():
     spawn(-1950, -620, 0, 0); spawn(-1020, 880, 0, 270); spawn(-1700, 1700, 0, 270)
     spawn(-1450, -620, 0, 90); spawn(1100, -620, 0, 90); spawn(-650, 1120, 0, 0)
     # ammo & items around
-    item('ammo_nipper', -1960, -240, 0); item('ammo_nipper', 1990, -300, 0); item('ammo_nipper', 600, 1100, 0)
+    item('ammo_nipper', -1960, -240, 0); item('ammo_nipper', 1990, -300, 0)
     item('ammo_pumper', -1180, 1640, 0)
     item('ammo_balloony', 1120, 1660, 0)
     item('ammo_bubbleg', -1990, 1500, 0)
@@ -1392,7 +1398,7 @@ def extras():
            box((SX - 82, SY - 2, -10), (SX - 78, SY + 2, 100), T('spray')), box((SX + 78, SY - 2, -10), (SX + 82, SY + 2, 100), T('spray'))]
     M.ent('func_rotating', (SX, SY, 103), brushes=arm, speed=60, noise='sound/world/ambient/water_shower.ogg')
     # ---------- tower roof raven (animated WoP model, entity)
-    M.ent('misc_externalmodel', (224, 548, 514), model='models/mapobjects/animated/raven_sitting_2_small.md3',
+    M.ent('misc_externalmodel', (224, 548, 512), model='models/mapobjects/animated/raven_sitting_2_small.md3',
           angle=45, animationStart=0, animationEnd=210, animationFPS=30)
     # ---------- decoration: ducks, sunbathing gummy bears, beach toys, towels
     for (dx, dy, dz, a) in ((-1072, -300, 0, 180), (-1072, 420, 0, 180), (-1136, 1300, 0, 180), (1136, -300, 0, 0),
@@ -1422,27 +1428,29 @@ def extras():
         mdl('pad_sink/sink.md3', x, -1050, 0, scale=0.28, angle=270) if False else None
 
 
-def beach_hut(x0, y0, x1, y1, door, crates):
-    """small enterable hut (walls 8, roof 96..112) with a crate staircase to the roof"""
+def beach_hut(x0, y0, x1, y1, door, crates, z=0):
+    """small enterable hut (walls 8, roof 96..112) with a crate staircase to the roof, standing on z"""
     h = 96; wt = {'side': T('wood_white'), 'top': T('wood_white')}
+    def bx(mn, mx, tex): A(box((mn[0], mn[1], mn[2] + z), (mx[0], mx[1], mx[2] + z), tex))
     xm, ym = (x0 + x1) // 2, (y0 + y1) // 2
     for side, (a0, b0, a1, b1) in (('s', (x0, y0, x1, y0 + 8)), ('n', (x0, y1 - 8, x1, y1)),
                                    ('w', (x0, y0 + 8, x0 + 8, y1 - 8)), ('e', (x1 - 8, y0 + 8, x1, y1 - 8))):
         if side == door:
             if side in 'ns':
-                A(box((a0, b0, 0), (xm - 32, b1, h), wt)); A(box((xm + 32, b0, 0), (a1, b1, h), wt))
-                A(box((xm - 32, b0, 80), (xm + 32, b1, h), wt))
+                bx((a0, b0, 0), (xm - 32, b1, h), wt); bx((xm + 32, b0, 0), (a1, b1, h), wt)
+                bx((xm - 32, b0, 80), (xm + 32, b1, h), wt)
             else:
-                A(box((a0, b0, 0), (a1, ym - 32, h), wt)); A(box((a0, ym + 32, 0), (a1, b1, h), wt))
-                A(box((a0, ym - 32, 80), (a1, ym + 32, h), wt))
+                bx((a0, b0, 0), (a1, ym - 32, h), wt); bx((a0, ym + 32, 0), (a1, b1, h), wt)
+                bx((a0, ym - 32, 80), (a1, ym + 32, h), wt)
         else:
-            A(box((a0, b0, 0), (a1, b1, h), wt))
-    A(box((x0 - 8, y0 - 8, h), (x1 + 8, y1 + 8, h + 16), {'top': T('thatch'), 'side': T('thatch'), 'bot': T('wood_white')}))
-    zone((x0 + 8, y0 + 8, x1 - 8, y1 - 8), T('teak'))
+            bx((a0, b0, 0), (a1, b1, h), wt)
+    bx((x0 - 8, y0 - 8, h), (x1 + 8, y1 + 8, h + 16), {'top': T('thatch'), 'side': T('thatch'), 'bot': T('wood_white')})
+    if z == 0:
+        zone((x0 + 8, y0 + 8, x1 - 8, y1 - 8), T('teak'))
     cx, cy, dx, dy = crates
     for k, top in enumerate((96, 64, 32)):
-        A(box((cx + dx * 48 * k - 24, cy + dy * 48 * k - 24, 0), (cx + dx * 48 * k + 24, cy + dy * 48 * k + 24, top), T('crate')))
-    light(xm, ym, 70, 140)
+        bx((cx + dx * 48 * k - 24, cy + dy * 48 * k - 24, 0), (cx + dx * 48 * k + 24, cy + dy * 48 * k + 24, top), T('crate'))
+    light(xm, ym, z + 70, 140)
 
 
 def blockers():
@@ -1520,6 +1528,153 @@ def facades():
     A(box((-260, 64, 232), (-256, 576, 264), bd)); A(box((256, 64, 232), (260, 576, 264), bd))
 
 
+# =================================================================================================== DELUXE (v3)
+def mover_model(cls, model, x, y, z, length=8, **kw):
+    """brush mover that only shows a model2 (invisible, nonsolid brush hanging `length` below the origin).
+    func_pendulum: swing period comes from `length` (Q3: f = sqrt(g / (3 * length)) / 2pi), `speed` = swing degrees.
+    (func_bobbing would also work, but bspc turns every func_bobbing into a bot 'funcbob' ride, even nonsolid ones.)"""
+    return M.ent(cls, (x, y, z), brushes=[box((x - 8, y - 8, z - length), (x + 8, y + 8, z + 8), T('nodraw_ns'))],
+                 model2='models/mapobjects/' + model, **kw)
+
+
+def floaties():
+    """rocking ducks / beach balls on the water and wiggling fish under it (idea from the hand-edited v1 map)"""
+    D, DB, SB, BB = 'ente/ducka.md3', 'ente/duckb.md3', 'pad_ball/pad_soccerball.md3', 'pad_ball/pad_basketball.md3'
+    surf = {D: -14, DB: -12, SB: -46, BB: -50}          # origin offsets so they float half in the water (surface -8)
+    for i, (m, x, y, wz) in enumerate((
+            (SB, -1250, -60, 0), (BB, -1700, 520, 0), (D, -1250, 380, 0), (DB, -1600, -200, 0), (D, -1180, 560, 0),   # wave pool
+            (D, -672, -400, 0), (DB, 672, 420, 0), (D, 120, 930, 0), (DB, -380, -560, 0), (D, -672, 300, 0),        # lazy river
+            (SB, 1250, 1100, 8), (D, 1800, 950, 0), (DB, 1760, 1450, 0), (BB, 1300, 1450, 12),                         # lagoon
+            (SB, -1250, 1300, 0), (D, -1480, 1160, 0),                                                                 # dive pool
+            (D, -200, 1650, 192), (BB, 200, 1600, 192))):                                                               # infinity pool
+        mover_model('func_pendulum', m, x, y, wz + surf[m], length=48 + 16 * (i % 4), speed=5 + i % 4,
+                    phase=round((i * 0.137) % 1, 3), angle=(i * 47) % 360)
+    fish = ['pad_fish/flame_angel.md3', 'pad_fish/flame_angel02.md3', 'pad_fish/flame_angel05.md3',
+            'pad_fish/flame_angel_r.md3', 'pad_fish/flame_angel_r02.md3', 'pad_fish/flame_angel_r05.md3']
+    for i, (x, y, z) in enumerate(((-1450, 1200, -260), (-1300, 1400, -200), (-1500, 1420, -320), (-1350, 1250, -150),
+                                   (-1200, 400, -122), (-1600, 300, -122))):
+        mover_model('func_pendulum', fish[i % 6], x, y, z, length=24, speed=10, phase=round(i / 6, 3), angle=(i * 70) % 360)
+
+
+def ravens():
+    for (x, y, z, a) in ((-1700, 780, 160, 300), (240, -360, 128, 20), (1300, -1080, 192, 180), (-260, -1700, 224, 0),
+                         (-1820, -1060, 176, 250)):
+        M.ent('misc_externalmodel', (x, y, z), model='models/mapobjects/animated/raven_sitting_2_small.md3', angle=a,
+              animationStart=0, animationEnd=210, animationFPS=30)
+
+
+def booster(mn, mx, pitch, yaw, speed, name, wait=0.5):
+    """trigger_multiple -> target_push: sets the player's velocity (pitch > 0 = downward)"""
+    M.ent('trigger_multiple', brushes=[box(mn, mx, TRIG)], target=name, wait=wait)
+    M.ent('target_push', ((mn[0] + mx[0]) // 2, (mn[1] + mx[1]) // 2, mx[2] + 8), targetname=name,
+          angles=f'{pitch} {yaw} 0', speed=speed)
+
+
+def rapids():
+    # slide launchers on the tower roof
+    booster((-300, 280, 512), (-236, 360, 580), 20, 180, 820, 'boost_kamikaze')
+    booster((112, 576, 512), (208, 640, 580), 8, 90, 560, 'boost_rapids')
+    # river jets: south leg flows east, east leg north, north leg west, west leg south
+    for (mn, mx, yaw, nm) in (((-296, -624, -48), (-120, -464, 8), 0, 'jet_s'), ((592, 330, -48), (752, 560, 8), 90, 'jet_e'),
+                              ((60, 848, -48), (380, 1008, 8), 180, 'jet_n'), ((-752, 120, -48), (-592, 440, 8), 270, 'jet_w')):
+        booster(mn, mx, 0, yaw, 380, nm, wait=0.25)
+        A(box((mn[0], mn[1], -10), (mx[0], mx[1], -9), T('foam')))
+        speaker((mn[0] + mx[0]) // 2, (mn[1] + mx[1]) // 2, 0, 'sound/world/ambient/water_bubbling.ogg')
+    post_sign(-240, -688, 'sign_rapids_jet', 's', w=128, h=32)
+
+
+def sky_cannon_and_isle():
+    """jump pad on the east beach that fires you across the sky to Paradise Isle (teleporter back)"""
+    CX, CY, ZT, R = 2880, 1440, 320, 300
+    jumppad(1984, 1440, 0, (2860, 1440, ZT), apex_extra=96, name='sky_cannon')
+    # launch ring (open to the west so you can walk in) + striped posts with lamps
+    for k in range(12):
+        if k in (5, 6, 7): continue
+        a0, a1 = 2 * math.pi * k / 12, 2 * math.pi * (k + 1) / 12
+        A(hull([(1984 + rr * math.cos(a), 1440 + rr * math.sin(a), z) for a in (a0, a1) for rr in (44, 56) for z in (0, 22)],
+               {'top': T('coping'), 'side': T('awning_red')}))
+    for (px, py) in ((1946, 1386), (1946, 1494)):
+        A(cyl(px, py, 6, 0, 120, T('awning_red'), 8)); A(cyl(px, py, 10, 120, 132, T('lightpanel'), 8))
+        light(px, py, 140, 120, '1 0.7 0.3')
+    post_sign(1968, 1544, 'sign_cannon', 'w', w=160, h=40)
+    speaker(1984, 1440, 40, 'sound/world/ambient/wind_stormy.ogg')
+    # the isle: 12-gon slab, rock cone below, boulder rim (32 high: no walking off, landing from the air is fine)
+    top = ngon(CX, CY, R, 12, phase=0)
+    A(prism(top, ZT - 48, ZT, {'top': GRASS, 'side': T('rock'), 'bot': T('rock')}))
+    A(hull([(x, y, ZT - 48) for x, y in top] + [(CX + 40, CY - 30, ZT - 620)], {'top': CAULK, 'side': T('rock'), 'bot': T('rock')}))
+    for k in range(12):
+        a0, a1 = 2 * math.pi * k / 12, 2 * math.pi * (k + 1) / 12
+        pts = [(CX + rr * math.cos(a), CY + rr * math.sin(a), z) for a in (a0, a1) for rr in (276, R) for z in (ZT, ZT + 32)]
+        A(hull(pts, {'top': T('rock'), 'side': T('rock')}))
+    zt = ZT
+    beach_hut(2900, 1480, 3060, 1608, 'w', (2980, 1448, 0, -1), z=zt)
+    A(sign_box((2940, 1608, zt + 50), (3040, 1612, zt + 80), T('sign_isle'), 512, 128, back=T('wood_white'), facing='n'))
+    weapon('splasher', 2980, 1544, zt + 112, wait=20)
+    item('ammo_splasher', 2760, 1560, zt)
+    item('item_armor_shard', 2990, 1560, zt)
+    palm(2700, 1500, zt, h=240, lean=(-30, 10), seed=51); palm(2830, 1650, zt, h=200, lean=(10, 26), seed=52)
+    lounger(2860, 1250, zt, 90); lounger(2930, 1250, zt, 90); umbrella(2895, 1300, zt, 'umb_green')
+    mdl('pad_ducks/pad_duck.md3', 3050, 1330, zt, scale=0.3, angle=135)
+    for (fx, fy, sd) in ((2700, 1500, 61), (2830, 1650, 62), (2660, 1380, 63), (3100, 1440, 64)):
+        flowers(fx, fy, zt, seed=sd, n=3, r=34)
+    mdl('pad_items/towelstack.md3', 2895, 1215, zt, scale=0.35, angle=90)
+    mdl('pad_ball/pad_soccerball.md3', 2780, 1600, zt, scale=0.35)
+    mdl('pad_ddmix/padship/amphora.md3', 3070, 1500, zt, scale=0.2, angle=40)
+    clipbox((3030, 1300, zt), (3070, 1360, zt + 64))
+    M.ent('misc_externalmodel', (2985, 1585, zt + 112), model='models/mapobjects/animated/raven_sitting_2_small.md3',
+          angle=0, animationStart=0, animationEnd=210, animationFPS=30)
+    # teleporter home (to the pirate cove beach)
+    M.ent('trigger_teleport', brushes=[box((2730, 1270, zt), (2794, 1334, zt + 64), TRIG)], target='tp_isle')
+    mdl('pad_teleporter/padtp_blue.md3', 2762, 1302, zt, scale=0.5, angle=0)
+    M.ent('misc_teleporter_dest', (1140, 1650, 24), targetname='tp_isle', angle=0)
+    light(2762, 1302, zt + 50, 200, '0.4 0.7 1'); light(CX, CY, zt + 160, 300)
+    spawn(2700, 1380, zt, 180)
+
+
+def gondola_ride():
+    """second gondola cabin running out along the cable into the clouds (func_train, out of reach)"""
+    y0, y1 = -2000, -2800
+    cab = {'top': T('metal'), 'bot': T('metal_white'), 'e': T('window'), 'w': T('window'), 'n': T('stucco_sun'), 's': T('stucco_sun')}
+    br = [box((-8, y0 - 8, 222), (8, y0 + 8, 238), 'common/origin'),
+          box((-72, y0 - 56, 170), (72, y0 + 56, 280), cab),
+          box((-80, y0 - 64, 280), (80, y0 + 64, 290), T('metal_white')),
+          box((-6, y0 - 6, 290), (6, y0 + 6, 306), T('metal_dark')),
+          box((-24, y0 - 16, 306), (24, y0 + 16, 312), T('metal_dark'))]
+    M.ent('func_train', brushes=br, target='gond_a', speed=90)
+    M.ent('path_corner', (0, y0, 230), targetname='gond_a', target='gond_b', wait=4)
+    M.ent('path_corner', (0, y1, 230), targetname='gond_b', target='gond_a', wait=2)
+
+
+def hot_air_balloon():
+    cx, cy, z0 = -2700, -500, 900
+    prof = [(0, 50), (60, 120), (140, 165), (230, 175), (310, 150), (370, 100), (400, 40)]
+    br = []
+    for i, ((za, ra), (zb, rb)) in enumerate(zip(prof, prof[1:])):
+        pts = [(x, y, z0 + za) for x, y in ngon(cx, cy, ra, 12)] + [(x, y, z0 + zb) for x, y in ngon(cx, cy, rb, 12)]
+        br.append(hull(pts, T('balloon') if i % 2 == 0 else T('balloon_b')))
+    br.append(box((cx - 36, cy - 36, z0 - 140), (cx + 36, cy + 36, z0 - 90), {'side': T('bamboo'), 'top': T('teak'), 'bot': T('bamboo')}))
+    for dx, dy in ((-30, -30), (26, -30), (-30, 26), (26, 26)):
+        br.append(box((cx + dx, cy + dy, z0 - 90), (cx + dx + 4, cy + dy + 4, z0), T('metal_dark')))
+    M.ent('func_bobbing', brushes=br, height=60, speed=14, phase=0.2)
+
+
+def rainbow():
+    """additive 7-band arc over the infinity waterfall"""
+    cx, cy, cz = 0, 2150, -420
+    n = 26
+    for k in range(7):
+        r0 = 1080 - 18 * k
+        for i in range(n):
+            a0 = math.radians(12 + 156 * i / n); a1 = math.radians(12 + 156 * (i + 1) / n)
+            pts = [(cx + rr * math.cos(a), yy, cz + rr * math.sin(a)) for a in (a0, a1) for rr in (r0 - 18, r0) for yy in (cy, cy + 4)]
+            A(hull(pts, T(f'rainbow{k}'), round_pts=False))
+
+
+def deluxe():
+    floaties(); ravens(); rapids(); sky_cannon_and_isle(); gondola_ride(); hot_air_balloon(); rainbow()
+
+
+
 # =================================================================================================== main
 def main():
     textures.make_all(OUT)
@@ -1532,7 +1687,7 @@ def main():
     wave_pool(); dive_zone(); lazy_river()
     TW = tower(); grotto()
     terrace(); pirate_cove(); kids_zone(); snack_shack(); changing_rooms(); plaza()
-    center_island(TW); scatter_east_west(); extras(); blockers(); facades()
+    center_island(TW); scatter_east_west(); extras(); blockers(); facades(); deluxe()
     # tower boaster on wave machine roof
     weapon('boaster', -1440, 760, 160)
     item('ammo_boaster', -1150, 1000, 0)
