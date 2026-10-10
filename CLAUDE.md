@@ -30,6 +30,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 ## Known pitfalls
 - Texture preview: Q3 texture t runs downward; three.js textures need flipY=false or signs look upside down.
 - misc_model is static; animated models need `misc_externalmodel` (no modelscale) with animationStart/End/FPS.
+- Moving decoration: nodraw_ns brush + model2 on func_pendulum/func_rotating, not func_bobbing (bots try to ride bobbers).
 - An item origin must sit 16u above the floor (bbox +-15) or the game drops it as "in solid".
 - Probe AAS areas at floor+25 (standing origin); floor+24 sits exactly on the boundary.
 - Models only appear in-game if q3map2 baked them in; a "failed loading model" error means the compile command's paths are wrong.

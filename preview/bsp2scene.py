@@ -39,7 +39,8 @@ def read_bsp(path):
     surfs = np.frombuffer(L(13), sd)
     lmb = L(14); nlm = len(lmb) // (128 * 128 * 3)
     lms = [np.frombuffer(lmb, 'u1', 128 * 128 * 3, i * 128 * 128 * 3).reshape(128, 128, 3) for i in range(nlm)]
-    return ents, shaders, dv, di, surfs, lms
+    md = L(7); models = [struct.unpack_from('<6f4i', md, i * 40) for i in range(len(md) // 40)]
+    return ents, shaders, dv, di, surfs, lms, models
 
 
 def parse_entities(s):
@@ -207,9 +208,20 @@ def main():
     ap.add_argument('--views', default='', help='"Name:x,y,z,yaw,pitch;Name2:..." camera buttons (first = start view)')
     a = ap.parse_args()
 
-    ents, shaders, dv, di, surfs, lms = read_bsp(a.bsp)
+    ents, shaders, dv, di, surfs, lms, bmodels = read_bsp(a.bsp)
     ent_list = parse_entities(ents)
     shinfo = parse_shaders(a.vfs)
+    # brush entities with an origin (movers, trains with origin brushes) store their surfaces relative to it
+    surf_off = {}
+    for e in ent_list:
+        m = e.get('model', '')
+        if m.startswith('*') and e.get('origin'):
+            try:
+                o = np.array([float(v) for v in e['origin'].split()], np.float32)
+                fs, ns = bmodels[int(m[1:])][6:8]
+                for k in range(fs, fs + ns): surf_off[k] = o
+            except Exception:
+                pass
 
     # lightmap atlas
     n = max(1, len(lms)); cols = int(np.ceil(np.sqrt(n))); rows = int(np.ceil(n / cols))
@@ -221,7 +233,7 @@ def main():
 
     groups = {}   # (shader, lit) -> lists
     sky_name = a.sky
-    for s in surfs:
+    for si, s in enumerate(surfs):
         sname = shaders[s['shader']][0]
         info = shinfo.get(sname.lower(), {})
         if info.get('nodraw') or sname.lower().startswith(('textures/common/', 'noshader')) or s['type'] == 4:
@@ -240,6 +252,7 @@ def main():
             V = dv[fv:fv + nv]
             xyz, st, lmst, col = V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)
             tris = di[fi:fi + ni].astype(np.int64)
+        if si in surf_off: xyz = np.asarray(xyz, np.float32) + surf_off[si]
         lmn = int(s['lm'])
         if lmn >= 0:
             li = lmn; ax = (li % cols) * 128; ay = (li // cols) * 128
@@ -253,6 +266,34 @@ def main():
         g['pos'].append(np.asarray(xyz, np.float32)); g['uv'].append(np.asarray(st, np.float32))
         g['uv2'].append(np.asarray(lm2, np.float32)); g['col'].append(np.asarray(col, np.float32)[:, :3])
         g['idx'].append(tris + g['n']); g['n'] += len(xyz)
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        import md3tool
+    except Exception:
+        md3tool = None
+    nent_models = 0
+    for e in ent_list:
+        mp = e.get('model2') or (e.get('model') if e.get('classname') == 'misc_externalmodel' else None)
+        if not mp or not md3tool or not e.get('origin'): continue
+        f = next((os.path.join(d, mp) for d in reversed(a.vfs) if os.path.exists(os.path.join(d, mp))), None)
+        if not f: continue
+        try: md = md3tool.load(f)
+        except Exception: continue
+        o = np.array([float(v) for v in e['origin'].split()], np.float32)
+        if 'angles' in e: yaw = float(e['angles'].split()[1])
+        else: yaw = float(e.get('angle', 0))
+        c, sn = np.cos(np.radians(yaw)), np.sin(np.radians(yaw))
+        R = np.array([[c, sn, 0], [-sn, c, 0], [0, 0, 1]], np.float32)
+        for srf in md['surfaces']:
+            sname = srf['shader'] or ''
+            key = (sname, False)
+            g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
+            v = srf['verts'] @ R + o
+            g['pos'].append(v.astype(np.float32)); g['uv'].append(srf['st'].astype(np.float32))
+            g['uv2'].append(np.zeros((len(v), 2), np.float32)); g['col'].append(np.full((len(v), 3), 118, np.float32))
+            g['idx'].append(srf['tris'][:, ::-1].astype(np.int64) + g['n']); g['n'] += len(v)
+        nent_models += 1
 
     blob = io.BytesIO(); meta = []; tex_cache = {}; textures = {}
     missing = set()
@@ -325,7 +366,7 @@ def main():
     open(a.out, 'w').write(html)
     tv = sum(m['nv'] for m in meta); ti = sum(m['ni'] for m in meta) // 3
     print(f'{a.out}: {len(meta)} materials, {tv} verts, {ti} tris, {len(lms)} lightmaps, sky={sky_name}, '
-          f'{len(marks)} markers, {os.path.getsize(a.out) / 1e6:.1f} MB')
+          f'{len(marks)} markers, {nent_models} entity models, {os.path.getsize(a.out) / 1e6:.1f} MB')
     if missing: print('no image for:', ', '.join(sorted(missing)[:40]))
 
 
