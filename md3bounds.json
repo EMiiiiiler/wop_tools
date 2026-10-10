@@ -1,0 +1,7325 @@
+{
+"models/mapobjects/animated/raven_sitting_1.md3": {
+"max": [
+109.09,
+36.59,
+138.05
+],
+"min": [
+-162.77,
+-36.62,
+-0.98
+],
+"shaders": [
+"models/mapobjects/animated/Raven.tga"
+]
+},
+"models/mapobjects/animated/raven_sitting_1_small.md3": {
+"max": [
+50.44,
+18.31,
+68.97
+],
+"min": [
+-85.5,
+-18.3,
+-0.53
+],
+"shaders": [
+"models/mapobjects/animated/Raven.tga"
+]
+},
+"models/mapobjects/animated/raven_sitting_2.md3": {
+"max": [
+93.7,
+48.66,
+117.67
+],
+"min": [
+-161.23,
+-44.41,
+0.31
+],
+"shaders": [
+"models/mapobjects/animated/Raven.tga"
+]
+},
+"models/mapobjects/animated/raven_sitting_2_small.md3": {
+"max": [
+42.33,
+27.2,
+58.89
+],
+"min": [
+-85.12,
+-19.33,
+0.22
+],
+"shaders": [
+"models/mapobjects/animated/Raven.tga"
+]
+},
+"models/mapobjects/ente/bonea.md3": {
+"max": [
+1.12,
+7.48,
+2.0
+],
+"min": [
+-1.42,
+-7.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/ente/bones"
+]
+},
+"models/mapobjects/ente/boneb.md3": {
+"max": [
+1.92,
+7.69,
+2.48
+],
+"min": [
+-1.42,
+-8.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/ente/bones"
+]
+},
+"models/mapobjects/ente/deadalienA.md3": {
+"max": [
+19.03,
+36.55,
+13.22
+],
+"min": [
+-22.41,
+-26.64,
+-0.47
+],
+"shaders": [
+"models/mapobjects/ente/deadalien",
+"models/mapobjects/ente/deadalien_glass"
+]
+},
+"models/mapobjects/ente/deadalienB.md3": {
+"max": [
+13.89,
+15.97,
+35.83
+],
+"min": [
+-20.88,
+-27.0,
+-0.2
+],
+"shaders": [
+"models/mapobjects/ente/deadalien",
+"models/mapobjects/ente/deadalien_glass"
+]
+},
+"models/mapobjects/ente/ducka.md3": {
+"max": [
+19.11,
+8.52,
+27.19
+],
+"min": [
+-22.47,
+-8.52,
+-0.06
+],
+"shaders": [
+"models/mapobjects/ente/ducks.tga"
+]
+},
+"models/mapobjects/ente/duckb.md3": {
+"max": [
+17.83,
+8.47,
+21.8
+],
+"min": [
+-21.61,
+-8.47,
+-0.09
+],
+"shaders": [
+"models/mapobjects/ente/ducks.tga"
+]
+},
+"models/mapobjects/ente/padstatue_gold.md3": {
+"max": [
+60.08,
+64.25,
+243.33
+],
+"min": [
+-35.95,
+-107.7,
+0.34
+],
+"shaders": [
+"models/mapobjects/ente/padgold_body.tga",
+"models/mapobjects/ente/padgold_cape.tga",
+"models/mapobjects/ente/padgold_goggles.tga",
+"models/mapobjects/ente/padgold_head.tga"
+]
+},
+"models/mapobjects/ente/padstatue_winner.md3": {
+"max": [
+60.08,
+64.25,
+243.33
+],
+"min": [
+-35.95,
+-107.7,
+0.34
+],
+"shaders": [
+"models/mapobjects/ente/padwinner_body.tga",
+"models/mapobjects/ente/padwinner_cape.tga",
+"models/mapobjects/ente/padwinner_goggles.tga",
+"models/mapobjects/ente/padwinner_head.tga"
+]
+},
+"models/mapobjects/gummybears/greenbear.md3": {
+"max": [
+37.12,
+46.59,
+154.39
+],
+"min": [
+-22.81,
+-48.38,
+-0.02
+],
+"shaders": [
+"models/mapobjects/gummybears/greengum.jpg"
+]
+},
+"models/mapobjects/gummybears/ldgreenbear.md3": {
+"max": [
+69.92,
+47.59,
+58.47
+],
+"min": [
+-84.27,
+-47.38,
+0.11
+],
+"shaders": [
+"models/mapobjects/gummybears/greengum.jpg"
+]
+},
+"models/mapobjects/gummybears/ldorangebear.md3": {
+"max": [
+75.33,
+46.59,
+57.8
+],
+"min": [
+-78.86,
+-48.38,
+0.17
+],
+"shaders": [
+"models/mapobjects/gummybears/orangegum.jpg"
+]
+},
+"models/mapobjects/gummybears/ldredbear.md3": {
+"max": [
+70.33,
+47.5,
+58.42
+],
+"min": [
+-83.86,
+-47.47,
+0.0
+],
+"shaders": [
+"models/mapobjects/gummybears/redgum.jpg"
+]
+},
+"models/mapobjects/gummybears/ldyellowbear.md3": {
+"max": [
+69.83,
+47.47,
+58.62
+],
+"min": [
+-84.36,
+-47.5,
+0.17
+],
+"shaders": [
+"models/mapobjects/gummybears/yellowgum.jpg"
+]
+},
+"models/mapobjects/gummybears/orangebear.md3": {
+"max": [
+37.12,
+46.59,
+154.39
+],
+"min": [
+-22.81,
+-48.38,
+-0.02
+],
+"shaders": [
+"models/mapobjects/gummybears/orangegum.jpg"
+]
+},
+"models/mapobjects/gummybears/redbear.md3": {
+"max": [
+37.12,
+46.59,
+154.39
+],
+"min": [
+-22.81,
+-48.38,
+-0.02
+],
+"shaders": [
+"models/mapobjects/gummybears/redgum.jpg"
+]
+},
+"models/mapobjects/gummybears/yellowbear.md3": {
+"max": [
+37.12,
+46.59,
+154.39
+],
+"min": [
+-22.81,
+-48.38,
+-0.02
+],
+"shaders": [
+"models/mapobjects/gummybears/yellowgum.jpg"
+]
+},
+"models/mapobjects/pad_actionfigures/fig_girl.md3": {
+"max": [
+29.95,
+57.22,
+132.31
+],
+"min": [
+-4.61,
+-63.14,
+-58.73
+],
+"shaders": [
+"models/mapobjects/pad_actionfigures/fig_pumper",
+"models/mapobjects/pad_actionfigures/fig_pumpertubes",
+"models/mapobjects/pad_actionfigures/girl_box",
+"models/mapobjects/pad_actionfigures/padgrlbd",
+"models/mapobjects/pad_actionfigures/padgrlhd",
+"models/mapobjects/pad_actionfigures/plastic"
+]
+},
+"models/mapobjects/pad_actionfigures/fig_lilly.md3": {
+"max": [
+29.09,
+61.75,
+135.36
+],
+"min": [
+-4.61,
+-58.62,
+-55.69
+],
+"shaders": [
+"models/mapobjects/pad_actionfigures/fig_pumper",
+"models/mapobjects/pad_actionfigures/fig_pumpertubes",
+"models/mapobjects/pad_actionfigures/lilbody",
+"models/mapobjects/pad_actionfigures/lilhead",
+"models/mapobjects/pad_actionfigures/lilly_box",
+"models/mapobjects/pad_actionfigures/plastic"
+]
+},
+"models/mapobjects/pad_ball/pad_basketball.md3": {
+"max": [
+44.38,
+44.36,
+86.75
+],
+"min": [
+-44.38,
+-44.38,
+-1.98
+],
+"shaders": [
+"models/mapobjects/pad_ball/pad_jail_basket_ball.tga"
+]
+},
+"models/mapobjects/pad_ball/pad_soccerball.md3": {
+"max": [
+40.28,
+41.09,
+79.39
+],
+"min": [
+-40.28,
+-39.14,
+-0.34
+],
+"shaders": [
+"models/mapobjects/pad_ball/pad_soccerball.tga"
+]
+},
+"models/mapobjects/pad_ball/pad_softball.md3": {
+"max": [
+9.14,
+9.08,
+18.08
+],
+"min": [
+-9.14,
+-9.14,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_ball/pad_softball.tga"
+]
+},
+"models/mapobjects/pad_ball/pad_softball_sig.md3": {
+"max": [
+9.14,
+9.08,
+18.08
+],
+"min": [
+-9.14,
+-9.14,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_ball/pad_softball_sig.tga"
+]
+},
+"models/mapobjects/pad_ball/pad_tennisball.md3": {
+"max": [
+7.45,
+7.23,
+14.75
+],
+"min": [
+-7.45,
+-7.28,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ball/pad_tennisball.tga"
+]
+},
+"models/mapobjects/pad_bath/deocan1.md3": {
+"max": [
+23.98,
+23.98,
+135.05
+],
+"min": [
+-24.0,
+-24.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_bath/deocan1.tga"
+]
+},
+"models/mapobjects/pad_bath/electoothbrush.md3": {
+"max": [
+17.27,
+14.64,
+227.75
+],
+"min": [
+-14.33,
+-14.64,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_bath/electric_toothbrush.tga"
+]
+},
+"models/mapobjects/pad_bath/electoothbrush_side.md3": {
+"max": [
+129.28,
+15.94,
+28.67
+],
+"min": [
+-98.45,
+-14.61,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_bath/electric_toothbrush.tga"
+]
+},
+"models/mapobjects/pad_bath/electoothbrush_stem.md3": {
+"max": [
+33.25,
+7.61,
+12.77
+],
+"min": [
+-34.64,
+-8.73,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_bath/electric_toothbrush.tga"
+]
+},
+"models/mapobjects/pad_bath/ointment_flat.md3": {
+"max": [
+12.73,
+54.45,
+24.47
+],
+"min": [
+-12.73,
+-54.08,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_bath/ointment.tga"
+]
+},
+"models/mapobjects/pad_bath/ointment_used.md3": {
+"max": [
+12.73,
+54.8,
+25.17
+],
+"min": [
+-12.73,
+-49.02,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_bath/ointment.tga"
+]
+},
+"models/mapobjects/pad_bath/razor.md3": {
+"max": [
+69.38,
+26.55,
+13.92
+],
+"min": [
+-100.5,
+-27.22,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_bath/razor.tga"
+]
+},
+"models/mapobjects/pad_bath/toothpaste_flat.md3": {
+"max": [
+25.47,
+98.5,
+49.95
+],
+"min": [
+-25.47,
+-119.42,
+-0.14
+],
+"shaders": [
+"models/mapobjects/pad_bath/toothpaste.tga"
+]
+},
+"models/mapobjects/pad_bath/toothpaste_up.md3": {
+"max": [
+25.47,
+24.19,
+216.7
+],
+"min": [
+-25.47,
+-23.95,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_bath/toothpaste.tga"
+]
+},
+"models/mapobjects/pad_bath/toothpaste_used.md3": {
+"max": [
+27.95,
+100.81,
+51.94
+],
+"min": [
+-27.95,
+-101.97,
+-0.11
+],
+"shaders": [
+"models/mapobjects/pad_bath/toothpaste.tga"
+]
+},
+"models/mapobjects/pad_books/comics/pad_comic1.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/comics/padcomic_bc.tga",
+"models/mapobjects/pad_books/comics/padcomic_fc.tga",
+"models/mapobjects/pad_books/comics/padcomic_spine.tga",
+"models/mapobjects/pad_books/comics/padcomic_tbedge.tga"
+]
+},
+"models/mapobjects/pad_books/comics/pad_comic1_ang.md3": {
+"max": [
+75.0,
+98.11,
+59.44
+],
+"min": [
+-75.0,
+-97.14,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_books/comics/padcomic_bc.tga",
+"models/mapobjects/pad_books/comics/padcomic_fc.tga",
+"models/mapobjects/pad_books/comics/padcomic_spine.tga",
+"models/mapobjects/pad_books/comics/padcomic_tbedge.tga"
+]
+},
+"models/mapobjects/pad_books/comics/pad_comic1_upd.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/comics/padcomic_bc.tga",
+"models/mapobjects/pad_books/comics/padcomic_fc.tga",
+"models/mapobjects/pad_books/comics/padcomic_spine.tga",
+"models/mapobjects/pad_books/comics/padcomic_tbedge.tga"
+]
+},
+"models/mapobjects/pad_books/comics/pad_comic1_upr.md3": {
+"max": [
+75.0,
+4.0,
+200.0
+],
+"min": [
+-75.0,
+-4.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/comics/padcomic_bc.tga",
+"models/mapobjects/pad_books/comics/padcomic_fc.tga",
+"models/mapobjects/pad_books/comics/padcomic_spine.tga",
+"models/mapobjects/pad_books/comics/padcomic_tbedge.tga"
+]
+},
+"models/mapobjects/pad_books/comics/pad_oc_lg.md3": {
+"max": [
+100.0,
+150.0,
+6.0
+],
+"min": [
+-100.0,
+-150.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/comics/padcomic_bc.tga",
+"models/mapobjects/pad_books/comics/padcomic_tbedge.tga",
+"models/mapobjects/pad_books/comics/padopen_left.tga",
+"models/mapobjects/pad_books/comics/padopen_right.tga"
+]
+},
+"models/mapobjects/pad_books/glow/pad_ob_glow.md3": {
+"max": [
+97.86,
+132.3,
+21.22
+],
+"min": [
+-95.31,
+-138.59,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/glow/pad_openbook_glow.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_1.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook01.tga",
+"models/mapobjects/pad_books/kids/mbook01b.tga",
+"models/mapobjects/pad_books/kids/mbook01c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_1_ang.md3": {
+"max": [
+75.0,
+96.14,
+72.7
+],
+"min": [
+-75.0,
+-95.56,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook01.tga",
+"models/mapobjects/pad_books/kids/mbook01b.tga",
+"models/mapobjects/pad_books/kids/mbook01c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_1_upd.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook01.tga",
+"models/mapobjects/pad_books/kids/mbook01b.tga",
+"models/mapobjects/pad_books/kids/mbook01c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_1_upr.md3": {
+"max": [
+76.0,
+4.0,
+200.0
+],
+"min": [
+-74.0,
+-4.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook01.tga",
+"models/mapobjects/pad_books/kids/mbook01b.tga",
+"models/mapobjects/pad_books/kids/mbook01c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_2.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook02.tga",
+"models/mapobjects/pad_books/kids/mbook02b.tga",
+"models/mapobjects/pad_books/kids/mbook02c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_2_ang.md3": {
+"max": [
+75.0,
+96.14,
+72.7
+],
+"min": [
+-75.0,
+-95.56,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook02.tga",
+"models/mapobjects/pad_books/kids/mbook02b.tga",
+"models/mapobjects/pad_books/kids/mbook02c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_2_upd.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook02.tga",
+"models/mapobjects/pad_books/kids/mbook02b.tga",
+"models/mapobjects/pad_books/kids/mbook02c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_2_upr.md3": {
+"max": [
+76.0,
+4.0,
+200.0
+],
+"min": [
+-74.0,
+-4.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook02.tga",
+"models/mapobjects/pad_books/kids/mbook02b.tga",
+"models/mapobjects/pad_books/kids/mbook02c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_3.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook03.tga",
+"models/mapobjects/pad_books/kids/mbook03b.tga",
+"models/mapobjects/pad_books/kids/mbook03c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_3_ang.md3": {
+"max": [
+75.0,
+96.14,
+72.7
+],
+"min": [
+-75.0,
+-95.56,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook03.tga",
+"models/mapobjects/pad_books/kids/mbook03b.tga",
+"models/mapobjects/pad_books/kids/mbook03c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_3_upd.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook03.tga",
+"models/mapobjects/pad_books/kids/mbook03b.tga",
+"models/mapobjects/pad_books/kids/mbook03c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_3_upr.md3": {
+"max": [
+76.0,
+4.0,
+200.0
+],
+"min": [
+-74.0,
+-4.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook03.tga",
+"models/mapobjects/pad_books/kids/mbook03b.tga",
+"models/mapobjects/pad_books/kids/mbook03c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_4.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook04.tga",
+"models/mapobjects/pad_books/kids/mbook04b.tga",
+"models/mapobjects/pad_books/kids/mbook04c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_4_ang.md3": {
+"max": [
+75.0,
+96.14,
+72.7
+],
+"min": [
+-75.0,
+-95.56,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook04.tga",
+"models/mapobjects/pad_books/kids/mbook04b.tga",
+"models/mapobjects/pad_books/kids/mbook04c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_4_upd.md3": {
+"max": [
+75.0,
+100.0,
+8.0
+],
+"min": [
+-75.0,
+-100.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook04.tga",
+"models/mapobjects/pad_books/kids/mbook04b.tga",
+"models/mapobjects/pad_books/kids/mbook04c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/mbook_fl_4_upr.md3": {
+"max": [
+76.0,
+4.0,
+200.0
+],
+"min": [
+-74.0,
+-4.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/mbook04.tga",
+"models/mapobjects/pad_books/kids/mbook04b.tga",
+"models/mapobjects/pad_books/kids/mbook04c.tga",
+"models/mapobjects/pad_books/kids/mbook_sidepages.tga",
+"models/mapobjects/pad_books/kids/mbook_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/kids/pad_okb_lg.md3": {
+"max": [
+100.0,
+150.0,
+6.0
+],
+"min": [
+-100.0,
+-150.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/kids/kidedge.jpg",
+"models/mapobjects/pad_books/kids/mbook04b.jpg",
+"models/mapobjects/pad_books/kids/mbook04left1.jpg",
+"models/mapobjects/pad_books/kids/mbook04right.jpg"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ang_lg.md3": {
+"max": [
+73.38,
+40.45,
+194.59
+],
+"min": [
+-70.47,
+-55.72,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ang_lg_wop.md3": {
+"max": [
+73.38,
+40.45,
+194.59
+],
+"min": [
+-70.47,
+-55.72,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_angl_lg.md3": {
+"max": [
+73.38,
+55.69,
+194.61
+],
+"min": [
+-70.47,
+-40.44,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_angl_lg_wop.md3": {
+"max": [
+73.38,
+55.69,
+194.61
+],
+"min": [
+-70.47,
+-40.44,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_angl_md.md3": {
+"max": [
+50.56,
+28.44,
+135.89
+],
+"min": [
+-51.92,
+-59.53,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_angl_md_wop.md3": {
+"max": [
+50.56,
+28.44,
+135.89
+],
+"min": [
+-51.92,
+-59.53,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_angr_md.md3": {
+"max": [
+50.56,
+57.31,
+136.39
+],
+"min": [
+-51.92,
+-28.72,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_angr_md_wop.md3": {
+"max": [
+50.56,
+57.31,
+136.39
+],
+"min": [
+-51.92,
+-28.72,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_fl_lg.md3": {
+"max": [
+69.55,
+95.39,
+42.27
+],
+"min": [
+-74.28,
+-95.2,
+-0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_fl_lg_wop.md3": {
+"max": [
+69.55,
+95.39,
+42.27
+],
+"min": [
+-74.28,
+-95.2,
+-0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_fl_md.md3": {
+"max": [
+45.75,
+67.95,
+31.72
+],
+"min": [
+-56.73,
+-67.84,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_fl_md_wop.md3": {
+"max": [
+45.75,
+67.95,
+31.72
+],
+"min": [
+-56.73,
+-67.84,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ur.md3": {
+"max": [
+73.38,
+20.03,
+181.52
+],
+"min": [
+-70.47,
+-20.25,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ur_lg.md3": {
+"max": [
+73.38,
+21.06,
+190.53
+],
+"min": [
+-70.47,
+-21.23,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ur_lg_wop.md3": {
+"max": [
+73.38,
+21.06,
+190.53
+],
+"min": [
+-70.47,
+-21.23,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ur_md.md3": {
+"max": [
+50.56,
+15.73,
+135.83
+],
+"min": [
+-51.92,
+-15.89,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_ur_md_wop.md3": {
+"max": [
+50.56,
+15.73,
+135.83
+],
+"min": [
+-51.92,
+-15.89,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_cb_wopblue_ur.md3": {
+"max": [
+11.75,
+2.45,
+29.97
+],
+"min": [
+-12.02,
+-2.53,
+-0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_closedbook_wopblue.tga"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_lg.md3": {
+"max": [
+97.86,
+132.3,
+21.22
+],
+"min": [
+-95.31,
+-138.59,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook.tga",
+"models/mapobjects/pad_books/pad_openbook_rp"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_lg_pir1.md3": {
+"max": [
+97.86,
+132.3,
+21.22
+],
+"min": [
+-95.31,
+-138.59,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook_pir1",
+"models/mapobjects/pad_books/pad_openbook_pir1.tga"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_lg_pir2.md3": {
+"max": [
+97.86,
+132.3,
+21.22
+],
+"min": [
+-95.31,
+-138.59,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook_pir2",
+"models/mapobjects/pad_books/pad_openbook_pir2.tga"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_lg_wop.md3": {
+"max": [
+97.86,
+132.3,
+21.22
+],
+"min": [
+-95.31,
+-138.59,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook_rpwop",
+"models/mapobjects/pad_books/pad_openbook_wop.tga"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_md.md3": {
+"max": [
+68.48,
+92.58,
+14.89
+],
+"min": [
+-66.73,
+-97.03,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook.tga",
+"models/mapobjects/pad_books/pad_openbook_rp"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_md_pir1.md3": {
+"max": [
+68.48,
+92.58,
+14.89
+],
+"min": [
+-66.73,
+-97.03,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook_pir1",
+"models/mapobjects/pad_books/pad_openbook_pir1.tga"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_md_pir2.md3": {
+"max": [
+68.48,
+92.58,
+14.89
+],
+"min": [
+-66.73,
+-97.03,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook_pir2",
+"models/mapobjects/pad_books/pad_openbook_pir2.tga"
+]
+},
+"models/mapobjects/pad_books/pad_ob_fl_md_wop.md3": {
+"max": [
+68.48,
+92.58,
+14.89
+],
+"min": [
+-66.73,
+-97.03,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook_rpwop",
+"models/mapobjects/pad_books/pad_openbook_wop.tga"
+]
+},
+"models/mapobjects/pad_books/pad_openbook.md3": {
+"max": [
+14.7,
+22.67,
+11.55
+],
+"min": [
+-14.92,
+-23.75,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/pad_openbook.tga",
+"models/mapobjects/pad_books/pad_openbook_rp"
+]
+},
+"models/mapobjects/pad_books/rhodan/pdr_1book.md3": {
+"max": [
+56.0,
+16.0,
+160.0
+],
+"min": [
+-48.0,
+-24.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/rhodan/pdr_fb.tga",
+"models/mapobjects/pad_books/rhodan/pdr_sidepages.tga",
+"models/mapobjects/pad_books/rhodan/pdr_spine.tga",
+"models/mapobjects/pad_books/rhodan/pdr_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/rhodan/pdr_1book_fl.md3": {
+"max": [
+49.0,
+79.0,
+40.0
+],
+"min": [
+-55.0,
+-81.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/rhodan/pdr_fb.tga",
+"models/mapobjects/pad_books/rhodan/pdr_sidepages.tga",
+"models/mapobjects/pad_books/rhodan/pdr_spine.tga",
+"models/mapobjects/pad_books/rhodan/pdr_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/rhodan/pdr_4books.md3": {
+"max": [
+56.0,
+80.0,
+160.0
+],
+"min": [
+-48.0,
+-80.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/rhodan/pdr_fb.tga",
+"models/mapobjects/pad_books/rhodan/pdr_sidepages.tga",
+"models/mapobjects/pad_books/rhodan/pdr_spine.tga",
+"models/mapobjects/pad_books/rhodan/pdr_tbpages.tga"
+]
+},
+"models/mapobjects/pad_books/rhodan/pdr_4books_fl.md3": {
+"max": [
+56.0,
+80.0,
+160.0
+],
+"min": [
+-48.0,
+-80.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_books/rhodan/pdr_fb.tga",
+"models/mapobjects/pad_books/rhodan/pdr_sidepages.tga",
+"models/mapobjects/pad_books/rhodan/pdr_spine.tga",
+"models/mapobjects/pad_books/rhodan/pdr_tbpages.tga"
+]
+},
+"models/mapobjects/pad_cake/pad_cakeslice.md3": {
+"max": [
+12.0,
+24.0,
+18.0
+],
+"min": [
+-13.0,
+-23.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cake/pad_cake"
+]
+},
+"models/mapobjects/pad_cake/pad_cakesliceup.md3": {
+"max": [
+43.73,
+43.52,
+25.33
+],
+"min": [
+0.0,
+0.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cake/pad_cake"
+]
+},
+"models/mapobjects/pad_cake/pad_cakestand.md3": {
+"max": [
+57.33,
+57.47,
+76.25
+],
+"min": [
+-57.33,
+-57.84,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cake/pad_cake",
+"models/mapobjects/pad_cake/pad_cakeglass",
+"models/mapobjects/pad_cake/pad_cakeplaterim",
+"models/mapobjects/pad_cake/pad_cakeplatetop",
+"models/mapobjects/pad_cake/pad_cakestandbase"
+]
+},
+"models/mapobjects/pad_cloister/cane2_brown.md3": {
+"max": [
+18.64,
+-47.67,
+203.39
+],
+"min": [
+-22.03,
+-83.7,
+0.33
+],
+"shaders": [
+"models/mapobjects/pad_cloister/cane_brown.tga"
+]
+},
+"models/mapobjects/pad_cloister/cane3_brown.md3": {
+"max": [
+35.23,
+-32.39,
+260.34
+],
+"min": [
+-34.44,
+-101.83,
+1.8
+],
+"shaders": [
+"models/mapobjects/pad_cloister/cane_brown.tga"
+]
+},
+"models/mapobjects/pad_clothes/peg_wooden.md3": {
+"max": [
+1.61,
+1.5,
+15.75
+],
+"min": [
+-1.62,
+-1.48,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_clothes/peg_wooden.jpg"
+]
+},
+"models/mapobjects/pad_clothes/prisonjacket_flat.md3": {
+"max": [
+36.58,
+69.94,
+7.42
+],
+"min": [
+-47.25,
+-68.3,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_clothes/prisonjacketfixedpoint"
+]
+},
+"models/mapobjects/pad_clothes/prisonjacket_hung.md3": {
+"max": [
+3.67,
+57.38,
+38.66
+],
+"min": [
+-3.0,
+-55.61,
+-41.8
+],
+"shaders": [
+"models/mapobjects/pad_clothes/prisonjacket"
+]
+},
+"models/mapobjects/pad_clothes/sock_grey.md3": {
+"max": [
+0.52,
+10.69,
+36.11
+],
+"min": [
+-0.92,
+-11.81,
+0.31
+],
+"shaders": [
+"models/mapobjects/pad_clothes/sock_grey"
+]
+},
+"models/mapobjects/pad_clothes/sock_grey2.md3": {
+"max": [
+0.52,
+10.69,
+36.11
+],
+"min": [
+-0.92,
+-11.81,
+0.31
+],
+"shaders": [
+"models/mapobjects/pad_clothes/sock_grey2"
+]
+},
+"models/mapobjects/pad_clothes/sock_grey3.md3": {
+"max": [
+0.52,
+10.69,
+36.11
+],
+"min": [
+-0.92,
+-11.81,
+0.31
+],
+"shaders": [
+"models/mapobjects/pad_clothes/sock_grey3"
+]
+},
+"models/mapobjects/pad_condiments/pad_ketchup.md3": {
+"max": [
+11.97,
+11.98,
+67.81
+],
+"min": [
+-11.91,
+-11.98,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_condiments/bottle_ketchup.tga"
+]
+},
+"models/mapobjects/pad_condiments/pad_mustard.md3": {
+"max": [
+11.97,
+11.98,
+67.81
+],
+"min": [
+-11.91,
+-11.98,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_condiments/bottle_mustard.tga"
+]
+},
+"models/mapobjects/pad_condiments/pepper.md3": {
+"max": [
+7.81,
+7.84,
+28.67
+],
+"min": [
+-7.81,
+-7.88,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_condiments/saltandpepper.tga"
+]
+},
+"models/mapobjects/pad_condiments/salt.md3": {
+"max": [
+7.81,
+7.84,
+28.66
+],
+"min": [
+-7.81,
+-7.88,
+-0.02
+],
+"shaders": [
+"models/mapobjects/pad_condiments/saltandpepper.tga"
+]
+},
+"models/mapobjects/pad_condiments/sugar.md3": {
+"max": [
+11.41,
+11.38,
+41.27
+],
+"min": [
+-11.42,
+-11.38,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_condiments/sugar.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup01.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup001.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup01_side.md3": {
+"max": [
+50.52,
+58.64,
+71.16
+],
+"min": [
+-41.55,
+-35.91,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup001.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup01_upd.md3": {
+"max": [
+35.58,
+65.17,
+92.09
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup001.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup02.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup001.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup02_side.md3": {
+"max": [
+50.52,
+58.64,
+71.16
+],
+"min": [
+-41.55,
+-35.91,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup001.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup02_upd.md3": {
+"max": [
+35.59,
+65.17,
+92.09
+],
+"min": [
+-35.59,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup001.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup03.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup003.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup03_side.md3": {
+"max": [
+50.52,
+58.3,
+70.83
+],
+"min": [
+-41.55,
+-36.25,
+-0.17
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup003.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup03_upd.md3": {
+"max": [
+35.58,
+65.17,
+92.09
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup002.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup04.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup003.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup04_side.md3": {
+"max": [
+50.52,
+58.64,
+71.16
+],
+"min": [
+-41.55,
+-35.91,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup003.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup04_upd.md3": {
+"max": [
+35.59,
+65.17,
+92.09
+],
+"min": [
+-35.59,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup002.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup05.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup002.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup05_side.md3": {
+"max": [
+50.52,
+58.47,
+70.83
+],
+"min": [
+-41.55,
+-36.08,
+-0.17
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup002.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup05_upd.md3": {
+"max": [
+35.58,
+65.17,
+92.09
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup003.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup06.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup002.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup06_side.md3": {
+"max": [
+50.52,
+58.64,
+80.83
+],
+"min": [
+-41.55,
+-35.91,
+9.81
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup002.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup06_upd.md3": {
+"max": [
+35.59,
+65.17,
+92.12
+],
+"min": [
+-35.59,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup003.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup07.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup004.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup07_side.md3": {
+"max": [
+50.52,
+58.64,
+71.16
+],
+"min": [
+-41.55,
+-35.91,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup004.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup07_upd.md3": {
+"max": [
+35.58,
+65.17,
+92.09
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup004.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup08.md3": {
+"max": [
+35.56,
+65.17,
+92.06
+],
+"min": [
+-35.58,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup004.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup08_side.md3": {
+"max": [
+50.52,
+58.3,
+70.83
+],
+"min": [
+-41.55,
+-36.25,
+-0.17
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup004.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cups/pad_cup08_upd.md3": {
+"max": [
+35.59,
+65.17,
+92.12
+],
+"min": [
+-35.59,
+-36.56,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_cups/cup004.tga",
+"models/mapobjects/pad_cups/cup_under.tga",
+"models/mapobjects/pad_cups/handle.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_fork.md3": {
+"max": [
+111.34,
+15.38,
+8.61
+],
+"min": [
+-110.52,
+-15.44,
+-0.19
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/knifefork.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_fork2.md3": {
+"max": [
+111.34,
+15.38,
+8.61
+],
+"min": [
+-110.52,
+-15.44,
+-0.19
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/knifefork02.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_knife.md3": {
+"max": [
+112.92,
+8.94,
+10.47
+],
+"min": [
+-111.98,
+-12.61,
+-0.8
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/knifefork.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_knife2.md3": {
+"max": [
+112.92,
+8.94,
+10.47
+],
+"min": [
+-111.98,
+-12.61,
+-0.8
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/knifefork02.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_knife2_full.md3": {
+"max": [
+112.89,
+8.91,
+11.69
+],
+"min": [
+-111.97,
+-12.61,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/knifefork02.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_knife_full.md3": {
+"max": [
+112.89,
+8.91,
+11.69
+],
+"min": [
+-111.97,
+-12.61,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/knifefork.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_spoon.md3": {
+"max": [
+120.98,
+24.95,
+14.09
+],
+"min": [
+-105.88,
+-23.09,
+-0.67
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/spoon01.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_spoon2.md3": {
+"max": [
+120.98,
+24.95,
+14.09
+],
+"min": [
+-105.88,
+-23.09,
+-0.67
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/spoon02.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_teaspoon.md3": {
+"max": [
+71.52,
+14.72,
+8.77
+],
+"min": [
+-64.59,
+-14.11,
+-0.08
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/spoon01.tga"
+]
+},
+"models/mapobjects/pad_cutlery/pad_teaspoon_ur.md3": {
+"max": [
+7.28,
+31.3,
+127.75
+],
+"min": [
+-39.12,
+-9.47,
+0.08
+],
+"shaders": [
+"models/mapobjects/pad_cutlery/spoon01.tga"
+]
+},
+"models/mapobjects/pad_ddmix/anteroom/injection_green.md3": {
+"max": [
+14.58,
+70.88,
+9.03
+],
+"min": [
+-14.58,
+-72.12,
+-9.03
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/anteroom/injection.tga",
+"models/mapobjects/pad_ddmix/anteroom/injection_glass.tga"
+]
+},
+"models/mapobjects/pad_ddmix/anteroom/injection_red.md3": {
+"max": [
+14.58,
+73.31,
+9.03
+],
+"min": [
+-14.58,
+-80.48,
+-9.03
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/anteroom/injection.tga",
+"models/mapobjects/pad_ddmix/anteroom/injection_glass.tga"
+]
+},
+"models/mapobjects/pad_ddmix/anteroom/medical_case.md3": {
+"max": [
+65.98,
+29.69,
+97.55
+],
+"min": [
+-66.34,
+-22.03,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/anteroom/black_case.tga",
+"models/mapobjects/pad_ddmix/anteroom/medical_case.tga",
+"models/mapobjects/pad_ddmix/anteroom/notarzt.tga"
+]
+},
+"models/mapobjects/pad_ddmix/anteroom/metal_suitcase.md3": {
+"max": [
+65.98,
+29.69,
+97.55
+],
+"min": [
+-66.34,
+-22.03,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/anteroom/metal_suitcase.tga",
+"models/mapobjects/pad_ddmix/anteroom/silver_case.tga"
+]
+},
+"models/mapobjects/pad_ddmix/anteroom/vase.md3": {
+"max": [
+52.94,
+51.06,
+491.36
+],
+"min": [
+-48.45,
+-87.95,
+0.72
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/anteroom/vase.tga",
+"models/mapobjects/pad_ddmix/anteroom/water_vase",
+"models/mapobjects/pad_ddmix/plants/tulip1.tga"
+]
+},
+"models/mapobjects/pad_ddmix/attic/kaspad.md3": {
+"max": [
+50.77,
+78.95,
+60.95
+],
+"min": [
+-80.42,
+-85.06,
+0.27
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/attic/kaspad.tga"
+]
+},
+"models/mapobjects/pad_ddmix/attic/pumper.md3": {
+"max": [
+51.67,
+77.2,
+58.78
+],
+"min": [
+-27.42,
+-125.62,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/attic/pumper.tga",
+"models/mapobjects/pad_ddmix/attic/tubes.tga"
+]
+},
+"models/mapobjects/pad_ddmix/backyard/screw_nut.md3": {
+"max": [
+16.77,
+14.53,
+18.59
+],
+"min": [
+-16.53,
+-14.3,
+0.09
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/backyard/screwnut.tga"
+]
+},
+"models/mapobjects/pad_ddmix/backyard/screwnut_thin.md3": {
+"max": [
+16.77,
+14.53,
+7.34
+],
+"min": [
+-16.53,
+-14.3,
+0.09
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/backyard/screwnut_thin"
+]
+},
+"models/mapobjects/pad_ddmix/backyard/tire.md3": {
+"max": [
+129.94,
+-0.08,
+257.91
+],
+"min": [
+-128.38,
+-71.64,
+-0.25
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/backyard/tire.tga"
+]
+},
+"models/mapobjects/pad_ddmix/bun.md3": {
+"max": [
+16.94,
+24.09,
+20.91
+],
+"min": [
+-16.94,
+-24.09,
+0.0
+],
+"shaders": [
+"\\models\\mapobjects\\pad_ddmix\\bun.tga"
+]
+},
+"models/mapobjects/pad_ddmix/cabin/griff.md3": {
+"max": [
+18.75,
+70.53,
+18.75
+],
+"min": [
+-18.75,
+0.0,
+-18.75
+],
+"shaders": [
+"textures/pad_wallout/wall_stone044.jpg"
+]
+},
+"models/mapobjects/pad_ddmix/cabin/telescope.md3": {
+"max": [
+45.08,
+55.58,
+354.41
+],
+"min": [
+-100.11,
+-53.92,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/cabin/occulars.tga",
+"models/mapobjects/pad_ddmix/cabin/telescope.tga"
+]
+},
+"models/mapobjects/pad_ddmix/castle/knightshield.md3": {
+"max": [
+23.25,
+-0.05,
+25.25
+],
+"min": [
+-23.33,
+-10.23,
+-26.55
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/castle/knightshield.tga"
+]
+},
+"models/mapobjects/pad_ddmix/castle/padking.md3": {
+"max": [
+25.56,
+23.47,
+90.48
+],
+"min": [
+-31.05,
+-26.05,
+-1.16
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/castle/padking.tga"
+]
+},
+"models/mapobjects/pad_ddmix/castle/shield.md3": {
+"max": [
+17.88,
+2.59,
+20.97
+],
+"min": [
+-18.11,
+-6.31,
+-26.55
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/castle/shield.tga"
+]
+},
+"models/mapobjects/pad_ddmix/castle/sword.md3": {
+"max": [
+5.89,
+1.59,
+64.52
+],
+"min": [
+-5.89,
+-1.62,
+0.22
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/castle/knightshield.tga"
+]
+},
+"models/mapobjects/pad_ddmix/castle/torch.md3": {
+"max": [
+9.59,
+0.73,
+44.09
+],
+"min": [
+-9.53,
+-15.84,
+-12.17
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/castle/torch.tga",
+"textures/pad_maps/fackel"
+]
+},
+"models/mapobjects/pad_ddmix/castle/turul.md3": {
+"max": [
+108.11,
+38.67,
+83.62
+],
+"min": [
+-107.19,
+-38.98,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/castle/turul.tga"
+]
+},
+"models/mapobjects/pad_ddmix/chess/chess_black_dame.md3": {
+"max": [
+15.47,
+15.47,
+69.66
+],
+"min": [
+-15.47,
+-15.47,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/chess/chess_black.tga"
+]
+},
+"models/mapobjects/pad_ddmix/chess/chess_black_king.md3": {
+"max": [
+16.22,
+16.22,
+80.45
+],
+"min": [
+-16.22,
+-16.22,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/chess/chess_black.tga"
+]
+},
+"models/mapobjects/pad_ddmix/chess/chess_black_tower.md3": {
+"max": [
+12.83,
+12.83,
+46.67
+],
+"min": [
+-12.83,
+-12.83,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/chess/chess_black.tga"
+]
+},
+"models/mapobjects/pad_ddmix/chess/chess_white_dame.md3": {
+"max": [
+15.47,
+15.47,
+69.66
+],
+"min": [
+-15.47,
+-15.47,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/chess/chess_white.tga"
+]
+},
+"models/mapobjects/pad_ddmix/chess/chess_white_king.md3": {
+"max": [
+16.22,
+16.22,
+80.45
+],
+"min": [
+-16.22,
+-16.22,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/chess/chess_white.tga"
+]
+},
+"models/mapobjects/pad_ddmix/chess/chess_white_tower.md3": {
+"max": [
+12.83,
+12.83,
+46.67
+],
+"min": [
+-12.83,
+-12.83,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/chess/chess_white.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/coffe_pot.md3": {
+"max": [
+55.92,
+76.94,
+117.58
+],
+"min": [
+-55.92,
+-55.12,
+0.14
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/can_top.tga",
+"models/mapobjects/pad_ddmix/diner/coffee_pot.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/glass_betty.md3": {
+"max": [
+34.31,
+34.31,
+142.47
+],
+"min": [
+-34.31,
+-34.31,
+0.27
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/glass_betty.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/glass_diner.md3": {
+"max": [
+26.47,
+26.47,
+58.45
+],
+"min": [
+-26.47,
+-26.47,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/diner_logo.tga",
+"models/mapobjects/pad_ddmix/diner/glass_highlight_small.tga",
+"models/mapobjects/pad_ddmix/diner/logoback.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/glass_midnight.md3": {
+"max": [
+25.19,
+25.19,
+139.45
+],
+"min": [
+-25.19,
+-25.19,
+0.28
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/glass_midnight.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/glass_rings.md3": {
+"max": [
+29.28,
+29.3,
+82.88
+],
+"min": [
+-29.28,
+-29.64,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/glass01.tga",
+"models/mapobjects/pad_ddmix/diner/glass_rings.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/glass_simple.md3": {
+"max": [
+27.36,
+27.22,
+62.75
+],
+"min": [
+-27.36,
+-27.09,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/glass01.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/glass_sunrise.md3": {
+"max": [
+25.19,
+25.19,
+139.45
+],
+"min": [
+-25.19,
+-25.19,
+0.28
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/glass_sunrise.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/muffin_blueberry.md3": {
+"max": [
+26.94,
+33.81,
+49.02
+],
+"min": [
+-30.38,
+-21.09,
+0.33
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/muffin_blueberry.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/muffin_blueberry_nobottom.md3": {
+"max": [
+26.94,
+33.81,
+49.02
+],
+"min": [
+-30.38,
+-21.09,
+0.33
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/muffin_blueberry.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/muffin_choco.md3": {
+"max": [
+26.94,
+131.3,
+49.02
+],
+"min": [
+-30.38,
+76.39,
+0.33
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/muffin_choco.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/muffin_choco_nobottom.md3": {
+"max": [
+26.94,
+131.3,
+49.02
+],
+"min": [
+-30.38,
+76.39,
+0.33
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/muffin_choco.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/sugar_packet.md3": {
+"max": [
+23.94,
+26.94,
+3.5
+],
+"min": [
+-23.94,
+-26.94,
+0.16
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/sugar_packet.tga"
+]
+},
+"models/mapobjects/pad_ddmix/diner/tunnellamp.md3": {
+"max": [
+18.81,
+42.14,
+45.8
+],
+"min": [
+-15.84,
+-0.64,
+-45.86
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/diner/light.tga",
+"models/mapobjects/pad_ddmix/diner/tunnellamp.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/ancient_doorknob.md3": {
+"max": [
+28.05,
+56.0,
+65.16
+],
+"min": [
+-28.05,
+0.0,
+-115.17
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/ancient_doorknob.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/ancient_key_in_lock.md3": {
+"max": [
+11.02,
+69.02,
+-33.5
+],
+"min": [
+-11.02,
+-13.36,
+-58.92
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/key.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/ancient_key_lying.md3": {
+"max": [
+15.56,
+41.25,
+6.64
+],
+"min": [
+-15.56,
+-41.12,
+0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/key.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/door_handle_blue.md3": {
+"max": [
+27.61,
+60.83,
+41.34
+],
+"min": [
+-118.78,
+0.0,
+-93.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/door_handle_blue.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/door_handle_blue_mirrored.md3": {
+"max": [
+118.78,
+60.83,
+41.34
+],
+"min": [
+-27.61,
+0.0,
+-93.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/door_handle_blue.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/door_handle_red.md3": {
+"max": [
+27.61,
+60.83,
+41.34
+],
+"min": [
+-118.78,
+0.0,
+-93.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/door_handle_red.tga"
+]
+},
+"models/mapobjects/pad_ddmix/door/door_handle_red_mirrored.md3": {
+"max": [
+118.78,
+60.83,
+41.34
+],
+"min": [
+-27.61,
+0.0,
+-93.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/door/door_handle_red.tga"
+]
+},
+"models/mapobjects/pad_ddmix/gallery/fire_extinguisher.md3": {
+"max": [
+13.09,
+0.0,
+44.14
+],
+"min": [
+-21.19,
+-22.62,
+-24.31
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/gallery/fire_extinguisher.tga"
+]
+},
+"models/mapobjects/pad_ddmix/jail/handcuffs_hanging.md3": {
+"max": [
+54.53,
+55.34,
+15.42
+],
+"min": [
+-38.47,
+-52.55,
+-324.64
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/jail/handcuffs.tga"
+]
+},
+"models/mapobjects/pad_ddmix/jail/handcuffs_lying.md3": {
+"max": [
+186.66,
+38.05,
+155.03
+],
+"min": [
+-157.73,
+-136.28,
+0.55
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/jail/handcuffs.tga"
+]
+},
+"models/mapobjects/pad_ddmix/jail/matches_closed.md3": {
+"max": [
+36.75,
+49.0,
+24.14
+],
+"min": [
+-36.75,
+-49.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/jail/matches.tga"
+]
+},
+"models/mapobjects/pad_ddmix/jail/matches_opened.md3": {
+"max": [
+36.75,
+65.84,
+29.48
+],
+"min": [
+-36.75,
+-65.84,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/jail/matches.tga"
+]
+},
+"models/mapobjects/pad_ddmix/jail/skull.md3": {
+"max": [
+52.19,
+77.41,
+106.92
+],
+"min": [
+-52.19,
+-74.8,
+0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/jail/skull.tga"
+]
+},
+"models/mapobjects/pad_ddmix/jail/snowman.md3": {
+"max": [
+77.2,
+58.89,
+136.31
+],
+"min": [
+-74.33,
+-58.89,
+0.67
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/jail/snowman.tga"
+]
+},
+"models/mapobjects/pad_ddmix/mix/blue_flag.md3": {
+"max": [
+12.73,
+1.44,
+0.0
+],
+"min": [
+-12.73,
+-1.44,
+-50.69
+],
+"shaders": [
+"textures/pad_tex02/blueflag"
+]
+},
+"models/mapobjects/pad_ddmix/mix/matchbook_closed.md3": {
+"max": [
+31.55,
+33.92,
+10.64
+],
+"min": [
+-31.55,
+-33.92,
+0.19
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/mix/matchbook_padman.tga",
+"models/mapobjects/pad_ddmix/mix/matches.tga"
+]
+},
+"models/mapobjects/pad_ddmix/mix/matchbook_diner.md3": {
+"max": [
+31.7,
+29.23,
+15.58
+],
+"min": [
+-31.39,
+-43.34,
+-15.58
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/mix/matchbook_diner.tga",
+"models/mapobjects/pad_ddmix/mix/matches.tga"
+]
+},
+"models/mapobjects/pad_ddmix/mix/matchbook_doomdragon.md3": {
+"max": [
+31.7,
+29.23,
+15.58
+],
+"min": [
+-31.39,
+-43.34,
+-15.58
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/mix/matchbook_doomdragon.tga",
+"models/mapobjects/pad_ddmix/mix/matches.tga"
+]
+},
+"models/mapobjects/pad_ddmix/mix/matchbook_padman.md3": {
+"max": [
+31.7,
+29.23,
+15.58
+],
+"min": [
+-31.39,
+-43.34,
+-15.58
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/mix/matchbook_padman.tga",
+"models/mapobjects/pad_ddmix/mix/matches.tga"
+]
+},
+"models/mapobjects/pad_ddmix/mix/red_flag.md3": {
+"max": [
+12.73,
+1.44,
+0.0
+],
+"min": [
+-12.73,
+-1.44,
+-50.69
+],
+"shaders": [
+"textures/pad_tex02/redflag"
+]
+},
+"models/mapobjects/pad_ddmix/padkitchen/towel.md3": {
+"max": [
+165.72,
+21.16,
+205.3
+],
+"min": [
+-101.91,
+-25.61,
+-93.41
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padkitchen/towel.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padkitchen/towel_bath_blue.md3": {
+"max": [
+165.72,
+21.16,
+205.3
+],
+"min": [
+-101.91,
+-25.61,
+-93.41
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padkitchen/towel_bath_blue.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padkitchen/towel_bath_pink.md3": {
+"max": [
+165.72,
+21.16,
+205.3
+],
+"min": [
+-101.91,
+-25.61,
+-93.41
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padkitchen/towel_bath_pink.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padkitchen/towel_kitchen.md3": {
+"max": [
+165.72,
+21.16,
+205.3
+],
+"min": [
+-101.91,
+-25.61,
+-93.41
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padkitchen/towel_kitchen.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padlibrary/bookend.md3": {
+"max": [
+54.06,
+80.25,
+167.08
+],
+"min": [
+-70.08,
+-72.98,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padlibrary/bookend.tga",
+"models/mapobjects/pad_ddmix/padlibrary/bookend_shader.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padlibrary/pipe.md3": {
+"max": [
+30.95,
+63.11,
+44.58
+],
+"min": [
+-26.41,
+-65.17,
+0.19
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padlibrary/pipe.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padship/amphora.md3": {
+"max": [
+55.67,
+54.27,
+277.27
+],
+"min": [
+-55.52,
+-54.25,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padship/amphora.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padship/rumbottle1.md3": {
+"max": [
+37.28,
+37.27,
+98.47
+],
+"min": [
+-37.22,
+-37.25,
+0.16
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padship/rumbottle.tga",
+"models/mapobjects/pad_ddmix/padship/rumbottle_parts.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padship/rumbottle2.md3": {
+"max": [
+40.09,
+37.27,
+98.47
+],
+"min": [
+-37.28,
+-37.25,
+0.16
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padship/rumbottle.tga",
+"models/mapobjects/pad_ddmix/padship/rumbottle_parts.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padship/shiplamp.md3": {
+"max": [
+34.02,
+34.02,
+4.88
+],
+"min": [
+-34.02,
+-34.02,
+-147.48
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padship/shiplamp.tga",
+"models/mapobjects/pad_ddmix/padship/shiplamp_light.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padship/valve.md3": {
+"max": [
+5.38,
+0.53,
+5.23
+],
+"min": [
+-5.38,
+-0.53,
+-5.23
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padship/valve.tga"
+]
+},
+"models/mapobjects/pad_ddmix/padshop/cardboard_standup.md3": {
+"max": [
+109.31,
+42.06,
+333.08
+],
+"min": [
+-93.7,
+-34.66,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/padshop/cardboard_side",
+"models/mapobjects/pad_ddmix/padshop/standup",
+"models/mapobjects/pad_ddmix/padshop/white_cardboard"
+]
+},
+"models/mapobjects/pad_ddmix/plants/bonsai.md3": {
+"max": [
+141.64,
+122.41,
+268.98
+],
+"min": [
+-104.69,
+-82.45,
+0.36
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/bonsai.tga",
+"models/mapobjects/pad_ddmix/plants/flower_soil.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/bonsai2.md3": {
+"max": [
+141.64,
+122.41,
+268.98
+],
+"min": [
+-104.69,
+-82.45,
+0.36
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/bonsai.tga",
+"models/mapobjects/pad_ddmix/plants/flower_soil.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/cane1.md3": {
+"max": [
+3.52,
+-52.41,
+251.0
+],
+"min": [
+-3.14,
+-59.11,
+0.88
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/cane.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/cane2.md3": {
+"max": [
+18.64,
+-47.67,
+203.39
+],
+"min": [
+-22.03,
+-83.7,
+0.33
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/cane.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/cane3.md3": {
+"max": [
+35.23,
+-32.39,
+260.34
+],
+"min": [
+-34.44,
+-101.83,
+1.8
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/cane.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/cane4.md3": {
+"max": [
+23.94,
+-29.03,
+283.38
+],
+"min": [
+-26.41,
+-80.47,
+1.02
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/cane.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/cane5.md3": {
+"max": [
+40.22,
+-29.03,
+275.16
+],
+"min": [
+-45.23,
+-88.52,
+0.8
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/cane.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/fern.md3": {
+"max": [
+303.75,
+287.03,
+277.06
+],
+"min": [
+-295.55,
+-267.83,
+0.34
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/fern.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/flower_pink.md3": {
+"max": [
+105.77,
+102.88,
+92.77
+],
+"min": [
+-99.98,
+-102.88,
+0.41
+],
+"shaders": [
+"models\\mapobjects\\pad_ddmix\\plants\\flower_pink.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/flower_yellow.md3": {
+"max": [
+147.05,
+128.03,
+211.09
+],
+"min": [
+-125.44,
+-153.94,
+-1.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/flower_yellow.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/ikebana_blue.md3": {
+"max": [
+106.31,
+91.81,
+267.12
+],
+"min": [
+-310.17,
+-68.98,
+0.72
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/ikebana_blue",
+"textures/pad_bookroom/bomarble01blue",
+"textures/pad_bookroom/bomarble01blue_dark",
+"textures/pad_bookroom/goldstab006"
+]
+},
+"models/mapobjects/pad_ddmix/plants/ikebana_red.md3": {
+"max": [
+106.31,
+91.81,
+267.12
+],
+"min": [
+-310.17,
+-68.98,
+0.72
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/ikebana_red",
+"textures/pad_bookroom/bomarble01",
+"textures/pad_bookroom/bomarble01_dark",
+"textures/pad_bookroom/goldstab006"
+]
+},
+"models/mapobjects/pad_ddmix/plants/tulip1.md3": {
+"max": [
+82.2,
+179.64,
+251.17
+],
+"min": [
+-50.92,
+55.09,
+-30.88
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/tulip1.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/tulip2.md3": {
+"max": [
+50.72,
+225.83,
+191.98
+],
+"min": [
+-69.62,
+39.98,
+-30.88
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/tulip1.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/water_lily.md3": {
+"max": [
+143.98,
+124.69,
+20.98
+],
+"min": [
+-143.98,
+-124.69,
+1.67
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/water_lily.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/waterplant1a.md3": {
+"max": [
+92.69,
+135.45,
+317.95
+],
+"min": [
+-158.77,
+-142.03,
+-0.06
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/waterplant1.tga"
+]
+},
+"models/mapobjects/pad_ddmix/plants/waterplant1b.md3": {
+"max": [
+82.55,
+93.84,
+317.95
+],
+"min": [
+-74.52,
+-100.97,
+1.19
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/plants/waterplant1.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/bush.md3": {
+"max": [
+170.45,
+81.92,
+211.44
+],
+"min": [
+-177.88,
+-64.92,
+-0.05
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/bush.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/cannedfish.md3": {
+"max": [
+49.0,
+45.42,
+25.06
+],
+"min": [
+-48.03,
+-50.12,
+0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/cannedfish.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/cannedfish_rusty.md3": {
+"max": [
+49.0,
+45.42,
+25.06
+],
+"min": [
+-48.03,
+-50.12,
+0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/cannedfish_rusty.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/garbage_bag_group.md3": {
+"max": [
+58.45,
+56.23,
+88.81
+],
+"min": [
+-52.81,
+-51.47,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/garbage_bag.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/garbage_bag_lying.md3": {
+"max": [
+33.48,
+41.91,
+46.83
+],
+"min": [
+-31.67,
+-39.17,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/garbage_bag.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/garbage_bag_standing.md3": {
+"max": [
+36.78,
+29.31,
+70.44
+],
+"min": [
+-36.88,
+-32.89,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/garbage_bag.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/grass.md3": {
+"max": [
+54.12,
+63.03,
+211.66
+],
+"min": [
+-54.12,
+-63.03,
+-4.83
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/grass.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_day.md3": {
+"max": [
+52.95,
+-0.02,
+137.34
+],
+"min": [
+-52.67,
+-112.92,
+-0.08
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_day.tga",
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_glass_day.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_night.md3": {
+"max": [
+75.58,
+14.69,
+137.34
+],
+"min": [
+-74.97,
+-135.16,
+-0.08
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_glass_night.tga",
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_lightrays.tga",
+"models/mapobjects/pad_ddmix/trashcan/lamp_house_night.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_lit.md3": {
+"max": [
+72.16,
+52.28,
+-0.58
+],
+"min": [
+-72.16,
+-52.28,
+-72.2
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_dirty.tga",
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_lit.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_lit_lesslight.md3": {
+"max": [
+72.16,
+52.28,
+-0.58
+],
+"min": [
+-72.16,
+-52.28,
+-72.2
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_dirty.tga",
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_lit2.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_unlit.md3": {
+"max": [
+72.16,
+52.28,
+-0.58
+],
+"min": [
+-72.16,
+-52.28,
+-72.2
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_dirty.tga",
+"models/mapobjects/pad_ddmix/trashcan/lamp_sewer_unlit.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/tree_autumn.md3": {
+"max": [
+214.19,
+214.19,
+420.47
+],
+"min": [
+-220.28,
+-249.66,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/tree1_bole.tga",
+"models/mapobjects/pad_ddmix/trashcan/tree1_leaves.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/tree_leafless.md3": {
+"max": [
+217.02,
+182.27,
+408.12
+],
+"min": [
+-204.89,
+-232.17,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/tree1_bole.tga",
+"models/mapobjects/pad_ddmix/trashcan/tree1_twigs.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/tree_leafless_clipme.md3": {
+"max": [
+208.31,
+164.17,
+388.09
+],
+"min": [
+-192.66,
+-194.97,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/tree1_bole.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/tree_spring.md3": {
+"max": [
+214.19,
+214.19,
+420.47
+],
+"min": [
+-220.28,
+-249.66,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/tree1_bole.tga",
+"models/mapobjects/pad_ddmix/trashcan/tree4_leaves.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/tree_summer.md3": {
+"max": [
+214.19,
+214.19,
+420.47
+],
+"min": [
+-220.28,
+-249.66,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/tree1_bole.tga",
+"models/mapobjects/pad_ddmix/trashcan/tree2_leaves.tga"
+]
+},
+"models/mapobjects/pad_ddmix/trashcan/tree_winter.md3": {
+"max": [
+217.02,
+182.27,
+408.12
+],
+"min": [
+-204.89,
+-232.17,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_ddmix/trashcan/tree3_bole.tga",
+"models/mapobjects/pad_ddmix/trashcan/tree3_twigs.tga"
+]
+},
+"models/mapobjects/pad_ducks/pad_duck.md3": {
+"max": [
+72.95,
+117.28,
+211.84
+],
+"min": [
+-73.08,
+-102.3,
+-0.16
+],
+"shaders": [
+"models/mapobjects/pad_ducks/pad_duck.tga"
+]
+},
+"models/mapobjects/pad_ducktape/ducktape.md3": {
+"max": [
+40.08,
+29.98,
+63.23
+],
+"min": [
+-20.08,
+-29.98,
+34.09
+],
+"shaders": [
+"models/mapobjects/pad_ducktape/ducktape.tga",
+"models/mapobjects/pad_ducktape/end.jpg",
+"models/mapobjects/pad_ducktape/inner.jpg"
+]
+},
+"models/mapobjects/pad_fish/flame_angel.md3": {
+"max": [
+46.05,
+12.09,
+52.48
+],
+"min": [
+-46.19,
+-12.03,
+0.11
+],
+"shaders": [
+"models/mapobjects/pad_fish/flame_angel",
+"models/mapobjects/pad_fish/flame_angel_fins"
+]
+},
+"models/mapobjects/pad_fish/flame_angel02.md3": {
+"max": [
+34.38,
+14.44,
+56.41
+],
+"min": [
+-27.34,
+-13.67,
+0.44
+],
+"shaders": [
+"models/mapobjects/pad_fish/flame_angel02",
+"models/mapobjects/pad_fish/flame_angel_fins02"
+]
+},
+"models/mapobjects/pad_fish/flame_angel05.md3": {
+"max": [
+30.95,
+11.91,
+51.03
+],
+"min": [
+-31.03,
+-11.14,
+0.2
+],
+"shaders": [
+"models/mapobjects/pad_fish/flame_angel05",
+"models/mapobjects/pad_fish/flame_angel_fins05"
+]
+},
+"models/mapobjects/pad_fish/flame_angel_r.md3": {
+"max": [
+46.19,
+12.09,
+52.48
+],
+"min": [
+-46.05,
+-12.03,
+0.11
+],
+"shaders": [
+"models/mapobjects/pad_fish/flame_angel",
+"models/mapobjects/pad_fish/flame_angel_fins"
+]
+},
+"models/mapobjects/pad_fish/flame_angel_r02.md3": {
+"max": [
+27.34,
+14.44,
+56.41
+],
+"min": [
+-34.38,
+-13.67,
+0.44
+],
+"shaders": [
+"models/mapobjects/pad_fish/flame_angel02",
+"models/mapobjects/pad_fish/flame_angel_fins02"
+]
+},
+"models/mapobjects/pad_fish/flame_angel_r05.md3": {
+"max": [
+31.03,
+11.91,
+51.03
+],
+"min": [
+-30.95,
+-11.14,
+0.2
+],
+"shaders": [
+"models/mapobjects/pad_fish/flame_angel05",
+"models/mapobjects/pad_fish/flame_angel_fins05"
+]
+},
+"models/mapobjects/pad_fridge/veg_bag.md3": {
+"max": [
+36.78,
+29.31,
+70.44
+],
+"min": [
+-36.88,
+-32.89,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_fridge/veg_bag.tga"
+]
+},
+"models/mapobjects/pad_fruits/apple.md3": {
+"max": [
+23.81,
+25.06,
+28.16
+],
+"min": [
+-23.83,
+-23.09,
+-23.91
+],
+"shaders": [
+"models/mapobjects/pad_fruits/apple.tga"
+]
+},
+"models/mapobjects/pad_fruits/banana.md3": {
+"max": [
+100.84,
+27.95,
+43.98
+],
+"min": [
+-101.61,
+-32.06,
+0.12
+],
+"shaders": [
+"models/mapobjects/pad_fruits/banana.tga"
+]
+},
+"models/mapobjects/pad_fruits/citrus.md3": {
+"max": [
+25.52,
+39.25,
+32.59
+],
+"min": [
+-25.52,
+-61.27,
+-25.42
+],
+"shaders": [
+"models/mapobjects/pad_fruits/citrus.tga",
+"models/mapobjects/pad_fruits/citrus_leaf"
+]
+},
+"models/mapobjects/pad_fruits/hazelnut.md3": {
+"max": [
+8.25,
+11.19,
+14.0
+],
+"min": [
+-8.25,
+-6.77,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_fruits/hazelnut"
+]
+},
+"models/mapobjects/pad_fruits/orange.md3": {
+"max": [
+41.91,
+40.77,
+85.45
+],
+"min": [
+-40.56,
+-41.34,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_fruits/orange"
+]
+},
+"models/mapobjects/pad_fruits/walnut.md3": {
+"max": [
+9.62,
+7.39,
+8.55
+],
+"min": [
+-10.5,
+-7.38,
+-6.17
+],
+"shaders": [
+"models/mapobjects/pad_fruits/walnut.tga"
+]
+},
+"models/mapobjects/pad_healthstation/pad_hs_base.md3": {
+"max": [
+56.05,
+48.36,
+21.06
+],
+"min": [
+-35.8,
+-48.36,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_healthstation/pad_hs_dome",
+"models/mapobjects/pad_healthstation/pad_hs_fin",
+"models/mapobjects/pad_healthstation/pad_hs_ring"
+]
+},
+"models/mapobjects/pad_healthstation/pad_hs_cross.md3": {
+"max": [
+5.64,
+19.77,
+23.55
+],
+"min": [
+-5.33,
+-20.25,
+-19.56
+],
+"shaders": [
+"models/mapobjects/pad_healthstation/pad_hs_crossring"
+]
+},
+"models/mapobjects/pad_healthstation/pad_hs_ring.md3": {
+"max": [
+2.39,
+28.67,
+30.41
+],
+"min": [
+-2.42,
+-28.14,
+-26.34
+],
+"shaders": [
+"models/mapobjects/pad_healthstation/pad_hs_crossring"
+]
+},
+"models/mapobjects/pad_items/toothbrush_blackblue.md3": {
+"max": [
+4.14,
+2.7,
+70.14
+],
+"min": [
+-3.64,
+-2.45,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_items/toothbrush_blackblue"
+]
+},
+"models/mapobjects/pad_items/toothbrush_blackcyan.md3": {
+"max": [
+4.14,
+2.7,
+70.14
+],
+"min": [
+-3.64,
+-2.45,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_items/toothbrush_blackcyan"
+]
+},
+"models/mapobjects/pad_items/toothbrush_blackgreen.md3": {
+"max": [
+4.14,
+2.7,
+70.14
+],
+"min": [
+-3.64,
+-2.45,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_items/toothbrush_blackgreen"
+]
+},
+"models/mapobjects/pad_items/toothbrush_blackorange.md3": {
+"max": [
+4.14,
+2.7,
+70.14
+],
+"min": [
+-3.64,
+-2.45,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_items/toothbrush_blackorange"
+]
+},
+"models/mapobjects/pad_items/toothbrush_blackpurple.md3": {
+"max": [
+4.14,
+2.7,
+70.14
+],
+"min": [
+-3.64,
+-2.45,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_items/toothbrush_blackpurple"
+]
+},
+"models/mapobjects/pad_items/toothbrush_blackred.md3": {
+"max": [
+4.14,
+2.7,
+70.14
+],
+"min": [
+-3.64,
+-2.45,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_items/toothbrush_blackred"
+]
+},
+"models/mapobjects/pad_items/towelroll.md3": {
+"max": [
+17.25,
+40.23,
+30.95
+],
+"min": [
+-15.2,
+-40.03,
+-0.08
+],
+"shaders": [
+"models/mapobjects/pad_items/towel_flat_rolled.jpg",
+"models/mapobjects/pad_items/towel_rolledend.jpg"
+]
+},
+"models/mapobjects/pad_items/towelstack.md3": {
+"max": [
+31.38,
+29.06,
+31.34
+],
+"min": [
+-30.73,
+-30.06,
+-15.66
+],
+"shaders": [
+"models/mapobjects/pad_items/towelstack.jpg"
+]
+},
+"models/mapobjects/pad_items/towelstack_2.md3": {
+"max": [
+31.38,
+29.06,
+11.84
+],
+"min": [
+-29.58,
+-30.06,
+-15.66
+],
+"shaders": [
+"models/mapobjects/pad_items/towelstack.jpg"
+]
+},
+"models/mapobjects/pad_lamps/gooseneck.md3": {
+"max": [
+71.56,
+42.81,
+181.89
+],
+"min": [
+-60.59,
+-42.81,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_lamps/gooseneck.tga"
+]
+},
+"models/mapobjects/pad_lamps/gooseneck2.md3": {
+"max": [
+71.56,
+42.81,
+181.89
+],
+"min": [
+-60.59,
+-42.81,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_lamps/gooseneck2.tga"
+]
+},
+"models/mapobjects/pad_lamps/small_gooseneck.md3": {
+"max": [
+66.64,
+32.11,
+118.7
+],
+"min": [
+-43.91,
+-32.11,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_lamps/gooseneck.tga"
+]
+},
+"models/mapobjects/pad_maple/pad_maple.md3": {
+"max": [
+28.45,
+28.45,
+3.94
+],
+"min": [
+-28.52,
+-28.44,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_maple/maple.jpg"
+]
+},
+"models/mapobjects/pad_nascars/padcar_black.md3": {
+"max": [
+12.0,
+32.64,
+18.0
+],
+"min": [
+-11.38,
+-29.48,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_nascars/padcar_black"
+]
+},
+"models/mapobjects/pad_nascars/padcar_black_rc.md3": {
+"max": [
+70.28,
+203.39,
+107.97
+],
+"min": [
+-75.53,
+-169.44,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_nascars/padcar_black"
+]
+},
+"models/mapobjects/pad_nascars/padcar_muster.md3": {
+"max": [
+12.0,
+32.64,
+18.0
+],
+"min": [
+-11.38,
+-29.48,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_nascars/padcar_muster"
+]
+},
+"models/mapobjects/pad_nascars/padcar_muster_rc.md3": {
+"max": [
+70.28,
+203.39,
+107.97
+],
+"min": [
+-75.53,
+-169.44,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_nascars/padcar_muster"
+]
+},
+"models/mapobjects/pad_nascars/padcar_orange.md3": {
+"max": [
+12.0,
+32.64,
+18.0
+],
+"min": [
+-11.38,
+-29.48,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_nascars/padcar_orange"
+]
+},
+"models/mapobjects/pad_nascars/padcar_orange_rc.md3": {
+"max": [
+70.28,
+203.39,
+107.97
+],
+"min": [
+-75.53,
+-169.44,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_nascars/padcar_orange"
+]
+},
+"models/mapobjects/pad_objects/pad_fdisk.md3": {
+"max": [
+21.0,
+21.0,
+3.0
+],
+"min": [
+-21.0,
+-21.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_objects/fdisk_edges.jpg",
+"models/mapobjects/pad_objects/fdisk_faces.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_fdisk_ang.md3": {
+"max": [
+1.0,
+21.0,
+15.0
+],
+"min": [
+-40.8,
+-21.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_objects/fdisk_edges.jpg",
+"models/mapobjects/pad_objects/fdisk_faces.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_fdisk_stk.md3": {
+"max": [
+21.0,
+21.0,
+15.0
+],
+"min": [
+-21.0,
+-21.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_objects/fdisk_botedge.jpg",
+"models/mapobjects/pad_objects/fdisk_faces.jpg",
+"models/mapobjects/pad_objects/fdisk_topedge.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_fdisk_upd.md3": {
+"max": [
+21.0,
+21.0,
+3.0
+],
+"min": [
+-21.0,
+-21.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_objects/fdisk_edges.jpg",
+"models/mapobjects/pad_objects/fdisk_faces.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_fdisk_wb.md3": {
+"max": [
+24.0,
+24.0,
+3.0
+],
+"min": [
+-24.0,
+-24.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_objects/fdisk_back.tga",
+"textures/pad_objects/obj029.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj011.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj011.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj011b.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj011b.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj011c.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj011c.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj011d.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj011d.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj011e.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj011e.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj012.md3": {
+"max": [
+5.0,
+40.0,
+80.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj012.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj012b.md3": {
+"max": [
+5.0,
+40.0,
+80.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj012b.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj069.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj069.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_obj069b.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj069b.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck01.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck01.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck02.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck02.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck03.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck03.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck04.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck04.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck05.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck05.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck06.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck06.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck07.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck07.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck08.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck08.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_litesw_steck09.md3": {
+"max": [
+5.0,
+40.0,
+136.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/steck09.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_single_obj047.md3": {
+"max": [
+5.0,
+40.0,
+80.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj047.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_single_obj047b.md3": {
+"max": [
+5.0,
+40.0,
+80.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj047b.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_single_obj047c.md3": {
+"max": [
+5.0,
+40.0,
+80.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj047c.jpg"
+]
+},
+"models/mapobjects/pad_objects/pad_single_obj047d.md3": {
+"max": [
+5.0,
+40.0,
+80.0
+],
+"min": [
+0.0,
+-40.0,
+0.0
+],
+"shaders": [
+"textures/pad_objects/obj047d.jpg"
+]
+},
+"models/mapobjects/pad_pc/keyboard.md3": {
+"max": [
+35.39,
+135.12,
+6.31
+],
+"min": [
+-80.92,
+-140.0,
+-11.08
+],
+"shaders": [
+"models/mapobjects/pad_pc/keyboard"
+]
+},
+"models/mapobjects/pad_pc/mousea.md3": {
+"max": [
+26.84,
+46.03,
+31.22
+],
+"min": [
+-26.86,
+-52.09,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pc/mousea"
+]
+},
+"models/mapobjects/pad_pc/pad_tft.md3": {
+"max": [
+68.3,
+112.42,
+222.53
+],
+"min": [
+-83.33,
+-113.52,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pc/pad_tft.tga",
+"models/mapobjects/pad_pc/pad_tft_screen"
+]
+},
+"models/mapobjects/pad_pc/padshop_tft.md3": {
+"max": [
+68.3,
+112.42,
+222.53
+],
+"min": [
+-83.33,
+-113.52,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pc/pad_tft.tga",
+"models/mapobjects/pad_pc/pad_tft_screen"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsbl.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsbl.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsbl_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsbl.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsbl_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsbl.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsbr.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsbr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsbr_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsbr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsbr_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsbr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsdb.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsdb.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsdb_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsdb.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsdb_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsdb.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsg.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsg.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsg_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsg.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsg_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsg.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsgr.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsgr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsgr_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsgr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsgr_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsgr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilslb.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilslb.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilslb_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilslb.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilslb_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilslb.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsn.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsn.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsn_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsn.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsn_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsn.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilso.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilso.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilso_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilso.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilso_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilso.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsp.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsp.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsp_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsp.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsp_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsp.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsr.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsr_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsr_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsr.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsy.md3": {
+"max": [
+41.0,
+3.98,
+8.0
+],
+"min": [
+-42.0,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsy.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsy_lg.md3": {
+"max": [
+76.0,
+3.98,
+8.0
+],
+"min": [
+-76.83,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsy.tga"
+]
+},
+"models/mapobjects/pad_pencils/pad_pencilsy_lgur.md3": {
+"max": [
+0.09,
+3.98,
+149.81
+],
+"min": [
+-38.28,
+-3.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_pencils/pad_pencilsy.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika1.md3": {
+"max": [
+70.17,
+25.75,
+24.22
+],
+"min": [
+-57.03,
+-25.78,
+-0.16
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika1.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika1_angl.md3": {
+"max": [
+69.64,
+25.75,
+72.41
+],
+"min": [
+-48.03,
+-25.78,
+-0.14
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika1.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika1_ur.md3": {
+"max": [
+23.58,
+25.75,
+126.97
+],
+"min": [
+0.0,
+-25.78,
+0.08
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika1.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika2.md3": {
+"max": [
+70.17,
+25.75,
+24.22
+],
+"min": [
+-57.03,
+-25.78,
+-0.16
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika2.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika2_angl.md3": {
+"max": [
+69.64,
+25.75,
+72.41
+],
+"min": [
+-48.03,
+-25.78,
+-0.14
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika2.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika2_ur.md3": {
+"max": [
+23.58,
+25.75,
+126.97
+],
+"min": [
+0.0,
+-25.78,
+0.08
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika2.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika3.md3": {
+"max": [
+70.17,
+25.75,
+24.22
+],
+"min": [
+-57.03,
+-25.78,
+-0.16
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika3.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika3_angl.md3": {
+"max": [
+69.64,
+25.75,
+72.41
+],
+"min": [
+-48.03,
+-25.78,
+-0.14
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika3.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika3_ur.md3": {
+"max": [
+23.58,
+25.75,
+126.97
+],
+"min": [
+0.0,
+-25.78,
+0.08
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika3.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika4.md3": {
+"max": [
+70.17,
+25.75,
+24.22
+],
+"min": [
+-57.03,
+-25.78,
+-0.16
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika4.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika4_angl.md3": {
+"max": [
+69.64,
+25.75,
+72.41
+],
+"min": [
+-48.03,
+-25.78,
+-0.14
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika4.tga"
+]
+},
+"models/mapobjects/pad_phones/pad_padika4_ur.md3": {
+"max": [
+23.58,
+25.75,
+126.97
+],
+"min": [
+0.0,
+-25.78,
+0.08
+],
+"shaders": [
+"models/mapobjects/pad_phones/padika4.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_coffee1.md3": {
+"max": [
+63.7,
+64.06,
+10.03
+],
+"min": [
+-63.7,
+-64.06,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_coffee002.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_coffee2.md3": {
+"max": [
+63.7,
+64.06,
+10.03
+],
+"min": [
+-63.7,
+-64.06,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_coffee003.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_coffee3.md3": {
+"max": [
+63.7,
+64.06,
+10.03
+],
+"min": [
+-63.7,
+-64.06,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_coffee004.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_coffee4.md3": {
+"max": [
+63.7,
+64.06,
+10.03
+],
+"min": [
+-63.7,
+-64.06,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_coffee005.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_coffeeblue.md3": {
+"max": [
+63.7,
+64.06,
+10.03
+],
+"min": [
+-63.7,
+-64.06,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_coffeeblue.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_coffeered.md3": {
+"max": [
+63.7,
+64.06,
+10.03
+],
+"min": [
+-63.7,
+-64.06,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_coffeered.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp1.md3": {
+"max": [
+127.41,
+128.14,
+20.0
+],
+"min": [
+-127.41,
+-128.14,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate001.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp1hm.md3": {
+"max": [
+152.89,
+153.78,
+24.02
+],
+"min": [
+-152.89,
+-153.78,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_deco.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp2.md3": {
+"max": [
+127.41,
+128.14,
+20.0
+],
+"min": [
+-127.41,
+-128.14,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate002.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp2hm.md3": {
+"max": [
+152.89,
+153.78,
+24.03
+],
+"min": [
+-152.89,
+-153.78,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate_deco02.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp3.md3": {
+"max": [
+127.41,
+128.14,
+20.0
+],
+"min": [
+-127.41,
+-128.14,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate003.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp4.md3": {
+"max": [
+127.41,
+128.14,
+20.0
+],
+"min": [
+-127.41,
+-128.14,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate004.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hp5.md3": {
+"max": [
+127.41,
+128.14,
+20.0
+],
+"min": [
+-127.41,
+-128.14,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate005.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack1.md3": {
+"max": [
+127.41,
+128.14,
+190.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate002.tga",
+"models/mapobjects/pad_plates/plate_pack.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack1_hs.md3": {
+"max": [
+127.41,
+128.14,
+100.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate002.tga",
+"models/mapobjects/pad_plates/plate_pack.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack2.md3": {
+"max": [
+127.41,
+128.14,
+190.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate003.tga",
+"models/mapobjects/pad_plates/plate_pack003.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack2_hs.md3": {
+"max": [
+127.41,
+128.14,
+100.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate003.tga",
+"models/mapobjects/pad_plates/plate_pack003.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack3.md3": {
+"max": [
+127.41,
+128.14,
+190.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate004.tga",
+"models/mapobjects/pad_plates/plate_pack004.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack3_hs.md3": {
+"max": [
+127.41,
+128.14,
+100.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate004.tga",
+"models/mapobjects/pad_plates/plate_pack004.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack4.md3": {
+"max": [
+127.41,
+128.14,
+190.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate005.tga",
+"models/mapobjects/pad_plates/plate_pack005.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_plates/plate_hpstack4_hs.md3": {
+"max": [
+127.41,
+128.14,
+100.0
+],
+"min": [
+-127.41,
+-128.19,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_plates/plate005.tga",
+"models/mapobjects/pad_plates/plate_pack005.tga",
+"models/mapobjects/pad_plates/plate_under.tga"
+]
+},
+"models/mapobjects/pad_radio_car/radio_control.md3": {
+"max": [
+57.34,
+53.66,
+119.58
+],
+"min": [
+-12.23,
+-52.33,
+0.23
+],
+"shaders": [
+"models/mapobjects/pad_radio_car/radio_control.tga"
+]
+},
+"models/mapobjects/pad_radio_car/radio_control_fl.md3": {
+"max": [
+49.89,
+53.66,
+38.03
+],
+"min": [
+-78.55,
+-52.33,
+-0.47
+],
+"shaders": [
+"models/mapobjects/pad_radio_car/radio_control.tga"
+]
+},
+"models/mapobjects/pad_radio_car/radio_control_ur.md3": {
+"max": [
+27.67,
+53.66,
+128.28
+],
+"min": [
+-10.11,
+-52.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_radio_car/radio_control.tga"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_blue.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_blue.jpg"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_green.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_green.jpg"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_orange.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_orange.jpg"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_pink.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_pink.jpg"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_purple.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_purple.jpg"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_red.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_red.jpg"
+]
+},
+"models/mapobjects/pad_scouringpad/scouringpad_yellow.md3": {
+"max": [
+22.5,
+14.81,
+13.75
+],
+"min": [
+-22.92,
+-16.17,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_scouringpad/scouringpad_yellow.jpg"
+]
+},
+"models/mapobjects/pad_sink/sink.md3": {
+"max": [
+113.33,
+72.16,
+276.77
+],
+"min": [
+-0.02,
+-68.94,
+5.98
+],
+"shaders": [
+"models/mapobjects/pad_sink/brokentapend.jpg",
+"models/mapobjects/pad_sink/caps",
+"models/mapobjects/pad_sink/screwthread.jpg",
+"models/mapobjects/pad_sink/sink",
+"models/mapobjects/pad_sink/sinkdoublesided",
+"models/mapobjects/pad_sink/sinkhole.jpg",
+"models/mapobjects/pad_sink/tap",
+"models/mapobjects/pad_sink/tapend.jpg",
+"models/mapobjects/pad_sink/wastepipe"
+]
+},
+"models/mapobjects/pad_statues/statue_super.md3": {
+"max": [
+41.91,
+58.73,
+250.61
+],
+"min": [
+-52.53,
+-59.42,
+-1.16
+],
+"shaders": [
+"models/mapobjects/pad_statues/statue_super_buckle",
+"models/mapobjects/pad_statues/statue_super_button",
+"models/mapobjects/pad_statues/statue_super_cape",
+"models/mapobjects/pad_statues/statue_super_hands",
+"models/mapobjects/pad_statues/statue_super_head",
+"models/mapobjects/pad_statues/statue_super_neck",
+"models/mapobjects/pad_statues/statue_super_shades",
+"models/mapobjects/pad_statues/statue_super_shoes",
+"models/mapobjects/pad_statues/statue_super_suit"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower.md3": {
+"max": [
+30.91,
+36.19,
+174.41
+],
+"min": [
+-26.59,
+-38.42,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/dirt.tga",
+"models/mapobjects/pad_sunflower/pot.tga",
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower2.md3": {
+"max": [
+36.27,
+44.77,
+160.5
+],
+"min": [
+-32.73,
+-44.77,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower3.md3": {
+"max": [
+42.95,
+52.58,
+192.59
+],
+"min": [
+-39.84,
+-54.86,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower4.md3": {
+"max": [
+24.78,
+29.91,
+107.05
+],
+"min": [
+-21.22,
+-29.78,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower5.md3": {
+"max": [
+24.78,
+34.27,
+114.31
+],
+"min": [
+-21.22,
+-34.94,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower6.md3": {
+"max": [
+40.16,
+57.55,
+193.09
+],
+"min": [
+-37.58,
+-59.42,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_sunflower/pad_sunflower_l.md3": {
+"max": [
+83.06,
+103.84,
+439.78
+],
+"min": [
+-83.19,
+-130.55,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_sunflower/sunhead",
+"models/mapobjects/pad_sunflower/sunleaf1",
+"models/mapobjects/pad_sunflower/sunleaf2",
+"models/mapobjects/pad_sunflower/sunstem",
+"models/mapobjects/pad_sunflower/sunstem.tga"
+]
+},
+"models/mapobjects/pad_teabags/roundteabag.md3": {
+"max": [
+30.34,
+31.16,
+4.83
+],
+"min": [
+-31.08,
+-31.08,
+0.09
+],
+"shaders": [
+"models/mapobjects/pad_teabags/roundteabag.jpg"
+]
+},
+"models/mapobjects/pad_teabags/squareteabag.md3": {
+"max": [
+29.55,
+30.16,
+3.67
+],
+"min": [
+-30.94,
+-30.58,
+0.17
+],
+"shaders": [
+"models/mapobjects/pad_teabags/squareteabag.jpg"
+]
+},
+"models/mapobjects/pad_teleporter/padtp_blue.md3": {
+"max": [
+39.95,
+79.0,
+116.0
+],
+"min": [
+-40.02,
+-79.03,
+-0.11
+],
+"shaders": [
+"models/mapobjects/pad_teleporter/pad_base",
+"models/mapobjects/pad_teleporter/pad_baseglow",
+"models/mapobjects/pad_teleporter/pad_teleporter_blue",
+"models/mapobjects/pad_teleporter/padsphere_blue"
+]
+},
+"models/mapobjects/pad_teleporter/padtp_orange.md3": {
+"max": [
+39.95,
+79.0,
+116.0
+],
+"min": [
+-40.02,
+-79.03,
+-0.11
+],
+"shaders": [
+"models/mapobjects/pad_teleporter/pad_base",
+"models/mapobjects/pad_teleporter/pad_baseglow",
+"models/mapobjects/pad_teleporter/pad_teleporter_orange",
+"models/mapobjects/pad_teleporter/padsphere_orange"
+]
+},
+"models/mapobjects/pad_teleporter/padtp_pink.md3": {
+"max": [
+39.95,
+79.0,
+116.0
+],
+"min": [
+-40.02,
+-79.03,
+-0.11
+],
+"shaders": [
+"models/mapobjects/pad_teleporter/pad_base",
+"models/mapobjects/pad_teleporter/pad_baseglow",
+"models/mapobjects/pad_teleporter/pad_teleporter_pink",
+"models/mapobjects/pad_teleporter/padsphere_pink"
+]
+},
+"models/mapobjects/pad_teleporter/padtp_purple.md3": {
+"max": [
+39.95,
+79.0,
+116.0
+],
+"min": [
+-40.02,
+-79.03,
+-0.11
+],
+"shaders": [
+"models/mapobjects/pad_teleporter/pad_base",
+"models/mapobjects/pad_teleporter/pad_baseglow",
+"models/mapobjects/pad_teleporter/pad_teleporter_purple",
+"models/mapobjects/pad_teleporter/padsphere_purple"
+]
+},
+"models/mapobjects/pad_teleporter/padtp_yellow.md3": {
+"max": [
+39.95,
+79.0,
+116.0
+],
+"min": [
+-40.02,
+-79.03,
+-0.11
+],
+"shaders": [
+"models/mapobjects/pad_teleporter/pad_base",
+"models/mapobjects/pad_teleporter/pad_baseglow",
+"models/mapobjects/pad_teleporter/pad_teleporter_yellow",
+"models/mapobjects/pad_teleporter/padsphere_yellow"
+]
+},
+"models/mapobjects/pad_tins/carrots_tbl.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/carrots.jpg"
+]
+},
+"models/mapobjects/pad_tins/carrots_tbs.md3": {
+"max": [
+31.84,
+32.17,
+105.86
+],
+"min": [
+-31.84,
+-32.16,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/carrots.jpg"
+]
+},
+"models/mapobjects/pad_tins/carrots_tbs_sd.md3": {
+"max": [
+52.92,
+31.52,
+62.55
+],
+"min": [
+-52.92,
+-31.64,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/carrots.jpg"
+]
+},
+"models/mapobjects/pad_tins/carrots_tl.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/carrots.jpg"
+]
+},
+"models/mapobjects/pad_tins/carrots_ts.md3": {
+"max": [
+31.84,
+32.17,
+105.86
+],
+"min": [
+-31.84,
+-32.16,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.tga",
+"models/mapobjects/pad_tins/carrots.tga"
+]
+},
+"models/mapobjects/pad_tins/pad_coke.md3": {
+"max": [
+33.47,
+33.34,
+122.03
+],
+"min": [
+-33.47,
+-33.23,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_tins/coke1.jpg",
+"models/mapobjects/pad_tins/cola_bottom.tga",
+"models/mapobjects/pad_tins/cola_top.tga"
+]
+},
+"models/mapobjects/pad_tins/pad_coke_cr.md3": {
+"max": [
+33.2,
+30.19,
+38.72
+],
+"min": [
+-33.2,
+-31.73,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_tins/coke1.jpg",
+"models/mapobjects/pad_tins/cola_bottom.tga",
+"models/mapobjects/pad_tins/cola_top.tga"
+]
+},
+"models/mapobjects/pad_tins/pad_coke_sd.md3": {
+"max": [
+60.98,
+32.73,
+65.67
+],
+"min": [
+-60.98,
+-32.62,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_tins/coke1.jpg",
+"models/mapobjects/pad_tins/cola_bottom.tga",
+"models/mapobjects/pad_tins/cola_top.tga"
+]
+},
+"models/mapobjects/pad_tins/pad_milk_s.md3": {
+"max": [
+31.84,
+32.17,
+71.47
+],
+"min": [
+-31.84,
+-32.16,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_tins/milk.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_milk_scl.md3": {
+"max": [
+31.84,
+32.17,
+71.47
+],
+"min": [
+-31.84,
+-32.16,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_tins/milk.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_milk_tbs.md3": {
+"max": [
+31.84,
+32.17,
+71.47
+],
+"min": [
+-31.84,
+-32.16,
+0.02
+],
+"shaders": [
+"models/mapobjects/pad_tins/milk.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_milk_tbs_s.md3": {
+"max": [
+35.72,
+31.58,
+62.5
+],
+"min": [
+-35.72,
+-31.58,
+-0.02
+],
+"shaders": [
+"models/mapobjects/pad_tins/milk.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_milk_tbs_scl.md3": {
+"max": [
+35.72,
+31.58,
+62.5
+],
+"min": [
+-35.72,
+-31.58,
+-0.02
+],
+"shaders": [
+"models/mapobjects/pad_tins/milk.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_paint1.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/paint01.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_paint1_tl.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/paint01.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_paint2.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/paint02.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_paint2_tl.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/paint02.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_pupsi.md3": {
+"max": [
+33.47,
+33.34,
+122.03
+],
+"min": [
+-33.47,
+-33.23,
+0.03
+],
+"shaders": [
+"models/mapobjects/pad_tins/cola_bottom.tga",
+"models/mapobjects/pad_tins/cola_top.tga",
+"models/mapobjects/pad_tins/pupsi.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_pupsi_cr.md3": {
+"max": [
+33.2,
+30.19,
+38.72
+],
+"min": [
+-33.2,
+-31.73,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_tins/cola_bottom.tga",
+"models/mapobjects/pad_tins/cola_top.tga",
+"models/mapobjects/pad_tins/pupsi.jpg"
+]
+},
+"models/mapobjects/pad_tins/pad_pupsi_sd.md3": {
+"max": [
+60.98,
+32.8,
+65.67
+],
+"min": [
+-60.98,
+-32.56,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_tins/cola_bottom.tga",
+"models/mapobjects/pad_tins/cola_top.tga",
+"models/mapobjects/pad_tins/pupsi.jpg"
+]
+},
+"models/mapobjects/pad_tins/tomatoes_tbl.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/tomatoes.jpg"
+]
+},
+"models/mapobjects/pad_tins/tomatoes_tbs.md3": {
+"max": [
+31.84,
+32.17,
+105.86
+],
+"min": [
+-31.84,
+-32.16,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/tomatoes.jpg"
+]
+},
+"models/mapobjects/pad_tins/tomatoes_tbs_sd.md3": {
+"max": [
+52.92,
+31.58,
+63.5
+],
+"min": [
+-52.92,
+-31.58,
+0.97
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/tomatoes.jpg"
+]
+},
+"models/mapobjects/pad_tins/tomatoes_tl.md3": {
+"max": [
+47.84,
+48.34,
+114.55
+],
+"min": [
+-47.86,
+-48.33,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/tomatoes.jpg"
+]
+},
+"models/mapobjects/pad_tins/tomatoes_ts.md3": {
+"max": [
+31.84,
+32.17,
+105.86
+],
+"min": [
+-31.84,
+-32.16,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_tins/canlid.jpg",
+"models/mapobjects/pad_tins/tomatoes.jpg"
+]
+},
+"models/mapobjects/pad_toiletroll/pad_toiletroll.md3": {
+"max": [
+44.14,
+44.14,
+98.0
+],
+"min": [
+-44.14,
+-44.14,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_toiletroll/cardboard.jpg",
+"models/mapobjects/pad_toiletroll/toiletrollend.jpg",
+"models/mapobjects/pad_toiletroll/toiletrollpaper.jpg"
+]
+},
+"models/mapobjects/pad_train/hammer.md3": {
+"max": [
+43.61,
+-1.09,
+100.84
+],
+"min": [
+-46.08,
+-27.22,
+-86.69
+],
+"shaders": [
+"models/mapobjects/pad_train/ehammer",
+"models/mapobjects/pad_train/ehammer_metal"
+]
+},
+"models/mapobjects/pad_train/ptoweldispenser.md3": {
+"max": [
+15.19,
+44.17,
+47.36
+],
+"min": [
+-15.19,
+-44.17,
+-24.88
+],
+"shaders": [
+"models/mapobjects/pad_train/ptoweldispenser",
+"models/mapobjects/pad_train/ptoweldispenser_shiny"
+]
+},
+"models/mapobjects/pad_train/soapdispenser.md3": {
+"max": [
+10.19,
+12.97,
+27.55
+],
+"min": [
+-10.19,
+-12.97,
+-17.11
+],
+"shaders": [
+"models/mapobjects/pad_train/soapdispenser",
+"models/mapobjects/pad_train/soapdispenser_window"
+]
+},
+"models/mapobjects/pad_train/tdoorhandle_inside.md3": {
+"max": [
+155.34,
+61.98,
+103.58
+],
+"min": [
+-34.06,
+-13.38,
+-103.58
+],
+"shaders": [
+"models/mapobjects/pad_train/tdoorhandle"
+]
+},
+"models/mapobjects/pad_train/tdoorhandle_inside_mirrored.md3": {
+"max": [
+34.06,
+61.98,
+103.58
+],
+"min": [
+-155.34,
+-13.38,
+-103.58
+],
+"shaders": [
+"models/mapobjects/pad_train/tdoorhandle"
+]
+},
+"models/mapobjects/pad_train/tdoorhandle_outside.md3": {
+"max": [
+155.34,
+13.19,
+103.58
+],
+"min": [
+-34.06,
+-62.05,
+-103.58
+],
+"shaders": [
+"models/mapobjects/pad_train/tdoorhandle"
+]
+},
+"models/mapobjects/pad_train/tdoorhandle_outside_mirrored.md3": {
+"max": [
+34.06,
+13.19,
+103.58
+],
+"min": [
+-155.34,
+-62.05,
+-103.58
+],
+"shaders": [
+"models/mapobjects/pad_train/tdoorhandle"
+]
+},
+"models/mapobjects/pad_train/ttoilet.md3": {
+"max": [
+296.94,
+218.73,
+497.81
+],
+"min": [
+-291.52,
+-218.73,
+-47.91
+],
+"shaders": [
+"models/mapobjects/pad_train/toilet_ceramic",
+"models/mapobjects/pad_train/toilet_metal",
+"models/mapobjects/pad_train/toilet_plastic_matte",
+"models/mapobjects/pad_train/toilet_plastic_shiny"
+]
+},
+"models/mapobjects/pad_westernset/actors_chair.md3": {
+"max": [
+94.81,
+77.08,
+307.98
+],
+"min": [
+-94.8,
+-77.08,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_westernset/actors_chair_cloth.tga",
+"models/mapobjects/pad_westernset/directors_chair_wood.tga"
+]
+},
+"models/mapobjects/pad_westernset/cactus.md3": {
+"max": [
+56.98,
+45.38,
+285.38
+],
+"min": [
+-41.2,
+-50.27,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_westernset/cactus.tga",
+"textures/pad_garden/kaktus002.tga"
+]
+},
+"models/mapobjects/pad_westernset/camera.md3": {
+"max": [
+173.42,
+71.09,
+171.55
+],
+"min": [
+-173.86,
+-73.14,
+-0.12
+],
+"shaders": [
+"models/mapobjects/pad_westernset/camera.tga",
+"models/mapobjects/pad_westernset/camera_screens.tga",
+"textures/pad_gfx02/tinpad.tga"
+]
+},
+"models/mapobjects/pad_westernset/colt.md3": {
+"max": [
+50.97,
+76.62,
+20.48
+],
+"min": [
+-34.44,
+-84.89,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_westernset/colt.tga"
+]
+},
+"models/mapobjects/pad_westernset/colt_nobullets.md3": {
+"max": [
+50.97,
+76.62,
+20.48
+],
+"min": [
+-14.08,
+-84.89,
+-0.03
+],
+"shaders": [
+"models/mapobjects/pad_westernset/colt.tga"
+]
+},
+"models/mapobjects/pad_westernset/directors_chair.md3": {
+"max": [
+94.81,
+77.08,
+307.98
+],
+"min": [
+-94.8,
+-77.08,
+0.05
+],
+"shaders": [
+"models/mapobjects/pad_westernset/directors_chair_cloth.tga",
+"models/mapobjects/pad_westernset/directors_chair_wood.tga"
+]
+},
+"models/mapobjects/pad_westernset/sheriff_badge.md3": {
+"max": [
+30.59,
+34.86,
+6.02
+],
+"min": [
+-30.58,
+-34.88,
+0.0
+],
+"shaders": [
+"models/mapobjects/pad_westernset/sheriff_badge"
+]
+},
+"models/mapobjects/pad_westernset/spotlight.md3": {
+"max": [
+61.25,
+52.94,
+6.38
+],
+"min": [
+-61.25,
+-414.38,
+-395.94
+],
+"shaders": [
+"models/mapobjects/pad_westernset/spotlight.tga",
+"models/mapobjects/pad_westernset/spotlight_front.tga",
+"textures/pad_gfx/flare.tga",
+"textures/pad_gfx02b/beam_yellow.tga"
+]
+},
+"models/mapobjects/pad_westernset/spotlight_off.md3": {
+"max": [
+37.06,
+32.69,
+6.38
+],
+"min": [
+-37.06,
+-80.03,
+-146.64
+],
+"shaders": [
+"models/mapobjects/pad_westernset/spotlight.tga",
+"models/mapobjects/pad_westernset/spotlight_front_off.tga"
+]
+},
+"models/mapobjects/pad_westernset/tombstone1.md3": {
+"max": [
+40.66,
+-7.12,
+113.52
+],
+"min": [
+-40.97,
+-21.84,
+0.17
+],
+"shaders": [
+"models/mapobjects/pad_westernset/tombstone1.tga"
+]
+},
+"models/mapobjects/pad_westernset/tombstone2.md3": {
+"max": [
+37.05,
+-7.12,
+136.48
+],
+"min": [
+-37.05,
+-21.84,
+0.17
+],
+"shaders": [
+"models/mapobjects/pad_westernset/tombstone2.tga"
+]
+},
+"models/mapobjects/pad_westernset/tombstone3.md3": {
+"max": [
+37.16,
+-9.8,
+120.22
+],
+"min": [
+-37.16,
+-20.38,
+-0.53
+],
+"shaders": [
+"models/mapobjects/pad_westernset/tombstone3.tga"
+]
+},
+"models/mapobjects/padfigures/cocofig_bone.md3": {
+"max": [
+41.55,
+8.83,
+7.38
+],
+"min": [
+-41.47,
+-5.42,
+-7.38
+],
+"shaders": [
+"models/mapobjects/padfigures/bone.tga"
+]
+},
+"models/mapobjects/padfigures/coconut.md3": {
+"max": [
+8.38,
+10.77,
+11.0
+],
+"min": [
+-9.3,
+-10.42,
+-6.89
+],
+"shaders": [
+"models/mapobjects/padfigures/coconuts.tga"
+]
+},
+"models/mapobjects/padlogo/padlogo_lg.md3": {
+"max": [
+29.64,
+267.05,
+336.3
+],
+"min": [
+0.05,
+-263.83,
+-170.62
+],
+"shaders": [
+"models/mapobjects/padlogo/temple_stone21.jpg"
+]
+},
+"models/mapobjects/padmousetrap/padjumptrap.md3": {
+"max": [
+52.0,
+30.0,
+20.12
+],
+"min": [
+-60.0,
+-30.0,
+0.0
+],
+"shaders": [
+"models/mapobjects/padmousetrap/padmousetrap"
+]
+},
+"models/mapobjects/padtv/padtv.md3": {
+"max": [
+136.34,
+213.88,
+501.72
+],
+"min": [
+-96.92,
+-213.8,
+62.72
+],
+"shaders": [
+"models/mapobjects/padtv/backoftv.tga",
+"models/mapobjects/padtv/tv02",
+"models/mapobjects/padtv/tvfoot.tga",
+"models/mapobjects/padtv/tvframe.tga",
+"models/mapobjects/padtv/tvwood.tga"
+]
+},
+"models/mapobjects/padtv/padtv2.md3": {
+"max": [
+136.22,
+214.0,
+300.05
+],
+"min": [
+-96.77,
+-213.98,
+0.0
+],
+"shaders": [
+"models/mapobjects/padtv/backoftv.tga",
+"models/mapobjects/padtv/tv02",
+"models/mapobjects/padtv/tvfoot.tga",
+"models/mapobjects/padtv/tvframe.tga",
+"models/mapobjects/padtv/tvwood.tga"
+]
+},
+"models/mapobjects/spider/spider.md3": {
+"max": [
+0.12,
+28.05,
+22.55
+],
+"min": [
+-13.78,
+-28.05,
+-25.22
+],
+"shaders": [
+"models/mapobjects/spider/spiderskin.tga"
+]
+},
+"models/mapobjects/spider/spider30.md3": {
+"max": [
+12.64,
+28.05,
+19.59
+],
+"min": [
+-18.06,
+-28.05,
+-21.83
+],
+"shaders": [
+"models/mapobjects/spider/spiderskin.tga"
+]
+},
+"models/mapobjects/spider/spider30s.md3": {
+"max": [
+1.98,
+4.39,
+3.08
+],
+"min": [
+-2.83,
+-4.39,
+-3.42
+],
+"shaders": [
+"models/mapobjects/spider/spiderskin.tga"
+]
+},
+"models/mapobjects/spider/spiderf.md3": {
+"max": [
+22.55,
+28.05,
+13.78
+],
+"min": [
+-25.23,
+-28.05,
+-0.11
+],
+"shaders": [
+"models/mapobjects/spider/spiderskin.tga"
+]
+},
+"models/mapobjects/spider/spiderfs.md3": {
+"max": [
+4.27,
+5.31,
+2.61
+],
+"min": [
+-4.77,
+-5.31,
+-0.02
+],
+"shaders": [
+"models/mapobjects/spider/spiderskin.tga"
+]
+},
+"models/mapobjects/spider/spiders.md3": {
+"max": [
+0.02,
+5.31,
+4.27
+],
+"min": [
+-2.61,
+-5.31,
+-4.77
+],
+"shaders": [
+"models/mapobjects/spider/spiderskin.tga"
+]
+}
+}

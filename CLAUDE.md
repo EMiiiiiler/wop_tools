@@ -20,11 +20,18 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Any water needs a way out (portal, ladder or ramp). Note bots do not climb ladders; use stairs or jump pads.
 - Full explorability: every door or building can be entered, and every building can be climbed. Rooftop access must not have geometry blocking line of fire to other players.
 
-## Tools
-- `check_entities.py <map>`: lists entities inside solid brushes.
-- `padcounter/build_padcounter.py`: map generator and reusable brush helpers. `GL` env var scales all models (1.0 = native); `OUT` sets the output folder.
+## Tools (see README.md)
+- Generate with `wopmap.py`; place models with `md3bounds.json` so they rest on surfaces.
+- Before delivering any map run: `audit_map.py` (must say RESULT: OK), `aas_check.py` after bspc (RESULT: OK),
+  `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
+- If wopded is available, run the map with bots and read games.log for pickups/frags.
+- `waterpark/` is the reference generator (zones, holes for pools, slides, facades, decoration).
 
 ## Known pitfalls
+- Texture preview: Q3 texture t runs downward; three.js textures need flipY=false or signs look upside down.
+- misc_model is static; animated models need `misc_externalmodel` (no modelscale) with animationStart/End/FPS.
+- An item origin must sit 16u above the floor (bbox +-15) or the game drops it as "in solid".
+- Probe AAS areas at floor+25 (standing origin); floor+24 sits exactly on the boundary.
 - Models only appear in-game if q3map2 baked them in; a "failed loading model" error means the compile command's paths are wrong.
 - Pickup classnames should be verified against WoP's entities.def.
 - `Unknown surfaceparm: "woodsteps"` is harmless with `-game quake3`.
