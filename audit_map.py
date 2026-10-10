@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Audit a Quake 3 / WoP .map for the standing mapping rules.
 
-    python3 audit_map.py maps/mymap.map [--md3root <dir holding models/>] [--bounds md3bounds.json] [-v]
+    python3 audit_map.py maps/mymap.map [--md3root <dir holding models/>] [--shaders <dir with scripts/>] [-v]
 
 Checks
   1. brush overlaps: any two brushes (world or brush entities) whose interiors intersect by more than
@@ -12,7 +12,10 @@ Checks
   3. misc_model support: model's lowest vertices (scaled/rotated) must rest on a solid or water-floor
      surface within 3u below; reports % of the footprint that is unsupported (overhang) and floaters.
   4. misc_model vs brush: model bbox shrunk by 25% must not sink into solid brushes.
+     misc_externalmodel (animated, frame 0) gets the same support/sink checks.
   5. counts: weapons, ammo per weapon type (rule: 3-6), spawns, models.
+--shaders: read every scripts/*.shader below the given dir(s) and classify brushes by surfaceparm
+  (water/slime/lava/fog -> liquid, nonsolid -> decoration) instead of guessing from the texture name.
 Exit status 1 if anything failed.
 """
 import re, sys, os, math, json, argparse
@@ -98,8 +101,43 @@ def box_overlap(P, mn, mx, eps=0.5):
     return overlap_depth(P, Pb) > eps
 
 
+SHADER_PARMS = {}   # 'textures/x/y' -> set of surfaceparms (filled by load_shaders)
+
+
+def load_shaders(dirs):
+    """parse scripts/*.shader under each dir; remember surfaceparms per shader name"""
+    for d in dirs:
+        for root, _, files in os.walk(d):
+            for fn in files:
+                if not fn.endswith('.shader'): continue
+                txt = re.sub(r'//[^\n]*', '', open(os.path.join(root, fn), errors='ignore').read())
+                depth = 0; name = None; parms = set(); tok_iter = re.finditer(r'\{|\}|[^\s{}]+(?:[ \t]+[^\s{}]+)*', txt)
+                for m in tok_iter:
+                    t = m.group(0)
+                    if t == '{': depth += 1; continue
+                    if t == '}':
+                        depth -= 1
+                        if depth == 0 and name: SHADER_PARMS[name] = parms; name = None
+                        continue
+                    if depth == 0: name = t.strip().lower(); parms = set()
+                    elif depth == 1 and t.lower().startswith('surfaceparm'):
+                        parms.add(t.split()[1].lower())
+
+
+def parm_kind(tex):
+    p = SHADER_PARMS.get('textures/' + tex.lower())
+    if p is None: return None
+    if p & {'water', 'slime', 'lava', 'fog'}: return 'water'
+    if 'nonsolid' in p: return 'decor'
+    return 'solid'
+
+
 def kind(texs):
     t = [x.lower() for x in texs]
+    if SHADER_PARMS:
+        pk = [parm_kind(x) for x in t]
+        if all(k == 'decor' or 'caulk' in x or 'nodraw' in x for k, x in zip(pk, t)) and 'decor' in pk: return 'decor'
+        if 'water' in pk and not any(any(s in x for s in TRIGGER) for x in t): return 'water'
     if all(any(s in x for s in SKIP_TEX) for x in t): return 'skip'
     if all(any(s in x for s in DECOR) or 'caulk' in x or 'nodraw' in x for x in t) and any(any(s in x for s in DECOR) for x in t):
         return 'decor'
@@ -144,7 +182,9 @@ def main():
     ap.add_argument('--md3root', default=None)
     ap.add_argument('-v', action='store_true')
     ap.add_argument('--maxlist', type=int, default=40)
+    ap.add_argument('--shaders', action='append', default=[], help='dir(s) holding scripts/*.shader')
     a = ap.parse_args()
+    if a.shaders: load_shaders(a.shaders)
     ents = parse(a.map)
     B = []      # (planes, kind, ent index, brush index, mn, mx, texs)
     for ei, e in enumerate(ents):
@@ -189,7 +229,7 @@ def main():
     for ei, e in enumerate(ents):
         kv = e['kv']; c = kv.get('classname', '')
         counts[c] = counts.get(c, 0) + 1
-        if 'origin' not in kv or c in ('misc_model', 'worldspawn', 'light', 'target_position', 'info_null',
+        if 'origin' not in kv or c in ('misc_model', 'misc_externalmodel', 'worldspawn', 'light', 'target_position', 'info_null',
                                         'target_speaker', 'info_notnull', 'target_location') or e['brushes']: continue
         o = np.array([float(v) for v in kv['origin'].split()])
         if c.startswith(('weapon_', 'ammo_', 'item_', 'holdable_')):
@@ -217,7 +257,7 @@ def main():
         fmn = np.array([b[4] for b in floors]); fmx = np.array([b[5] for b in floors])
         for ei, e in enumerate(ents):
             kv = e['kv']
-            if kv.get('classname') != 'misc_model': continue
+            if kv.get('classname') not in ('misc_model', 'misc_externalmodel'): continue
             o = np.array([float(v) for v in kv['origin'].split()])
             s = float(kv.get('modelscale', 1))
             if 'angles' in kv: ang = [float(v) for v in kv['angles'].split()]
@@ -252,7 +292,8 @@ def main():
                 if frac > 0.2: msg += f'{frac * 100:.0f}% of base unsupported (base z {zb:.1f}) '
                 if sink: msg += f'intersects solid ent{sink[0][2]}/b{sink[0][3]} {sink[0][6][0]}'
                 mbad.append(msg)
-    print(f'[models] {len(mbad)} problems ({counts.get("misc_model", 0)} models)')
+    print(f'[models] {len(mbad)} problems ({counts.get("misc_model", 0)} models, '
+          f'{counts.get("misc_externalmodel", 0)} animated)')
     for s in mbad[:a.maxlist]: print(s)
     fails += len(mbad)
     # 5. counts

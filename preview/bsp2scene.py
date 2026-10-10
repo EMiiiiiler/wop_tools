@@ -4,6 +4,8 @@
     python3 bsp2scene.py <map.bsp> <out.html> --vfs <dir> [--vfs <dir> ...] [--three three.min.js]
                          [--sky env/ueberdenwolken] [--texsize 256] [--title "name"]
                          [--threeurl https://cdnjs...]   (reference three.js by URL instead of inlining)
+                         [--style night.css]   (extra CSS appended to the page style, e.g. a map-specific palette)
+                         [--views "Name:x,y,z,yaw,pitch;..."]   (camera buttons, first one is the start view)
 
 --vfs: directories searched (in order) for scripts/*.shader and textures; pass pk3dir folders
        or your map's source folder. Last one wins for duplicate shader names, like the game.
@@ -37,6 +39,9 @@ def read_bsp(path):
                    ('fi', '<i4'), ('ni', '<i4'), ('lm', '<i4'), ('lmx', '<i4'), ('lmy', '<i4'),
                    ('lmw', '<i4'), ('lmh', '<i4'), ('lmo', '<f4', 3), ('lmv', '<f4', 9), ('pw', '<i4'), ('ph', '<i4')])
     surfs = np.frombuffer(L(13), sd)
+    md = np.frombuffer(L(7), np.dtype([('mins', '<f4', 3), ('maxs', '<f4', 3), ('fs', '<i4'), ('ns', '<i4'),
+                                        ('fb', '<i4'), ('nb', '<i4')]))
+    read_bsp.models = md
     lmb = L(14); nlm = len(lmb) // (128 * 128 * 3)
     lms = [np.frombuffer(lmb, 'u1', 128 * 128 * 3, i * 128 * 128 * 3).reshape(128, 128, 3) for i in range(nlm)]
     return ents, shaders, dv, di, surfs, lms
@@ -204,6 +209,7 @@ def main():
     ap.add_argument('--title', default=None)
     ap.add_argument('--markers', type=int, default=1)
     ap.add_argument('--sub', default='Compiled BSP preview')
+    ap.add_argument('--style', default=None, help='CSS file appended after the built-in style (palette/type overrides)')
     ap.add_argument('--views', default='', help='"Name:x,y,z,yaw,pitch;Name2:..." camera buttons (first = start view)')
     a = ap.parse_args()
 
@@ -219,9 +225,20 @@ def main():
     buf = io.BytesIO(); Image.fromarray(atlas).save(buf, 'PNG', optimize=True)
     atlas_url = 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
 
+    # brush models (*1, *2 ...) with an origin brush are stored around (0,0,0); place them at the entity origin
+    surf_off = np.zeros((len(surfs), 3), np.float32)
+    for e in ent_list:
+        m = e.get('model', '')
+        if m.startswith('*') and e.get('origin'):
+            try:
+                k = int(m[1:]); o = np.array([float(v) for v in e['origin'].split()], np.float32)
+                md = read_bsp.models[k]; surf_off[md['fs']:md['fs'] + md['ns']] = o
+            except Exception:
+                pass
+
     groups = {}   # (shader, lit) -> lists
     sky_name = a.sky
-    for s in surfs:
+    for si, s in enumerate(surfs):
         sname = shaders[s['shader']][0]
         info = shinfo.get(sname.lower(), {})
         if info.get('nodraw') or sname.lower().startswith(('textures/common/', 'noshader')) or s['type'] == 4:
@@ -240,6 +257,7 @@ def main():
             V = dv[fv:fv + nv]
             xyz, st, lmst, col = V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)
             tris = di[fi:fi + ni].astype(np.int64)
+        if surf_off[si].any(): xyz = np.asarray(xyz, np.float32) + surf_off[si]
         lmn = int(s['lm'])
         if lmn >= 0:
             li = lmn; ax = (li % cols) * 128; ay = (li // cols) * 128
@@ -319,6 +337,7 @@ def main():
     for v in filter(None, a.views.split(';')):
         n, c = v.split(':'); views.append([n] + [float(t) for t in c.split(',')])
     html = TEMPLATE.replace('%%THREE%%', three_tag).replace('%%TITLE%%', title).replace('%%SUB%%', a.sub)
+    html = html.replace('%%STYLE%%', open(a.style).read() if a.style else '')
     html = html.replace('%%VIEWS%%', '<script>window.__VIEWS=' + json.dumps(views) + ';</script>')
     html = html.replace('%%DATA%%', json.dumps({'meta': meta, 'tex': textures, 'atlas': atlas_url, 'sky': sky,
                                                  'marks': marks, 'blob': data_b64}))
@@ -353,6 +372,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 #pad{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,44px);gap:6px}
 #pad button{height:44px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:9px;font-size:16px}
 @media (hover:hover) and (pointer:fine){#pad{display:none}}
+%%STYLE%%
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Nunito+Sans:wght@400;600&display=swap">
 <div id="hud"><button id="hide" aria-label="Hide panel">&minus;</button><h1>%%TITLE%%</h1><div class="body"><div class="sub">%%SUB%%</div>
