@@ -22,7 +22,7 @@ import re, sys, os, math, json, argparse
 import numpy as np
 from scipy.optimize import linprog
 
-DECOR = ('spray', 'frond', 'sail', 'cable', 'waterfall', 'caustic', 'beam_ns', 'glow_ns', 'leaf')
+DECOR = ('rainbow', 'foam', 'nodraw_ns', 'spray', 'frond', 'sail', 'cable', 'waterfall', 'caustic', 'beam_ns', 'glow_ns', 'leaf')
 WATER = ('water',)
 TRIGGER = ('common/trigger',)
 CLIP = ('clip',)
@@ -229,7 +229,7 @@ def main():
     for ei, e in enumerate(ents):
         kv = e['kv']; c = kv.get('classname', '')
         counts[c] = counts.get(c, 0) + 1
-        if 'origin' not in kv or c in ('misc_model', 'misc_externalmodel', 'worldspawn', 'light', 'target_position', 'info_null',
+        if 'origin' not in kv or c in ('misc_model', 'misc_externalmodel', 'path_corner', 'worldspawn', 'light', 'target_position', 'info_null',
                                         'target_speaker', 'info_notnull', 'target_location') or e['brushes']: continue
         o = np.array([float(v) for v in kv['origin'].split()])
         if c.startswith(('weapon_', 'ammo_', 'item_', 'holdable_')):
@@ -292,8 +292,7 @@ def main():
                 if frac > 0.2: msg += f'{frac * 100:.0f}% of base unsupported (base z {zb:.1f}) '
                 if sink: msg += f'intersects solid ent{sink[0][2]}/b{sink[0][3]} {sink[0][6][0]}'
                 mbad.append(msg)
-    print(f'[models] {len(mbad)} problems ({counts.get("misc_model", 0)} models, '
-          f'{counts.get("misc_externalmodel", 0)} animated)')
+    print(f'[models] {len(mbad)} problems ({counts.get("misc_model", 0)} models, {counts.get("misc_externalmodel", 0)} external)')
     for s in mbad[:a.maxlist]: print(s)
     fails += len(mbad)
     # 5. counts
@@ -304,7 +303,10 @@ def main():
         flag = '' if (nw == 0 or 3 <= na <= 6) else '   <-- rule: 3-6 ammo spots'
         if flag: fails += 1
         print(f'   {w:9s} weapons {nw}  ammo {na}{flag}')
-    print(f'   nipper ammo {counts.get("ammo_nipper", 0)}')
+    nn = counts.get('ammo_nipper', 0)          # Nipper is the starting weapon: no pickup, but the ammo rule still applies
+    nflag = '' if (nn == 0 or 3 <= nn <= 6) else '   <-- rule: 3-6 ammo spots'
+    if nflag: fails += 1
+    print(f'   nipper    (start)     ammo {nn}{nflag}')
     others = {k: v for k, v in counts.items() if k.startswith(('item_', 'holdable_', 'station_'))}
     print('   ' + ', '.join(f'{k} {v}' for k, v in sorted(others.items())))
     print(f'   spawns {counts.get("info_player_deathmatch", 0)}')

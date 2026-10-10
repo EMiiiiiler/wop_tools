@@ -18,7 +18,7 @@ from scipy.spatial import ConvexHull
 
 DETAIL = 134217728
 # shaders whose brushes are not "solid" for overlap checks (prefix match after textures/)
-NONSOLID_HINTS = ('water', 'trigger', 'clip', 'origin', 'hint', 'skip', 'spray', 'waterfall', 'frond', 'fog',
+NONSOLID_HINTS = ('rainbow', 'foam', 'water', 'trigger', 'clip', 'origin', 'hint', 'skip', 'spray', 'waterfall', 'frond', 'fog',
                   'nodraw_ns', 'cable', 'glassns', 'sail', 'caustic', 'beam_ns')
 
 
