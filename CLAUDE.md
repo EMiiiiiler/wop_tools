@@ -38,3 +38,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Models only appear in-game if q3map2 baked them in; a "failed loading model" error means the compile command's paths are wrong.
 - Pickup classnames should be verified against WoP's entities.def.
 - `Unknown surfaceparm: "woodsteps"` is harmless with `-game quake3`.
+- A brush entity with an origin brush must NOT also get an `origin` key: q3map2 adds them and the mover ends up
+  outside the map (bspc then reports a leak). Give func_rotating/func_train only the origin brush.
+- Jump pads: Q3 AimAtTarget aims from the trigger's centre and the target_position is the apex of the arc
+  (see `playroom/build_playroom.py` jumppad()).
