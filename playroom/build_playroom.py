@@ -272,6 +272,7 @@ def bed():
     # duvet hanging over the foot end (short flap, stays clear of the floor) + jump pad up onto the bed
     A(box((X0 + 8, Y0 - 8, 232), (X1 - 8, Y0, 384), T('duvet')))
     jumppad(-1470, -220, 0, (-1470, 520, 384), 560, 'jp_bedup')
+    jumppad(-960, 960, 0, (-1450, 760, 384), 560, 'jp_bedside')      # alongside the bed, east side
     # under the bed (z 0..176): shoebox, comics, socks, lost ball; dim night light
     A(box((-1660, 1000, 0), (-1400, 1240, 96), {'side': T('shoebox'), 'top': T('cardboard')}))
     mdl('pad_books/comics/pad_comic1.md3', -1300, 700, 0, angle=20)
