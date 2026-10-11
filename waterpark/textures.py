@@ -268,6 +268,67 @@ def make_textures(W):
                     ('Muffin .... 2', 138, (235, 235, 225)), ('Ice Pop ... 1', 172, (235, 235, 225)), ('Slushie ... 3', 206, (235, 235, 225))):
         ff = f if y == 20 else f2; tw = d.textlength(t, font=ff); d.text(((n - tw) / 2, y), t, fill=c, font=ff)
     W.save('menu', im)
+    # snack bar: three chalk menu boards (fitted onto wall boxes, so never mirrored)
+    def menu_board(name, title, tcol, rows, doodle):
+        im = img(C((30, 46, 40)) + N3(256, 8, 70 + len(name), 7)).resize((512, 256)); d = ImageDraw.Draw(im)
+        d.rectangle([0, 0, 511, 255], outline=(150, 100, 60), width=14)
+        f = text_fit(d, title, 300, 46); tw = d.textlength(title, font=f); d.text(((512 - tw) / 2, 18), title, fill=tcol, font=f)
+        f2 = ImageFont.truetype(FONT, 24)
+        for i, (item_, price) in enumerate(rows):
+            y = 84 + i * 38
+            d.text((40, y), item_, fill=(236, 236, 226), font=f2)
+            pw = d.textlength(price, font=f2); d.text((472 - pw, y), price, fill=(250, 220, 120), font=f2)
+            x0 = 48 + d.textlength(item_, font=f2); x1 = 462 - pw
+            for x in range(int(x0), int(x1), 10): d.ellipse([x, y + 20, x + 3, y + 23], fill=(160, 170, 160))
+        cx, cy = 70, 44
+        for k, c in enumerate(doodle):
+            d.ellipse([cx + k * 22 - 10, cy - 10, cx + k * 22 + 10, cy + 10], fill=c)
+            d.ellipse([442 - k * 22 - 10, cy - 10, 442 - k * 22 + 10, cy + 10], fill=c)
+        W.save(name, im)
+    menu_board('menu_snacks', 'SNACKS', (255, 200, 80), (('Pad Dog', '4'), ('Fries', '3'), ('Nachos', '4'), ('Muffin', '2')),
+               ((240, 180, 60), (220, 60, 50)))
+    menu_board('menu_drinks', 'SLUSHIES', (110, 220, 255), (('Cherry Bomb', '3'), ('Blue Lagoon', '3'), ('Lime Splash', '3'), ('Cola', '2')),
+               ((230, 50, 70), (60, 140, 250), (90, 220, 90)))
+    menu_board('menu_ice', 'ICE CREAM', (255, 150, 200), (('Duck Swirl', '3'), ('Cloud Cone', '2'), ('Rainbow Pop', '2'), ('Sundae', '5')),
+               ((255, 160, 200), (250, 240, 220)))
+    # counter front: turquoise tiles with a white wave band and a coral kick stripe
+    a = C((40, 170, 180)) + N3(n, 1, 71, 5)
+    a[(xx % 32 < 2) | (yy % 32 < 2)] *= 0.8
+    wave = 150 + 12 * np.sin(xx / n * 4 * np.pi)
+    a[(yy > wave) & (yy < wave + 22)] = C((248, 248, 240))
+    a[yy > 220] = C((236, 96, 80)); a[(yy > 216) & (yy <= 220)] = C((250, 250, 245))
+    W.save('counter_front', a)
+    W.save('counter_top', C((236, 234, 228)) + N3(n, 1, 72, 9) + N3(n, 6, 73, 6))
+    # back cabinets: white doors with handles
+    a = C((238, 236, 230)) + N3(n, 1, 74, 3)
+    for k in range(0, n, 64):
+        a[:, k:k + 3] *= 0.7; a[4:8, :] *= 0.8
+        a[100:156, k + 52:k + 56] = C((150, 156, 164))
+    W.save('cabinet', a)
+    # slushie tanks (swirled syrup, animated in the shader)
+    for nme, c1, c2 in (('slush_red', (235, 40, 70), (255, 140, 160)), ('slush_blue', (30, 110, 240), (130, 210, 255)),
+                        ('slush_green', (60, 200, 70), (180, 255, 150))):
+        r_ = np.hypot(xx - 128, yy - 128); th = np.arctan2(yy - 128, xx - 128)
+        g = ((np.sin(th * 3 + r_ / 18) + 1) / 2)[..., None]
+        W.save(nme, C(c1) * (1 - g) + C(c2) * g + N3(n, 2, 75, 4))
+    # drinks fridge door: bottles on shelves behind glass
+    im = Image.new('RGB', (n, n), (200, 230, 245)); d = ImageDraw.Draw(im)
+    pal = [(220, 50, 50), (40, 160, 60), (250, 180, 30), (40, 100, 220), (240, 240, 240), (150, 60, 160)]
+    for row in range(4):
+        y0 = 18 + row * 60
+        d.rectangle([10, y0 + 50, 246, y0 + 54], fill=(170, 180, 190))
+        for k in range(9):
+            x = 18 + k * 26; c = pal[(k + row * 2) % 6]
+            d.rectangle([x, y0 + 14, x + 16, y0 + 50], fill=c); d.rectangle([x + 5, y0 + 2, x + 11, y0 + 14], fill=c)
+            d.rectangle([x + 2, y0 + 26, x + 14, y0 + 36], fill=(250, 250, 240))
+    d.rectangle([0, 0, n - 1, n - 1], outline=(235, 235, 235), width=10); d.rectangle([224, 90, 234, 170], fill=(150, 156, 164))
+    W.save('fridge', im)
+    # popcorn machine window
+    a = C((250, 214, 110)) + N3(n, 1.2, 76, 30)
+    a[yy < 70] = C((200, 30, 40)) + N3(n, 1, 77, 5)[yy < 70]
+    im = img(a); d = ImageDraw.Draw(im); f = text_fit(d, 'POPCORN', 220, 40); tw = d.textlength('POPCORN', font=f)
+    d.text(((n - tw) / 2, 12), 'POPCORN', fill=(255, 240, 200), font=f)
+    W.save('popcorn', im)
     # tv / scoreboard screen
     im = Image.new('RGB', (n, 128), (16, 24, 40)); d = ImageDraw.Draw(im)
     f = text_fit(d, 'NEXT WAVE IN 0:42', 230, 30)
@@ -729,8 +790,49 @@ textures/waterpark/foam
 }
 
 '''
-    for nme in ('balloon', 'balloon_b'):
+    for nme in ('balloon', 'balloon_b', 'counter_front', 'popcorn'):
         S += lm_shader(nme)
+    S += lm_shader('counter_top', steps='metalsteps') + lm_shader('cabinet', steps='woodsteps')
+    for nme in ('menu_snacks', 'menu_drinks', 'menu_ice'):        # chalk boards with a soft glow of their own
+        S += lm_shader(nme, extra='\tq3map_surfacelight 40\n')
+    for nme in ('slush_red', 'slush_blue', 'slush_green'):
+        S += f'''textures/waterpark/{nme}
+{{
+	qer_editorimage textures/waterpark/{nme}
+	surfaceparm nomarks
+	q3map_surfacelight 120
+	{{
+		map textures/waterpark/{nme}
+		tcMod rotate 40
+		rgbGen identity
+	}}
+	{{
+		map textures/waterpark/glass
+		blendFunc GL_ONE GL_ONE
+		rgbGen const ( 0.25 0.25 0.25 )
+		tcGen environment
+	}}
+}}
+
+'''
+    S += '''textures/waterpark/fridge
+{
+	qer_editorimage textures/waterpark/fridge
+	surfaceparm nomarks
+	q3map_surfacelight 150
+	{
+		map textures/waterpark/fridge
+		rgbGen identity
+	}
+	{
+		map textures/waterpark/glass
+		blendFunc GL_ONE GL_ONE
+		rgbGen const ( 0.2 0.2 0.2 )
+		tcGen environment
+	}
+}
+
+'''
     for i in range(7):
         S += f'''textures/waterpark/rainbow{i}
 {{
