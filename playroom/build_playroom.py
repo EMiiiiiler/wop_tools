@@ -448,7 +448,7 @@ def shelf():
     # ledge (832) + hutch lower compartment
     mdl_c('pad_books/pad_cb_fl_lg.md3', 1700, 860, 832, angle=0)
     solid_mdl('pad_ddmix/cabin/telescope.md3', 1700, 340, 832, angle=180)
-    item('item_berserker', 1700, 600, 832)
+    item('item_revival', 1700, 600, 832)    # not item_berserker: Pickup_Powerup passes the item's NULL client (crash in current WoP main)
     item('ammo_nipper', 1520, 340, 832)
     light(1560, 600, 1100, 300)
     # top compartment (1216..1424): the prize
