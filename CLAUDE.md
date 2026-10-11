@@ -42,3 +42,6 @@ Tools and standing rules for building World of Padman (WoP) maps.
   outside the map (bspc then reports a leak). Give func_rotating/func_train only the origin brush.
 - Jump pads: Q3 AimAtTarget aims from the trigger's centre and the target_position is the apex of the arc
   (see `playroom/build_playroom.py` jumppad()).
+- Don't place `item_berserker` until WoP fixes g_items.c Pickup_Powerup: it calls G_ForceClientWeapon(ent->client)
+  on the item entity (NULL client) and the server segfaults on pickup (found with wopded + gdb on WoP main, Oct 2026).
+- misc_model has no collision. Give big models a weapclip box (`playroom/build_playroom.py` solid_mdl()).

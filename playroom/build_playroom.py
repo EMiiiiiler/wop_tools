@@ -7,7 +7,7 @@ Writes <OUT>/maps/wop_padplayroom.map, textures/playroom/*, scripts/playroom.sha
 
 A kid's bedroom at Padman scale (about 8u per cm, so catalog models sit at their native scale 1.0).
 x east, y north, floor z 0, room x -1792..1792, y -1536..1536, ceiling z 1600.
-  NW bed (jump pad up, pillow, under-bed stash)    N nightstand + orange race-track ramp up to the desk
+  NW bed (jump pad up, pillow, under-bed stash)    N nightstand + jump pad up to the desk
   NE desk, PC, chair                              E shelf cabinet + hutch (top shelf = Imperius)
   SE dresser + aquarium (jump pad in, teleporter out, Splasher on the gravel)
   S  window sill with sunbeam, radiator, ruler bridge to the dresser
@@ -40,7 +40,7 @@ for k, v in {'floor_wood': (2, 2), 'wallpaper': (2, 2), 'dado': (1, 1), 'ceiling
              'brick_red_top': (1, 1), 'brick_blue_top': (1, 1), 'brick_yellow_top': (1, 1), 'brick_green_top': (1, 1),
              'brick_white_top': (1, 1), 'toybox_plain': (1, 1), 'track_support': (1, 1), 'chest': (0.5, 0.5),
              'fabric_red': (1, 1), 'fabric_blue': (1, 1), 'fabric_green': (1, 1), 'fabric_yellow': (1, 1),
-             'fabric_denim': (1, 1), 'fabric_orange': (1, 1), 'book_red': (1, 1), 'book_blue': (1, 1), 'book_green': (1, 1),
+             'fabric_denim': (1, 1), 'fabric_orange': (1, 1), 'fabric_stripe': (0.5, 0.5), 'fabric_check': (0.5, 0.5), 'fabric_dots': (0.5, 0.5), 'book_red': (1, 1), 'book_blue': (1, 1), 'book_green': (1, 1),
              'book_yellow': (1, 1), 'book_purple': (1, 1), 'book_orange': (1, 1), 'pc_case': (1, 1)}.items():
     wopmap.TEXSCALE[T(k)] = v
 for _b in 'abcdp':
@@ -70,6 +70,22 @@ def mdl_c(path, x, y, zsurf, scale=1.0, angle=0, **kw):
     a = math.radians(angle)
     ox = cx * math.cos(a) - cy * math.sin(a); oy = cx * math.sin(a) + cy * math.cos(a)
     return mdl(path, x - ox, y - oy, zsurf, scale, angle, **kw)
+
+
+def solid_mdl(path, x, y, zsurf, scale=1.0, angle=0, shrink=0.12, **kw):
+    """mdl_c + a weapon-clip box around the model's rotated bounds (shrunk a little) so players and shots collide"""
+    e = mdl_c(path, x, y, zsurf, scale, angle, **kw)
+    b = BOUNDS['models/mapobjects/' + path]
+    ox, oy, oz = (float(v) for v in e['origin'].split())
+    a = math.radians(angle); ca, sa = math.cos(a), math.sin(a)
+    xs, ys = [], []
+    for px in (b['min'][0], b['max'][0]):
+        for py in (b['min'][1], b['max'][1]):
+            xs.append(ox + (px * ca - py * sa) * scale); ys.append(oy + (px * sa + py * ca) * scale)
+    dx = (max(xs) - min(xs)) * shrink / 2; dy = (max(ys) - min(ys)) * shrink / 2
+    z0 = zsurf; z1 = oz + b['max'][2] * scale
+    A(box((round(min(xs) + dx), round(min(ys) + dy), round(z0)), (round(max(xs) - dx), round(max(ys) - dy), round(z1 - 4)), WCLIP))
+    return e
 
 
 def light(x, y, z, val, color='1 0.95 0.85', **kw):
@@ -168,12 +184,13 @@ def room_shell():
     def wall_tex(face):
         return {'n': CAULK, 's': CAULK, 'e': CAULK, 'w': CAULK, 'top': CAULK, 'bot': CAULK, face: None}
 
-    def wall(mn, mx, inner, bands=True):
-        """vertical wall split into skirting (0..48), dado (48..512), rail (512..528), wallpaper (528..ceiling)"""
+    def wall(mn, mx, inner, bands=True, outer=CAULK):
+        """vertical wall split into skirting (0..48), dado (48..512), rail (512..528), wallpaper (528..ceiling).
+        outer: texture for the other faces (the west wall shows its back and hole jambs inside the hideout)"""
         for (za, zb, tex) in ((0, 48, 'skirting'), (48, 512, 'dado'), (512, 528, 'dado_rail'), (528, CZ, 'wallpaper')):
             a, b = max(za, mn[2]), min(zb, mx[2])
             if b <= a: continue
-            t = {'side': CAULK, 'top': CAULK, 'bot': CAULK, inner: T(tex)}
+            t = {'side': outer, 'top': CAULK, 'bot': outer if za == mn[2] else CAULK, inner: T(tex)}
             A(box((mn[0], mn[1], a), (mx[0], mx[1], b), t, detail=False))
 
     # floor + ceiling (structural)
@@ -184,9 +201,10 @@ def room_shell():
     wall((RX1, RY0, 0), (RX1 + W, RY1, CZ), 'w')
     # west wall with the mouse hole (y -640..-544, z 0..112)
     MH = (-640, -544, 112)
-    wall((RX0 - W, RY0, 0), (RX0, MH[0], CZ), 'e')
-    wall((RX0 - W, MH[1], 0), (RX0, RY1, CZ), 'e')
-    wall((RX0 - W, MH[0], MH[2]), (RX0, MH[1], CZ), 'e')
+    PL = T('plaster_rough')
+    wall((RX0 - W, RY0, 0), (RX0, MH[0], CZ), 'e', outer=PL)
+    wall((RX0 - W, MH[1], 0), (RX0, RY1, CZ), 'e', outer=PL)
+    wall((RX0 - W, MH[0], MH[2]), (RX0, MH[1], CZ), 'e', outer=PL)
     # arch corners of the mouse hole (detail wedges)
     for (ya, yb, sgn) in ((MH[0], MH[0] + 24, 1), (MH[1] - 24, MH[1], -1)):
         pts = []
@@ -241,7 +259,7 @@ def window_and_outside():
             (WX0 - 40, Y + 1500, 400), (WX1 - 140, Y + 1500, 400), (WX0 - 40, Y + 1500, 60), (WX1 - 140, Y + 1500, 60)],
            T('dustmotes')))
     # sill decoration
-    mdl_c('pad_westernset/cactus.md3', -360, Y + 90, 576, scale=1.2, angle=30)
+    solid_mdl('pad_westernset/cactus.md3', -360, Y + 90, 576, scale=1.2, angle=30)
     mdl_c('pad_ddmix/plants/flower_pink.md3', 60, Y + 100, 576, scale=0.6, angle=0)
     mdl_c('pad_sunflower/pad_sunflower3.md3', 520, Y + 90, 576, scale=1.5, angle=200)
     mdl_c('pad_ddmix/plants/bonsai.md3', 840, Y + 96, 576, scale=0.55, angle=90)
@@ -265,10 +283,21 @@ def bed():
     A(box((X0, Y0, 176), (X1, Y1 - 64, 224), pine))                                            # frame / slats
     A(box((X0 + 8, Y0, 224), (X1 - 8, Y1 - 64, 368), {'side': T('mattress'), 'top': T('sheet'), 'bot': T('mattress')}))
     A(box((X0 + 8, Y0, 368), (X1 - 8, 1200, 384), {'top': T('duvet'), 'side': T('duvet'), 'bot': T('duvet')}))
-    # pillow: chamfered 72u so its rim is a walkable slope (41 deg)
-    px0, px1, py0, py1 = X0 + 56, X1 - 56, 1240, 1448
-    A(hull([(x, y, 368) for x in (px0, px1) for y in (py0, py1)] +
-           [(x, y, 432) for x in (px0 + 72, px1 - 72) for y in (py0 + 72, py1 - 72)], T('pillow')))
+    # two puffy pillows: domed hulls with rounded corners (soft 41-deg top slopes, steep plump sides)
+    def pillow(x0, x1, y0, y1, z):
+        prof = [(0, 0, 40), (10, 14, 44), (26, 30, 52), (44, 50, 64), (56, 80, 72)]   # (dz, inset, corner)
+        pts = []
+        for dz, ins, c in prof:
+            ax0, ax1, ay0, ay1 = x0 + ins, x1 - ins, y0 + ins, y1 - ins
+            c = min(c, (ax1 - ax0) / 2 - 1, (ay1 - ay0) / 2 - 1)
+            for k in range(16):
+                ang = 2 * math.pi * (k + 0.5) / 16
+                cx = ax1 - c if math.cos(ang) > 0 else ax0 + c
+                cy = ay1 - c if math.sin(ang) > 0 else ay0 + c
+                pts.append((cx + c * math.cos(ang), cy + c * math.sin(ang), z + dz))
+        A(hull(pts, T('pillow'), round_pts=False))
+    pillow(X0 + 24, -1484, 1240, 1456, 368)
+    pillow(-1460, X1 - 24, 1240, 1456, 368)
     # duvet hanging over the foot end (short flap, stays clear of the floor) + jump pad up onto the bed
     A(box((X0 + 8, Y0 - 8, 232), (X1 - 8, Y0, 384), T('duvet')))
     jumppad(-1470, -220, 0, (-1470, 520, 384), 560, 'jp_bedup')
@@ -286,7 +315,7 @@ def bed():
     light(-1460, 900, 120, 120, '0.5 0.6 1')
     speaker(-1500, 800, 80, 'sound/world/animal/kitten_meow.ogg', loop=False, targetname='meow')
     # on the bed
-    item('item_jumper', -1472, 1344, 432)
+    item('item_jumper', -1626, 1348, 424)
     item('ammo_pumper', -1620, 900, 384)
     spawn(-1300, 1000, 384, 270)
     jumppad(-1472, 320, 384, (-1500, -1330, 1152), 1290, 'jp_bed')
@@ -309,46 +338,12 @@ def nightstand():
     light(-860, 1400, 560, 260, '1 0.85 0.6')
 
 
-# =================================================================================================== race track + desk
-TRACK = dict(x0=-576, x1=448, y0=1216, y1=1376, z0=8, z1=576)
-
-
-def track_z(x):
-    t = TRACK
-    return t['z0'] + (t['z1'] - t['z0']) * (x - t['x0']) / (t['x1'] - t['x0'])
-
-
-def race_track():
-    t = TRACK
-    x0, x1, y0, y1 = t['x0'], t['x1'], t['y0'], t['y1']
-    th = 24
-    xs = [x0, x0 + (th - 8) * (x1 - x0) / (t['z1'] - t['z0']), x1]   # where the underside leaves the floor
-    pts = []
-    for x in xs:
-        zt = track_z(x); zb = max(0, zt - th)
-        for y in (y0, y1):
-            pts += [(x, y, zt), (x, y, zb)]
-    A(hull(pts, {'top': T('track'), 'side': T('track_side'), 'bot': T('track_side')}, round_pts=False))
-    # side lips (16 high) - open for the last 96u at the foot so you can step on/off sideways
-    for (ya, yb) in ((y0 - 16, y0), (y1, y1 + 16)):
-        xa = x0 + 96
-        p = []
-        for x in (xa, x1):
-            zt = track_z(x)
-            for y in (ya, yb):
-                p += [(x, y, zt + 16), (x, y, max(0, zt - th))]
-        A(hull(p, T('track_side'), round_pts=False))
-    # blue supports under the high part
-    for sx in (-96, 208):
-        zb = track_z(sx - 16) - th - 1
-        for (ya, yb) in ((y0 - 16, y0 + 16), (y1 - 16, y1 + 16)):
-            A(box((sx - 16, ya, 0), (sx + 16, yb, math.floor(zb)), T('track_support')))
-    # clip the low wedge under the slab so nothing gets stuck
-    xc = x0 + (96 + th - 8) * (x1 - x0) / (t['z1'] - t['z0'])
-    zc = track_z(xc) - th
-    A(hull([(xs[1], y, 0) for y in (y0, y1)] + [(xc, y, 0) for y in (y0, y1)] + [(xc, y, zc) for y in (y0, y1)], CLIP, round_pts=False))
-    item('ammo_boaster', 120, 1296, 0)                  # under the track
-    item('item_armor_shard', 260, 1296, math.ceil(track_z(260)) + 10)
+# =================================================================================================== desk access + desk
+def desk_pad():
+    """jump pad on the floor west of the desk (replaces the old race-track ramp: much quicker up)"""
+    jumppad(260, 1300, 0, (660, 1290, 576), 760, 'jp_deskup')
+    item('ammo_boaster', 100, 1300, 0)
+    item('item_armor_shard', -220, 1340, 0)
     speaker(0, 1296, 300, 'sound/world/misc/toy_squeeze.ogg', loop=False, targetname='squeak')
 
 
@@ -385,7 +380,7 @@ def desk():
     item('ammo_bubbleg', 600, 1150, 0)
     # desk top
     Z = 576
-    mdl_c('pad_pc/pad_tft.md3', 860, 1440, Z, angle=270)
+    solid_mdl('pad_pc/pad_tft.md3', 860, 1440, Z, angle=270)
     mdl_c('pad_pc/keyboard.md3', 860, 1230, Z, angle=270)
     mdl_c('pad_pc/mousea.md3', 1080, 1220, Z, angle=270)
     mdl_c('pad_lamps/gooseneck.md3', 1300, 1430, Z, angle=200)
@@ -393,7 +388,7 @@ def desk():
     mdl_c('pad_pencils/pad_pencilsr_lg.md3', 640, 1140, Z, angle=20)
     mdl_c('pad_pencils/pad_pencilsg_lg.md3', 660, 1110, Z, angle=-10)
     mdl_c('pad_phones/pad_padika2.md3', 1180, 1320, Z, angle=80)
-    mdl_c('gummybears/redbear.md3', 1100, 1460, Z, angle=250)
+    solid_mdl('gummybears/redbear.md3', 1100, 1460, Z, angle=250)
     mdl_c('pad_tins/pad_coke.md3', 1360, 1110, Z, angle=0)
     mdl_c('pad_objects/pad_fdisk.md3', 700, 1330, Z, angle=12)
     weapon('pumper', 1000, 1120, Z, marker='green')
@@ -448,20 +443,20 @@ def shelf():
     mdl_c('pad_books/rhodan/pdr_4books.md3', 1700, 330, 448, angle=0)
     mdl('pad_books/pad_cb_ur_lg.md3', 1700, 470, 448, angle=0)
     mdl('pad_books/pad_cb_ur_lg_wop.md3', 1700, 520, 448, angle=0)
-    mdl_c('pad_actionfigures/fig_lilly.md3', 1700, 860, 448, angle=180)
+    solid_mdl('pad_actionfigures/fig_lilly.md3', 1700, 860, 448, angle=180)
     item('ammo_balloony', 1560, 700, 448)
     item('ammo_boaster', 1560, 400, 448)
     spawn(1580, 560, 448, 180)
     # ledge (832) + hutch lower compartment
     mdl_c('pad_books/pad_cb_fl_lg.md3', 1700, 860, 832, angle=0)
-    mdl_c('pad_ddmix/cabin/telescope.md3', 1700, 340, 832, angle=180)
-    item('item_berserker', 1700, 600, 832)
+    solid_mdl('pad_ddmix/cabin/telescope.md3', 1700, 340, 832, angle=180)
+    item('item_revival', 1700, 600, 832)    # not item_berserker: Pickup_Powerup passes the item's NULL client (crash in current WoP main)
     item('ammo_nipper', 1520, 340, 832)
     light(1560, 600, 1100, 300)
     # top compartment (1216..1424): the prize
     weapon('imperius', 1712, 592, 1216, marker='purple')
     mdl_c('pad_books/rhodan/pdr_4books.md3', 1710, 330, 1216, angle=0)
-    mdl_c('pad_statues/statue_super.md3', 1712, 840, 1216, scale=0.75, angle=180)
+    solid_mdl('pad_statues/statue_super.md3', 1712, 840, 1216, scale=0.75, angle=180)
     light(1680, 600, 1380, 160, '0.9 0.6 1')
     # pads: floor -> middle compartment, ledge -> top compartment
     jumppad(1300, 600, 0, (1600, 600, 448), 640, 'jp_shelf_mid')
@@ -501,8 +496,8 @@ def dresser_tank():
     light(1512, -1368, 680, 160, '0.4 0.7 1')
     speaker(1512, -1368, 700, 'sound/world/machine/fishtank.ogg')
     # dresser top west strip
-    item('ammo_pumper', 1216, -1300, 576)
-    mdl_c('pad_ducks/pad_duck.md3', 1216, -1460, 576, scale=0.5, angle=60)
+    item('ammo_pumper', 1216, -1180, 576)
+    solid_mdl('pad_ducks/pad_duck.md3', 1210, -1340, 576, scale=0.5, angle=60)
     spawn(1216, -1140, 576, 180)
     # ruler bridge from the sill to the dresser
     rb = box((900, -1504, 576), (1232, -1424, 592), T('ruler'))
@@ -532,10 +527,43 @@ def wardrobe():
         A(b)
     # clothes rail + hanging clothes (well above head height)
     A(box((X0 + 32, -1330, 780), (X1 - 32, -1314, 796), T('metal_chrome')))
-    cols = ['fabric_red', 'fabric_denim', 'fabric_yellow', 'fabric_green', 'fabric_orange', 'fabric_blue']
-    for i, xa in enumerate(range(X0 + 72, X1 - 72, 72)):
-        z0 = 360 + (i % 3) * 60
-        A(box((xa, -1410, z0), (xa + 48, -1234, 780), T(cols[i % 6])))
+    # garments on hangers, hanging flat in the y-z plane (front faces the open doors), well above head height
+    RY = -1322                                   # rail centre (y)
+    def hanger(x):
+        A(box((x - 2, RY - 2, 796), (x + 2, RY + 2, 812), T('metal_chrome')))                        # hook over the rail
+        for sg in (-1, 1):                                                                              # wire shoulders
+            A(hull([(xx, RY + sg * dy, z) for xx in (x - 2, x + 2) for (dy, z) in ((4, 780), (4, 775), (74, 750), (74, 745))],
+                   T('metal_chrome'), round_pts=False))
+    def slab(x, pts2d, tex, t=10):
+        """extrude a convex outline [(dy, z)...] around the rail by +-t/2 in x"""
+        A(hull([(xx, RY + dy, z) for xx in (x - t / 2, x + t / 2) for (dy, z) in pts2d], T(tex), round_pts=False))
+    def shirt(x, tex, long=False, hood=False):
+        hanger(x)
+        bot = 520 if long else 580
+        slab(x, [(-80, 742), (80, 742), (-26, 752), (26, 752), (-72, bot), (72, bot)], tex, 14)       # body + collar
+        for sg in (-1, 1):                                                                              # sleeves hang down
+            sl = 560 if long else 680
+            slab(x, [(sg * 80, 742), (sg * 100, 728), (sg * 104, sl), (sg * 82, sl + 6)], tex, 12)
+        if hood:
+            slab(x + 9, [(-34, 748), (34, 748), (-26, 690), (26, 690)], tex, 4)
+    def trousers(x, tex):
+        A(box((x - 2, RY - 2, 796), (x + 2, RY + 2, 812), T('metal_chrome')))
+        A(box((x - 2, RY - 70, 760), (x + 2, RY + 70, 768), T('metal_chrome')))                     # clip bar
+        slab(x, [(-66, 760), (66, 760), (-66, 720), (66, 720)], tex, 12)                               # waistband
+        for sg in (-1, 1):
+            slab(x, [(sg * 4, 720), (sg * 66, 720), (sg * 8, 470), (sg * 64, 470)], tex, 12)        # legs
+    def dress(x, tex):
+        hanger(x)
+        slab(x, [(-60, 742), (60, 742), (-46, 640), (46, 640)], tex, 12)                               # bodice
+        slab(x, [(-46, 640), (46, 640), (-100, 470), (100, 470)], tex, 10)                             # flared skirt
+    shirt(-1736, 'fabric_stripe')
+    trousers(-1676, 'fabric_denim')
+    dress(-1614, 'fabric_dots')
+    shirt(-1554, 'fabric_green', long=True, hood=True)
+    shirt(-1494, 'fabric_check')
+    trousers(-1434, 'fabric_orange')
+    shirt(-1374, 'fabric_red', long=True)
+    shirt(-1314, 'fabric_yellow')
     # floor inside: shoe boxes, socks, armour
     for (bx, by, bz, h) in ((-1720, -1500, 16, 96), (-1720, -1500, 112, 96), (-1580, -1500, 16, 96)):
         A(box((bx, by, bz), (bx + 128, by + 200, bz + h), {'side': T('shoebox'), 'top': T('cardboard'), 'bot': T('cardboard')}))
@@ -550,7 +578,7 @@ def wardrobe():
     weapon('betty', -1500, -1250, 1152, marker='black')
     item('ammo_bubbleg', -1300, -1160, 1152)
     light(-1500, -1300, 1400, 260)
-    mdl_c('pad_ddmix/padshop/cardboard_standup.md3', -1330, -660, 0, angle=135)
+    solid_mdl('pad_ddmix/padshop/cardboard_standup.md3', -1330, -660, 0, angle=135)
 
 
 # =================================================================================================== dollhouse
@@ -627,7 +655,7 @@ def tv_corner():
     A(box((X0 + 32, Y0, 32), (X1 - 32, Y0 + 16, 192), T('walnut')))
     # console inside the bench + TV on top
     A(box((-860, -1500, 32), (-700, -1400, 80), T('plastic_black')))
-    mdl_c('padtv/padtv2.md3', -784, -1408, 224, angle=270)
+    solid_mdl('padtv/padtv2.md3', -784, -1408, 224, angle=270)
     mdl_c('pad_radio_car/radio_control_fl.md3', -930, -1440, 224, angle=200)
     speaker(-784, -1450, 360, 'sound/world/machine/tv_upstairs.ogg')
     item('ammo_betty', -620, -1380, 32)
@@ -688,31 +716,32 @@ def centre():
     # loop-the-loop arch on the west half of the rug
     loop_arch(-300, -60)
     # standing gummy bears + rubber duck + balls (sightline breakers)
-    mdl_c('gummybears/greenbear.md3', 120, -560, 4, angle=60)
-    mdl_c('gummybears/orangebear.md3', -1000, 300, 0, angle=200)
-    mdl_c('gummybears/yellowbear.md3', 1100, 200, 0, angle=150)
-    mdl_c('pad_ducks/pad_duck.md3', -520, 520, 0, angle=300)
-    M.ent('trigger_multiple', brushes=[box((-640, 380, 0), (-400, 660, 120), TRIG)], target='squeak', wait=3)
+    solid_mdl('gummybears/greenbear.md3', 120, -560, 4, angle=60)
+    solid_mdl('gummybears/orangebear.md3', -1000, 300, 0, angle=200)
+    solid_mdl('gummybears/yellowbear.md3', 1100, 200, 0, angle=150)
+    solid_mdl('pad_ducks/pad_duck.md3', -520, 520, 0, angle=300)
+    M.ent('trigger_multiple', brushes=[box((-660, 380, 0), (-380, 416, 120), TRIG), box((-660, 624, 0), (-380, 646, 120), TRIG),
+                                       box((-660, 416, 0), (-635, 624, 120), TRIG), box((-404, 416, 0), (-380, 624, 120), TRIG)],
+          target='squeak', wait=3)
     mdl('pad_ball/pad_basketball.md3', 1000, -300, 0)
     mdl('pad_ball/pad_soccerball.md3', -1100, -120, 0)
     mdl_c('pad_books/pad_ob_fl_lg_wop.md3', 860, 380, 0, angle=15)
-    mdl_c('pad_tins/pad_pupsi_sd.md3', -600, 700, 0, angle=35)
-    mdl_c('pad_toiletroll/pad_toiletroll.md3', 1260, -560, 0)
+    solid_mdl('pad_tins/pad_pupsi_sd.md3', -600, 700, 0, angle=35)
+    solid_mdl('pad_toiletroll/pad_toiletroll.md3', 1260, -560, 0)
     # RC cars driving up and down (nonsolid eye candy, func_train)
-    for (nm, x, ya, yb, mdlp, spd) in (('rc_a', 900, -700, 280, 'pad_nascars/padcar_orange_rc.md3', 260),
-                                       ('rc_b', -1300, -900, -40, 'pad_nascars/padcar_black_rc.md3', 220)):
+    for (nm, x, ya, yb, mdlp, spd) in (('rc_a', 1380, -680, 100, 'pad_nascars/padcar_orange_rc.md3', 260),):
         br = [box((x - 8, ya - 8, 0 + 16), (x + 8, ya + 8, 32), ORIGIN), box((x - 16, ya - 16, 34), (x + 16, ya + 16, 50), NODRAW_NS)]
         M.ent('func_train', brushes=br, target=nm + '1', speed=spd, model2='models/mapobjects/' + mdlp)
         M.ent('path_corner', (x, ya, 24), targetname=nm + '1', target=nm + '2', wait=1.5)
         M.ent('path_corner', (x, yb, 24), targetname=nm + '2', target=nm + '1', wait=1.5)
     # floor items/spawns
     for (cls, x, y, z) in (('item_armor_shard', 0, -200, 4), ('item_armor_shard', 1200, 600, 0), ('item_armor_shard', -900, 800, 0),
-                           ('ammo_nipper', 640, 800, 0), ('ammo_bubbleg', -1100, 120, 0), ('ammo_pumper', 1250, -800, 0),
+                           ('ammo_bubbleg', -1100, 120, 0), ('ammo_pumper', 1250, -800, 0),
                            ('ammo_splasher', 200, -1250, 0), ('ammo_boaster', -400, 900, 0), 
                            ('ammo_bubbleg', 700, 520, 0)):
         item(cls, x, y, z)
     for (x, y, z, a) in ((0, -350, 4, 90), (-1000, 0, 0, 0), (1100, 400, 0, 180), (300, 1000, 0, 270), (-600, -1250, 0, 0),
-                         (1040, -1180, 0, 90), (-200, 1100, 0, 0), (1300, -200, 0, 135), (-700, 300, 0, 300), (-1550, -800, 0, 45)):
+                         (1040, -1180, 0, 90), (-200, 1100, 0, 0), (1200, -80, 0, 135), (-700, 300, 0, 300), (-1550, -800, 0, 45)):
         spawn(x, y, z, a)
 
 
@@ -753,6 +782,76 @@ def posters():
     A(sign_box((RX0, 300, 800), (RX0 + 2, 556, 1184), T('poster_space'), 256, 384, back=P, facing='e'))
     A(sign_box((RX1 - 2, -760, 900), (RX1, -504, 1284), T('poster_duck'), 256, 384, back=P, facing='w'))
     A(sign_box((-1150, RY0, 760), (-894, RY0 + 2, 1144), T('poster_map'), 256, 384, back=P, facing='n'))
+
+
+# =================================================================================================== more floor toys
+def floor_toys():
+    # cardboard play tunnel lying on its side (octagon tube along y, flat 16u floor inside): run through it
+    cx, cz, ro, ri, y0, y1 = 500, 128, 128, 112, 620, 980
+    def oct_pt(r, k):          # apothem r, flat face at the bottom
+        a = k * math.pi / 4 - math.pi / 2 - math.pi / 8
+        R = r / math.cos(math.pi / 8)
+        return (cx + R * math.cos(a), cz + R * math.sin(a))
+    for k in range(8):
+        pts = []
+        for r in (ri, ro):
+            for kk in (k, k + 1):
+                xx, zz = oct_pt(r, kk)
+                pts += [(xx, y0, zz), (xx, y1, zz)]
+        A(hull(pts, {'side': T('cardboard'), 'top': T('cardboard'), 'bot': T('cardboard')}, round_pts=False))
+    item('ammo_nipper', 500, 800, 16)
+    light(500, 800, 90, 90, '1 0.85 0.6')
+
+    # open picture book lying face down as a tent (walk underneath along y)
+    tx0, tx1, ty0, ty1, rz, th = -1640, -1300, -440, -120, 200, 12
+    xm = (tx0 + tx1) / 2
+    for (xa, xb) in ((tx0, xm), (tx1, xm)):
+        pts = []
+        for y in (ty0, ty1):
+            pts += [(xa, y, 0), (xa + (th if xa < xb else -th), y, 0), (xb, y, rz), (xb, y, rz - th * 1.6)]
+        A(hull(pts, {'side': T('book_purple'), 'bot': T('pages'), 'top': T('book_purple')}, round_pts=False))
+    item('item_armor_shard', -1470, -280, 0)
+    mdl_c('pad_pencils/pad_pencilsr_lg.md3', -1180, -160, 0, angle=70)
+    mdl_c('pad_pencils/pad_pencilsbl_lg.md3', -1150, -220, 0, angle=95)
+    mdl_c('pad_pencils/pad_pencilsy_lg.md3', -1210, -260, 0, angle=40)
+
+    # wooden toy train along the north wall: engine + two wagons of blocks (cover and a little climb)
+    def wheel(x, y0, y1, r=28):
+        pts = []
+        for k in range(8):
+            a = 2 * math.pi * (k + 0.5) / 8
+            for y in (y0, y1):
+                pts.append((x + r * math.cos(a), y, r + r * math.sin(a)))
+        A(hull(pts, {'side': T('fabric_red'), 'n': T('walnut'), 's': T('walnut')}, round_pts=False))
+    Y0, Y1 = 1400, 1520
+    cars = ((-660, -460, 'engine'), (-440, -260, 'wagon'), (-240, -60, 'wagon2'))
+    for (xa, xb, kind) in cars:
+        for wx in (xa + 40, xb - 40):
+            wheel(wx, Y0, Y0 + 14); wheel(wx, Y1 - 14, Y1)
+        A(box((xa, Y0 + 14, 22), (xb, Y1 - 14, 56), {'side': T('pine'), 'top': T('pine'), 'bot': T('pine')}))
+        if kind == 'engine':
+            A(box((xa, Y0 + 14, 56), (xa + 90, Y1 - 14, 176), {'side': T('fabric_red'), 'top': T('fabric_red')}))
+            A(box((xa - 8, Y0 + 6, 176), (xa + 98, Y1 - 6, 192), T('fabric_yellow')))
+            pts = []
+            for k in range(8):
+                a = 2 * math.pi * (k + 0.5) / 8
+                for x in (xa + 90, xb):
+                    pts.append((x, (Y0 + Y1) / 2 + 46 * math.cos(a), 56 + 46 + 46 * math.sin(a)))
+            A(hull(pts, {'side': T('fabric_blue'), 'e': T('fabric_yellow')}, round_pts=False))
+            A(cyl(xb - 40, (Y0 + Y1) / 2, 16, 146, 220, T('plastic_black'), 8))
+        else:
+            for (ya, yb) in ((Y0 + 14, Y0 + 26), (Y1 - 26, Y1 - 14)):
+                A(box((xa, ya, 56), (xb, yb, 104), T('fabric_green' if kind == 'wagon' else 'fabric_orange')))
+            A(box((xa, Y0 + 26, 56), (xa + 12, Y1 - 26, 104), T('fabric_green' if kind == 'wagon' else 'fabric_orange')))
+            A(box((xb - 12, Y0 + 26, 56), (xb, Y1 - 26, 104), T('fabric_green' if kind == 'wagon' else 'fabric_orange')))
+    for (bx, t) in ((-420, 'a'), (-340, 'c')):
+        A(box((bx, 1430, 56), (bx + 64, 1494, 120), T('block_' + t)))
+    item('ammo_balloony', 20, 1460, 0)
+    mdl_c('pad_radio_car/radio_control.md3', -690, 1130, 0, angle=300)
+    mdl_c('pad_ball/pad_tennisball.md3', 60, 1180, 0)
+    mdl_c('pad_ball/pad_softball.md3', 140, 1120, 0)
+    speaker(-560, 1460, 140, 'sound/world/misc/bicycle_bell.ogg', loop=False, targetname='trainbell')
+    M.ent('func_timer', (-560, 1460, 200), target='trainbell', wait=40, random=20, spawnflags=1)
 
 
 # =================================================================================================== ceiling: lamp + mobile
@@ -814,8 +913,8 @@ def main():
     textures.make_all(OUT)
     os.makedirs(os.path.join(OUT, 'scripts'), exist_ok=True)
     MH = room_shell()
-    window_and_outside(); bed(); nightstand(); race_track(); desk(); chair(); shelf(); dresser_tank(); wardrobe()
-    dollhouse(); tv_corner(); centre(); clutter(); posters(); ceiling(); hideout(MH)
+    window_and_outside(); bed(); nightstand(); desk_pad(); desk(); chair(); shelf(); dresser_tank(); wardrobe()
+    dollhouse(); tv_corner(); centre(); clutter(); floor_toys(); posters(); ceiling(); hideout(MH)
     M.ent('info_player_intermission', (-1200, -1000, 1300), angles='25 40 0')
     os.makedirs(os.path.join(OUT, 'maps'), exist_ok=True)
     open(os.path.join(OUT, 'maps', MAPNAME + '.map'), 'w').write(
