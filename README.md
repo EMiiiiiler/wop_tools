@@ -11,6 +11,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`), plus dev
   `compile.sh` / `render.sh`. `textures.py` makes all textures, the shader and the arena.
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
+- `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 
 ## Checks (run on every map)
 - `audit_map.py map --md3root <dir holding models/>` - brush overlaps, entities/items/spawns in solids or
