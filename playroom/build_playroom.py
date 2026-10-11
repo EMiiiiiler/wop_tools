@@ -7,9 +7,9 @@ Writes <OUT>/maps/wop_padplayroom.map, textures/playroom/*, scripts/playroom.sha
 
 A kid's bedroom at Padman scale (about 8u per cm, so catalog models sit at their native scale 1.0).
 x east, y north, floor z 0, room x -1792..1792, y -1536..1536, ceiling z 1600.
-  NW bed (duvet ramp, pillow, under-bed stash)    N nightstand + orange race-track ramp up to the desk
+  NW bed (jump pad up, pillow, under-bed stash)    N nightstand + orange race-track ramp up to the desk
   NE desk, PC, chair                              E shelf cabinet + hutch (top shelf = Imperius)
-  SE dresser + aquarium (book stairs in, teleporter out, Splasher on the gravel)
+  SE dresser + aquarium (jump pad in, teleporter out, Splasher on the gravel)
   S  window sill with sunbeam, radiator, ruler bridge to the dresser
   SW walk-in wardrobe (Betty on top, pad from the bed)    W mouse hole -> Pad's Hideout (secret)
   centre rug playmat: dollhouse (2 floors + roof deck), brick ziggurat, toy box, ABC blocks, chess, mobile overhead
@@ -269,8 +269,9 @@ def bed():
     px0, px1, py0, py1 = X0 + 56, X1 - 56, 1240, 1448
     A(hull([(x, y, 368) for x in (px0, px1) for y in (py0, py1)] +
            [(x, y, 432) for x in (px0 + 72, px1 - 72) for y in (py0 + 72, py1 - 72)], T('pillow')))
-    # draped duvet: ramp from the floor up to the mattress top at the foot end
-    A(ramp(X0 + 8, -416, X1 - 8, Y0, 0, 0, 384, 'n', {'top': T('duvet'), 'side': T('duvet'), 'bot': CAULK}))
+    # duvet hanging over the foot end (short flap, stays clear of the floor) + jump pad up onto the bed
+    A(box((X0 + 8, Y0 - 8, 232), (X1 - 8, Y0, 384), T('duvet')))
+    jumppad(-1470, -220, 0, (-1470, 520, 384), 560, 'jp_bedup')
     # under the bed (z 0..176): shoebox, comics, socks, lost ball; dim night light
     A(box((-1660, 1000, 0), (-1400, 1240, 96), {'side': T('shoebox'), 'top': T('cardboard')}))
     mdl('pad_books/comics/pad_comic1.md3', -1300, 700, 0, angle=20)
@@ -480,12 +481,8 @@ def dresser_tank():
     A(box((TX0, TY0, 592), (TX1, TY0 + 8, 880), G)); A(box((TX0, TY1 - 8, 592), (TX1, TY1, 880), G))
     A(box((TX0, TY0 + 8, 592), (TX0 + 8, TY1 - 8, 880), G)); A(box((TX1 - 8, TY0 + 8, 592), (TX1, TY1 - 8, 880), G))
     A(box((TX0 + 8, TY0 + 8, 608), (TX1 - 8, TY1 - 8, 872), T('water')))
-    # book stairs on the front ledge (16u steps, 24 deep) up to the rim
-    cols = ['red', 'blue', 'green', 'yellow', 'purple', 'orange']
-    nst = 19
-    for i in range(nst):
-        xa = TX0 + 8 + 24 * i; xb = xa + 24
-        A(book(xa, TY1, xb, Y1 - 16, 576 + 16 * i, 576 + 16 * (i + 1), cols[i % 6]))
+    # jump pad on the front ledge: over the glass and splash down into the tank
+    jumppad(1380, -1144, 576, (1500, -1380, 608), 1000, 'jp_tank')
     # tank contents
     mdl_c('pad_ddmix/plants/waterplant1a.md3', 1480, -1400, 608, scale=0.5, angle=0)
     mdl_c('pad_ddmix/plants/waterplant1b.md3', 1590, -1320, 608, scale=0.6, angle=90)
