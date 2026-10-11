@@ -1,0 +1,7 @@
+/* Crater Crust: one committed neon-night look (no light variant) */
+:root,:root[data-theme="light"],:root[data-theme="dark"]{--bg:#0d0820;--panel:rgba(22,12,48,.88);--fg:#f3ecff;--mut:#b9a8e0;--line:#3d2a72;--btn:#22154a;--accent:#ff4fc3;--onaccent:#1a0626;
+ --display:"Righteous","Trebuchet MS",sans-serif;--body:"Nunito Sans",system-ui,sans-serif;color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d0820;--panel:rgba(22,12,48,.88);--fg:#f3ecff;--mut:#b9a8e0;--line:#3d2a72;--btn:#22154a;--accent:#ff4fc3;--onaccent:#1a0626;color-scheme:dark}}
+#hud{border-color:var(--line);box-shadow:0 0 0 1px rgba(80,230,255,.25),0 0 24px rgba(255,79,195,.18)}
+#hud h1{color:#ffd9f4;text-shadow:0 0 10px rgba(255,79,195,.7)}
+#hud .sub{color:#7ee9ff}
