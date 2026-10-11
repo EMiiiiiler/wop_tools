@@ -40,7 +40,7 @@ for k, v in {'floor_wood': (2, 2), 'wallpaper': (2, 2), 'dado': (1, 1), 'ceiling
              'brick_red_top': (1, 1), 'brick_blue_top': (1, 1), 'brick_yellow_top': (1, 1), 'brick_green_top': (1, 1),
              'brick_white_top': (1, 1), 'toybox_plain': (1, 1), 'track_support': (1, 1), 'chest': (0.5, 0.5),
              'fabric_red': (1, 1), 'fabric_blue': (1, 1), 'fabric_green': (1, 1), 'fabric_yellow': (1, 1),
-             'fabric_denim': (1, 1), 'fabric_orange': (1, 1), 'book_red': (1, 1), 'book_blue': (1, 1), 'book_green': (1, 1),
+             'fabric_denim': (1, 1), 'fabric_orange': (1, 1), 'fabric_stripe': (0.5, 0.5), 'fabric_check': (0.5, 0.5), 'fabric_dots': (0.5, 0.5), 'book_red': (1, 1), 'book_blue': (1, 1), 'book_green': (1, 1),
              'book_yellow': (1, 1), 'book_purple': (1, 1), 'book_orange': (1, 1), 'pc_case': (1, 1)}.items():
     wopmap.TEXSCALE[T(k)] = v
 for _b in 'abcdp':
@@ -184,12 +184,13 @@ def room_shell():
     def wall_tex(face):
         return {'n': CAULK, 's': CAULK, 'e': CAULK, 'w': CAULK, 'top': CAULK, 'bot': CAULK, face: None}
 
-    def wall(mn, mx, inner, bands=True):
-        """vertical wall split into skirting (0..48), dado (48..512), rail (512..528), wallpaper (528..ceiling)"""
+    def wall(mn, mx, inner, bands=True, outer=CAULK):
+        """vertical wall split into skirting (0..48), dado (48..512), rail (512..528), wallpaper (528..ceiling).
+        outer: texture for the other faces (the west wall shows its back and hole jambs inside the hideout)"""
         for (za, zb, tex) in ((0, 48, 'skirting'), (48, 512, 'dado'), (512, 528, 'dado_rail'), (528, CZ, 'wallpaper')):
             a, b = max(za, mn[2]), min(zb, mx[2])
             if b <= a: continue
-            t = {'side': CAULK, 'top': CAULK, 'bot': CAULK, inner: T(tex)}
+            t = {'side': outer, 'top': CAULK, 'bot': outer if za == mn[2] else CAULK, inner: T(tex)}
             A(box((mn[0], mn[1], a), (mx[0], mx[1], b), t, detail=False))
 
     # floor + ceiling (structural)
@@ -200,9 +201,10 @@ def room_shell():
     wall((RX1, RY0, 0), (RX1 + W, RY1, CZ), 'w')
     # west wall with the mouse hole (y -640..-544, z 0..112)
     MH = (-640, -544, 112)
-    wall((RX0 - W, RY0, 0), (RX0, MH[0], CZ), 'e')
-    wall((RX0 - W, MH[1], 0), (RX0, RY1, CZ), 'e')
-    wall((RX0 - W, MH[0], MH[2]), (RX0, MH[1], CZ), 'e')
+    PL = T('plaster_rough')
+    wall((RX0 - W, RY0, 0), (RX0, MH[0], CZ), 'e', outer=PL)
+    wall((RX0 - W, MH[1], 0), (RX0, RY1, CZ), 'e', outer=PL)
+    wall((RX0 - W, MH[0], MH[2]), (RX0, MH[1], CZ), 'e', outer=PL)
     # arch corners of the mouse hole (detail wedges)
     for (ya, yb, sgn) in ((MH[0], MH[0] + 24, 1), (MH[1] - 24, MH[1], -1)):
         pts = []
@@ -525,10 +527,43 @@ def wardrobe():
         A(b)
     # clothes rail + hanging clothes (well above head height)
     A(box((X0 + 32, -1330, 780), (X1 - 32, -1314, 796), T('metal_chrome')))
-    cols = ['fabric_red', 'fabric_denim', 'fabric_yellow', 'fabric_green', 'fabric_orange', 'fabric_blue']
-    for i, xa in enumerate(range(X0 + 72, X1 - 72, 72)):
-        z0 = 360 + (i % 3) * 60
-        A(box((xa, -1410, z0), (xa + 48, -1234, 780), T(cols[i % 6])))
+    # garments on hangers, hanging flat in the y-z plane (front faces the open doors), well above head height
+    RY = -1322                                   # rail centre (y)
+    def hanger(x):
+        A(box((x - 2, RY - 2, 796), (x + 2, RY + 2, 812), T('metal_chrome')))                        # hook over the rail
+        for sg in (-1, 1):                                                                              # wire shoulders
+            A(hull([(xx, RY + sg * dy, z) for xx in (x - 2, x + 2) for (dy, z) in ((4, 780), (4, 775), (74, 750), (74, 745))],
+                   T('metal_chrome'), round_pts=False))
+    def slab(x, pts2d, tex, t=10):
+        """extrude a convex outline [(dy, z)...] around the rail by +-t/2 in x"""
+        A(hull([(xx, RY + dy, z) for xx in (x - t / 2, x + t / 2) for (dy, z) in pts2d], T(tex), round_pts=False))
+    def shirt(x, tex, long=False, hood=False):
+        hanger(x)
+        bot = 520 if long else 580
+        slab(x, [(-80, 742), (80, 742), (-26, 752), (26, 752), (-72, bot), (72, bot)], tex, 14)       # body + collar
+        for sg in (-1, 1):                                                                              # sleeves hang down
+            sl = 560 if long else 680
+            slab(x, [(sg * 80, 742), (sg * 100, 728), (sg * 104, sl), (sg * 82, sl + 6)], tex, 12)
+        if hood:
+            slab(x + 9, [(-34, 748), (34, 748), (-26, 690), (26, 690)], tex, 4)
+    def trousers(x, tex):
+        A(box((x - 2, RY - 2, 796), (x + 2, RY + 2, 812), T('metal_chrome')))
+        A(box((x - 2, RY - 70, 760), (x + 2, RY + 70, 768), T('metal_chrome')))                     # clip bar
+        slab(x, [(-66, 760), (66, 760), (-66, 720), (66, 720)], tex, 12)                               # waistband
+        for sg in (-1, 1):
+            slab(x, [(sg * 4, 720), (sg * 66, 720), (sg * 8, 470), (sg * 64, 470)], tex, 12)        # legs
+    def dress(x, tex):
+        hanger(x)
+        slab(x, [(-60, 742), (60, 742), (-46, 640), (46, 640)], tex, 12)                               # bodice
+        slab(x, [(-46, 640), (46, 640), (-100, 470), (100, 470)], tex, 10)                             # flared skirt
+    shirt(-1736, 'fabric_stripe')
+    trousers(-1676, 'fabric_denim')
+    dress(-1614, 'fabric_dots')
+    shirt(-1554, 'fabric_green', long=True, hood=True)
+    shirt(-1494, 'fabric_check')
+    trousers(-1434, 'fabric_orange')
+    shirt(-1374, 'fabric_red', long=True)
+    shirt(-1314, 'fabric_yellow')
     # floor inside: shoe boxes, socks, armour
     for (bx, by, bz, h) in ((-1720, -1500, 16, 96), (-1720, -1500, 112, 96), (-1580, -1500, 16, 96)):
         A(box((bx, by, bz), (bx + 128, by + 200, bz + h), {'side': T('shoebox'), 'top': T('cardboard'), 'bot': T('cardboard')}))
@@ -701,7 +736,7 @@ def centre():
         M.ent('path_corner', (x, yb, 24), targetname=nm + '2', target=nm + '1', wait=1.5)
     # floor items/spawns
     for (cls, x, y, z) in (('item_armor_shard', 0, -200, 4), ('item_armor_shard', 1200, 600, 0), ('item_armor_shard', -900, 800, 0),
-                           ('ammo_nipper', 640, 800, 0), ('ammo_bubbleg', -1100, 120, 0), ('ammo_pumper', 1250, -800, 0),
+                           ('ammo_bubbleg', -1100, 120, 0), ('ammo_pumper', 1250, -800, 0),
                            ('ammo_splasher', 200, -1250, 0), ('ammo_boaster', -400, 900, 0), 
                            ('ammo_bubbleg', 700, 520, 0)):
         item(cls, x, y, z)
@@ -747,6 +782,76 @@ def posters():
     A(sign_box((RX0, 300, 800), (RX0 + 2, 556, 1184), T('poster_space'), 256, 384, back=P, facing='e'))
     A(sign_box((RX1 - 2, -760, 900), (RX1, -504, 1284), T('poster_duck'), 256, 384, back=P, facing='w'))
     A(sign_box((-1150, RY0, 760), (-894, RY0 + 2, 1144), T('poster_map'), 256, 384, back=P, facing='n'))
+
+
+# =================================================================================================== more floor toys
+def floor_toys():
+    # cardboard play tunnel lying on its side (octagon tube along y, flat 16u floor inside): run through it
+    cx, cz, ro, ri, y0, y1 = 500, 128, 128, 112, 620, 980
+    def oct_pt(r, k):          # apothem r, flat face at the bottom
+        a = k * math.pi / 4 - math.pi / 2 - math.pi / 8
+        R = r / math.cos(math.pi / 8)
+        return (cx + R * math.cos(a), cz + R * math.sin(a))
+    for k in range(8):
+        pts = []
+        for r in (ri, ro):
+            for kk in (k, k + 1):
+                xx, zz = oct_pt(r, kk)
+                pts += [(xx, y0, zz), (xx, y1, zz)]
+        A(hull(pts, {'side': T('cardboard'), 'top': T('cardboard'), 'bot': T('cardboard')}, round_pts=False))
+    item('ammo_nipper', 500, 800, 16)
+    light(500, 800, 90, 90, '1 0.85 0.6')
+
+    # open picture book lying face down as a tent (walk underneath along y)
+    tx0, tx1, ty0, ty1, rz, th = -1640, -1300, -440, -120, 200, 12
+    xm = (tx0 + tx1) / 2
+    for (xa, xb) in ((tx0, xm), (tx1, xm)):
+        pts = []
+        for y in (ty0, ty1):
+            pts += [(xa, y, 0), (xa + (th if xa < xb else -th), y, 0), (xb, y, rz), (xb, y, rz - th * 1.6)]
+        A(hull(pts, {'side': T('book_purple'), 'bot': T('pages'), 'top': T('book_purple')}, round_pts=False))
+    item('item_armor_shard', -1470, -280, 0)
+    mdl_c('pad_pencils/pad_pencilsr_lg.md3', -1180, -160, 0, angle=70)
+    mdl_c('pad_pencils/pad_pencilsbl_lg.md3', -1150, -220, 0, angle=95)
+    mdl_c('pad_pencils/pad_pencilsy_lg.md3', -1210, -260, 0, angle=40)
+
+    # wooden toy train along the north wall: engine + two wagons of blocks (cover and a little climb)
+    def wheel(x, y0, y1, r=28):
+        pts = []
+        for k in range(8):
+            a = 2 * math.pi * (k + 0.5) / 8
+            for y in (y0, y1):
+                pts.append((x + r * math.cos(a), y, r + r * math.sin(a)))
+        A(hull(pts, {'side': T('fabric_red'), 'n': T('walnut'), 's': T('walnut')}, round_pts=False))
+    Y0, Y1 = 1400, 1520
+    cars = ((-660, -460, 'engine'), (-440, -260, 'wagon'), (-240, -60, 'wagon2'))
+    for (xa, xb, kind) in cars:
+        for wx in (xa + 40, xb - 40):
+            wheel(wx, Y0, Y0 + 14); wheel(wx, Y1 - 14, Y1)
+        A(box((xa, Y0 + 14, 22), (xb, Y1 - 14, 56), {'side': T('pine'), 'top': T('pine'), 'bot': T('pine')}))
+        if kind == 'engine':
+            A(box((xa, Y0 + 14, 56), (xa + 90, Y1 - 14, 176), {'side': T('fabric_red'), 'top': T('fabric_red')}))
+            A(box((xa - 8, Y0 + 6, 176), (xa + 98, Y1 - 6, 192), T('fabric_yellow')))
+            pts = []
+            for k in range(8):
+                a = 2 * math.pi * (k + 0.5) / 8
+                for x in (xa + 90, xb):
+                    pts.append((x, (Y0 + Y1) / 2 + 46 * math.cos(a), 56 + 46 + 46 * math.sin(a)))
+            A(hull(pts, {'side': T('fabric_blue'), 'e': T('fabric_yellow')}, round_pts=False))
+            A(cyl(xb - 40, (Y0 + Y1) / 2, 16, 146, 220, T('plastic_black'), 8))
+        else:
+            for (ya, yb) in ((Y0 + 14, Y0 + 26), (Y1 - 26, Y1 - 14)):
+                A(box((xa, ya, 56), (xb, yb, 104), T('fabric_green' if kind == 'wagon' else 'fabric_orange')))
+            A(box((xa, Y0 + 26, 56), (xa + 12, Y1 - 26, 104), T('fabric_green' if kind == 'wagon' else 'fabric_orange')))
+            A(box((xb - 12, Y0 + 26, 56), (xb, Y1 - 26, 104), T('fabric_green' if kind == 'wagon' else 'fabric_orange')))
+    for (bx, t) in ((-420, 'a'), (-340, 'c')):
+        A(box((bx, 1430, 56), (bx + 64, 1494, 120), T('block_' + t)))
+    item('ammo_balloony', 20, 1460, 0)
+    mdl_c('pad_radio_car/radio_control.md3', -690, 1130, 0, angle=300)
+    mdl_c('pad_ball/pad_tennisball.md3', 60, 1180, 0)
+    mdl_c('pad_ball/pad_softball.md3', 140, 1120, 0)
+    speaker(-560, 1460, 140, 'sound/world/misc/bicycle_bell.ogg', loop=False, targetname='trainbell')
+    M.ent('func_timer', (-560, 1460, 200), target='trainbell', wait=40, random=20, spawnflags=1)
 
 
 # =================================================================================================== ceiling: lamp + mobile
@@ -809,7 +914,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'scripts'), exist_ok=True)
     MH = room_shell()
     window_and_outside(); bed(); nightstand(); desk_pad(); desk(); chair(); shelf(); dresser_tank(); wardrobe()
-    dollhouse(); tv_corner(); centre(); clutter(); posters(); ceiling(); hideout(MH)
+    dollhouse(); tv_corner(); centre(); clutter(); floor_toys(); posters(); ceiling(); hideout(MH)
     M.ent('info_player_intermission', (-1200, -1000, 1300), angles='25 40 0')
     os.makedirs(os.path.join(OUT, 'maps'), exist_ok=True)
     open(os.path.join(OUT, 'maps', MAPNAME + '.map'), 'w').write(

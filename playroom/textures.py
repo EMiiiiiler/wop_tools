@@ -249,6 +249,19 @@ def make_textures(W):
         a = fill(n, col, 5, hash(nme) % 89) + N3(n, 0.5, 73, 6)
         for i in range(0, n, 4): a[i, :] *= 0.95
         W.save(nme, a)
+    # patterned fabrics for the wardrobe clothes
+    a = fill(n, (245, 245, 240), 4, 140) + N3(n, 0.5, 141, 5)
+    for i in range(0, n, 32): a[i:i + 12] = C((40, 70, 150)) + N3(n, 0.5, 142, 5)[i:i + 12]
+    W.save('fabric_stripe', a)
+    a = fill(n, (200, 40, 40), 4, 143) + N3(n, 0.5, 144, 5)
+    for i in range(0, n, 64):
+        a[i:i + 20] = a[i:i + 20] * 0.55; a[:, i:i + 20] = a[:, i:i + 20] * 0.55
+        a[i + 40:i + 44] = C((240, 220, 120)); a[:, i + 40:i + 44] = C((240, 220, 120))
+    W.save('fabric_check', a)
+    im = Image.fromarray(np.clip(fill(n, (120, 70, 170), 4, 145), 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
+    for yy in range(0, n, 32):
+        for xx in range(0 if (yy // 32) % 2 == 0 else 16, n, 32): d.ellipse((xx + 4, yy + 4, xx + 14, yy + 14), fill=(250, 240, 250))
+    W.save('fabric_dots', im)
     im = Image.new('RGB', (256, 128), (230, 120, 40)); d = ImageDraw.Draw(im)
     d.rectangle((0, 0, 255, 22), fill=(250, 250, 250)); text_c(d, (128, 76), 'PAD KICKS', 40, (255, 255, 255), maxw=230)
     W.save('shoebox', im)
@@ -476,7 +489,7 @@ STEPS = {'floor_wood': 'woodsteps', 'dh_floor': 'woodsteps', 'old_boards': 'wood
          'duvet': 'softsteps', 'pillow': 'softsteps', 'mattress': 'softsteps', 'sheet': 'softsteps', 'beanbag': 'softsteps',
          'rug': 'carpetsteps', 'rug_edge': 'carpetsteps', 'gravel': 'sandsteps', 'cardboard': 'softsteps', 'dust': 'softsteps',
          'fabric_red': 'softsteps', 'fabric_blue': 'softsteps', 'fabric_green': 'softsteps', 'fabric_yellow': 'softsteps',
-         'fabric_denim': 'softsteps', 'fabric_orange': 'softsteps', 'grass': 'softsteps', 'pages': 'softsteps',
+         'fabric_denim': 'softsteps', 'fabric_orange': 'softsteps', 'fabric_stripe': 'softsteps', 'fabric_check': 'softsteps', 'fabric_dots': 'softsteps', 'grass': 'softsteps', 'pages': 'softsteps',
          'chessboard': 'woodsteps', 'shoebox': 'softsteps', 'dh_trim': 'woodsteps', 'chest': 'woodsteps'}
 for _c in ('red', 'blue', 'green', 'yellow', 'purple', 'orange'): STEPS['book_' + _c] = 'softsteps'
 for _c in ('a', 'b', 'c', 'd', 'p'): STEPS['block_' + _c] = 'woodsteps'

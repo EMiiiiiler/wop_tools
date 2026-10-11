@@ -7,7 +7,7 @@ Room x -1792..1792, y -1536..1536, ceiling 1600; 12 portals, VIS instant, full b
   office chair, shelf cabinet + hutch (pad chain to the top shelf), dresser + aquarium (jump pad in, teleporter out,
   swimming fish on func_pendulum), window sill with a sunbeam and dust motes, ruler bridge, walk-in wardrobe, dollhouse
   (2 floors + roof deck, stairs inside), TV bench, rug playmat, brick ziggurat, ABC blocks, chess, toy box with lid ramp,
-  loop-the-loop, toy rocket, RC car (func_train + model2), rotating ceiling mobile, posters, mouse hole -> Pad's Hideout.
+  loop-the-loop, toy rocket, play tunnel, book tent, toy train, garments on hangers, RC car (func_train + model2), rotating ceiling mobile, posters, mouse hole -> Pad's Hideout.
 - `textures.py` - every texture (original art), `playroom.shader`, `wop_padplayroom.arena`. Sky is WoP's `env/fort-pad512`.
 - `routes.txt` - on-foot routes for `aas_check.py --route`.
 - `compile.sh`, `check.sh`, `render.sh` - dev compile, full regenerate+compile+audit, preview screenshots.
