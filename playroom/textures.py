@@ -143,8 +143,10 @@ def make_textures(W):
     for (mx, my) in ((200, 130), (60, 110)):
         d.ellipse((mx - 14, my - 14, mx + 14, my + 14), fill=(250, 240, 200)); d.ellipse((mx - 6, my - 18, mx + 18, my + 10), fill=(46, 70, 140))
     W.save('duvet', np.asarray(im, np.float32) + N3(n, 0.6, 34, 4))
-    a = fill(n, (246, 246, 240), 3, 35)
-    for i in range(0, n, 32): a[:, i:i + 3] = C((150, 200, 240))
+    # pillowcase: soft white cotton, gentle puckering, faint pale-blue stripes and a stitched seam
+    a = fill(n, (248, 248, 244), 2, 35) + N3(n, 10, 135, 7) + N3(n, 0.6, 136, 2)
+    for i in range(0, n, 64): a[:, i + 20:i + 44] = a[:, i + 20:i + 44] * C((0.93, 0.96, 1.0))
+    for j in range(4, n, 12): a[j:j + 2, 2:4] *= 0.9; a[j:j + 2, n - 4:n - 2] *= 0.9
     W.save('pillow', a)
     a = fill(n, (236, 236, 240), 3, 36)
     for i in range(0, n, 64):

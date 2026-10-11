@@ -1,7 +1,6 @@
 # On-foot routes that must work both ways while standing (aas_check.py --route @playroom/routes.txt)
 # name: from x,y,z > to x,y,z   (z = floor height)
 bed_nightstand:  -1250,1100,384 > -950,1250,384
-race_track:      -700,1296,0 > 640,1180,576
 under_bed:       -1000,800,0 > -1450,800,0
 under_desk:      700,980,0 > 860,1300,0
 wardrobe_in:     -1500,-780,0 > -1500,-1200,16
@@ -12,6 +11,6 @@ dollhouse_roof:  -620,-1000,224 > -620,-700,448
 mouse_hole:      -1700,-592,0 > -2000,-560,0
 toybox_lid:      -200,270,4 > 0,800,208
 ziggurat:        250,-520,4 > 250,-200,228
-ruler_bridge:    700,-1450,576 > 1216,-1300,576
+ruler_bridge:    700,-1460,576 > 1255,-1470,576
 hutch_ledge:     1560,880,832 > 1720,880,832
-dresser_ledge:   1216,-1300,576 > 1600,-1140,576
+dresser_ledge:   1216,-1460,576 > 1600,-1140,576
