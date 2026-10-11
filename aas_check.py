@@ -2,6 +2,7 @@
 """Check bot navigation (.aas from bspc) against the map's entities.
 
     python3 aas_check.py maps/mymap.aas maps/mymap.map [--points "x,y,z;x,y,z"] [--rj]
+                         [--route "name:x,y,z>x,y,z;..." | --route @routes.txt]
 
 For every pickup / spawn / extra point it finds the AAS area and runs a graph search over the
 reachability links from all spawn points. Reports
@@ -9,6 +10,10 @@ reachability links from all spawn points. Reports
   - pickups bots cannot reach from the spawns (rocket/bfg jumps excluded unless --rj),
   - pickups bots can reach but cannot leave again (traps),
 and a travel-type summary.
+--route checks that a designed path (stairs into a cellar, a hatch into a ship's hold...) works ON FOOT in both
+directions while standing: only walk / step / jump / walk-off-ledge links into areas a standing player fits in
+(no crouching, swimming, teleporters or jump pads), staying near the straight line between the two points. Pickups can pass the main check through a back door while
+the front door is blocked by a low ceiling; this catches that.
 """
 import struct, sys, re, argparse
 from collections import deque
@@ -72,6 +77,7 @@ def main():
     ap.add_argument('aas'); ap.add_argument('map')
     ap.add_argument('--points', default='')
     ap.add_argument('--rj', action='store_true', help='allow rocket/bfg jumps')
+    ap.add_argument('--route', default='', help='"name:x,y,z>x,y,z;..." on-foot standing routes, checked both ways')
     a = ap.parse_args()
     planes, areas, sets, reach, nodes = load_aas(a.aas)
     ents = parse_ents(a.map)
@@ -85,6 +91,14 @@ def main():
             counts[t] = counts.get(t, 0) + 1
             if t in (12, 13) and not a.rj: continue
             adj[ai].append(int(r['area'])); radj[int(r['area'])].append(ai)
+    PRES_NORMAL = 2
+    foot = [[] for _ in range(na)]
+    for ai in range(1, na):
+        if not sets[ai]['pres'] & PRES_NORMAL: continue
+        s_ = sets[ai]
+        for r in reach[s_['freach']:s_['freach'] + s_['nreach']]:
+            t = int(r['type']) & 0xFFFFFF; b_ = int(r['area'])
+            if t in (2, 4, 5, 7) and sets[b_]['pres'] & PRES_NORMAL: foot[ai].append(b_)
 
     def find(o, kind):
         # items rest on the floor: probe a standing player origin above them
@@ -132,6 +146,44 @@ def main():
             print(f'  UNREACHABLE    {c:24s} {[round(v) for v in o]} area {ar}'); bad += 1
         elif ar not in back:
             print(f'  TRAP (no exit) {c:24s} {[round(v) for v in o]} area {ar}'); bad += 1
+    import heapq
+    C = areas['c']
+    MN, MX = areas['mins'], areas['maxs']
+    def walk_len(src, dst, pa, pb, corridor=448):
+        """shortest on-foot path between two areas using only areas whose box overlaps the A-B box grown by
+        `corridor` (2D) and whose floor lies between the lower point - 24 and the higher point + 160, so a
+        long way round (out a back door, through the water...) doesn't count; inf if none"""
+        if not (src and dst): return float('inf')
+        bx0 = min(pa[0], pb[0]) - corridor; bx1 = max(pa[0], pb[0]) + corridor
+        by0 = min(pa[1], pb[1]) - corridor; by1 = max(pa[1], pb[1]) + corridor
+        z0, z1 = min(pa[2], pb[2]) - 24, max(pa[2], pb[2]) + 160
+        def inside(x):
+            if x in (src, dst): return True
+            return (z0 <= MN[x][2] <= z1 and MX[x][0] >= bx0 and MN[x][0] <= bx1 and MX[x][1] >= by0 and MN[x][1] <= by1)
+        dist = {src: 0.0}; pq = [(0.0, src)]
+        while pq:
+            d, x = heapq.heappop(pq)
+            if x == dst: return d
+            if d > dist.get(x, 1e18): continue
+            for y in foot[x]:
+                if not inside(y): continue
+                nd = d + float(np.linalg.norm(C[x] - C[y]))
+                if nd < dist.get(y, 1e18): dist[y] = nd; heapq.heappush(pq, (nd, y))
+        return float('inf')
+    rts = a.route
+    if rts.startswith('@'):              # @file: one "name: x,y,z > x,y,z" per line, # comments
+        rts = ';'.join(l.split('#')[0].replace(' ', '') for l in open(rts[1:]) if l.split('#')[0].strip())
+    for rt in filter(None, rts.split(';')):
+        name, pts = rt.split(':') if ':' in rt else ('route', rt)
+        pa, pb = ([float(v) for v in q.split(',')] for q in pts.split('>'))
+        # route points are floor heights; find() probes like an item (origin floor + 16)
+        aa, ab = find([pa[0], pa[1], pa[2] + 16], 'item'), find([pb[0], pb[1], pb[2] + 16], 'item')
+        res = []
+        for lbl, (x, y, p0, p1) in (('there', (aa, ab, pa, pb)), ('back', (ab, aa, pb, pa))):
+            res.append('' if walk_len(x, y, p0, p1) < float('inf') else f'{lbl} blocked')
+        st = 'NO AREA' if not (aa and ab) else ('OK' if not any(res) else ', '.join(r for r in res if r))
+        print(f'  route {name:20s} {st}')
+        if st != 'OK': bad += 1
     print('reach types: ' + ', '.join(f'{TT.get(k, k)} {v}' for k, v in sorted(counts.items())))
     print(f'reachable areas from spawns: {len(fwd)} / {na - 1}')
     print('RESULT:', 'OK' if not bad else f'{bad} problem(s)')

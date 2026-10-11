@@ -30,7 +30,7 @@ wopmap.TEXSCALE.update({T('deck'): (1, 1), T('path'): (0.5, 0.5), T('rock'): (1,
                         T('pool_tile'): (0.5, 0.5), T('pool_lane'): (0.5, 0.5), T('pool_band'): (0.5, 0.5),
                         T('coping'): (0.5, 0.5), SAND: (0.5, 0.5), T('checker'): (0.5, 0.5), GRASS: (0.5, 0.5), STONE: (1, 1),
                         T('palm_trunk'): (0.25, 0.25), T('thatch'): (0.5, 0.5), T('frond'): (0.5, 0.5),
-                        T('water'): (0.5, 0.5), T('stucco_sand'): (0.5, 0.5), T('teak'): (0.5, 0.5),
+                        T('water'): (0.5, 0.5), T('counter_front'): (0.25, 0.25), T('stucco_sand'): (0.5, 0.5), T('teak'): (0.5, 0.5),
                         T('spray'): (0.5, 0.5), T('waterfall'): (1, 1), ROOFT: (0.5, 0.5)})
 
 M = Map({'message': 'Splash World: Cloud Lagoon Deluxe', '_ambient': '6', 'gridsize': '96 96 128',
@@ -741,12 +741,12 @@ def grotto():
         x0, y0, x1, y1 = r
         A(box((x0, y0, ZB), (x1, y1, -192), {'top': T('rock'), 'side': CAULK}))
         A(box((x0, y0, -48), (x1, y1, 0), {'bot': T('rock_dark'), 'side': CAULK, 'top': T('deck')}))
-    hole((448, -32, 560, 128), T('rock'), g2)
+    hole((448, 0, 560, 128), T('rock'), g2)       # covered part starts where the stairs are low enough to walk under
 
     def g3(r):    # open pit
         x0, y0, x1, y1 = r
         A(box((x0, y0, ZB), (x1, y1, -192), {'top': T('rock'), 'side': CAULK}))
-    hole((448, -256, 560, -32), T('rock'), g3)
+    hole((448, -256, 560, 0), T('rock'), g3)
     for b in stairs(448, -256, 560, 128, -192, 0, 's', {'top': T('rock'), 'side': T('rock_dark')}, base=-192): A(b)
     weapon('imperius', 512, 324, -168, wait=150)
     item('ammo_imperius', 420, 200, -192)
@@ -759,8 +759,8 @@ def grotto():
     M.ent('trigger_multiple', brushes=[box((452, 136, -184), (556, 200, -120), TRIG)], target='secret', wait=30)
     speaker(504, 168, -140, 'sound/world/misc/secret_found.ogg', loop=False, targetname='secret')
     # rock rim + bushes around the pit
-    A(box((432, -272, 0), (576, -256, 16), T('rock'))); A(box((432, -256, 0), (448, -32, 16), T('rock')))
-    A(box((560, -256, 0), (576, -32, 16), T('rock')))
+    A(box((432, -272, 0), (576, -256, 16), T('rock'))); A(box((432, -256, 0), (448, 0, 16), T('rock')))
+    A(box((560, -256, 0), (576, 0, 16), T('rock')))
 
 
 def slides(TW):
@@ -931,9 +931,9 @@ def pirate_cove():
     A(box((1504, hy0, F), (1568, hy0 + 16, 0), hull_t))                          # door sill
     A(box((1504, 1024, F), (1568, 1056, -24), hull_t)); A(box((1504, 1056, F), (1568, 1088, -8), hull_t))   # steps
     A(box((hx0 + 16, hy0 + 16, F), (hx1 - 16, hy1, 0), {'top': SHIPD, 'side': CAULK}))    # hold floor
-    # deck slab with hatch over interior stairs (x 1424..1488, y 1216..1376)
+    # deck slab with hatch over interior stairs (x 1424..1488, y 1184..1376)
     dk = {'top': SHIPD, 'bot': T('wood_dark'), 'side': SHIPW}
-    A(box((1488, hy0 + 16, 80), (hx1 - 16, hy1, 96), dk)); A(box((hx0 + 16, hy0 + 16, 80), (1488, 1216, 96), dk))
+    A(box((1488, hy0 + 16, 80), (hx1 - 16, hy1, 96), dk)); A(box((hx0 + 16, hy0 + 16, 80), (1488, 1184, 96), dk))   # hatch open over the whole flight
     for b in stairs(1424, 1184, 1488, 1376, 0, 96, 'n', {'top': SHIPD, 'side': T('wood_dark')}): A(b)
     # bow
     A(prism([(hx0, hy1), (hx1, hy1), (1536, 1504)], F, 96, {'top': SHIPD, 'side': SHIPW, 'bot': SHIPW}))
@@ -1057,6 +1057,62 @@ def kids_zone():
     spawn(1000, 300, 0, 0)
 
 
+def snack_bar(Y0, H):
+    """Snack Shack serving counter: tiled counter with display case, register and striped awning; behind it a
+    drinks cooler, slushie machine, coffee and popcorn machines and three chalk menu boards."""
+    CT = T('counter_top')
+    # front counter (tiled body + overhanging top) and the back counter with cabinet doors
+    A(box((1216, -1440, 0), (1728, -1412, 36), {'top': CT, 'n': T('counter_front'), 'e': T('counter_front'),
+                                                'w': T('counter_front'), 's': T('cabinet'), 'bot': CT}))
+    A(box((1208, -1444, 36), (1736, -1404, 42), CT))
+    A(box((1104, Y0 + 16, 0), (1840, Y0 + 48, 64), {'top': CT, 'n': T('cabinet'), 'side': T('metal_white')}))
+    # glass display case on the counter (open at the back for the staff)
+    G = T('glass')
+    A(hull([(x, y, z) for x in (1292, 1448) for (y, z) in ((-1406, 42), (-1410, 42), (-1426, 84), (-1430, 84))], G))
+    A(box((1292, -1440, 84), (1448, -1426, 86), G))
+    for (xa, xb) in ((1290, 1292), (1448, 1450)):
+        A(hull([(x, y, z) for x in (xa, xb) for (y, z) in ((-1406, 42), (-1440, 42), (-1440, 86), (-1426, 86))], G))
+    mdl('pad_ddmix/diner/muffin_blueberry.md3', 1322, -1426, 42, scale=0.18, angle=200)
+    mdl('pad_cake/pad_cakestand.md3', 1372, -1424, 42, scale=0.22)
+    mdl('pad_ddmix/diner/muffin_choco.md3', 1420, -1444, 42, scale=0.18, angle=0)
+    # register, tip jar, condiments
+    mdl('pad_pc/padshop_tft.md3', 1600, -1428, 42, scale=0.12, angle=270)
+    mdl('pad_ddmix/diner/glass_simple.md3', 1650, -1420, 42, scale=0.3)
+    mdl('pad_condiments/pad_ketchup.md3', 1690, -1418, 42, scale=0.3); mdl('pad_condiments/pad_mustard.md3', 1710, -1430, 42, scale=0.3)
+    mdl('pad_ddmix/diner/sugar_packet.md3', 1250, -1424, 42, scale=0.4, angle=30)
+    # striped awning over the counter with a valance, lit underneath
+    A(hull([(x, y, z) for x in (1200, 1744) for (y, z) in ((-1452, 176), (-1452, 170), (-1384, 148), (-1384, 142))], T('awning_red')))
+    A(box((1200, -1384, 128), (1744, -1380, 150), T('awning_red')))
+    for x in (1300, 1470, 1640):
+        light(x, -1420, 118, 150, '1 0.9 0.75')
+    # bar stools in front of the counter
+    for x in (1260, 1340, 1580, 1660):
+        A(cyl(x, -1384, 5, 0, 24, T('metal'), 8)); A(cyl(x, -1384, 12, 24, 30, {'top': T('awning_red'), 'side': T('metal_white'), 'bot': T('metal')}, 10))
+    # behind the counter: drinks cooler, slushie machine, coffee + popcorn machines, cups and bottles
+    zb = 64; yb0, yb1 = -1516, -1494
+    A(box((1112, Y0 + 16, zb), (1176, -1492, 168), {'n': T('fridge'), 'side': T('metal_white'), 'top': T('metal_white'), 'bot': T('metal_white')}))
+    A(box((1196, yb0, zb), (1304, yb1, zb + 10), T('metal_white')))
+    for i, (x0, tex) in enumerate(((1200, 'slush_red'), (1236, 'slush_blue'), (1272, 'slush_green'))):
+        A(box((x0, yb0 + 2, zb + 10), (x0 + 28, yb1 - 2, zb + 44), T(tex)))
+        A(box((x0, yb0 + 2, zb + 44), (x0 + 28, yb1 - 2, zb + 48), T('metal_white')))
+    A(box((1340, yb0, zb + 14), (1390, yb1, zb + 44), {'side': T('metal_dark'), 'top': T('metal'), 'bot': T('metal_dark')}))   # coffee machine
+    A(box((1340, yb0, zb), (1350, yb1, zb + 14), T('metal_dark'))); A(box((1380, yb0, zb), (1390, yb1, zb + 14), T('metal_dark')))
+    A(box((1356, yb1, zb + 34), (1374, yb1 + 2, zb + 40), T('awning_red')))
+    mdl('pad_ddmix/diner/coffe_pot.md3', 1415, -1508, zb, scale=0.16)
+    A(box((1500, yb0, zb), (1560, yb1, zb + 4), T('awning_red')))
+    A(box((1500, yb0, zb + 4), (1560, yb1, zb + 36), T('popcorn')))
+    A(hull([(1496, yb0, zb + 36), (1564, yb0, zb + 36), (1496, yb1, zb + 36), (1564, yb1, zb + 36), (1530, -1505, zb + 50)], T('awning_red')))
+    for k, x in enumerate((1590, 1606, 1622)):
+        mdl(f'pad_cups/pad_cup0{k + 1}.md3', x, -1508, zb, scale=0.12, angle=90)
+    mdl('pad_ddmix/padship/rumbottle1.md3', 1690, -1505, zb, scale=0.14)
+    mdl('pad_ddmix/diner/glass_sunrise.md3', 1730, -1505, zb, scale=0.13)
+    mdl('pad_ddmix/diner/glass_midnight.md3', 1765, -1505, zb, scale=0.13)
+    mdl('pad_ddmix/diner/muffin_blueberry.md3', 1805, -1505, zb, scale=0.16, angle=90)
+    # menu boards on the back wall (fitted, readable from the room)
+    for (x0, tex) in ((1328, 'menu_snacks'), (1480, 'menu_drinks'), (1632, 'menu_ice')):
+        A(sign_box((x0, Y0 + 16, 108), (x0 + 136, Y0 + 19, 172), T(tex), 512, 256, back=T('wood_dark'), facing='n'))
+
+
 def snack_shack():
     X0, Y0, X1, Y1, H = 1088, -1536, 1856, -1024, 176
     wt = T('stucco_coral')
@@ -1074,9 +1130,7 @@ def snack_shack():
     A(box((X0, Y0, H), (X1, Y1, H + 16), {'top': T('deck'), 'side': T('trim_wave'), 'bot': T('stucco_white')}))
     zone((X0 + 16, Y0 + 16, X1 - 16, Y1 - 16), T('tile_white'))
     # counter + kitchen
-    A(box((1216, -1440, 0), (1728, -1408, 40), {'top': T('metal'), 'side': T('teak')}))
-    A(box((1104, Y0 + 16, 0), (1840, Y0 + 48, 64), {'top': T('metal'), 'side': T('metal_white')}))    # back counter
-    A(box((1500, Y0 + 16, 64), (1600, Y0 + 24, 160), T('menu')))
+    snack_bar(Y0, H)
     sign((1256, Y1, 140), (1576, Y1 + 8, 172), 'sign_snack', 'n')
     for (x, y) in ((1300, -1220), (1460, -1180), (1620, -1220), (1380, -1310), (1560, -1310)):
         table(x, y, 0)
@@ -1086,8 +1140,6 @@ def snack_shack():
                              (1460, -1180, 'pad_ddmix/diner/muffin_choco', 0.2), (1620, -1220, 'pad_cups/pad_cup03', 0.12),
                              (1560, -1310, 'pad_ddmix/diner/glass_diner', 0.25), (1380, -1310, 'pad_condiments/salt', 0.3)):
         mdl(mname + '.md3', mx, my, 30, scale=s, angle=int(mx) % 360)
-    for (mx, mname) in ((1260, 'pad_cake/pad_cakestand'), (1420, 'pad_ddmix/diner/coffe_pot'), (1680, 'pad_ddmix/diner/muffin_blueberry')):
-        mdl(mname + '.md3', mx, -1424, 40, scale=0.22 if 'cake' in mname else 0.18)
     for x in range(1180, 1800, 160):
         A(box((x - 32, -1312, H - 8), (x + 32, -1248, H), T('lightpanel')))
     weapon('pumper', 1460, -1360, 0)

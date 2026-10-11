@@ -16,7 +16,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `audit_map.py map --md3root <dir holding models/>` - brush overlaps, entities/items/spawns in solids or
   triggers, models resting on a surface (no floating/overhang) and not sunk into brushes, 3-6 ammo per weapon.
 - `aas_check.py map.aas map.map` - every pickup reachable by bots from the spawns and not a trap (reads the
-  bspc .aas directly; `--points "x,y,z;..."` for extra spots).
+  bspc .aas directly; `--points "x,y,z;..."` for extra spots). `--route @routes.txt` checks designed paths
+  (stairs, hatches, crate climbs, roofs) work on foot both ways while standing, near the straight line between
+  the points, so a back door doesn't hide a blocked front door. `waterpark/routes.txt` is an example.
+  Limit: the AAS sometimes links steps under a low overhang anyway, so still look at stair/ceiling junctions.
 - `sightlines.py map out.png` - long eye-level sightlines (brushes + model boxes block), with a top-down plot.
 - `check_entities.py` - quick entity-in-solid check (superseded by audit_map).
   audit_map also checks misc_externalmodel support and the Nipper (start weapon) ammo count.

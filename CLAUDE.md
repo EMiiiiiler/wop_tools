@@ -22,7 +22,8 @@ Tools and standing rules for building World of Padman (WoP) maps.
 
 ## Tools (see README.md)
 - Generate with `wopmap.py`; place models with `md3bounds.json` so they rest on surfaces.
-- Before delivering any map run: `audit_map.py` (must say RESULT: OK), `aas_check.py` after bspc (RESULT: OK),
+- Before delivering any map run: `audit_map.py` (must say RESULT: OK), `aas_check.py` after bspc with a `--route @routes.txt`
+  covering every stair/hatch/roof (RESULT: OK),
   `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
 - If wopded is available, run the map with bots and read games.log for pickups/frags.
 - `waterpark/` is the reference generator (zones, holes for pools, slides, facades, decoration).
@@ -31,6 +32,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Texture preview: Q3 texture t runs downward; three.js textures need flipY=false or signs look upside down.
 - misc_model is static; animated models need `misc_externalmodel` (no modelscale) with animationStart/End/FPS.
 - Moving decoration: nodraw_ns brush + model2 on func_pendulum/func_rotating, not func_bobbing (bots try to ride bobbers).
+- Headroom: a ceiling edge over stairs needs step top + 56 below it on the step BEFORE the edge, or players must crouch.
 - An item origin must sit 16u above the floor (bbox +-15) or the game drops it as "in solid".
 - Probe AAS areas at floor+25 (standing origin); floor+24 sits exactly on the boundary.
 - Models only appear in-game if q3map2 baked them in; a "failed loading model" error means the compile command's paths are wrong.

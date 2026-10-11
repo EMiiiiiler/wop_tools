@@ -129,6 +129,12 @@ def shader_info(body):
             info['blend'] = None if bf == 'filter' else bf
             if 'alphafunc' in sl: info['alpha'] = True
             if bf == 'filter': info['blend'] = None
+            info['tint'] = None
+            if 'rgbgen' in sl:                  # rgbGen const ( r g b ): dims additive glass, spray...
+                j = sl.index('rgbgen')
+                if sl[j + 1] == 'const':
+                    try: info['tint'] = [float(v) for v in st[j + 2:j + 7] if v not in ('(', ')')][:3]
+                    except Exception: pass
     return info
 
 
@@ -331,7 +337,7 @@ def main():
         # q3 (x,y,z) -> three (x, z, -y)
         p3 = np.stack([pos[:, 0], pos[:, 2], -pos[:, 1]], 1).astype(np.float32)
         rec = {'shader': sname, 'lit': bool(lit), 'tex': tid, 'blend': info.get('blend'), 'alpha': bool(info.get('alpha')),
-               'scroll': info.get('scroll'), 'nv': int(len(pos)), 'ni': int(len(idx))}
+               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'nv': int(len(pos)), 'ni': int(len(idx))}
         for k, arr in (('pos', p3), ('uv', uv.astype(np.float32)), ('uv2', uv2.astype(np.float32)),
                        ('col', (np.clip(col, 0, 255)).astype(np.uint8)), ('idx', idx)):
             while blob.tell() % 4: blob.write(b'\0')
@@ -447,11 +453,11 @@ const scrollers = [];
 const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol;
  uniform vec2 scroll; uniform float time;
  void main(){ vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `;
-const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; uniform float alphaTest; uniform float opacity; uniform float add;
+const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; uniform float alphaTest; uniform float opacity; uniform float add; uniform vec3 tint;
  varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol;
  void main(){ vec4 c = texture2D(map, vUv); if(c.a < alphaTest) discard;
   vec3 light = lit > 0.5 ? texture2D(lm, vUv2).rgb : vCol/255.0;
-  vec3 col = add > 0.5 ? c.rgb : c.rgb * min(light*2.0, vec3(1.6));
+  vec3 col = add > 0.5 ? c.rgb * tint : c.rgb * min(light*2.0, vec3(1.6));
   gl_FragColor = vec4(pow(col, vec3(0.9)), add > 0.5 ? 1.0 : (opacity < 1.0 ? opacity : c.a)); }`;
 for (const m of D.meta){
   const g = new THREE.BufferGeometry();
@@ -462,7 +468,7 @@ for (const m of D.meta){
   g.setIndex(new THREE.BufferAttribute(new Uint32Array(bin, m.idx, m.ni), 1));
   const blend = m.blend; const t = tex(m.tex) || white;
   const u = {map:{value:t}, lm:{value:atlas}, lit:{value:m.lit?1:0}, alphaTest:{value:m.alpha?0.5:0.0},
-             opacity:{value: blend==='blend'?0.55:1.0}, add:{value: blend==='add'?1:0}, scroll:{value:new THREE.Vector2(...(m.scroll||[0,0]))}, time:{value:0}};
+             opacity:{value: blend==='blend'?0.55:1.0}, add:{value: blend==='add'?1:0}, tint:{value:new THREE.Vector3(...(m.tint||[1,1,1]))}, scroll:{value:new THREE.Vector2(...(m.scroll||[0,0]))}, time:{value:0}};
   const mat = new THREE.ShaderMaterial({uniforms:u, vertexShader:VS, fragmentShader:FS, side:THREE.DoubleSide,
      transparent: !!blend, depthWrite: !blend});
   if (blend==='add'){ mat.blending = THREE.AdditiveBlending; }
