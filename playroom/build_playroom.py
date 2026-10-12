@@ -46,6 +46,7 @@ for k, v in {'floor_wood': (2, 2), 'wallpaper': (2, 2), 'dado': (1, 1), 'ceiling
 for _b in 'abcdp':
     wopmap.TEXSCALE[T('block_' + _b)] = (1, 1)       # 128px over a 128u block face
 
+PILLOW = os.environ.get('PILLOW', 'brush')      # 'md3' = curved MD3 pillows from pillow_md3.py
 M = Map({'message': "Padman's Playroom", '_ambient': '6', 'gridsize': '96 96 96', '_blocksize': '0'})
 A = M.add
 RX0, RX1, RY0, RY1, CZ = -1792, 1792, -1536, 1536, 1600
@@ -296,8 +297,23 @@ def bed():
                 cy = ay1 - c if math.sin(ang) > 0 else ay0 + c
                 pts.append((cx + c * math.cos(ang), cy + c * math.sin(ang), z + dz))
         A(hull(pts, T('pillow'), round_pts=False))
-    pillow(X0 + 24, -1484, 1240, 1456, 368)
-    pillow(-1460, X1 - 24, 1240, 1456, 368)
+    if PILLOW == 'md3':
+        # curved MD3 pillows (pillow_md3.py) + a matching invisible weapclip dome each, 60u high like the model
+        for (cx, ang) in ((-1626, 4), (-1318, -3)):
+            M.model('models/mapobjects/playroom/pillow.md3', (cx, 1348, 368), scale=1, angle=ang)
+            pts = []
+            for dz, ins, c in ((0, 2, 40), (8, 14, 44), (22, 30, 52), (37, 50, 64), (47, 80, 72)):
+                ax0, ax1, ay0, ay1 = cx - 142 + ins, cx + 142 - ins, 1240 + ins, 1456 - ins
+                c = min(c, (ax1 - ax0) / 2 - 1, (ay1 - ay0) / 2 - 1)
+                for k in range(16):
+                    an = 2 * math.pi * (k + 0.5) / 16
+                    px = ax1 - c if math.cos(an) > 0 else ax0 + c
+                    py = ay1 - c if math.sin(an) > 0 else ay0 + c
+                    pts.append((px + c * math.cos(an), py + c * math.sin(an), 368 + dz))
+            A(hull(pts, WCLIP, round_pts=False))
+    else:
+        pillow(X0 + 24, -1484, 1240, 1456, 368)
+        pillow(-1460, X1 - 24, 1240, 1456, 368)
     # duvet hanging over the foot end (short flap, stays clear of the floor) + jump pad up onto the bed
     A(box((X0 + 8, Y0 - 8, 232), (X1 - 8, Y0, 384), T('duvet')))
     jumppad(-1470, -220, 0, (-1470, 520, 384), 560, 'jp_bedup')
@@ -315,7 +331,7 @@ def bed():
     light(-1460, 900, 120, 120, '0.5 0.6 1')
     speaker(-1500, 800, 80, 'sound/world/animal/kitten_meow.ogg', loop=False, targetname='meow')
     # on the bed
-    item('item_jumper', -1626, 1348, 424)
+    item('item_jumper', -1626, 1348, 424 if PILLOW != 'md3' else 415)
     item('ammo_pumper', -1620, 900, 384)
     spawn(-1300, 1000, 384, 270)
     jumppad(-1472, 320, 384, (-1500, -1330, 1152), 1290, 'jp_bed')
@@ -911,6 +927,9 @@ def hideout(MH):
 # =================================================================================================== main
 def main():
     textures.make_all(OUT)
+    if PILLOW == 'md3':
+        import pillow_md3
+        pillow_md3.main(OUT)
     os.makedirs(os.path.join(OUT, 'scripts'), exist_ok=True)
     MH = room_shell()
     window_and_outside(); bed(); nightstand(); desk_pad(); desk(); chair(); shelf(); dresser_tank(); wardrobe()
