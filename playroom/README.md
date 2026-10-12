@@ -19,4 +19,4 @@ Helpers worth reusing: `jumppad(x, y, z, land, apex, name)` aims from the trigge
 texture onto a top face (rugs, chess boards), `drawer_box()` builds a cabinet with fitted drawer fronts.
 
 `pillow_md3.py` writes `models/mapobjects/playroom/pillow.md3` + `pillow.jpg` (curved pillow, 284 x 216 x 61).
-Build with `PILLOW=md3` to use it on the bed instead of the brush pillows (a weapclip dome gives it collision).
+The bed uses it by default (`PILLOW=brush` brings back the brush pillows) (a weapclip dome gives it collision).

@@ -46,7 +46,7 @@ for k, v in {'floor_wood': (2, 2), 'wallpaper': (2, 2), 'dado': (1, 1), 'ceiling
 for _b in 'abcdp':
     wopmap.TEXSCALE[T('block_' + _b)] = (1, 1)       # 128px over a 128u block face
 
-PILLOW = os.environ.get('PILLOW', 'brush')      # 'md3' = curved MD3 pillows from pillow_md3.py
+PILLOW = os.environ.get('PILLOW', 'md3')        # 'md3' = curved MD3 pillows (pillow_md3.py), 'brush' = old brush pillows
 M = Map({'message': "Padman's Playroom", '_ambient': '6', 'gridsize': '96 96 96', '_blocksize': '0'})
 A = M.add
 RX0, RX1, RY0, RY1, CZ = -1792, 1792, -1536, 1536, 1600
