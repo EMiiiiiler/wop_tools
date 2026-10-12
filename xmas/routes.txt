@@ -1,0 +1,13 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @xmas/routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height)
+ginger_door:      1600,-900,0 > 1600,-1250,0
+# ginger_ramp: players walk the candy ramp onto the roof; bspc leaves a groundless strip at the eave seam, bots use jp_ginger
+ginger_ridge:     1500,-1180,369 > 1500,-1300,420
+tree_cave_s:      0,-520,4 > 120,-200,4
+tree_cave_e:      1060,560,0 > 800,640,4
+tree_ring1:       816,512,512 > 782,724,512
+tree_ring2:       308,1045,832 > -308,1045,832
+tree_ring3:       416,512,1152 > 294,806,1152
+mantel_walk:      -1815,420,688 > -1815,-160,688
+sleigh_step:      -2100,-720,2128 > -1780,-720,2192
+roof_tp:          -1650,0,2128 > -1300,250,2128

@@ -12,6 +12,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   `compile.sh` / `render.sh`. `textures.py` makes all textures, the shader and the arena.
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
+- `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
+  see xmas/README.md.
+- `lfs_fetch.py` - replace LFS stubs in a shallow WoP checkout with the real files; `--map maps/x.map` pulls every md3,
+  the images its shaders use (resolved through WoP's shader scripts) and the map's skybox.
 
 ## Checks (run on every map)
 - `audit_map.py map --md3root <dir holding models/>` - brush overlaps, entities/items/spawns in solids or
@@ -22,6 +26,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   the points, so a back door doesn't hide a blocked front door. `waterpark/routes.txt` is an example.
   Limit: the AAS sometimes links steps under a low overhang anyway, so still look at stair/ceiling junctions.
 - `sightlines.py map out.png` - long eye-level sightlines (brushes + model boxes block), with a top-down plot.
+- `pad_check.py map --shaders <dirs>` - flies every jump pad (AimAtTarget velocity, player box, 125 Hz) against the
+  solid/clip brushes and reports where it lands or what blocks the arc. bspc is stricter, so still run aas_check.
 - `check_entities.py` - quick entity-in-solid check (superseded by audit_map).
   audit_map also checks misc_externalmodel support and the Nipper (start weapon) ammo count.
 
