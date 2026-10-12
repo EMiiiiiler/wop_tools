@@ -253,6 +253,96 @@ def sub_rects(outer, holes):
     return out
 
 
+# ------------------------------------------------------------------ CSG (carve one brush with others)
+def planes_verts(P, eps=0.01):
+    """vertices of the convex region {x : n.x <= d for all (n, d) in P}"""
+    from itertools import combinations
+    m = len(P)
+    if m < 4: return np.zeros((0, 3))
+    N = np.array([p[0] for p in P], dtype=np.float64); D = np.array([p[1] for p in P], dtype=np.float64)
+    tri = np.array(list(combinations(range(m), 3)))
+    Am = N[tri]; det = np.linalg.det(Am)
+    ok = np.abs(det) > 1e-9
+    tri, Am = tri[ok], Am[ok]
+    if len(tri) == 0: return np.zeros((0, 3))
+    V = np.linalg.solve(Am, D[tri][..., None])[..., 0]
+    inside = np.all(V @ N.T - D[None, :] <= eps, axis=1)
+    V = V[inside]
+    if len(V) == 0: return V
+    V = np.unique(np.round(V, 3), axis=0)
+    return V
+
+
+def _prune(P, V):
+    """drop planes that don't carry a face (fewer than 3 vertices on them)"""
+    out = []
+    for n, d in P:
+        if np.count_nonzero(np.abs(V @ n - d) < 1e-3) >= 3 and \
+           not any(np.allclose(n, q[0], atol=1e-7) and abs(d - q[1]) < 1e-5 for q in out):
+            out.append((n, d))
+    return out
+
+
+def _thick_enough(P, V, min_thick):
+    if len(V) < 4: return False
+    for n, d in P:
+        dist = d - V @ np.asarray(n)
+        if dist.max() > 1e-3 and dist.max() < min_thick: return False
+    ext = V.max(0) - V.min(0)
+    return bool(np.all(ext >= min_thick))
+
+
+def brush_from_planes(P, tex, detail=True):
+    V = planes_verts(P)
+    faces = []; seen = []
+    for n, d in P:
+        n = np.asarray(n, dtype=np.float64)
+        if any(np.allclose(n, q[0], atol=1e-6) and abs(d - q[1]) < 1e-4 for q in seen): continue
+        on = V[np.abs(V @ n - d) < 1e-3]
+        if len(on) < 3: continue
+        seen.append((n, d))
+        c0 = on.mean(0)
+        a = on[np.argmax(((on - c0) ** 2).sum(1))]
+        b = on[np.argmax(((on - a) ** 2).sum(1))]
+        c = on[np.argmax(np.abs(np.cross(on - a, b - a) @ n))]
+        pts = [tuple(a), tuple(b), tuple(c)]
+        nn = _cross(_sub(pts[0], pts[1]), _sub(pts[2], pts[1]))
+        if _dot(nn, n) < 0: pts = [pts[2], pts[1], pts[0]]
+        t = _pick_tex(tex, n)
+        faces.append(Face(pts, t, default_scale(t)))
+    return Brush(faces, detail)
+
+
+def carve(brush, cutters, tex=None, min_thick=1.0):
+    """CSG-subtract every cutter brush from `brush`; returns convex pieces (Brush list) that cover brush minus cutters.
+    Axial cutter planes are used first to keep the pieces box-like; pieces thinner than min_thick are dropped."""
+    tex = tex or next(iter(brush.textures()))
+    pieces = [[(np.asarray(n, dtype=np.float64), float(d)) for n, d in brush.planes()]]
+    for cb in cutters:
+        CP = [(np.asarray(n, dtype=np.float64), float(d)) for n, d in cb.planes()]
+        CP.sort(key=lambda p: -np.max(np.abs(p[0])))
+        cmn, cmx = cb.bounds()
+        nxt = []
+        for P in pieces:
+            V = planes_verts(P)
+            if len(V) == 0: continue
+            if np.any(V.min(0) >= cmx - 1e-3) or np.any(V.max(0) <= cmn + 1e-3):
+                nxt.append(P); continue
+            cur = list(P); inside = True
+            for n, d in CP:
+                outp = cur + [(-n, -d)]
+                Vo = planes_verts(outp)
+                if _thick_enough(outp, Vo, min_thick): nxt.append(_prune(outp, Vo))
+                cur = cur + [(n, d)]
+                Vc = planes_verts(cur)
+                if len(Vc): cur = _prune(cur, Vc)
+                if not _thick_enough(cur, Vc, 0.01):
+                    inside = False; break
+            # whatever is left in `cur` lies inside the cutter: dropped
+        pieces = nxt
+    return [brush_from_planes(P, tex, brush.detail) for P in pieces]
+
+
 # ------------------------------------------------------------------ map
 class Map:
     def __init__(self, worldspawn=None):

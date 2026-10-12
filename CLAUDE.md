@@ -52,3 +52,13 @@ Tools and standing rules for building World of Padman (WoP) maps.
   seam (bots can't walk up): give bots a pad (`xmas/`).
 - autosprite2 needs thin quads, taller than wide (flames: 2u slabs, nodraw on the other faces); `alphaGen const`
   replaces the texture's alpha, so don't use it on alpha-cutout sprites (smoke turned into a solid rectangle).
+- func_bobbing as a bot ferry (padbath/README.md): bspc links it to grounded areas within 192u of each end outline, using the
+  top of the mover's model + 24 as the plane, so the hull entity must be flat at deck height (superstructure = second
+  func_bobbing with identical keys). botlib boards only within 16u of the start and gets off within 24u of the end: short
+  boat, clear deck centre, dock against a clean pier exactly the boat's width, nothing else within 192u. Bobbers instakill
+  anyone they pin (MOD_CRUSH regardless of dmg).
+- Bots drown under large low ceilings over water; stand floating-looking structures on the floor.
+- A convex brush with 45-degree bevels next to a ramp face left the ramp area ungrounded in bspc (no links); keep ramps
+  as plain profiles.
+- Water overlapping solids fails audit_map: build one water box and `carve()` it; draw only the surface faces and give the
+  internal faces a nodraw water shader (q3map2 only culls exactly coincident faces).
