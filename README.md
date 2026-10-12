@@ -4,13 +4,14 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 
 ## Map building
 - `wopmap.py` - brush/entity library. Brushes are convex hulls of points (boxes, wedges, ramps, n-gon prisms,
-  slanted slide segments...), `stairs()` (16u rise, optional thin slabs), `sub_rects()` for cutting holes,
+  slanted slide segments...), `stairs()` (16u rise, optional thin slabs), `sub_rects()` for cutting holes, `carve()` (CSG: subtract brushes from a brush, e.g. water around everything in it),
   `sign_box()`/`fit_face()` for exactly-fitted, never-mirrored sign textures, `Map` writer.
 - `md3tool.py` - MD3 reader. `python3 md3tool.py bounds <models root> md3bounds.json` rebuilds the bounds table.
 - `md3bounds.json` - real bounds of every WoP map object (place models with `origin z = surface - zmin*scale`).
 - `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`), plus dev
   `compile.sh` / `render.sh`. `textures.py` makes all textures, the shader and the arena.
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
+- `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
   see xmas/README.md.
@@ -24,17 +25,19 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   bspc .aas directly; `--points "x,y,z;..."` for extra spots). `--route @routes.txt` checks designed paths
   (stairs, hatches, crate climbs, roofs) work on foot both ways while standing, near the straight line between
   the points, so a back door doesn't hide a blocked front door. `waterpark/routes.txt` is an example.
+  With team spawns + lollies it also prints each team's capture run (spawns -> enemy lolly -> home) and the travel types.
   Limit: the AAS sometimes links steps under a low overhang anyway, so still look at stair/ceiling junctions.
 - `sightlines.py map out.png` - long eye-level sightlines (brushes + model boxes block), with a top-down plot.
 - `pad_check.py map --shaders <dirs>` - flies every jump pad (AimAtTarget velocity, player box, 125 Hz) against the
   solid/clip brushes and reports where it lands or what blocks the arc. bspc is stricter, so still run aas_check.
+- `mover_sweep.py map` - every func_bobbing's swept volume (+-height along its axis) must clear the static brushes.
 - `check_entities.py` - quick entity-in-solid check (superseded by audit_map).
   audit_map also checks misc_externalmodel support and the Nipper (start weapon) ammo count.
 
 ## Preview
 - `preview/bsp2scene.py` - compiled .bsp -> self-contained three.js page (lightmaps, vertex-lit models, sky,
   item markers, camera buttons). Brush movers with an origin are put back in place, and mover `model2`s and
-  `misc_externalmodel`s (not baked into the bsp) are loaded from the md3s in the --vfs folders. `--threeurl` for a CDN build, `--three` to inline a local one.
+  `misc_externalmodel`s (not baked into the bsp) are loaded, func_bobbing movers bob live, from the md3s in the --vfs folders. `--threeurl` for a CDN build, `--three` to inline a local one.
 - `preview/shoot.py` - headless Chromium screenshots of that page from Q3 camera positions.
 - `preview/levelshots.py` - WoP-style levelshots (`<map>.jpg` cover, `<map>A.jpg`, animated `<map>B1..B3`).
 

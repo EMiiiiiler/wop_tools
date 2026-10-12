@@ -242,7 +242,21 @@ def main():
             except Exception:
                 pass
 
-    groups = {}   # (shader, lit) -> lists
+    # func_bobbing movers: their surfaces get their own groups and bob in the page (Q3 TR_SINE: base + h*sin(2pi(t/T + phase)))
+    surf_anim = {}; anims = []
+    for e in ent_list:
+        m = e.get('model', '')
+        if e.get('classname') == 'func_bobbing' and m.startswith('*'):
+            try:
+                k = int(m[1:]); md = read_bsp.models[k]
+            except Exception:
+                continue
+            sf = int(e.get('spawnflags', 0) or 0)
+            ax = 0 if sf & 1 else (1 if sf & 2 else 2)
+            anims.append({'axis': ax, 'h': float(e.get('height', 32)), 'T': float(e.get('speed', 4)), 'ph': float(e.get('phase', 0))})
+            for si in range(md['fs'], md['fs'] + md['ns']): surf_anim[si] = len(anims) - 1
+
+    groups = {}   # (shader, lit, anim) -> lists
     sky_name = a.sky
     for si, s in enumerate(surfs):
         sname = shaders[s['shader']][0]
@@ -272,7 +286,7 @@ def main():
             lm2 = np.stack([u2, v2], 1)
         else:
             lm2 = np.zeros((len(xyz), 2), np.float32)
-        key = (sname, lmn >= 0)
+        key = (sname, lmn >= 0, surf_anim.get(si, -1))
         g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
         g['pos'].append(np.asarray(xyz, np.float32)); g['uv'].append(np.asarray(st, np.float32))
         g['uv2'].append(np.asarray(lm2, np.float32)); g['col'].append(np.asarray(col, np.float32)[:, :3])
@@ -298,7 +312,7 @@ def main():
         R = np.array([[c, sn, 0], [-sn, c, 0], [0, 0, 1]], np.float32)
         for srf in md['surfaces']:
             sname = srf['shader'] or ''
-            key = (sname, False)
+            key = (sname, False, -1)
             g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
             v = srf['verts'] @ R + o
             g['pos'].append(v.astype(np.float32)); g['uv'].append(srf['st'].astype(np.float32))
@@ -308,7 +322,7 @@ def main():
 
     blob = io.BytesIO(); meta = []; tex_cache = {}; textures = {}
     missing = set()
-    for (sname, lit), g in sorted(groups.items()):
+    for (sname, lit, anim), g in sorted(groups.items()):
         info = shinfo.get(sname.lower(), {})
         img = info.get('img') or sname
         p = find_image(img, a.vfs) or (find_image(info['editor'], a.vfs) if info.get('editor') else None) or find_image(sname, a.vfs)
@@ -325,7 +339,8 @@ def main():
         # q3 (x,y,z) -> three (x, z, -y)
         p3 = np.stack([pos[:, 0], pos[:, 2], -pos[:, 1]], 1).astype(np.float32)
         rec = {'shader': sname, 'lit': bool(lit), 'tex': tid, 'blend': info.get('blend'), 'alpha': bool(info.get('alpha')),
-               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'nv': int(len(pos)), 'ni': int(len(idx))}
+               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'nv': int(len(pos)), 'ni': int(len(idx)),
+               'anim': (anim if anim >= 0 else None)}
         for k, arr in (('pos', p3), ('uv', uv.astype(np.float32)), ('uv2', uv2.astype(np.float32)),
                        ('col', (np.clip(col, 0, 255)).astype(np.uint8)), ('idx', idx)):
             while blob.tell() % 4: blob.write(b'\0')
@@ -373,7 +388,7 @@ def main():
     html = TEMPLATE.replace('%%THREE%%', three_tag).replace('%%TITLE%%', title).replace('%%SUB%%', a.sub)
     html = html.replace('%%STYLE%%', open(a.style).read() if a.style else '')
     html = html.replace('%%VIEWS%%', '<script>window.__VIEWS=' + json.dumps(views) + ';</script>')
-    html = html.replace('%%DATA%%', json.dumps({'meta': meta, 'tex': textures, 'atlas': atlas_url, 'sky': sky,
+    html = html.replace('%%DATA%%', json.dumps({'meta': meta, 'tex': textures, 'atlas': atlas_url, 'sky': sky, 'anims': anims,
                                                  'marks': marks, 'blob': data_b64}))
     open(a.out, 'w').write(html)
     tv = sum(m['nv'] for m in meta); ti = sum(m['ni'] for m in meta) // 3
@@ -437,7 +452,7 @@ function tex(id){ if(!id) return null; if(texs[id]) return texs[id]; pending++;
 pending++; const atlas = loader.load(D.atlas, ()=>{pending--;}); atlas.flipY=false; atlas.colorSpace = THREE.NoColorSpace;
 atlas.magFilter = THREE.LinearFilter; atlas.minFilter = THREE.LinearFilter; atlas.generateMipmaps=false;
 const white = new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1); white.needsUpdate = true;
-const scrollers = [];
+const scrollers = []; const movers = [];
 const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol;
  uniform vec2 scroll; uniform float time;
  void main(){ vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `;
@@ -462,6 +477,7 @@ for (const m of D.meta){
   if (blend==='add'){ mat.blending = THREE.AdditiveBlending; }
   if (m.scroll) scrollers.push(u.time);
   const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; if (blend) mesh.renderOrder = 2; scene.add(mesh);
+  if (m.anim !== null && m.anim !== undefined) movers.push([mesh, D.anims[m.anim]]);
 }
 if (D.sky){ const L = new THREE.CubeTextureLoader(); pending++;
   const order = ['lf','rt','up','dn','ft','bk'];
@@ -498,6 +514,8 @@ document.querySelectorAll('#pad button').forEach(b=>{ const k=b.dataset.k;
 addEventListener('resize', ()=>{ camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 let last = performance.now();
 function loop(now){ const dt = Math.min(0.05, (now-last)/1000); last = now;
+  for (const [mesh, a] of movers){ const d = a.h*Math.sin(2*Math.PI*(now/1000/a.T + a.ph));
+    if (a.axis===0) mesh.position.x = d; else if (a.axis===1) mesh.position.z = -d; else mesh.position.y = d; }
   const sp = (keys['shift']?1600:600)*dt; const f = new THREE.Vector3(); camera.getWorldDirection(f);
   const r = new THREE.Vector3().crossVectors(f, camera.up).normalize();
   if (keys['w']||keys['arrowup']) camera.position.addScaledVector(f, sp);
