@@ -5,7 +5,10 @@
 H=$(cd "$(dirname "$0")" && pwd); O=${OUT:-$H/out}; G=${GAME:-$HOME/Games/wop}
 OUT=$O python3 $H/build_playroom.py > /dev/null || exit 1
 [ -f $O/scripts/custinfoparms.txt ] || echo "note: copy XTRAS/mapping/scripts/custinfoparms.txt to $O/scripts/"
-python3 $H/../audit_map.py $O/maps/wop_padplayroom.map --md3root $G/wop/models.pk3dir --shaders $O --shaders $G/wop/scripts.pk3dir | sed -n '/problem/p;/RESULT/p'
+# audit needs one models root: merge WoP's catalog with this map's own models (symlinks)
+R=$(mktemp -d); cp -rs $G/wop/models.pk3dir/models $R/ 2>/dev/null; [ -d $O/models ] && cp -rsf $O/models $R/
+python3 $H/../audit_map.py $O/maps/wop_padplayroom.map --md3root $R --shaders $O --shaders $G/wop/scripts.pk3dir | sed -n '/problem/p;/RESULT/p'
+rm -rf $R
 GAME=$G $H/compile.sh $O ${*:-"-fast -samples 2 -filter"}
 grep -i leak $O/bspc.log
 python3 $H/../aas_check.py $O/maps/wop_padplayroom.aas $O/maps/wop_padplayroom.map --route @$H/routes.txt | grep -v " OK$"

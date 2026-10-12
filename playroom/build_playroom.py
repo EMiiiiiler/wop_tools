@@ -317,7 +317,7 @@ def bed():
         pillow(-1460, X1 - 24, 1240, 1456, 368)
     # duvet hanging over the foot end (short flap, stays clear of the floor) + jump pad up onto the bed
     A(box((X0 + 8, Y0 - 8, 232), (X1 - 8, Y0, 384), T('duvet')))
-    jumppad(-1470, -220, 0, (-1470, 520, 384), 560, 'jp_bedup')
+    jumppad(-1210, -230, 0, (-1450, 520, 384), 600, 'jp_bedup')      # beside the book tent, clear sky above
     jumppad(-960, 960, 0, (-1450, 760, 384), 560, 'jp_bedside')      # alongside the bed, east side
     # under the bed (z 0..176): shoebox, comics, socks, lost ball; dim night light
     A(box((-1660, 1000, 0), (-1400, 1240, 96), {'side': T('shoebox'), 'top': T('cardboard')}))
@@ -833,9 +833,9 @@ def floor_toys():
             pts += [(xa, y, 0), (xa + (th if xa < xb else -th), y, 0), (xb, y, rz), (xb, y, rz - th * 1.6)]
         A(hull(pts, {'side': T('book_purple'), 'bot': T('pages'), 'top': T('book_purple')}, round_pts=False))
     item('item_armor_shard', -1470, -280, 0)
-    mdl_c('pad_pencils/pad_pencilsr_lg.md3', -1180, -160, 0, angle=70)
-    mdl_c('pad_pencils/pad_pencilsbl_lg.md3', -1150, -220, 0, angle=95)
-    mdl_c('pad_pencils/pad_pencilsy_lg.md3', -1210, -260, 0, angle=40)
+    mdl_c('pad_pencils/pad_pencilsr_lg.md3', -1110, -40, 0, angle=70)
+    mdl_c('pad_pencils/pad_pencilsbl_lg.md3', -1290, -40, 0, angle=95)
+    mdl_c('pad_pencils/pad_pencilsy_lg.md3', -1600, -40, 0, angle=40)
 
     # wooden toy train along the north wall: engine + two wagons of blocks (cover and a little climb)
     def wheel(x, y0, y1, r=28):
