@@ -22,7 +22,8 @@ Tools and standing rules for building World of Padman (WoP) maps.
 
 ## Tools (see README.md)
 - Generate with `wopmap.py`; place models with `md3bounds.json` so they rest on surfaces.
-- Before delivering any map run: `audit_map.py` (must say RESULT: OK), `aas_check.py` after bspc with a `--route @routes.txt`
+- In a fresh cloud session, `lfs_fetch.py <wop repo> --map maps/x.map` gets the real md3s/textures/sky the map uses.
+- Before delivering any map run: `audit_map.py` (must say RESULT: OK), `pad_check.py` (every pad lands), `aas_check.py` after bspc with a `--route @routes.txt`
   covering every stair/hatch/roof (RESULT: OK),
   `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
 - If wopded is available, run the map with bots and read games.log for pickups/frags.
@@ -45,3 +46,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Don't place `item_berserker` until WoP fixes g_items.c Pickup_Powerup: it calls G_ForceClientWeapon(ent->client)
   on the item entity (NULL client) and the server segfaults on pickup (found with wopded + gdb on WoP main, Oct 2026).
 - misc_model has no collision. Give big models a weapclip box (`playroom/build_playroom.py` solid_mdl()).
+- misc_model has no collision for other models either: food on a plate *model* floats; use a thin brush plate.
+- bspc gives no walk-off links from steep (unwalkable) skirts, so bots get trapped on stacked cone tiers: add an outward
+  "fling" jump pad per tier. A ramp meeting a separate roof slab at the same pitch leaves a groundless AAS strip at the
+  seam (bots can't walk up): give bots a pad (`xmas/`).
+- autosprite2 needs thin quads, taller than wide (flames: 2u slabs, nodraw on the other faces); `alphaGen const`
+  replaces the texture's alpha, so don't use it on alpha-cutout sprites (smoke turned into a solid rectangle).

@@ -223,18 +223,6 @@ def main():
     ents, shaders, dv, di, surfs, lms, bmodels = read_bsp(a.bsp)
     ent_list = parse_entities(ents)
     shinfo = parse_shaders(a.vfs)
-    # brush entities with an origin (movers, trains with origin brushes) store their surfaces relative to it
-    surf_off = {}
-    for e in ent_list:
-        m = e.get('model', '')
-        if m.startswith('*') and e.get('origin'):
-            try:
-                o = np.array([float(v) for v in e['origin'].split()], np.float32)
-                fs, ns = bmodels[int(m[1:])][6:8]
-                for k in range(fs, fs + ns): surf_off[k] = o
-            except Exception:
-                pass
-
     # lightmap atlas
     n = max(1, len(lms)); cols = int(np.ceil(np.sqrt(n))); rows = int(np.ceil(n / cols))
     atlas = np.full((rows * 128, cols * 128, 3), 255, np.uint8)
@@ -275,7 +263,7 @@ def main():
             V = dv[fv:fv + nv]
             xyz, st, lmst, col = V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)
             tris = di[fi:fi + ni].astype(np.int64)
-        if si in surf_off: xyz = np.asarray(xyz, np.float32) + surf_off[si]
+        if surf_off[si].any(): xyz = np.asarray(xyz, np.float32) + surf_off[si]   # (an ndarray: 'si in surf_off' tested values)
         lmn = int(s['lm'])
         if lmn >= 0:
             li = lmn; ax = (li % cols) * 128; ay = (li // cols) * 128
