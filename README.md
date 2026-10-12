@@ -30,6 +30,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `sightlines.py map out.png` - long eye-level sightlines (brushes + model boxes block), with a top-down plot.
 - `pad_check.py map --shaders <dirs>` - flies every jump pad (AimAtTarget velocity, player box, 125 Hz) against the
   solid/clip brushes and reports where it lands or what blocks the arc. bspc is stricter, so still run aas_check.
+- `mover_sweep.py map` - every func_bobbing's swept volume (+-height along its axis) must clear the static brushes.
 - `check_entities.py` - quick entity-in-solid check (superseded by audit_map).
   audit_map also checks misc_externalmodel support and the Nipper (start weapon) ammo count.
 

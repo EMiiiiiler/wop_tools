@@ -189,6 +189,8 @@ def make_textures(W):
     # ---------------------------------------------------------------- toy ferries
     W.save('boat_yellow', hull((236, 196, 40), 81))
     W.save('boat_green', hull((60, 170, 90), 82))
+    W.save('boat_red', hull((210, 70, 60), 85))
+    W.save('boat_blue', hull((60, 110, 210), 86))
     W.save('boat_deck', planks(n, (180, 120, 70), 6, 83, gap=(70, 46, 26)))
     im = Image.new('RGB', (256, 128), (240, 240, 236)); d = ImageDraw.Draw(im)
     for k in range(3):
@@ -316,7 +318,7 @@ def make_shader(W, out):
     shinies = {'enamel': 0.12, 'enamel_floor': 0.08, 'chrome': 0.45, 'rail': 0.4, 'drain': 0.3, 'tile_wall': 0.08, 'tile_blue': 0.08,
                'tile_border': 0.08, 'bottle_teal': 0.15, 'bottle_pink': 0.15, 'bottle_white': 0.12, 'ring_red': 0.12, 'ring_orange': 0.12,
                'ring_yellow': 0.12, 'ring_green': 0.12, 'ring_blue': 0.12, 'ring_purple': 0.12, 'float_white': 0.1, 'cup_plastic': 0.12,
-               'soap': 0.06, 'soap_top': 0.06, 'boat_yellow': 0.1, 'boat_green': 0.1, 'lamp_rim': 0.3}
+               'soap': 0.06, 'soap_top': 0.06, 'boat_yellow': 0.1, 'boat_green': 0.1, 'boat_red': 0.1, 'boat_blue': 0.1, 'lamp_rim': 0.3}
     special = {'water', 'caustics', 'bubbles', 'lamp', 'nodraw_ns', 'flag_red', 'flag_blue', 'glass_shelf', 'drip', 'jumppad'}
     for nme in sorted(W.sizes):
         if nme in special: continue

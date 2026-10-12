@@ -32,7 +32,7 @@ OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MAPNAME = 'wop_padbath'
 T = lambda n: 'padbath/' + n
 CAULK = 'common/caulk'; CLIP = 'common/clip'; WCLIP = 'common/weapclip'; TRIG = 'common/trigger'; NODRAW = 'common/nodraw'
-NODRAW_NS = T('nodraw_ns')
+NODRAW_NS = T('nodraw_ns'); BOTCLIP = 'common/botclip'
 
 for k, v in {'tile_wall': (1, 1), 'tile_blue': (1, 1), 'ceiling': (2, 2), 'enamel': (2, 2), 'enamel_floor': (1, 1),
              'curtain': (1, 1.5), 'hull_red': (1, 1), 'hull_blue': (1, 1), 'hull_bottom': (1, 1), 'deck': (0.75, 0.75),
@@ -60,6 +60,11 @@ BOAT_HX = 128                             # ferry half length along x (short: bo
 PIER = 224                                # landing pier in front of each dock (x HIN..HIN+PIER)
 BOB_H = -(HIN + PIER + 2 + BOAT_HX)       # 1278: ferry centre at the red pier (2u gap: nothing to fall through)
 BOB_T = 16                                # bob period (s): a ferry leaves each ship every 8 s
+# third route: a shuttle from each ship's inboard side to the ring-stacker hub (low boats, deck z 48)
+SH_HY, SH_HX, SH_DECK = 112, 128, 48
+SH_W = HIN + PIER + 2 + SH_HX                    # shuttle centre at the ship stage (-1278)
+SH_E = -(BASE_R_AP := 329.5) - 72 - 2 - SH_HX    # shuttle centre at the hub stage (-530)
+SH_MID, SH_H, SH_T = (SH_W + SH_E) / 2, (SH_E - SH_W) / 2, 10
 PERCH_Z = 832                             # tap spout / shower head perch top
 SHELF_Z = 832                             # wall shelf top
 BOUNDS = json.load(open(os.path.join(os.path.dirname(HERE), 'md3bounds.json')))
@@ -269,16 +274,20 @@ def ship(s):
     hull_t = T('hull_' + team); trim = T('trim_' + team)
     up = {'side': hull_t, 'top': T('deck'), 'bot': CAULK}
     lo = {'side': T('hull_bottom'), 'top': CAULK, 'bot': T('hull_bottom')}
-    # straight hull (the toy ships stand on the tub floor: no low ceilings over the water for bots to drown under)
-    A(sh(s, [(SX + sg * 224, y, z) for sg in (-1, 1) for y in (STERN, BOW0) for z in (FZ, 0)], lo))
+    # straight hull: the ships float with a 96u draft, sides tucked in 32u at the keel. Under each ship a botclip block
+    # (invisible, players swim through it) keeps bots from routing under the hull, where they would drown.
+    KEEL = -96
+    A(sh(s, [(SX + sg * bw, y, z) for sg in (-1, 1) for y in (STERN, BOW0) for (bw, z) in ((192, KEEL), (224, 0))], lo))
     A(sh(s, [(SX + sg * 224, y, z) for sg in (-1, 1) for y in (STERN, BOW0) for z in (0, DECK)], up))
     # raked bow
-    A(sh(s, [(SX - 224, BOW0, FZ), (SX + 224, BOW0, FZ), (SX - 224, BOW0, 0), (SX + 224, BOW0, 0), (SX, 862, FZ), (SX, 862, 0)], lo))
+    A(sh(s, [(SX - 192, BOW0, KEEL), (SX + 192, BOW0, KEEL), (SX - 224, BOW0, 0), (SX + 224, BOW0, 0), (SX, 820, KEEL), (SX, 862, 0)], lo))
+    A(sh(s, [(SX + sg * 224, y, z) for sg in (-1, 1) for y in (STERN, BOW0) for z in (FZ, KEEL)], BOTCLIP))
+    A(sh(s, [(SX - 224, BOW0, FZ), (SX + 224, BOW0, FZ), (SX - 224, BOW0, KEEL), (SX + 224, BOW0, KEEL), (SX, 862, FZ), (SX, 862, KEEL)], BOTCLIP))
     A(sh(s, [(SX - 224, BOW0, 0), (SX + 224, BOW0, 0), (SX - 224, BOW0, DECK), (SX + 224, BOW0, DECK), (SX, 862, 0), (SX, BOWTIP, DECK)], up))
     # bulwarks (16u) with gaps at both ferry docks and the stern ramp
     bt = {'side': trim, 'top': trim, 'bot': CAULK}
     A(sb(s, HOUT, STERN, DECK, HOUT + 8, BOW0, DECK + 16, bt))
-    for (y0, y1) in ((STERN, -LANE[1] - 16), (-LANE[0] + 16, LANE[0] - 16), (LANE[1] + 16, BOW0)):
+    for (y0, y1) in ((STERN, -LANE[1] - 16), (-LANE[0] + 16, -SH_HY - 16), (SH_HY + 16, LANE[0] - 16), (LANE[1] + 16, BOW0)):
         A(sb(s, HIN - 8, y0, DECK, HIN, y1, DECK + 16, bt))
     # bow bulwarks: outer edge on the hull edge, inner edge 8u inside, cut at y = BOW0 and at the centreline
     L = math.hypot(224, BOWTIP - BOW0); off = 8 * L / (BOWTIP - BOW0)      # horizontal inset of the inner edge
@@ -291,9 +300,10 @@ def ship(s):
     A(sb(s, HOUT + 8, STERN, DECK, RX0, STERN + 8, DECK + 16, bt))
     A(sb(s, RX1, STERN, DECK, HIN - 8, STERN + 8, DECK + 16, bt))
     # stern boarding ramp: out of the water up to the deck
-    rb = ramp(RX0, -1040, RX1, STERN, FZ, -72, DECK, 'n', {'top': T('deck'), 'side': hull_t, 'bot': T('hull_bottom')})
-    if s < 0: rb = ramp(-RX1, -STERN, -RX0, 1040, FZ, -72, DECK, 's', {'top': T('deck'), 'side': hull_t, 'bot': T('hull_bottom')})
+    rb = ramp(RX0, -1040, RX1, STERN, KEEL, -72, DECK, 'n', {'top': T('deck'), 'side': hull_t, 'bot': T('hull_bottom')})
+    if s < 0: rb = ramp(-RX1, -STERN, -RX0, 1040, KEEL, -72, DECK, 's', {'top': T('deck'), 'side': hull_t, 'bot': T('hull_bottom')})
     A(rb)
+    A(sb(s, RX0, -1040, FZ, RX1, STERN, KEEL, BOTCLIP))
     # landing piers in front of both docks (standing on the tub floor). bspc links the ferry to every grounded area
     # within 192u of its end position; a clean pier keeps those links short so bots step on and off in time.
     # the pier is exactly as wide as the ferry at its dock edge, so a bot walking from anywhere near it to the ferry's
@@ -311,9 +321,14 @@ def ship(s):
         A(ramp(-HIN - PIER + 64, LANE[1], -HIN, LANE[1] + RL, FZ, -72, DECK, 's', pt))
     # ship name board on the inboard hull side (between the docks)
     if s > 0:
-        A(sign_box((HIN, -192, 24), (HIN + 4, 192, 96), T('name_red'), 512, 96, back=trim, facing='e'))
+        A(sign_box((HIN, 140, 40), (HIN + 4, 332, 76), T('name_red'), 512, 96, back=trim, facing='e'))
     else:
-        A(sign_box((-HIN - 4, -192, 24), (-HIN, 192, 96), T('name_blue'), 512, 96, back=trim, facing='w'))
+        A(sign_box((-HIN - 4, -332, 40), (-HIN, -140, 76), T('name_blue'), 512, 96, back=trim, facing='w'))
+    # shuttle stage: low landing exactly as wide as the shuttle, stairs up to the deck at its back
+    A(sb(s, HIN, -SH_HY, FZ, HIN + PIER, SH_HY, SH_DECK, pt))
+    for b in stairs(HIN, -SH_HY, HIN + 160, SH_HY, SH_DECK, DECK, 'w', pt, base=SH_DECK):
+        mn, mx = b.bounds()
+        A(sb(s, mn[0], mn[1], mn[2], mx[0], mx[1], mx[2], pt))
     # ---- bridge house x SX-128..SX+128, y -128..192, walls 16, interior z 128..288, roof slab 288..304
     hx0, hx1, hy0, hy1, hz1 = SX - 128, SX + 128, -128, 192, 288
     wall = {'side': T('ship_grey'), 'top': T('ship_grey'), 'bot': CAULK}
@@ -373,10 +388,12 @@ def ship(s):
     M.ent(lol, (s * SX, s * 40, DECK + 16))
     SPOTS['item'].append((lol, s * SX, s * 40, DECK))
     M.ent('station_health', (s * (HIN - 48), s * -240, DECK), angle=(180 if s > 0 else 0))
-    for (x, y, z, a) in ((SX - 80, -50, DECK, 0), (SX + 70, -70, DECK, 90), (HIN - 42, 200, DECK, 0), (HOUT + 40, 560, DECK, 0)):
+    # spawns on the fore and aft decks and the roof, none in the lolly room: defenders respawning beside the lolly
+    # killed nearly every carrier the moment it was taken (bot tests)
+    for (x, y, z, a) in ((SX + 150, -560, DECK, 0), (SX + 150, 560, DECK, 0), (SX - 150, -600, DECK, 0), (SX - 150, 600, DECK, 0)):
         spawn(s, 'team_%splayer' % team, x, y, z, a)
-    for (x, y, z, a) in ((HIN - 42, -60, DECK, 0), (SX + 70, 560, DECK, 0), (SX + 70, -560, DECK, 0), (SX + 60, -70, 304, 0),
-                         (SX + 60, 50, 304, 0), (SX + 66, 330, DECK, 0)):
+    for (x, y, z, a) in ((SX + 40, -600, DECK, 0), (SX + 40, 600, DECK, 0), (SX + 60, -70, 304, 0), (SX + 60, 50, 304, 0),
+                         (HOUT + 40, 540, DECK, 0), (HIN - 42, 250, DECK, 0)):
         spawn(s, 'team_%sspawn' % team, x, y, z, a)
     # ---- loot
     item(s, 'ammo_pumper', HOUT + 50, -250, DECK)
@@ -420,8 +437,8 @@ def ferry(s):
     def plan(xa, xb, ya, yb, cc):
         return [(xa + cc, ya), (xb - cc, ya), (xb, ya + cc), (xb, yb - cc), (xb - cc, yb), (xa + cc, yb), (xa, yb - cc), (xa, ya + cc)]
     p = plan(-BOAT_HX, BOAT_HX, y0, y1, c)
-    lower = sh(s, [(x, y, z) for (x, y) in p for z in (-32, 0)], {'side': T('hull_bottom'), 'top': CAULK, 'bot': T('hull_bottom')})
-    upper = sh(s, [(x, y, z) for (x, y) in p for z in (0, DECK)], {'side': col, 'top': T('boat_deck'), 'bot': CAULK})
+    lower = sh(s, [(x, y, z) for (x, y) in p for z in (-2, 8)], {'side': T('hull_bottom'), 'top': CAULK, 'bot': T('hull_bottom')})
+    upper = sh(s, [(x, y, z) for (x, y) in p for z in (8, DECK)], {'side': col, 'top': T('boat_deck'), 'bot': CAULK})
     kv = dict(spawnflags=1, height=BOB_H, speed=BOB_T, phase=('0' if s > 0 else '0.5'), dmg=0)
     M.ent('func_bobbing', brushes=[lower, upper], **kv)
     # open wheelhouse across the middle (a roof on four posts): players and bots walk straight through it, and the
@@ -433,6 +450,25 @@ def ferry(s):
     fun = scyl(s, 0, y1 - 50, 16, DECK + 108, DECK + 164, {'side': T('funnel_red' if s > 0 else 'funnel_blue'), 'top': T('ship_dark'), 'bot': CAULK}, 8)
     wheel = sb(s, -8, (y0 + y1) / 2 + 60, DECK, 8, (y0 + y1) / 2 + 76, DECK + 40, T('wood_light'))
     M.ent('func_bobbing', brushes=posts + [roof, fun, wheel], **kv)
+
+
+def shuttle(s):
+    """third route: a short low shuttle between the ship's stage and the hub's stage (10 s round trip). Same bot rules
+    as the ferries: flat hull entity, canopy on a second func_bobbing in sync, clean stages exactly its width."""
+    x0, x1 = SH_MID - SH_HX, SH_MID + SH_HX
+    c = 20
+    p = [(x0 + c, -SH_HY), (x1 - c, -SH_HY), (x1, -SH_HY + c), (x1, SH_HY - c), (x1 - c, SH_HY), (x0 + c, SH_HY), (x0, SH_HY - c), (x0, -SH_HY + c)]
+    lower = sh(s, [(x, y, z) for (x, y) in p for z in (-2, 8)], {'side': T('hull_bottom'), 'top': CAULK, 'bot': T('hull_bottom')})
+    upper = sh(s, [(x, y, z) for (x, y) in p for z in (8, SH_DECK)], {'side': T('boat_' + ('red' if s > 0 else 'blue')),
+                                                                    'top': T('boat_deck'), 'bot': CAULK})
+    kv = dict(spawnflags=1, height=round(SH_H), speed=SH_T, phase=('0' if s > 0 else '0.5'), dmg=0)
+    M.ent('func_bobbing', brushes=[lower, upper], **kv)
+    m = SH_MID
+    posts = [sb(s, m + px, py, SH_DECK, m + px + 10, py + 10, SH_DECK + 96, T('boat_roof')) for px in (-50, 40) for py in (-SH_HY + 8, SH_HY - 18)]
+    roof = sb(s, m - 60, -SH_HY + 4, SH_DECK + 96, m + 60, SH_HY - 4, SH_DECK + 108, {'top': T('boat_roof'), 'side': T('boat_roof'), 'bot': T('boat_cabin')})
+    flag = sb(s, m - 2, -2, SH_DECK + 108, m + 2, 2, SH_DECK + 180, T('ship_dark'))
+    pennant = sb(s, m + 2, -1, SH_DECK + 140, m + 70, 1, SH_DECK + 178, T('flag_' + ('red' if s > 0 else 'blue')))
+    M.ent('func_bobbing', brushes=posts + [roof, flag, pennant], **kv)
 
 
 # =================================================================================================== centre: ring stacker
@@ -451,12 +487,19 @@ def centre_tower():
     # blue stripe around the float
     for (r, zb, zt, tex) in RINGS:
         A(ring(r, zb, zt, tex))
-    # ramps out of the water east and west (on the 16-gon faces that face +-x)
     ap = BASE_R * math.cos(math.pi / 16)
+    ft = {'top': T('float_white'), 'side': T('float_white'), 'bot': T('float_white')}
+    u45 = (math.cos(math.radians(45)), math.sin(math.radians(45))); v45 = (-u45[1], u45[0])
     for s in (1, -1):
-        A(sh(s, [(x, y, z) for y in (-64, 64) for (x, z) in ((-ap - 0.5, 48), (-ap - 0.5, FZ), (-ap - 240, FZ), (-ap - 240, -72))],
-             {'top': T('float_white'), 'side': T('float_white'), 'bot': T('float_white')}, rnd=False))
-        spad(s, -294, 0, 48, (0, 0, 432), 560, 'tower_%s' % ('w' if s > 0 else 'e'))
+        # shuttle stage on the face toward each ship
+        A(sb(s, -ap - 72, -SH_HY, FZ, -ap - 0.5, SH_HY, 48, ft))
+        # ramp out of the water on the diagonal face (45 / 225 deg); it dips below the ferry lanes before reaching them
+        pts = []
+        for (t, z) in ((ap + 0.5, 48), (ap + 0.5, FZ), (ap + 240, FZ), (ap + 240, -72)):
+            for pp in (-64, 64):
+                pts.append((-(t * u45[0] + pp * v45[0]), -(t * u45[1] + pp * v45[1]), z))
+        A(sh(s, pts, ft, rnd=False))
+        spad(s, -208, 208, 48, (0, 0, 432), 560, 'tower_%s' % ('w' if s > 0 else 'e'))
     # loot
     weapon(1, 'imperius', 0, 0, 432, 'purple')
     item(1, 'team_CTL_neutrallolly', 0, 292, 48)
@@ -464,7 +507,7 @@ def centre_tower():
     item(1, 'holdable_killerducks', 0, 218, 144)
     for s in (1, -1):
         item(s, 'ammo_bubbleg', -206, -206, 48)
-        item(s, 'item_armor_shard', 206, -206, 48)
+        item(s, 'item_armor_shard', -ap - 36, 60, 48)
     light(0, 0, 720, 1200, '1 0.95 0.9')
 
 
@@ -491,10 +534,10 @@ def drain():
 def buoys():
     """anchored marker buoys between each ship and the tower (cover, breaks the long centre sightline)"""
     for s in (1, -1):
-        x, y = -1000, 0
+        x, y = -1000, 240
         A(scyl(s, x, y, 4, FZ, -64, T('chrome'), 6))
         A(scyl(s, x, y, 96, -64, 96, {'side': T('buoy'), 'top': T('float_white'), 'bot': T('float_white')}, 12))
-        A(sh(s, ring_pts(x, y, 80, 96, 12) + ring_pts(x, y, 16, 220, 12), T('ring_red' if s > 0 else 'ring_blue')))
+        A(sh(s, ring_pts(x, y, 96, 96, 12) + ring_pts(x, y, 16, 220, 12), T('ring_red' if s > 0 else 'ring_blue')))
         A(scyl(s, x, y, 14, 220, 252, T('lamp_rim'), 8))
         light(s * x, s * y, 280, 220, '1 0.4 0.3' if s > 0 else '0.4 0.6 1')
 
@@ -649,7 +692,7 @@ def main():
     TX.make_all(OUT)
     room_shell(); curtain()
     for s in (1, -1):
-        ship(s); wall_shelf(s); ferry(s); bar(s); rim_stuff(s); underwater(s)
+        ship(s); wall_shelf(s); ferry(s); shuttle(s); bar(s); rim_stuff(s); underwater(s)
     centre_tower(); drain(); buoys(); tap_and_shower(); suds_islands(); lights_and_sound()
     carve_water()
     M.ent('info_player_intermission', (-1400, -900, 900), angles='22 35 0')

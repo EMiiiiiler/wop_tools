@@ -25,7 +25,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - In a fresh cloud session, `lfs_fetch.py <wop repo> --map maps/x.map` gets the real md3s/textures/sky the map uses.
 - Before delivering any map run: `audit_map.py` (must say RESULT: OK), `pad_check.py` (every pad lands), `aas_check.py` after bspc with a `--route @routes.txt`
   covering every stair/hatch/roof (RESULT: OK),
-  `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
+  `mover_sweep.py` (if the map has func_bobbing), `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
 - If wopded is available, run the map with bots and read games.log for pickups/frags.
 - `waterpark/` is the reference generator (zones, holes for pools, slides, facades, decoration).
 
@@ -57,7 +57,8 @@ Tools and standing rules for building World of Padman (WoP) maps.
   func_bobbing with identical keys). botlib boards only within 16u of the start and gets off within 24u of the end: short
   boat, clear deck centre, dock against a clean pier exactly the boat's width, nothing else within 192u. Bobbers instakill
   anyone they pin (MOD_CRUSH regardless of dmg).
-- Bots drown under large low ceilings over water; stand floating-looking structures on the floor.
+- Bots drown under large low ceilings over water. Either stand the structure on the floor or fill the water under it with
+  `common/botclip` (WoP bspc makes botclip solid for the AAS; players still swim through it) - padbath ships float this way.
 - A convex brush with 45-degree bevels next to a ramp face left the ramp area ungrounded in bspc (no links); keep ramps
   as plain profiles.
 - Water overlapping solids fails audit_map: build one water box and `carve()` it; draw only the surface faces and give the
