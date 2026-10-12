@@ -21,4 +21,4 @@ texture onto a top face (rugs, chess boards), `drawer_box()` builds a cabinet wi
 `pillow_md3.py` writes `models/mapobjects/playroom/pillow.md3` + `pillow.jpg` (curved pillow, 284 x 216 x 61).
 The bed uses it by default (`PILLOW=brush` brings back the brush pillows) (a weapclip dome gives it collision).
 `clock_md3.py` writes `alarmclock.md3` + `clock_*.jpg` (twin-bell wind-up alarm clock, 146 x 67 x 179, built with meshkit).
-Build with `CLOCK=md3` to put it on the nightstand instead of the brush clock.
+The nightstand uses it by default (`CLOCK=brush` brings back the box clock).

@@ -46,7 +46,7 @@ for k, v in {'floor_wood': (2, 2), 'wallpaper': (2, 2), 'dado': (1, 1), 'ceiling
 for _b in 'abcdp':
     wopmap.TEXSCALE[T('block_' + _b)] = (1, 1)       # 128px over a 128u block face
 
-CLOCK = os.environ.get('CLOCK', 'brush')        # 'md3' = twin-bell alarm clock model (clock_md3.py)
+CLOCK = os.environ.get('CLOCK', 'md3')          # 'md3' = twin-bell alarm clock model (clock_md3.py), 'brush' = old box clock
 PILLOW = os.environ.get('PILLOW', 'md3')        # 'md3' = curved MD3 pillows (pillow_md3.py), 'brush' = old brush pillows
 M = Map({'message': "Padman's Playroom", '_ambient': '6', 'gridsize': '96 96 96', '_blocksize': '0'})
 A = M.add
