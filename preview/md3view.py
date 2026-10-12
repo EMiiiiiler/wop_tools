@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Self-contained turntable viewer for one MD3 (parsed in the browser from the real file bytes).
 
-    python3 md3view.py model.md3 texture.jpg out.html [--three three.min.js | --threeurl URL] [--title T] [--ground tex.jpg]
+    python3 md3view.py model.md3 <texture.jpg | texture dir> out.html [--three three.min.js | --threeurl URL] [--title T] [--ground tex.jpg]
 
 Drag to orbit, pinch / wheel to zoom. Lighting: warm key light + sky fill, like a sunny WoP room.
 Screenshot it with shoot-style playwright code or open it on a phone.
@@ -23,11 +23,12 @@ footer{padding:6px 16px 12px;color:var(--muted);font-size:.8rem;font-variant-num
 <footer id="info"></footer>
 __THREE__
 <script>
-const MD3="__MD3__", TEX="__TEX__", GROUND="__GROUND__";
+const MD3="__MD3__", TEX=__TEX__, GROUND="__GROUND__";   // TEX: {shader basename or "*": data uri}
 function b64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u.buffer}
 function parseMD3(buf){
   const dv=new DataView(buf); const nsurf=dv.getInt32(84,true), ofsSurf=dv.getInt32(100,true); let o=ofsSurf; const out=[];
   for(let s=0;s<nsurf;s++){
+    let sh='';{const oSh=dv.getInt32(o+92,true);for(let k=0;k<64;k++){const c=dv.getUint8(o+oSh+k);if(!c)break;sh+=String.fromCharCode(c)}}
     const nv=dv.getInt32(o+80,true), nt=dv.getInt32(o+84,true), oT=dv.getInt32(o+88,true), oST=dv.getInt32(o+96,true), oX=dv.getInt32(o+100,true), oE=dv.getInt32(o+104,true);
     const pos=new Float32Array(nv*3), nor=new Float32Array(nv*3), uv=new Float32Array(nv*2), idx=new Uint32Array(nt*3);
     for(let i=0;i<nv;i++){const p=o+oX+i*8;
@@ -38,7 +39,7 @@ function parseMD3(buf){
       pos.set([x,z,-y],i*3); nor.set([nx,nz,-ny],i*3);
       uv[i*2]=dv.getFloat32(o+oST+i*8,true); uv[i*2+1]=dv.getFloat32(o+oST+i*8+4,true);}
     for(let i=0;i<nt;i++){const p=o+oT+i*12; idx[i*3]=dv.getInt32(p,true); idx[i*3+1]=dv.getInt32(p+4,true); idx[i*3+2]=dv.getInt32(p+8,true);}
-    out.push({pos,nor,uv,idx,nv,nt}); o+=oE;}
+    out.push({pos,nor,uv,idx,nv,nt,sh}); o+=oE;}
   return out;
 }
 const cv=document.getElementById('c');
@@ -49,14 +50,15 @@ const cam=new THREE.PerspectiveCamera(40,1,1,5000);
 S.add(new THREE.HemisphereLight(0xdfeaff,0x8a6f55,0.9));
 const sun=new THREE.DirectionalLight(0xfff1dc,2.2); sun.position.set(-260,420,220); sun.castShadow=true;
 sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-260,right:260,top:260,bottom:-260,near:10,far:1200}); sun.shadow.bias=-0.0008; S.add(sun);
-const L=new THREE.TextureLoader(); const tex=L.load(TEX); tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false; tex.anisotropy=8;
+const L=new THREE.TextureLoader(), texCache={};
+function texFor(sh){const k=sh.split('/').pop(); const u=TEX[k]||TEX['*']; if(!u)return null; if(!texCache[u]){const t=L.load(u); t.colorSpace=THREE.SRGBColorSpace; t.flipY=false; t.anisotropy=8; t.wrapS=t.wrapT=THREE.RepeatWrapping; texCache[u]=t} return texCache[u]}
 const surfs=parseMD3(b64(MD3)); let tv=0,tt=0, box=new THREE.Box3();
 for(const s of surfs){const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.BufferAttribute(s.pos,3)); g.setAttribute('normal',new THREE.BufferAttribute(s.nor,3)); g.setAttribute('uv',new THREE.BufferAttribute(s.uv,2));
   // Quake winding is clockwise; flip to three's counter-clockwise front faces
   const ix=s.idx.slice(); for(let i=0;i<ix.length;i+=3){const t=ix[i+1];ix[i+1]=ix[i+2];ix[i+2]=t}
   g.setIndex(new THREE.BufferAttribute(ix,1));
-  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:tex,roughness:0.95,metalness:0})); m.castShadow=true; m.receiveShadow=true; S.add(m);
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:texFor(s.sh),roughness:/chrome|red|brass|black/.test(s.sh)?0.38:0.95,metalness:0})); m.castShadow=true; m.receiveShadow=true; S.add(m);
   g.computeBoundingBox(); box.union(g.boundingBox); tv+=s.nv; tt+=s.nt;}
 if(GROUND){const gt=L.load(GROUND); gt.colorSpace=THREE.SRGBColorSpace; gt.wrapS=gt.wrapT=THREE.RepeatWrapping; gt.repeat.set(3,3);
   const gm=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({map:gt,roughness:1})); gm.rotation.x=-Math.PI/2; gm.receiveShadow=true; S.add(gm);}
@@ -90,10 +92,16 @@ def main():
     def uri(p, mime):
         return f'data:{mime};base64,' + base64.b64encode(open(p, 'rb').read()).decode()
     mime = lambda p: 'image/png' if p.lower().endswith('.png') else 'image/jpeg'
+    import json
+    def texmap(t):
+        if os.path.isdir(t):
+            return json.dumps({os.path.splitext(f)[0]: uri(os.path.join(t, f), mime(f)) for f in sorted(os.listdir(t))
+                               if f.lower().endswith(('.jpg', '.jpeg', '.png'))})
+        return json.dumps({'*': uri(t, mime(t))})
     three = (f'<script src="{a.threeurl}"></script>' if a.threeurl else '<script>' + open(a.three).read() + '</script>')
     html = (PAGE.replace('__TITLE__', a.title).replace('__SUB__', a.sub).replace('__THREE__', three)
             .replace('__MD3__', base64.b64encode(open(a.md3, 'rb').read()).decode())
-            .replace('__TEX__', uri(a.tex, mime(a.tex))).replace('__GROUND__', uri(a.ground, mime(a.ground)) if a.ground else ''))
+            .replace('__TEX__', texmap(a.tex)).replace('__GROUND__', uri(a.ground, mime(a.ground)) if a.ground else ''))
     open(a.out, 'w').write(html)
     print(a.out, round(len(html) / 1e6, 2), 'MB')
 

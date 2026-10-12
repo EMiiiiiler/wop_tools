@@ -46,6 +46,7 @@ for k, v in {'floor_wood': (2, 2), 'wallpaper': (2, 2), 'dado': (1, 1), 'ceiling
 for _b in 'abcdp':
     wopmap.TEXSCALE[T('block_' + _b)] = (1, 1)       # 128px over a 128u block face
 
+CLOCK = os.environ.get('CLOCK', 'brush')        # 'md3' = twin-bell alarm clock model (clock_md3.py)
 PILLOW = os.environ.get('PILLOW', 'md3')        # 'md3' = curved MD3 pillows (pillow_md3.py), 'brush' = old brush pillows
 M = Map({'message': "Padman's Playroom", '_ambient': '6', 'gridsize': '96 96 96', '_blocksize': '0'})
 A = M.add
@@ -343,14 +344,19 @@ def nightstand():
     X0, X1, Y0, Y1 = -1152, -768, 1152, 1536
     drawer_box((X0, Y0, 0), (X1, Y1, 368), 's', 3, 'drawer_sky')
     A(box((X0, Y0, 368), (X1, Y1, 384), T('wood_white')))
-    # alarm clock with a face on the south side
-    A(box((-1110, 1420, 384), (-990, 1500, 488), T('plastic_grey')))
-    A(sign_box((-1100, 1416, 394), (-1000, 1420, 478), T('clock'), 128, 128, back=T('plastic_grey'), facing='s'))
-    A(box((-1092, 1440, 488), (-1060, 1480, 504), T('metal_chrome'))); A(box((-1040, 1440, 488), (-1008, 1480, 504), T('metal_chrome')))
+    if CLOCK == 'md3':
+        # twin-bell wind-up alarm clock (clock_md3.py), dial facing the room, + an invisible weapclip around the drum/bells
+        M.model('models/mapobjects/playroom/alarmclock.md3', (-1050, 1460, 384), scale=1, angle=0)
+        A(box((-1112, 1434, 384), (-988, 1490, 552), WCLIP))
+    else:
+        # alarm clock with a face on the south side
+        A(box((-1110, 1420, 384), (-990, 1500, 488), T('plastic_grey')))
+        A(sign_box((-1100, 1416, 394), (-1000, 1420, 478), T('clock'), 128, 128, back=T('plastic_grey'), facing='s'))
+        A(box((-1092, 1440, 488), (-1060, 1480, 504), T('metal_chrome'))); A(box((-1040, 1440, 488), (-1008, 1480, 504), T('metal_chrome')))
     mdl_c('pad_lamps/small_gooseneck.md3', -850, 1460, 384, angle=225)
     mdl('pad_cups/pad_cup03.md3', -900, 1240, 384, angle=30)
     item('ammo_splasher', -1040, 1260, 384)
-    speaker(-1050, 1460, 440, 'sound/world/machine/clock_ticking.ogg')
+    speaker(-1050, 1400, 470, 'sound/world/machine/clock_ticking.ogg')
     light(-860, 1400, 560, 260, '1 0.85 0.6')
 
 
@@ -930,6 +936,9 @@ def main():
     if PILLOW == 'md3':
         import pillow_md3
         pillow_md3.main(OUT)
+    if CLOCK == 'md3':
+        import clock_md3
+        clock_md3.main(OUT)
     os.makedirs(os.path.join(OUT, 'scripts'), exist_ok=True)
     MH = room_shell()
     window_and_outside(); bed(); nightstand(); desk_pad(); desk(); chair(); shelf(); dresser_tank(); wardrobe()
