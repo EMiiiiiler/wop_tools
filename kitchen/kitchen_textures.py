@@ -886,8 +886,8 @@ textures/{NS}/flame
 	{{
 		map textures/{NS}/flame.tga
 		blendFunc GL_SRC_ALPHA GL_ONE
-		rgbGen wave noise 0.8 0.25 0 6
-		tcMod stretch noise 1 0.08 0 5
+		rgbGen wave sin 0.85 0.15 0 4.7
+		tcMod stretch triangle 1 0.06 0.3 3.1
 	}}
 }}
 
