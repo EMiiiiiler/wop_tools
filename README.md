@@ -11,6 +11,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`), plus dev
   `compile.sh` / `render.sh`. `textures.py` makes all textures, the shader and the arena.
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
+- `padtank/` - *Fish Tank Temple* (`wop_padtank`): CTL map in an aquarium, fog-volume water, swimming fish schools on
+  func_rotating IQM movers; see padtank/README.md.
+- `md3write.py` - minimal MD3 writer for custom map objects (single frame).
+- `iqmtool.py` - static IQM writer/reader (float vertices: mover models that reach beyond MD3's +-512 limit).
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
@@ -35,7 +39,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   audit_map also checks misc_externalmodel support and the Nipper (start weapon) ammo count.
 
 ## Preview
-- `preview/bsp2scene.py` - compiled .bsp -> self-contained three.js page (lightmaps, vertex-lit models, sky,
+- `preview/bsp2scene.py` - compiled .bsp -> self-contained three.js page (lightmaps, vertex-lit models, sky, `--fog`,
+  func_rotating model2s (MD3 or IQM) spinning live,
   item markers, camera buttons). Brush movers with an origin are put back in place, and mover `model2`s and
   `misc_externalmodel`s (not baked into the bsp) are loaded, func_bobbing movers bob live, from the md3s in the --vfs folders. `--threeurl` for a CDN build, `--three` to inline a local one.
 - `preview/shoot.py` - headless Chromium screenshots of that page from Q3 camera positions.
