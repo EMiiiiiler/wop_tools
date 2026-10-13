@@ -19,6 +19,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
   see xmas/README.md.
+- `kitchen/` - *Countertop Clash* (`wop_padkitchen`): CTL on a giant kitchen counter (toaster bases, sink, stove, hood
+  walkway, fridge-top secret), lots of procedural MD3s (`kitchen_models.py`), see kitchen/README.md.
 - `lfs_fetch.py` - replace LFS stubs in a shallow WoP checkout with the real files; `--map maps/x.map` pulls every md3,
   the images its shaders use (resolved through WoP's shader scripts) and the map's skybox.
 
