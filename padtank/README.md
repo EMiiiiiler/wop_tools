@@ -20,12 +20,17 @@ Everything is detail: 0 portals, BSP+VIS+fast light ~30 s, full bounce light a f
     sponges; the Blue Hole with Betty + Pad Power on the bottom and stone steps out of the water under each causeway.
   - **reef** (`reef()`, NW for red / SE for blue): rock mesa with stairs, coral plates spiralling (32u rises, bot barrier
     jumps) up to a perch on a tall stalk (Splasher); a bubble lift from the mesa to the perch too.
-  - **diving bell** (`diving_bell()`, SW / NE): brass 16-gon, west and south hatches (Bubble G inside), coral plates up
-    to the roof and a bubble lift outside the south hatch (Pumper on the roof).
+  - **diving bell** (`diving_bell()`, SW / NE): an MD3 (`bell_model.py`, misc_model spawnflags 4 = lightmapped,
+    `_castshadows 1`): riveted brass body with flared foot, mid and crown bands, ribs, eight raised glass portholes,
+    framed west / south hatchways, smooth interior, low walkable riveted dome with a hatch wheel. Collision is invisible
+    `common/weapclip` brushes with the same shape (16-gon walls, door gaps, dome frustum r 240 @ 288 -> r 150 @ 316).
+    Bubble G inside, coral plates up to the dome and a bubble lift outside the south hatch (Pumper on top).
   - **chests** (`chest()`): mid-lane treasure chests, broken front to walk in (Pad shield), gold-bar steps to the lid.
   - `fish_loops()`: one `func_rotating` per school (origin brush at the circle centre, tiny `nodraw_ns` brush, `model2`
     = an IQM with every fish already placed on the circle, facing its direction of travel and banked into the turn).
     `sweep_check()` samples each school's swept annulus against the solid brushes so no fish swims through scenery.
+- `bell_model.py` - the diving bell MD3 + its textures/shaders (uses `../md3write.py`). A full turn holds a whole
+  number of texture tiles so wall spans that meet across 0/360 deg have no texture seam.
 - `fish_models.py` - procedural leopard shark / whale shark / blue tang meshes plus WoP's catalog angel fish
   (`pad_fish/*.md3`, real shaders), baked into `models/padtank/*.iqm` with `../iqmtool.py`. Tail fins are separate
   single-sided meshes with a `deformVertexes wave` shader, so they wag in game.

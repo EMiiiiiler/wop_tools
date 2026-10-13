@@ -13,6 +13,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
 - `padtank/` - *Fish Tank Temple* (`wop_padtank`): CTL map in an aquarium, fog-volume water, swimming fish schools on
   func_rotating IQM movers; see padtank/README.md.
+- `md3write.py` - minimal MD3 writer for custom map objects (single frame).
 - `iqmtool.py` - static IQM writer/reader (float vertices: mover models that reach beyond MD3's +-512 limit).
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.

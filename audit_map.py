@@ -155,11 +155,14 @@ def model_points(md3root, model, scale, ang, cache={}):
     import md3tool
     key = model
     if key not in cache:
-        p = os.path.join(md3root, model)
-        if not os.path.exists(p):
-            d = os.path.dirname(p); b = os.path.basename(p).lower()
-            alt = [f for f in os.listdir(d) if f.lower() == b] if os.path.isdir(d) else []
-            p = os.path.join(d, alt[0]) if alt else None
+        p = None
+        for root in (md3root if isinstance(md3root, list) else [md3root]):      # first root that has the file wins
+            q = os.path.join(root, model)
+            if not os.path.exists(q):
+                d = os.path.dirname(q); b = os.path.basename(q).lower()
+                alt = [f for f in os.listdir(d) if f.lower() == b] if os.path.isdir(d) else []
+                q = os.path.join(d, alt[0]) if alt else None
+            if q: p = q; break
         if not p: cache[key] = None
         else:
             m = md3tool.load(p)
@@ -182,7 +185,7 @@ def rot_matrix(ang):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('map')
-    ap.add_argument('--md3root', default=None)
+    ap.add_argument('--md3root', action='append', default=None, help='dir holding models/ (repeat for several, e.g. WoP + the map folder)')
     ap.add_argument('-v', action='store_true')
     ap.add_argument('--maxlist', type=int, default=40)
     ap.add_argument('--shaders', action='append', default=[], help='dir(s) holding scripts/*.shader')
@@ -290,6 +293,8 @@ def main():
             smn2[2] = max(smn2[2], zb + 2)
             cand = np.where(np.all(smn < smx2, 1) & np.all(smx > smn2, 1))[0]
             sink = [solids[k] for k in cand if solids[k][1] == 'solid' and box_overlap(solids[k][0], smn2, smx2, 2.0)]
+            # hollow models (a bell, an arch) have empty bbox corners: keep only brushes that really hold model vertices
+            sink = [b for b in sink if any(all(n @ p - d < -2.0 for n, d in b[0]) for p in v[::max(1, len(v) // 4000)])]
             if frac > 0.2 or sink:
                 msg = f'   ent{ei} {kv["model"].split("mapobjects/")[-1]} at {o.astype(int)} s{s:g}: '
                 if frac > 0.2: msg += f'{frac * 100:.0f}% of base unsupported (base z {zb:.1f}) '

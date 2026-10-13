@@ -66,7 +66,7 @@ SP_R0, SP_R1, SP_R2, SP_TOP = 208, 176, 144, 640    # spire radii (pool floor / 
 DECK_R = 352
 FILTER_Z = 768
 BELL = (-1000, -800)                  # red diving bell centre
-BELL_R, BELL_H = 240, 256
+BELL_R, BELL_H, BELL_TOP = 240, 256, 316
 CHEST_Y = (776, 1000)                 # red chest (north, x -192..192)
 BOUNDS = json.load(open(os.path.join(os.path.dirname(HERE), 'md3bounds.json')))
 SPOTS = {'weapon': [], 'ammo': [], 'item': [], 'spawn': []}
@@ -661,18 +661,19 @@ def diving_bell(s):
     """red diving bell (south-west): brass 16-gon, two hatches (west / south), coral plates spiral up to the roof,
     bubble lift outside the south hatch. Bubble G inside, Pumper on the roof."""
     bx, by = BELL
-    br = {'side': T('brass'), 'top': T('brass'), 'bot': CAULK}
+    # the visible bell is an MD3 (bell_model.py, lightmapped, casts shadows); these invisible weapclip brushes are its
+    # collision: 16-gon walls with the two hatchways (segments centred on 180 and 270 deg) and the low dome
+    cl = WCLIP
     outer = ngon(bx, by, BELL_R, 16); inner = ngon(bx, by, BELL_R - 32, 16)
-    doors = {7, 11}                                   # wall segments centred on 180 and 270 deg
+    doors = {7, 11}
     for k in range(16):
         q = [inner[k], outer[k], outer[(k + 1) % 16], inner[(k + 1) % 16]]
         z0 = 128 if k in doors else 0
-        A(sh(s, [(x, y, z) for (x, y) in q for z in (z0, BELL_H)], br))
-    A(sh(s, [(x, y, z) for (x, y) in outer for z in (BELL_H, BELL_H + 32)], {'top': T('bell_roof'), 'side': T('brass'), 'bot': T('brass')}))
-    # portholes on the east and north faces (sign panels, 4u proud)
-    ap = BELL_R * math.cos(math.radians(11.25))
-    A(ssign(s, (round(bx + ap), by - 40, 104), (round(bx + ap) + 4, by + 40, 184), T('porthole'), 256, 256, 'e', T('brass')))
-    A(ssign(s, (bx - 40, round(by + ap), 104), (bx + 40, round(by + ap) + 4, 184), T('porthole'), 256, 256, 'n', T('brass')))
+        A(sh(s, [(x, y, z) for (x, y) in q for z in (z0, BELL_H)], cl))
+    A(sh(s, [(x, y, z) for (x, y) in outer for z in (BELL_H, BELL_H + 32)], cl))
+    A(sh(s, [(x, y, BELL_H + 32) for (x, y) in outer] + [(x, y, BELL_TOP) for (x, y) in ngon(bx, by, 150, 16)], cl))
+    M.model('models/padtank/diving_bell.md3', (s * bx, s * by, 0), angle=(0 if s > 0 else 180), spawnflags=4,
+            _castshadows=1, _receiveshadows=1, _lightmapscale=0.5)
     # coral plates: 9 plates (32..288) counter-clockwise from -30 deg, the last one beside the roof edge
     P = plan_spiral((bx, by), BELL_R + 97, -30, 9, 32, dirn=1)
     check_plates(P)
@@ -681,16 +682,16 @@ def diving_bell(s):
         for b in plate(round(x), round(y), z, r, cols[k], 0): A(sb_brush(s, b))
     # bubble lift outside the south hatch -> roof
     a = math.radians(228)
-    spad(s, bx + 340 * math.cos(a), by + 340 * math.sin(a), 0, (bx, by, BELL_H + 32), 560, 'bell_%s' % ('r' if s > 0 else 'b'))
+    spad(s, bx + 340 * math.cos(a), by + 340 * math.sin(a), 0, (bx, by, BELL_TOP), 590, 'bell_%s' % ('r' if s > 0 else 'b'))
     # loot
     weapon(s, 'bubbleg', bx, by, 0, 'blue')
     item(s, 'ammo_pumper', bx + 120, by + 60, 0)
-    weapon(s, 'pumper', bx + 40, by + 40, BELL_H + 32, 'green')
+    weapon(s, 'pumper', bx + 40, by + 40, BELL_TOP, 'green')
     item(s, 'ammo_boaster', P[4][0], P[4][1], P[4][2])
     item(s, 'item_armor_shard', bx - 110, by - 60, 0)
     smdl(s, 'pad_ddmix/padship/rumbottle1.md3', bx - 120, by + 90, 0, 1.0, 30)
-    slight(s, bx, by, 200, 260, '1 0.85 0.6')
-    slight(s, bx, by, BELL_H + 200, 400)
+    slight(s, bx, by, 200, 380, '1 0.85 0.6')
+    slight(s, bx, by, BELL_TOP + 180, 400)
     slight(s, bx + 420, by + 120, 300, 350)
     LOOPS.append(dict(name=f'bell_{"r" if s > 0 else "b"}', centre=(s * bx, s * by, 430), speed=-20 * s, kind='tang_ring', R=200))
 

@@ -12,6 +12,7 @@ _spec = _ilu.spec_from_file_location('playroom_textures', os.path.join(os.path.d
 _pt = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_pt)
 noise, C, N3, img, fill, font, text_c = _pt.noise, _pt.C, _pt.N3, _pt.img, _pt.fill, _pt.font, _pt.text_c
 import fish_models
+import bell_model
 
 MAP = 'wop_padtank'
 NS = 'padtank'
@@ -672,6 +673,7 @@ textures/{NS}/banner_{team}
 
 '''
     S += fish_models.shaders()
+    S += bell_model.shaders()
     S += (f'levelshots/{MAP}B\n{{\n\tnomipmaps\n\t{{\n\t\tanimmap 0.5 levelshots/{MAP}B1 levelshots/{MAP}B2 levelshots/{MAP}B3\n\t}}\n}}\n')
     os.makedirs(os.path.join(out, 'scripts'), exist_ok=True)
     open(os.path.join(out, 'scripts', NS + '.shader'), 'w').write(S)
@@ -686,6 +688,7 @@ def make_all(out):
     W = TexWriter(out)
     make_textures(W)
     fish_models.make_textures(out)
+    bell_model.make(out)
     make_shader(W, out)
     make_arena(out)
     return W
