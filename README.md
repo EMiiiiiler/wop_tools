@@ -6,6 +6,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `wopmap.py` - brush/entity library. Brushes are convex hulls of points (boxes, wedges, ramps, n-gon prisms,
   slanted slide segments...), `stairs()` (16u rise, optional thin slabs), `sub_rects()` for cutting holes, `carve()` (CSG: subtract brushes from a brush, e.g. water around everything in it),
   `sign_box()`/`fit_face()` for exactly-fitted, never-mirrored sign textures, `Map` writer.
+- `md3write.py` - MD3 writer (one frame, Quake winding, lat/long normals) for custom map objects; `vertex_normals()` helper.
 - `md3tool.py` - MD3 reader. `python3 md3tool.py bounds <models root> md3bounds.json` rebuilds the bounds table.
 - `md3bounds.json` - real bounds of every WoP map object (place models with `origin z = surface - zmin*scale`).
 - `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`), plus dev
@@ -15,6 +16,9 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   func_rotating IQM movers; see padtank/README.md.
 - `md3write.py` - minimal MD3 writer for custom map objects (single frame).
 - `iqmtool.py` - static IQM writer/reader (float vertices: mover models that reach beyond MD3's +-512 limit).
+- `padpinball/` - *Tilt!* (`wop_padpinball`): Padman inside a giant pinball machine (flippers, pop bumpers and a chrome
+  steel ball as MD3 centrepieces, plunger lanes, ramps to corner booths, backbox jackpot room, underworld with the coin box);
+  CTL/1LC/FFA, see padpinball/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
@@ -42,10 +46,12 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 
 ## Preview
 - `preview/bsp2scene.py` - compiled .bsp -> self-contained three.js page (lightmaps, vertex-lit models, sky, `--fog`,
+  `tcGen environment` stages as smooth sphere-map chrome using the BSP vertex normals,
   func_rotating model2s (MD3 or IQM) spinning live,
   item markers, camera buttons). Brush movers with an origin are put back in place, and mover `model2`s and
   `misc_externalmodel`s (not baked into the bsp) are loaded, func_bobbing movers bob live, from the md3s in the --vfs folders. `--threeurl` for a CDN build, `--three` to inline a local one.
 - `preview/shoot.py` - headless Chromium screenshots of that page from Q3 camera positions.
+- `preview/md3view.py` - one-MD3 turntable page (parses the real .md3 in the browser; drag/pinch on phones).
 - `preview/levelshots.py` - WoP-style levelshots (`<map>.jpg` cover, `<map>A.jpg`, animated `<map>B1..B3`).
 
 ## q3map2 command notes (NetRadiant Custom, no WoP gamepack)

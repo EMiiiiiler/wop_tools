@@ -77,3 +77,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - misc_model `angles` follow audit_map.rot_matrix (z' = -sin(pitch) x + ...): pitch -90 turns a model's -x end down
   (catalog pad_fork tines are -x). bsp2scene's coloured octahedra are item markers drawn through walls, not geometry
   (`shoot.py --nomarkers` hides them).
+- A misc_model's *origin* must be inside the world too: models whose origin sits far above their base (catalog
+  `pad_ducktape`) placed on a low floor put the origin under the map and q3map2 reports "Entity leaked".
+- Don't put a misc_teleporter_dest inside a trigger_push (audit flags it); put it just behind the pad: the 400 u/s
+  teleport exit speed slides the player onto it.
+- `pkill -f wopded` from the Bash tool kills the tool's own shell (its command line contains the pattern); start
+  wopded with `setsid nohup ... < /dev/null &` and stop it with its pid or `timeout`.

@@ -17,3 +17,6 @@ Room x -1792..1792, y -1536..1536, ceiling 1600; 12 portals, VIS instant, full b
 Helpers worth reusing: `jumppad(x, y, z, land, apex, name)` aims from the trigger centre exactly like Q3's AimAtTarget
 (target = apex), `mdl_c()` places a model by its bounding-box centre (for off-centre origins), `fit_top()` fits a
 texture onto a top face (rugs, chess boards), `drawer_box()` builds a cabinet with fitted drawer fronts.
+
+`pillow_md3.py` writes `models/mapobjects/playroom/pillow.md3` + `pillow.jpg` (curved pillow, 284 x 216 x 61).
+The bed uses it by default (`PILLOW=brush` brings back the brush pillows) (a weapclip dome gives it collision).
