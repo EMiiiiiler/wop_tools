@@ -43,6 +43,10 @@ def load_aas(path):
     return planes, areas, sets, reach, nodes
 
 
+TEAMSPAWN = ('team_redspawn', 'team_bluespawn', 'team_redplayer', 'team_blueplayer',
+             'team_CTF_redspawn', 'team_CTF_bluespawn', 'team_CTF_redplayer', 'team_CTF_blueplayer')
+
+
 def point_area(planes, nodes, p):
     n = 1
     while n > 0:
@@ -116,9 +120,9 @@ def main():
         c = e.get('classname', ''); o = e.get('origin')
         if not o: continue
         o = [float(v) for v in o.split()]
-        if c in ('info_player_deathmatch', 'info_player_start'):
+        if c in ('info_player_deathmatch', 'info_player_start') or c in TEAMSPAWN:
             spawns.append((c, o, find(o, 'spawn')))
-        elif c.startswith(('weapon_', 'ammo_', 'item_', 'holdable_')) or c == 'station_health':
+        elif c.startswith(('weapon_', 'ammo_', 'item_', 'holdable_', 'team_CTL_', 'team_CTF_')) or c == 'station_health':
             picks.append((c, o, find(o, 'item')))
     for i, p in enumerate(a.points.split(';')):
         if p.strip():
@@ -184,6 +188,42 @@ def main():
         st = 'NO AREA' if not (aa and ab) else ('OK' if not any(res) else ', '.join(r for r in res if r))
         print(f'  route {name:20s} {st}')
         if st != 'OK': bad += 1
+    # CTL / CTF: each team's capture run (own spawns -> enemy lolly -> own lolly), fastest by bot travel time
+    lol = {c: ar for c, o, ar in picks if c.startswith(('team_CTL_', 'team_CTF_'))}
+    def tm(c): return 'red' if 'red' in c.lower() else ('blue' if 'blue' in c.lower() else '')
+    flags = {tm(c): ar for c, ar in lol.items() if tm(c)}
+    if len(flags) == 2:
+        import heapq as _hq
+        def fastest(srcs, dst):
+            # cost (1/100 s) = reach time + distance from where the area was entered to the reach start, walking
+            # 320 u/s, swimming 150 u/s (approximates the bot's area travel times)
+            dist = {x: 0 for x in srcs}; prev = {}; pq = [(0, x) for x in srcs]
+            entry = {x: C[x] for x in srcs}
+            while pq:
+                d, x = _hq.heappop(pq)
+                if x == dst: break
+                if d > dist[x]: continue
+                s_ = sets[x]
+                spd = 150.0 if s_['contents'] & 1 else 320.0
+                for r in reach[s_['freach']:s_['freach'] + s_['nreach']]:
+                    t = int(r['type']) & 0xFFFFFF
+                    if t in (12, 13) and not a.rj: continue
+                    y = int(r['area'])
+                    nd = d + int(r['time']) + 1 + float(np.linalg.norm(r['start'] - entry[x])) / spd * 100
+                    if nd < dist.get(y, 1 << 60): dist[y] = nd; prev[y] = (x, t); entry[y] = r['end']; _hq.heappush(pq, (nd, y))
+            if dst not in dist: return None, []
+            ty = []; y = dst
+            while y in prev: x, t = prev[y]; ty.append(TT.get(t, t)); y = x
+            return dist[dst], ty[::-1]
+        for team, other in (('red', 'blue'), ('blue', 'red')):
+            srcs = [ar for c, o, ar in spawns if ar and c in TEAMSPAWN and team in c]
+            for lbl, (sa, da) in (('to enemy lolly', (srcs, flags[other])), ('capture home', ([flags[other]], flags[team]))):
+                t_, ty = fastest(sa, da)
+                if t_ is None:
+                    print(f'  CTL {team:4s} {lbl:15s} NO PATH'); bad += 1
+                else:
+                    used = sorted(set(ty) - {'walk'})
+                    print(f'  CTL {team:4s} {lbl:15s} {t_ / 100:5.1f} s  via {", ".join(used) or "walk"}')
     print('reach types: ' + ', '.join(f'{TT.get(k, k)} {v}' for k, v in sorted(counts.items())))
     print(f'reachable areas from spawns: {len(fwd)} / {na - 1}')
     print('RESULT:', 'OK' if not bad else f'{bad} problem(s)')

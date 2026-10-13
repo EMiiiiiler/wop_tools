@@ -25,7 +25,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - In a fresh cloud session, `lfs_fetch.py <wop repo> --map maps/x.map` gets the real md3s/textures/sky the map uses.
 - Before delivering any map run: `audit_map.py` (must say RESULT: OK), `pad_check.py` (every pad lands), `aas_check.py` after bspc with a `--route @routes.txt`
   covering every stair/hatch/roof (RESULT: OK),
-  `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
+  `mover_sweep.py` (if the map has func_bobbing), `sightlines.py` (aim for < ~4% of rays over 1800u), then look at it with `preview/bsp2scene.py` + `shoot.py`.
 - If wopded is available, run the map with bots and read games.log for pickups/frags.
 - `waterpark/` is the reference generator (zones, holes for pools, slides, facades, decoration).
 
@@ -52,3 +52,27 @@ Tools and standing rules for building World of Padman (WoP) maps.
   seam (bots can't walk up): give bots a pad (`xmas/`).
 - autosprite2 needs thin quads, taller than wide (flames: 2u slabs, nodraw on the other faces); `alphaGen const`
   replaces the texture's alpha, so don't use it on alpha-cutout sprites (smoke turned into a solid rectangle).
+- func_bobbing as a bot ferry (padbath/README.md): bspc links it to grounded areas within 192u of each end outline, using the
+  top of the mover's model + 24 as the plane, so the hull entity must be flat at deck height (superstructure = second
+  func_bobbing with identical keys). botlib boards only within 16u of the start and gets off within 24u of the end: short
+  boat, clear deck centre, dock against a clean pier exactly the boat's width, nothing else within 192u. Bobbers instakill
+  anyone they pin (MOD_CRUSH regardless of dmg).
+- Bots drown under large low ceilings over water. Either stand the structure on the floor or fill the water under it with
+  `common/botclip` (WoP bspc makes botclip solid for the AAS; players still swim through it) - padbath ships float this way.
+- A convex brush with 45-degree bevels next to a ramp face left the ramp area ungrounded in bspc (no links); keep ramps
+  as plain profiles.
+- Water overlapping solids fails audit_map: build one water box and `carve()` it; draw only the surface faces and give the
+  internal faces a nodraw water shader (q3map2 only culls exactly coincident faces).
+- Fish/creatures that loop round a map: func_rotating + IQM model2 (`iqmtool.py`, `padtank/fish_models.py`); MD3 can't
+  hold geometry beyond +-512 of its origin. Fog volumes: run audit_map/sightlines with `--shaders` so the fog brush is
+  ignored instead of counted as a solid.
+- Bots may skip a long chain of 32u barrier-jump steps even when the AAS links every step; give the reward spot a pad too.
+- Custom MD3 buildings (padtank bell): misc_model spawnflags 4 for lightmaps + `_castshadows 1`, collision as invisible
+  weapclip brushes of the same shape; pass `--md3root` twice (WoP models + the map folder) to audit_map. The audit's sink
+  check now tests real model vertices, so hollow models don't flag scenery inside their bounding box.
+- A misc_model's *origin* must be inside the world too: models whose origin sits far above their base (catalog
+  `pad_ducktape`) placed on a low floor put the origin under the map and q3map2 reports "Entity leaked".
+- Don't put a misc_teleporter_dest inside a trigger_push (audit flags it); put it just behind the pad: the 400 u/s
+  teleport exit speed slides the player onto it.
+- `pkill -f wopded` from the Bash tool kills the tool's own shell (its command line contains the pattern); start
+  wopded with `setsid nohup ... < /dev/null &` and stop it with its pid or `timeout`.

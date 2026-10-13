@@ -99,11 +99,13 @@ def shader_info(body):
     for i, x in enumerate(tl):
         if x == 'surfaceparm' and i + 1 < len(tl):
             p = tl[i + 1]
-            if p == 'nodraw': info['nodraw'] = True
+            if p in ('nodraw', 'fog'): info['nodraw'] = True
             if p == 'sky': info['sky'] = info['sky'] or ''
             if p == 'nolightmap': info['nolm'] = True
         if x == 'skyparms' and i + 1 < len(tl): info['sky'] = top[i + 1]
         if x == 'qer_editorimage' and i + 1 < len(tl): info['editor'] = top[i + 1]
+    has_lm = any('$lightmap' in [x.lower() for x in st] for st in stages)
+    filter_only = False
     for st in stages:
         sl = [x.lower() for x in st]
         img = None
@@ -128,13 +130,16 @@ def shader_info(body):
             info['img'] = img
             info['blend'] = None if bf == 'filter' else bf
             if 'alphafunc' in sl: info['alpha'] = True
+            info['env'] = 'tcgen' in sl and sl[sl.index('tcgen') + 1:sl.index('tcgen') + 2] == ['environment']
             if bf == 'filter': info['blend'] = None
+            filter_only = (bf == 'filter' and not has_lm)
             info['tint'] = None
             if 'rgbgen' in sl:                  # rgbGen const ( r g b ): dims additive glass, spray...
                 j = sl.index('rgbgen')
                 if sl[j + 1] == 'const':
                     try: info['tint'] = [float(v) for v in st[j + 2:j + 7] if v not in ('(', ')')][:3]
                     except Exception: pass
+    if filter_only and info['blend'] is None: info['blend'] = 'blend'      # tinted glass: see through it
     return info
 
 
@@ -213,11 +218,13 @@ def main():
     ap.add_argument('--threeurl', default=None)
     ap.add_argument('--sky', default=None)
     ap.add_argument('--texsize', type=int, default=256)
+    ap.add_argument('--bigtex', default='', help='"substring=size;..." larger texture sizes for matching image paths (e.g. a fitted playfield painting)')
     ap.add_argument('--title', default=None)
     ap.add_argument('--markers', type=int, default=1)
     ap.add_argument('--sub', default='Compiled BSP preview')
     ap.add_argument('--style', default=None, help='CSS file appended after the built-in style (palette/type overrides)')
     ap.add_argument('--views', default='', help='"Name:x,y,z,yaw,pitch;Name2:..." camera buttons (first = start view)')
+    ap.add_argument('--fog', default=None, help='"r,g,b,dist": distance fog (Q3 fogparms colour + distance to opaque), e.g. for a map inside a fog volume')
     a = ap.parse_args()
 
     ents, shaders, dv, di, surfs, lms, bmodels = read_bsp(a.bsp)
@@ -242,7 +249,21 @@ def main():
             except Exception:
                 pass
 
-    groups = {}   # (shader, lit) -> lists
+    # func_bobbing movers: their surfaces get their own groups and bob in the page (Q3 TR_SINE: base + h*sin(2pi(t/T + phase)))
+    surf_anim = {}; anims = []
+    for e in ent_list:
+        m = e.get('model', '')
+        if e.get('classname') == 'func_bobbing' and m.startswith('*'):
+            try:
+                k = int(m[1:]); md = read_bsp.models[k]
+            except Exception:
+                continue
+            sf = int(e.get('spawnflags', 0) or 0)
+            ax = 0 if sf & 1 else (1 if sf & 2 else 2)
+            anims.append({'axis': ax, 'h': float(e.get('height', 32)), 'T': float(e.get('speed', 4)), 'ph': float(e.get('phase', 0))})
+            for si in range(md['fs'], md['fs'] + md['ns']): surf_anim[si] = len(anims) - 1
+
+    groups = {}   # (shader, lit, anim) -> lists
     sky_name = a.sky
     for si, s in enumerate(surfs):
         sname = shaders[s['shader']][0]
@@ -258,10 +279,12 @@ def main():
             ctrl = np.concatenate([V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)], 1).reshape(h, w, -1)
             verts, tris = bezier_patch(ctrl, w, h)
             xyz, st, lmst, col = verts[:, :3], verts[:, 3:5], verts[:, 5:7], np.clip(verts[:, 7:11], 0, 255)
+            nrm = np.zeros((len(xyz), 3), np.float32)
         else:
             fv, nv, fi, ni = s['fv'], s['nv'], s['fi'], s['ni']
             V = dv[fv:fv + nv]
             xyz, st, lmst, col = V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)
+            nrm = V['n']
             tris = di[fi:fi + ni].astype(np.int64)
         if surf_off[si].any(): xyz = np.asarray(xyz, np.float32) + surf_off[si]   # (an ndarray: 'si in surf_off' tested values)
         lmn = int(s['lm'])
@@ -272,35 +295,43 @@ def main():
             lm2 = np.stack([u2, v2], 1)
         else:
             lm2 = np.zeros((len(xyz), 2), np.float32)
-        key = (sname, lmn >= 0)
-        g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
+        key = (sname, lmn >= 0, surf_anim.get(si, -1))
+        g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'nrm': [], 'n': 0})
+        g['nrm'].append(np.asarray(nrm, np.float32))
         g['pos'].append(np.asarray(xyz, np.float32)); g['uv'].append(np.asarray(st, np.float32))
         g['uv2'].append(np.asarray(lm2, np.float32)); g['col'].append(np.asarray(col, np.float32)[:, :3])
         g['idx'].append(tris + g['n']); g['n'] += len(xyz)
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     try:
-        import md3tool
+        import md3tool, iqmtool
     except Exception:
-        md3tool = None
+        md3tool = iqmtool = None
     nent_models = 0
     for e in ent_list:
         mp = e.get('model2') or (e.get('model') if e.get('classname') == 'misc_externalmodel' else None)
         if not mp or not md3tool or not e.get('origin'): continue
         f = next((os.path.join(d, mp) for d in reversed(a.vfs) if os.path.exists(os.path.join(d, mp))), None)
         if not f: continue
-        try: md = md3tool.load(f)
+        try: md = iqmtool.load(f) if f.lower().endswith('.iqm') else md3tool.load(f)
         except Exception: continue
         o = np.array([float(v) for v in e['origin'].split()], np.float32)
         if 'angles' in e: yaw = float(e['angles'].split()[1])
         else: yaw = float(e.get('angle', 0))
         c, sn = np.cos(np.radians(yaw)), np.sin(np.radians(yaw))
         R = np.array([[c, sn, 0], [-sn, c, 0], [0, 0, 1]], np.float32)
+        anim = -1
+        if e.get('classname') == 'func_rotating':      # spins round its origin (Z axis unless spawnflags say X / Y)
+            sf = int(e.get('spawnflags', 0) or 0)
+            anims.append({'type': 'rot', 'speed': float(e.get('speed', 100)), 'axis': 0 if sf & 4 else (1 if sf & 8 else 2),
+                          'pivot': [float(o[0]), float(o[2]), float(-o[1])]})
+            anim = len(anims) - 1
         for srf in md['surfaces']:
             sname = srf['shader'] or ''
-            key = (sname, False)
-            g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
-            v = srf['verts'] @ R + o
+            key = (sname, False, anim)
+            g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'nrm': [], 'n': 0})
+            g['nrm'].append((np.asarray(srf['normals'], np.float32) @ R).astype(np.float32))
+            v = srf['verts'] @ R + (o if anim < 0 else 0)
             g['pos'].append(v.astype(np.float32)); g['uv'].append(srf['st'].astype(np.float32))
             g['uv2'].append(np.zeros((len(v), 2), np.float32)); g['col'].append(np.full((len(v), 3), 118, np.float32))
             g['idx'].append(srf['tris'][:, ::-1].astype(np.int64) + g['n']); g['n'] += len(v)
@@ -308,14 +339,18 @@ def main():
 
     blob = io.BytesIO(); meta = []; tex_cache = {}; textures = {}
     missing = set()
-    for (sname, lit), g in sorted(groups.items()):
+    for (sname, lit, anim), g in sorted(groups.items()):
         info = shinfo.get(sname.lower(), {})
         img = info.get('img') or sname
         p = find_image(img, a.vfs) or (find_image(info['editor'], a.vfs) if info.get('editor') else None) or find_image(sname, a.vfs)
         tid = None
         if p:
             if p not in tex_cache:
-                url = load_img(p, a.texsize)
+                tsz = a.texsize
+                for kv in filter(None, a.bigtex.split(';')):
+                    k_, v_ = kv.split('=')
+                    if k_ in p: tsz = max(tsz, int(v_))
+                url = load_img(p, tsz)
                 tex_cache[p] = None if url is None else f't{len(textures)}'
                 if url: textures[tex_cache[p]] = url
             tid = tex_cache[p]
@@ -325,11 +360,17 @@ def main():
         # q3 (x,y,z) -> three (x, z, -y)
         p3 = np.stack([pos[:, 0], pos[:, 2], -pos[:, 1]], 1).astype(np.float32)
         rec = {'shader': sname, 'lit': bool(lit), 'tex': tid, 'blend': info.get('blend'), 'alpha': bool(info.get('alpha')),
-               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'nv': int(len(pos)), 'ni': int(len(idx))}
+               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'env': bool(info.get('env')), 'nv': int(len(pos)), 'ni': int(len(idx)),
+               'anim': (anim if anim >= 0 else None)}
         for k, arr in (('pos', p3), ('uv', uv.astype(np.float32)), ('uv2', uv2.astype(np.float32)),
                        ('col', (np.clip(col, 0, 255)).astype(np.uint8)), ('idx', idx)):
             while blob.tell() % 4: blob.write(b'\0')
             rec[k] = blob.tell(); blob.write(arr.tobytes())
+        if info.get('env') and len(g['nrm']) == len(g['pos']):      # smooth chrome: real vertex normals
+            nr = np.concatenate(g['nrm'])
+            n3 = np.stack([nr[:, 0], nr[:, 2], -nr[:, 1]], 1).astype(np.float32)
+            while blob.tell() % 4: blob.write(b'\0')
+            rec['nrm'] = blob.tell(); blob.write(n3.tobytes())
         meta.append(rec)
 
     # sky
@@ -373,7 +414,8 @@ def main():
     html = TEMPLATE.replace('%%THREE%%', three_tag).replace('%%TITLE%%', title).replace('%%SUB%%', a.sub)
     html = html.replace('%%STYLE%%', open(a.style).read() if a.style else '')
     html = html.replace('%%VIEWS%%', '<script>window.__VIEWS=' + json.dumps(views) + ';</script>')
-    html = html.replace('%%DATA%%', json.dumps({'meta': meta, 'tex': textures, 'atlas': atlas_url, 'sky': sky,
+    fog = [float(v) for v in a.fog.split(',')] if a.fog else None
+    html = html.replace('%%DATA%%', json.dumps({'meta': meta, 'tex': textures, 'atlas': atlas_url, 'sky': sky, 'anims': anims, 'fog': fog,
                                                  'marks': marks, 'blob': data_b64}))
     open(a.out, 'w').write(html)
     tv = sum(m['nv'] for m in meta); ti = sum(m['ni'] for m in meta) // 3
@@ -426,7 +468,7 @@ renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 document.body.appendChild(renderer.domElement);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x8fb6e0);
+const scene = new THREE.Scene(); scene.background = D.fog ? new THREE.Color(D.fog[0], D.fog[1], D.fog[2]) : new THREE.Color(0x8fb6e0);
 const camera = new THREE.PerspectiveCamera(80, innerWidth/innerHeight, 4, 40000);
 camera.rotation.order = 'YXZ';
 const loader = new THREE.TextureLoader();
@@ -437,16 +479,23 @@ function tex(id){ if(!id) return null; if(texs[id]) return texs[id]; pending++;
 pending++; const atlas = loader.load(D.atlas, ()=>{pending--;}); atlas.flipY=false; atlas.colorSpace = THREE.NoColorSpace;
 atlas.magFilter = THREE.LinearFilter; atlas.minFilter = THREE.LinearFilter; atlas.generateMipmaps=false;
 const white = new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1); white.needsUpdate = true;
-const scrollers = [];
-const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol;
+const scrollers = []; const movers = [];
+const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol; varying float vDist; varying vec3 vView; varying vec3 vN;
  uniform vec2 scroll; uniform float time;
- void main(){ vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `;
+ void main(){ vN = normalMatrix * normal; vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; vec4 mv = modelViewMatrix*vec4(position,1.0); vDist = length(mv.xyz); vView = mv.xyz;
+  gl_Position = projectionMatrix*mv;} `;
 const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; uniform float alphaTest; uniform float opacity; uniform float add; uniform vec3 tint;
+ uniform vec4 fog; uniform float env; varying float vDist; varying vec3 vView; varying vec3 vN;
  varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol;
- void main(){ vec4 c = texture2D(map, vUv); if(c.a < alphaTest) discard;
+ void main(){ vec2 tuv = vUv;
+  if (env > 0.5) { vec3 n = length(vN) > 0.1 ? normalize(vN) : normalize(cross(dFdx(vView), dFdy(vView))); vec3 r = reflect(normalize(vView), n);
+    float m = 2.0*sqrt(r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0)); tuv = vec2(r.x/m + 0.5, 0.5 - r.y/m); }
+  vec4 c = texture2D(map, tuv); if(c.a < alphaTest) discard;
   vec3 light = lit > 0.5 ? texture2D(lm, vUv2).rgb : vCol/255.0;
   vec3 col = add > 0.5 ? c.rgb * tint : c.rgb * min(light*2.0, vec3(1.6));
-  gl_FragColor = vec4(pow(col, vec3(0.9)), add > 0.5 ? 1.0 : (opacity < 1.0 ? opacity : c.a)); }`;
+  col = pow(col, vec3(0.9));
+  if (fog.w > 0.0) { float f = clamp(vDist / fog.w, 0.0, 1.0); f = sqrt(f); col = add > 0.5 ? col * (1.0 - f) : mix(col, fog.rgb, f); }
+  gl_FragColor = vec4(col, add > 0.5 ? 1.0 : (opacity < 1.0 ? opacity : c.a)); }`;
 for (const m of D.meta){
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(bin, m.pos, m.nv*3), 3));
@@ -454,14 +503,17 @@ for (const m of D.meta){
   g.setAttribute('lmuv', new THREE.BufferAttribute(new Float32Array(bin, m.uv2, m.nv*2), 2));
   g.setAttribute('vcol', new THREE.BufferAttribute(new Uint8Array(bin, m.col, m.nv*3), 3));
   g.setIndex(new THREE.BufferAttribute(new Uint32Array(bin, m.idx, m.ni), 1));
+  if (m.nrm !== undefined) g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(bin, m.nrm, m.nv*3), 3));
   const blend = m.blend; const t = tex(m.tex) || white;
   const u = {map:{value:t}, lm:{value:atlas}, lit:{value:m.lit?1:0}, alphaTest:{value:m.alpha?0.5:0.0},
-             opacity:{value: blend==='blend'?0.55:1.0}, add:{value: blend==='add'?1:0}, tint:{value:new THREE.Vector3(...(m.tint||[1,1,1]))}, scroll:{value:new THREE.Vector2(...(m.scroll||[0,0]))}, time:{value:0}};
+             opacity:{value: blend==='blend'?0.55:1.0}, add:{value: blend==='add'?1:0}, tint:{value:new THREE.Vector3(...(m.tint||[1,1,1]))}, scroll:{value:new THREE.Vector2(...(m.scroll||[0,0]))}, time:{value:0},
+             fog:{value: D.fog ? new THREE.Vector4(...D.fog) : new THREE.Vector4(0,0,0,0)}, env:{value: m.env?1:0}};
   const mat = new THREE.ShaderMaterial({uniforms:u, vertexShader:VS, fragmentShader:FS, side:THREE.DoubleSide,
      transparent: !!blend, depthWrite: !blend});
   if (blend==='add'){ mat.blending = THREE.AdditiveBlending; }
   if (m.scroll) scrollers.push(u.time);
   const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; if (blend) mesh.renderOrder = 2; scene.add(mesh);
+  if (m.anim !== null && m.anim !== undefined){ const an = D.anims[m.anim]; if (an.type==='rot') mesh.position.set(...an.pivot); movers.push([mesh, an]); }
 }
 if (D.sky){ const L = new THREE.CubeTextureLoader(); pending++;
   const order = ['lf','rt','up','dn','ft','bk'];
@@ -498,6 +550,10 @@ document.querySelectorAll('#pad button').forEach(b=>{ const k=b.dataset.k;
 addEventListener('resize', ()=>{ camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 let last = performance.now();
 function loop(now){ const dt = Math.min(0.05, (now-last)/1000); last = now;
+  for (const [mesh, a] of movers){
+    if (a.type==='rot'){ const ang = a.speed*Math.PI/180*now/1000; if (a.axis===2) mesh.rotation.y = ang; else if (a.axis===0) mesh.rotation.x = ang; else mesh.rotation.z = -ang; continue; }
+    const d = a.h*Math.sin(2*Math.PI*(now/1000/a.T + a.ph));
+    if (a.axis===0) mesh.position.x = d; else if (a.axis===1) mesh.position.z = -d; else mesh.position.y = d; }
   const sp = (keys['shift']?1600:600)*dt; const f = new THREE.Vector3(); camera.getWorldDirection(f);
   const r = new THREE.Vector3().crossVectors(f, camera.up).normalize();
   if (keys['w']||keys['arrowup']) camera.position.addScaledVector(f, sp);
