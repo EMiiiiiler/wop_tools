@@ -15,7 +15,7 @@ built by a function taking s = +1 (red, west, negative x) and mirrored for blue 
                      The aisle between them is a drop to the floor (death), crossed by two cutting boards, a wooden
                      spatula (neutral lolly) and two baguettes from the side counters to the island ends.
   bases              a giant team-coloured four-slice toaster on each side counter: three doors, the lolly inside
-                     between glowing coils, roof slots you can drop through, toast-stack stairs up the wall side
+                     between glowing coils, roof slots you can drop through, a jump pad up to the roof
                      (Balloony on the roof)
   sink               1280 x 640 stainless basin 448 deep with 48u of soapy water (wade, never swim); two cutting-board
                      ramps out, a plate-stack jump pad up to the faucet spout. Betty at the bottom, Imperius on the spout.
@@ -69,7 +69,6 @@ TA = (-XW + 8, -960, -XW + 456, 64)   # flush against the end wall's backsplash
 TT, TROOF, TCH = 32, 512, 48
 TXM, TYM = (TA[0] + TA[2]) // 2, -448  # toaster centre (lolly)
 SLOT_A, SLOT_B, SLOT_Y = (TXM - 112, TXM - 48), (TXM + 48, TXM + 112), (-768, -128)
-TST = (TA[2], TA[2] + 256)             # toast-stack stairs on the toaster's east side (x range)
 # stove / hood / cabinets
 ST_X = 768
 CAB_Z0, CAB_Z1, CAB_Y0 = 944, 1728, 960
@@ -526,10 +525,8 @@ def toaster(s):
     weapon(s, 'balloony', TXM, -900, TROOF, 'green')
     item(s, 'ammo_nipper', TXM, 0, TROOF)
     slight(s, TXM, -400, TROOF + 260, 400)
-    # toast-stack stairs up the wall side to the roof (16u steps)
-    stt = {'top': T('bread'), 'side': T('crust'), 'bot': CAULK}
-    for b in stairs(TST[0], -1216, TST[1], -192, 0, TROOF, 'n', stt):
-        mn, mx = b.bounds(); A(sb(s, mn[0], mn[1], mn[2], mx[0], mx[1], mx[2], stt))
+    # jump pad from the counter up onto the roof (lands beside the Balloony, clear of the bread slots)
+    spad(s, TA[2] + 150, -600, 0, (TXM, -860, TROOF), TROOF + 260, 'roof_%s' % ('r' if s > 0 else 'b'))
 
 
 def ssign(s, mn, mx, tex, tw, th, facing, back):
@@ -822,7 +819,7 @@ def room_decor():
     speaker(0, fy1 + 40, ZF + 1200, 'sound/world/machine/freezer.ogg')
     A(sign_box((DOOR[0], YS, ZF), (DOOR[1], YS + 4, ZF + DOOR[2]), T('door'), 512, 1024, facing='n', back=T('baseboard')))
     dining_table()
-    A(sign_box((-2300, YS, ZF + 900), (-1500, YS + 8, ZF + 1500), T('painting'), 512, 384, facing='n', back=T('window_frame')))
+    A(sign_box((-2450, YS, 200), (-1350, YS + 8, 1025), T('painting'), 512, 384, facing='n', back=T('window_frame')))   # well above the chair backs (z -67)
     for s in (1, -1):         # wall clocks above the windows
         A(ssign(s, (-XW, -416, 1620), (-XW + 4, -160, 1876), T('clock'), 256, 256, 'e', T('wall')))
     mdl('pad_ddmix/trashcan/cannedfish.md3', 1500, -1900, ZF, 2.5, 0)

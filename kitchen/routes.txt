@@ -3,8 +3,6 @@
 red_toaster_south_door:     -2840,-1100,0 > -2840,-800,16
 red_toaster_north_door:     -2840,250,0 > -2840,-100,16
 red_toaster_east_door:      -2250,-64,0 > -2700,-64,16
-red_toast_stairs:           -2488,-1240,0 > -2488,-210,512
-red_stairs_roof:            -2488,-210,512 > -2840,-300,512
 red_side_to_corner:         -2600,300,0 > -2600,800,0
 red_corner_to_back:         -2300,800,0 > -1400,700,0
 red_baguette:               -2272,-700,0 > -1650,-700,0
@@ -22,8 +20,6 @@ red_hood_walk:              -1100,1100,960 > 0,1000,960
 blue_toaster_south_door:    2840,-1100,0 > 2840,-800,16
 blue_toaster_north_door:    2840,250,0 > 2840,-100,16
 blue_toaster_east_door:     2250,-64,0 > 2700,-64,16
-blue_toast_stairs:          2488,-1240,0 > 2488,-210,512
-blue_stairs_roof:           2488,-210,512 > 2840,-300,512
 blue_side_to_corner:        2600,300,0 > 2600,800,0
 blue_corner_to_back:        2300,800,0 > 1400,700,0
 blue_baguette:              2272,-700,0 > 1650,-700,0
