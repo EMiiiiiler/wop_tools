@@ -23,6 +23,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
   see xmas/README.md.
+- `meshlib.py` - mesh helpers for model generators: Mesh (auto winding), revolve (with per-angle radius), tube along a
+  path (flat ribbons, twisted UVs), ellipsoid/sphere, rounded and pillowy boxes, prisms (any simple polygon), arc paths,
+  and `save_md3()` which shrinks big models to fit MD3's +-512 (returns the modelscale) and drops collapsed triangles.
+- `preview/md3sheet.py out.png --vfs <dirs> a.md3 b.md3 ...` - contact sheet of models with their real textures.
 - `lfs_fetch.py` - replace LFS stubs in a shallow WoP checkout with the real files; `--map maps/x.map` pulls every md3,
   the images its shaders use (resolved through WoP's shader scripts) and the map's skybox.
 

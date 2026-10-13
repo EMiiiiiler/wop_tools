@@ -24,6 +24,8 @@ sys.path.insert(0, os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from wopmap import *
 import wopmap
 import xmas_textures as TX
+import xmas_models as XM
+from contextlib import contextmanager
 
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MAPNAME = 'wop_padxmas'
@@ -41,7 +43,36 @@ for k, v in {'floor_oak': (2, 2), 'wallpaper': (2, 2), 'wainscot': (1, 2.5), 'ce
     wopmap.TEXSCALE[T(k)] = v
 
 M = Map({'message': "Padman's Christmas", '_ambient': '7', '_color': '1 0.9 0.8', 'gridsize': '96 96 96', '_blocksize': '0'})
-A = M.add
+_CLIP = [False]
+
+
+def A(*bs, tag=None):
+    """add brushes to the world; inside `with as_clip():` they become invisible weapon clip (collision of an MD3)"""
+    if _CLIP[0]:
+        for b in _flat(bs):
+            for f in b.faces: f.tex = WCLIP
+    return M.add(*bs, tag=tag)
+
+
+def _flat(bs):
+    for b in bs:
+        if isinstance(b, (list, tuple)): yield from _flat(b)
+        else: yield b
+
+
+@contextmanager
+def as_clip():
+    _CLIP[0] = True
+    try: yield
+    finally: _CLIP[0] = False
+
+
+def xm(name, x, y, z, angle=0, key=None, scale=1.0, lm=1.0, **kw):
+    """place one of our MD3 models (xmas_models.py), lightmapped (spawnflags 4); origin = model base point"""
+    path, sc = XM.get(name, key=key, **kw)
+    z = z + XM.ZOFF.get(path, 0.0) * scale          # tall models are stored round their mid-height
+    return M.model(path, (round(x, 2), round(y, 2), round(z, 2)), scale=sc * scale, angle=angle, spawnflags=4,
+                   _lightmapscale=lm, _castshadows=1, _receiveshadows=1)
 RX0, RX1, RY0, RY1, CZ = -2176, 2176, -1792, 1792, 2112
 RZ = CZ + 16                                  # roof terrace floor (top of the ceiling slab)
 BOUNDS = json.load(open(os.path.join(os.path.dirname(HERE), 'md3bounds.json')))
@@ -170,49 +201,21 @@ def jumppad(x, y, z, land, apex, name, glow=True):
 
 
 def gift(x0, y0, z0, x1, y1, z1, pat, bow=True, lidless=False):
-    """wrapped present: paper + satin ribbon textures fitted to every face, optional little bow on top.
-    lidless: an opened present (4 walls + floor with tissue paper), returns the inner floor height."""
-    side, top = T('gift_%s_side' % pat), T('gift_%s_top' % pat)
-    def dress(b, top_fit=True):
-        for f in b.faces:
-            if abs(f.n[2]) < 0.1:
-                f.tex = side
-                if abs(f.n[0]) > 0.9: fit_face(f, y0, y1, z0, z1, 256, 256)
-                else: fit_face(f, x0, x1, z0, z1, 256, 256)
-            elif f.n[2] > 0.9 and top_fit:
-                f.tex = top
-        if top_fit: fit_top(b, x0, y0, x1, y1, 256, 256)
-        return b
+    """wrapped present: an MD3 (rounded paper box, raised satin ribbons, looped bow) on an invisible clip box.
+    lidless: an opened present (low walls with folded-out flaps, tissue inside); returns the inner floor height."""
+    path, sc = XM.gift_model(x1 - x0, y1 - y0, z1 - z0 if not lidless else 96, pat, bow=bow, open=lidless)
+    M.model(path, ((x0 + x1) / 2, (y0 + y1) / 2, z0), scale=sc, angle=0, spawnflags=4, _castshadows=1, _receiveshadows=1)
     if not lidless:
-        A(dress(box((x0, y0, z0), (x1, y1, z1), CAULK)))
-        if bow and min(x1 - x0, y1 - y0) >= 96:
-            bowtie((x0 + x1) / 2, (y0 + y1) / 2, z1, pat, min(x1 - x0, y1 - y0) * 0.22)
+        A(box((x0, y0, z0), (x1, y1, z1), WCLIP))
         return z1
     w = 12
     z1 = z0 + 32
-    A(dress(box((x0, y0, z0), (x1, y0 + w, z1), CAULK), False)); A(dress(box((x0, y1 - w, z0), (x1, y1, z1), CAULK), False))
-    A(dress(box((x0, y0 + w, z0), (x0 + w, y1 - w, z1), CAULK), False)); A(dress(box((x1 - w, y0 + w, z0), (x1, y1 - w, z1), CAULK), False))
-    for b in M.world[-4:]:
-        for f in b.faces:
-            if f.n[2] > 0.9: f.tex = T('box_inside')
-            elif abs(f.n[2]) < 0.1:
-                inner = (f.n[0] > 0.9 and b is M.world[-2]) or (f.n[0] < -0.9 and b is M.world[-1]) or \
-                        (f.n[1] > 0.9 and b is M.world[-4]) or (f.n[1] < -0.9 and b is M.world[-3])
-                if inner: f.tex = T('box_inside')
+    for mn, mx in (((x0, y0, z0), (x1, y0 + w, z1)), ((x0, y1 - w, z0), (x1, y1, z1)), ((x0, y0 + w, z0), (x0 + w, y1 - w, z1)),
+                   ((x1 - w, y0 + w, z0), (x1, y1 - w, z1))):
+        A(box(mn, mx, WCLIP))
     fl = z0 + 16
-    A(box((x0 + w, y0 + w, z0), (x1 - w, y1 - w, fl), {'top': T('tissue'), 'side': T('box_inside'), 'bot': T('box_inside')}))
+    A(box((x0 + w, y0 + w, z0), (x1 - w, y1 - w, fl), WCLIP))
     return fl
-
-
-def bowtie(cx, cy, z, pat, s):
-    """flat bow: two loops + knot, 16u tall (players step over it)"""
-    rt = T('ribbon_%s' % pat)
-    s = max(18, min(s, 56))
-    for sg in (-1, 1):
-        A(hull([(cx + sg * 6, cy - s * 0.25, z), (cx + sg * 6, cy + s * 0.25, z), (cx + sg * s, cy - s * 0.5, z), (cx + sg * s, cy + s * 0.5, z),
-                (cx + sg * 6, cy - s * 0.2, z + 12), (cx + sg * 6, cy + s * 0.2, z + 12), (cx + sg * s * 0.9, cy - s * 0.4, z + 16),
-                (cx + sg * s * 0.9, cy + s * 0.4, z + 16)], rt, round_pts=False))
-    A(box((round(cx - 6), round(cy - s * 0.25), z), (round(cx + 6), round(cy + s * 0.25), z + 16), rt))
 
 
 def plate(x, y, z, r):
@@ -221,9 +224,15 @@ def plate(x, y, z, r):
 
 
 def candle(x, y, z, r=14, h=96, tex='candle_red'):
-    A(cyl(x, y, r, z, z + h, {'side': T(tex), 'top': T('wax_top'), 'bot': T(tex)}, 8))
-    A(box((x - 1, y - 1, z + h), (x + 1, y + 1, z + h + 6), T('wire_ns')))
-    A(box((x - 1, y - 7, z + h + 4), (x + 1, y + 7, z + h + 34), {'e': T('flame'), 'w': T('flame'), 'side': NODRAW, 'top': NODRAW, 'bot': NODRAW}))
+    """MD3 candlestick (brass holder + dripping candle) with a flame sprite; total height h"""
+    holder = h > 70
+    ch = h - 30 if holder else h
+    xm('candlestick', x, y, z, key=f'candle_{tex}_{r}_{ch}' + ('' if holder else '_nh'), h=ch, r=r, col=tex, holder=holder)
+    flame(x, y, z + h + 4)
+
+
+def flame(x, y, z):
+    A(box((x - 1, y - 7, z), (x + 1, y + 7, z + 30), {'e': T('flame'), 'w': T('flame'), 'side': NODRAW, 'top': NODRAW, 'bot': NODRAW}))
 
 
 # =================================================================================================== shell
@@ -267,69 +276,29 @@ def ring_floor(i):
 
 
 def tree():
+    """the tree is one MD3 (xmas_models.tree): stand, trunk, five layered tiers with baubles, lights and tinsel.
+    Collision = the old brush shapes as invisible weapon clip (walkable rings, lips, necks); the tree skirt stays a brush."""
     cx, cy = TC
-    nt = {'side': T('needles'), 'top': T('needles_top'), 'bot': T('needles_under')}
-    # stand (red metal bucket with feet) + trunk
-    A(cyl(cx, cy, 256, 0, 144, {'side': T('stand_red'), 'top': T('stand_red'), 'bot': T('stand_red')}, 16))
-    A(cyl(cx, cy, 112, 144, TIERS[0][0] - 32, T('bark'), 12))
+    xm('tree', cx, cy, 0, tiers=tuple(TIERS), necks=tuple(NECKS), lm=2.0)
+    with as_clip():
+        A(cyl(cx, cy, 256, 0, 144, CAULK, 16))
+        A(cyl(cx, cy, 112, 144, TIERS[0][0] - 32, CAULK, 12))
+        for i, (zb, zt, rb, rt) in enumerate(TIERS):
+            A(frustum(cx, cy, zb - 32, zb, rb, rb, CAULK, 16))
+            A(frustum(cx, cy, zb, zt, rb, rt, CAULK, 16))
+            if i < 4:
+                A(cyl(cx, cy, NECKS[i], zt, TIERS[i + 1][0] - 32, CAULK, 12))
     # tree skirt (felt disc) around the stand
     inner, outer = ngon(cx, cy, 256, 16), ngon(cx, cy, 900, 16)
     for k in range(16):
         q = [inner[k], inner[(k + 1) % 16], outer[k], outer[(k + 1) % 16]]
         A(hull([(x, y, z) for (x, y) in q for z in (0, 4)], {'top': T('treeskirt'), 'side': T('rug_edge'), 'bot': CAULK}, round_pts=False))
-    # tiers + necks
-    for i, (zb, zt, rb, rt) in enumerate(TIERS):
-        A(frustum(cx, cy, zb - 32, zb, rb, rb, {'side': T('needles'), 'bot': T('needles_under'), 'top': T('needles')}, 16))
-        A(frustum(cx, cy, zb, zt, rb, rt, nt, 16))
-        if i < 4:
-            A(cyl(cx, cy, NECKS[i], zt, TIERS[i + 1][0] - 32, {'side': T('needles_under'), 'top': T('needles'), 'bot': T('needles')}, 12))
-    # ---- decorations: baubles hanging under each lip, bulbs along the lip, tinsel drapes on the skirts
-    cols = ['bauble_red', 'bauble_gold', 'bauble_blue', 'bauble_silver', 'bauble_green', 'bauble_purple']
-    bulbs = ['bulb_red', 'bulb_yellow', 'bulb_green', 'bulb_blue']
-    for i, (zb, zt, rb, rt) in enumerate(TIERS):
-        lip = zb - 32
-        nb = [14, 12, 10, 8, 6][i]
-        br = [30, 22, 20, 18, 16][i]
-        for k in range(nb):
-            ang = 360 * (k + 0.5) / nb + i * 13
-            bx, by = polar(rb - br - 18, ang)
-            wl = 14 if i == 0 else 6
-            A(box((round(bx) - 1, round(by) - 1, lip - wl), (round(bx) + 1, round(by) + 1, lip), T('wire_ns')))
-            A(box((round(bx) - 6, round(by) - 6, lip - wl - 6), (round(bx) + 6, round(by) + 6, lip - wl), T('brass')))
-            A(sphere(bx, by, lip - wl - 6 - br, br, T(cols[(k + i) % 6])))
-        nbu = [32, 26, 20, 14, 8][i]
-        for k in range(nbu):
-            ang = 360 * k / nbu + 5
-            ux, uy = polar(rb - 8, ang)
-            A(box((round(ux) - 5, round(uy) - 5, lip - 14), (round(ux) + 5, round(uy) + 5, lip - 2), T(bulbs[k % 4])))
-        # tinsel drape: one thin strip outside each skirt face, sagging between face corners
-        tin = T('tinsel' if i % 2 == 0 else 'tinsel_silver')
-        for k in range(16):
-            a0 = math.pi / 16 + 2 * math.pi * k / 16; a1 = a0 + 2 * math.pi / 16
-            for (fa, fb) in ((0.0, 0.5), (0.5, 1.0)):
-                pts = []
-                for (t, sag) in ((fa, 0.25 if fa == 0 else 0.6), (fb, 0.6 if fb == 0.5 else 0.25)):
-                    a = a0 + (a1 - a0) * t
-                    zz = zb + (zt - zb) * sag
-                    rr = rb + (rt - rb) * sag
-                    for dr, dz in ((6, 0), (10, 0), (6, 10), (10, 10)):
-                        # point on the face plane (polygon edge) at this angle, pushed outward
-                        e0 = (math.cos(a0), math.sin(a0)); e1 = (math.cos(a1), math.sin(a1))
-                        px = e0[0] + (e1[0] - e0[0]) * t; py = e0[1] + (e1[1] - e0[1]) * t
-                        R = rb + (rt - rb) * sag
-                        pts.append((cx + (R / math.cos(math.pi / 16)) * px + dr * math.cos((a0 + a1) / 2),
-                                    cy + (R / math.cos(math.pi / 16)) * py + dr * math.sin((a0 + a1) / 2), zz + dz))
-                A(hull(pts, tin, round_pts=False))
-    # ---- star on top: spinning (func_rotating, nonsolid glowing) on a thin pole
-    top = TIERS[4][1]
-    A(cyl(cx, cy, 6, top, top + 128, T('wire_ns'), 6))
-    sz = top + 236
-    br = [box((cx - 8, cy - 8, sz - 8), (cx + 8, cy + 8, sz + 8), ORIGIN)]
-    pts = star_outline(cx, sz, 96, 40)
-    for k in range(5):
-        tri = [pts[(2 * k - 1) % 10], pts[2 * k], pts[2 * k + 1]]
-        br.append(hull([(x, cy + s, z) for (x, z) in tri + [(cx, sz)] for s in (-6, 6)], T('star_gold'), round_pts=False))
-    M.ent('func_rotating', None, brushes=br, speed=30, spawnflags=0)
+    # ---- star on top: spinning MD3 (model2 of a func_rotating with a tiny nonsolid brush + origin brush)
+    sz = TIERS[4][1] + 236
+    path, _ = XM.get('star')
+    M.ent('func_rotating', None, brushes=[box((cx - 8, cy - 8, sz - 8), (cx + 8, cy + 8, sz + 8), ORIGIN),
+                                         box((cx - 4, cy - 4, sz - 4), (cx + 4, cy + 4, sz + 4), NODRAW_NS)],
+          model2=path, speed=30, spawnflags=0)
     light(cx, cy - 100, sz, 700, '1 0.85 0.5')
     light(cx, cy + 100, sz, 500, '1 0.85 0.5')
 
@@ -452,8 +421,11 @@ def under_tree():
     item('ammo_pumper', *polar(350, 100), z)
     item('item_armor_shard', *polar(820, 270), z)
     item('ammo_nipper', *polar(830, -20), z)
-    light(cx, cy - 400, 260, 220, '1 0.6 0.4'); light(cx, cy + 400, 260, 220, '0.6 0.8 1')
-    light(cx - 400, cy, 260, 200, '1 0.8 0.5'); light(cx + 400, cy, 260, 200, '1 0.5 0.5')
+    # fairy lights under the boughs (the tree MD3 casts shadows, so the cave needs its own light)
+    for k, col in enumerate(('1 0.6 0.4', '1 0.85 0.5', '0.6 0.8 1', '1 0.5 0.5', '0.7 1 0.6', '1 0.75 0.45')):
+        a = math.radians(30 + 60 * k)
+        light(cx + 560 * math.cos(a), cy + 560 * math.sin(a), 300, 520, col)
+    light(cx, cy, 300, 400, '1 0.8 0.6')
     for (ang, r) in ((-80, 840), (60, 850), (200, 850)):
         spawn(*polar(r, ang), z, (ang + 180) % 360)
 
@@ -477,22 +449,16 @@ def fireplace():
     # firebox floor + hearth
     A(box((FB['x0'], FB['y0'], 0), (FB['x1'], FB['y1'], 16), {'top': T('soot'), 'side': T('stone')}))
     A(box((BX1, -608, 0), (-1632, 608, 16), T('stone')))
-    # mantel shelf + corbels
-    A(box((BX1, -768, 640), (-1792, 768, 688), {'side': T('wood_dark'), 'top': T('wood_dark'), 'bot': T('wood_dark')}))
-    for y in (-736, -512, 480, 704):
-        A(hull([(BX1, y, 640), (BX1, y + 32, 640), (-1808, y, 640), (-1808, y + 32, 640), (BX1, y, 560), (BX1, y + 32, 560)], T('wood_dark')))
-    # painting above the mantel
+    # carved mantel (MD3: shelf, moulding, scroll corbels, fluted pilasters down to the hearth); clip = shelf + pilasters
+    xm('mantel', BX1, 0, 560, lm=1.0)
+    A(box((BX1, -768, 640), (-1792, 768, 688), WCLIP))
+    for (ya, yb) in ((-406, -314), (314, 406)):
+        A(box((BX1, ya, 16), (BX1 + 30, yb, 560), WCLIP))
+    # painting above the mantel in a gilt MD3 frame
     sign((BX1, -384, 880), (BX1 + 8, 384, 1360), 'painting', 'e', 512, 320, back=T('wallframe'))
-    # grate, logs (nonsolid - you can walk into the fire), fire sprites, embers
-    for y in (-176, 176):
-        A(box((-2040, y - 6, 16), (-1968, y + 6, 48), T('metal_black')))
-    for (x, z, y0, y1) in ((-2040, 48, -150, 150), (-1990, 48, -140, 160), (-2016, 82, -120, 130)):
-        pts = []
-        for k in range(8):
-            a = 2 * math.pi * (k + 0.5) / 8
-            for yy in (y0, y1):
-                pts.append((x + 20 * math.cos(a), yy, z + 18 + 18 * math.sin(a)))
-        A(hull(pts, {'side': T('log_bark_ns'), 'n': T('log_end_ns'), 's': T('log_end_ns')}, round_pts=False))
+    xm('frame', BX1, 0, 880, key='frame_painting', w=768, h=480)
+    # iron fire basket with logs (MD3, nonsolid - you can walk into the fire), fire sprites, embers
+    xm('fire_grate', -2010, 0, 16)
     A(box((-2060, -150, 16), (-1950, 150, 20), T('embers')))
     for (x, y0, y1, z0, z1) in ((-2016, -150, -50, 30, 250), (-2010, -60, 60, 36, 300), (-2016, 50, 150, 30, 240),
                                 (-1996, -110, -10, 40, 220), (-1996, 10, 110, 40, 230)):
@@ -512,8 +478,8 @@ def fireplace():
     Z = 688
     for y in (-720, -640, 640, 720):
         candle(-1866, y, Z, 12, 80 + (abs(y) % 3) * 12, 'candle_white')
-    A(box((-1888, -80, Z), (-1848, 80, Z + 120), T('wood_dark')))                     # mantel clock body
-    A(sign_box((-1848, -56, Z + 16), (-1844, 56, Z + 112), T('clockface'), 256, 256, back=T('brass'), facing='e'))
+    xm('mantel_clock', -1868, 0, Z)                                                  # arched mantel clock
+    A(box((-1888, -80, Z), (-1848, 80, Z + 120), WCLIP))
     nutcracker(-1863, -300, Z, 0.6)
     nutcracker(-1863, 300, Z, 0.6, coat='nut_blue')
     for (y, c) in ((-200, 0), (180, 1), (230, 2)):
@@ -522,42 +488,28 @@ def fireplace():
     item('holdable_boomies', -1815, -160, Z)
     item('ammo_bubbleg', -1815, 540, Z)
     item('ammo_splasher', -1815, 140, Z)
-    # stockings (nonsolid felt) hanging from the mantel edge
-    for (y, tex) in ((-660, 'fabric_ns'), (-540, 'knit_ns'), (560, 'knit_ns'), (680, 'fabric_ns')):
-        xs = -1786
-        A(box((xs, y - 28, 470), (xs + 14, y + 28, 640), T(tex)))
-        A(hull([(xs, y - 28, 420), (xs + 14, y - 28, 420), (xs, y + 28 + 44, 420), (xs + 14, y + 28 + 44, 420),
-                (xs, y - 28, 470), (xs + 14, y - 28, 470), (xs, y + 28, 470), (xs + 14, y + 28, 470)], T(tex), round_pts=False))
-        A(box((xs, y - 30, 600), (xs + 16, y + 30, 640), T('knit_ns')))
-    # garland along the mantel front
-    for k in range(12):
-        y0 = -768 + 128 * k
-        sag = 24 if k % 2 == 0 else 0
-        A(hull([(-1800, y0, 620 - sag), (-1786, y0, 620 - sag), (-1800, y0 + 128, 620 - (24 - sag)), (-1786, y0 + 128, 620 - (24 - sag)),
-                (-1800, y0, 640 - sag), (-1786, y0, 640 - sag), (-1800, y0 + 128, 640 - (24 - sag)), (-1786, y0 + 128, 640 - (24 - sag))],
-               T('needles_ns'), round_pts=False))
+    # stockings hanging from brass hooks on the mantel edge (MD3, nonsolid)
+    for (y, col, toe) in ((-660, 'velvet_red', 1), (-540, 'velvet_green', 1), (560, 'velvet_green', -1), (680, 'velvet_red', -1)):
+        xm('stocking', -1792, y, 640, key=f'stocking_{col}_{toe}', col=col, toe=toe)
+    # pine garland swagging along the mantel front
+    xm('garland', -1786, 0, 646)
     # Santa's milk and cookies on a little stool by the hearth + fire tools
-    A(cyl(-1560, -760, 96, 0, 200, {'side': T('wood_mid'), 'top': T('wood_mid')}, 12))
+    xm('stool', -1560, -760, 0)
+    A(cyl(-1560, -760, 96, 0, 200, WCLIP, 12))
     plate(-1565, -740, 200, 60)
     mdl_c('pad_ddmix/diner/muffin_choco.md3', -1575, -735, 206)
     mdl_c('pad_ddmix/diner/muffin_blueberry.md3', -1545, -760, 206, angle=90)
     mdl_c('pad_ddmix/diner/glass_simple.md3', -1530, -800, 200)
     A(box((-1600, -856, 200), (-1520, -820, 202), T('letter')))
-    A(cyl(-1700, 760, 40, 0, 24, T('metal_black'), 8))
-    for (dx, dy) in ((-12, 0), (10, 8), (2, -12)):
-        A(box((-1700 + dx - 3, 760 + dy - 3, 24), (-1700 + dx + 3, 760 + dy + 3, 420), T('brass')))
+    xm('fire_tools', -1700, 760, 0)
+    A(cyl(-1700, 760, 40, 0, 24, WCLIP, 8)); A(box((-1716, 744, 24), (-1684, 776, 380), WCLIP))
 
 
 def nutcracker(x, y, z, s=1.0, coat='nut_red'):
-    """little wooden soldier: base, legs, coat, face, tall hat"""
+    """wooden nutcracker soldier (MD3, 300 tall at s 1) facing into the room (+x) + a clip block"""
+    xm('nutcracker', x, y, z, key=f'nutcracker_{coat}', coat=coat, scale=s, angle=0)
     q = lambda v: round(v * s)
-    A(box((x - q(40), y - q(40), z), (x + q(40), y + q(40), z + q(16)), T('nut_black')))
-    for (ya, yb) in ((-28, -4), (4, 28)):
-        A(box((x - q(16), y + q(ya), z + q(16)), (x + q(16), y + q(yb), z + q(80)), T('nut_white')))
-    A(box((x - q(26), y - q(36), z + q(80)), (x + q(26), y + q(36), z + q(176)), T(coat)))
-    A(box((x - q(20), y - q(26), z + q(176)), (x + q(20), y + q(26), z + q(224)), T('nut_skin')))
-    A(box((x - q(22), y - q(28), z + q(224)), (x + q(22), y + q(28), z + q(300)), T('nut_black')))
-    A(box((x + q(20), y - q(16), z + q(186)), (x + q(24), y + q(16), z + q(196)), T('nut_white')))
+    A(box((x - q(40), y - q(40), z), (x + q(40), y + q(40), z + q(300)), WCLIP))
 
 
 def roof():
@@ -594,7 +546,7 @@ def roof():
     A(box((-2048 - 1, -60, RZ + 380), (-2048 + 1, 60, RZ + 620), {'e': T('smoke'), 'w': T('smoke'), 'side': NODRAW, 'top': NODRAW, 'bot': NODRAW}))
     # Santa's sleigh (step in from the back), sack, two reindeer, snowman
     sleigh(-2000, -880, -1440, -560)
-    reindeer(-1220, -800)
+    reindeer(-1220, -800, rudolph=True)
     reindeer(-1220, -640)
     for yy in (-800, -640):
         A(box((-1400, yy - 3, RZ + 150), (-1304, yy + 3, RZ + 156), T('wire_ns')))         # harness lines
@@ -625,6 +577,17 @@ def roof():
 
 
 def sleigh(x0, y0, x1, y1):
+    """Santa's sleigh: MD3 (xmas_models.sleigh) + sack MD3 + a present; collision = the old brush shapes as clip"""
+    xm('sleigh', (x0 + x1) / 2, (y0 + y1) / 2, RZ, lm=1.0)
+    fz = RZ + 64
+    sx, sy = x1 - 190, (y0 + y1) / 2
+    xm('sack', sx, sy, fz, key='sack_sleigh', rx=88, ry=106, h=200, gifts=False, seed=3)
+    with as_clip():
+        sleigh_collision(x0, y0, x1, y1)
+    gift(round(sx - 24), round(sy - 22), fz + 200, round(sx + 24), round(sy + 22), fz + 252, 'red', bow=False)
+
+
+def sleigh_collision(x0, y0, x1, y1):
     R, G = T('sleigh_red'), T('trim_gold')
     fz = RZ + 64                    # sleigh floor top (+48 step at the back = 2 x 32u steps for bots... 16+48)
     # runners
@@ -646,13 +609,19 @@ def sleigh(x0, y0, x1, y1):
     # sack of presents at the front
     sx, sy = x1 - 190, (y0 + y1) / 2
     pts = []
-    for (zf, rf) in ((0, 0.8), (0.4, 1.0), (0.8, 0.75), (1.0, 0.3)):
+    for (zf, rf) in ((0, 0.8), (0.4, 1.0), (0.8, 0.8), (1.0, 0.55)):
         pts += [(sx + 90 * rf * math.cos(2 * math.pi * k / 10), sy + 110 * rf * math.sin(2 * math.pi * k / 10), fz + 200 * zf) for k in range(10)]
     A(hull(pts, T('burlap'), round_pts=False))
-    gift(round(sx - 30), round(sy - 20), fz + 200, round(sx + 34), round(sy + 40), fz + 260, 'red', bow=False)
 
 
-def reindeer(x, y):
+def reindeer(x, y, rudolph=False):
+    """reindeer MD3 facing +x, collision = the old blocky shape as clip"""
+    xm('reindeer', x, y, RZ, key='rudolph' if rudolph else 'reindeer', rudolph=rudolph)
+    with as_clip():
+        reindeer_collision(x, y)
+
+
+def reindeer_collision(x, y):
     B, L = T('reindeer'), T('reindeer_light')
     z = RZ
     for (dx, dy) in ((-60, -24), (-60, 24), (60, -24), (60, 24)):
@@ -686,28 +655,22 @@ def window_garden():
     for (xa, xb) in ((WX0, -16), (16, WX1)):
         for (za, zb) in ((WZ0, 992), (1024, WZ1)):
             A(box((xa, Y - 18, za), (xb, Y - 14, zb), T('glass')))
-    # window seat with cushions + pillows
+    # window seat (panelled box) with an MD3 tartan cushion + velvet pillows
     A(box((WX0, Y, 0), (WX1, Y + 256, 352), {'side': T('wood_light'), 'top': T('wood_light')}))
-    A(box((WX0 + 16, Y + 16, 352), (WX1 - 16, Y + 240, 384), {'side': T('tartan'), 'top': T('tartan')}))
-    for (xc, ang) in ((-600, 0), (560, 0)):
-        A(hull([(xc - 70, Y + 16, 384), (xc + 70, Y + 16, 384), (xc - 70, Y + 60, 384), (xc + 70, Y + 60, 384),
-                (xc - 56, Y + 16, 500), (xc + 56, Y + 16, 500), (xc - 56, Y + 44, 490), (xc + 56, Y + 44, 490)], T('velvet_green')))
+    xm('seat_cushion', 0, Y + 128, 352, angle=90, L=WX1 - WX0 - 32, D=224, h=32)
+    A(box((WX0 + 16, Y + 16, 352), (WX1 - 16, Y + 240, 384), WCLIP))
+    for xc in (-600, 560):
+        xm('bolster', xc, Y + 44, 384, angle=90)
     item('item_climber', -200, Y + 140, 384)
     item('ammo_splasher', 300, Y + 150, 384)
     item('ammo_pumper', -420, Y + 150, 384)
     spawn(100, Y + 150, 384, 90)
     jumppad(0, -1478, 4, (0, Y + 140, 384), 600, 'jp_window')
-    # curtains (velvet, gathered) + rod + bells above
+    # velvet curtains with gold tie-backs (MD3) on a brass rod with two Christmas bells on a red bow
     for (xa, xb) in ((-960, -800), (800, 960)):
-        A(box((xa, Y, 0), (xb, Y + 48, 1720), T('curtain')))
-    A(box((-1024, Y + 52, 1720), (1024, Y + 68, 1736), T('brass')))
-    for xs in (-1024, 1008): A(box((xs, Y, 1712), (xs + 16, Y + 52, 1744), T('brass')))
-    for sx in (-110, 110):
-        A(frustum(sx, Y + 80, 1760, 1860, 70, 20, T('trim_gold'), 10))
-        A(cyl(sx, Y + 80, 14, 1748, 1760, T('trim_gold'), 6))
-        A(box((sx - 1, Y + 79, 1860), (sx + 1, Y + 81, 1880), T('wire_ns')))
-    A(box((-150, Y, 1880), (150, Y + 64, 1904), T('ribbon_red')))
-    A(box((-30, Y, 1904), (30, Y + 64, 1936), T('ribbon_red')))
+        xm('curtain', (xa + xb) / 2, Y, 0, angle=90)
+        A(box((xa, Y, 0), (xb, Y + 48, 1720), WCLIP))
+    xm('curtain_rod', 0, Y + 60, 1728, angle=90)
     # ---- garden outside (sky box y -3600..-1824)
     S = T('sky')
     gx0, gx1, gy0, gy1, gz0, gz1 = -2800, 2800, -3800, RY0 - 32, -112, 2700
@@ -737,47 +700,47 @@ def window_garden():
 
 # =================================================================================================== NW: armchair, side table, clock
 def nw_corner():
-    # armchair facing south-east (axis aligned, facing south)
+    # wingback armchair facing south (MD3), footstool, side table with cocoa, floor lamp, grandfather clock
     X0, X1, Y0, Y1 = -1760, -1312, 960, 1376
-    V = T('velvet_red')
-    A(box((X0, Y0, 0), (X1, Y1, 224), V))
-    A(box((X0 + 64, Y0 + 16, 224), (X1 - 64, Y1 - 96, 272), {'side': T('tartan'), 'top': T('tartan')}))
-    A(box((X0, Y1 - 96, 224), (X1, Y1, 720), V))
-    for (xa, xb) in ((X0, X0 + 64), (X1 - 64, X1)):
-        A(box((xa, Y0, 224), (xb, Y1 - 96, 400), V))
-    A(hull([(X1 - 64, Y0 + 40, 400), (X1, Y0 + 40, 400), (X1 - 64, Y1 - 120, 400), (X1, Y1 - 120, 400),
-            (X1 - 70, Y0 + 40, 404), (X1 + 6, Y0 + 40, 404), (X1 + 6, Y0 + 40, 300), (X1 - 70, Y1 - 120, 404), (X1 + 6, Y1 - 120, 404),
-            (X1 + 6, Y1 - 120, 300)], T('knit_ns'), round_pts=False))                         # blanket over the arm
+    xm('armchair', (X0 + X1) / 2, (Y0 + Y1) / 2, 0, angle=270, lm=1.0)
+    with as_clip():
+        A(box((X0, Y0, 0), (X1, Y1, 224), CAULK))
+        A(box((X0 + 64, Y0 + 16, 224), (X1 - 64, Y1 - 96, 272), CAULK))
+        A(box((X0, Y1 - 96, 224), (X1, Y1, 720), CAULK))
+        for (xa, xb) in ((X0, X0 + 64), (X1 - 64, X1)):
+            A(box((xa, Y0, 224), (xb, Y1 - 96, 400), CAULK))
     item('ammo_betty', -1200, 1050, 0)
-    # footstool
-    A(box((-1660, 720, 0), (-1400, 900, 112), {'side': T('velvet_red'), 'top': T('tartan')}))
+    xm('footstool', -1530, 810, 0)
+    A(box((-1660, 720, 0), (-1400, 900, 112), WCLIP))
     item('ammo_boaster', -1300, 760, 0)
     # side table: cocoa, cookies, pipe, poinsettia
-    A(cyl(-1140, 1300, 128, 304, 336, {'side': T('wood_dark'), 'top': T('wood_dark'), 'bot': T('wood_dark')}, 16))
-    A(cyl(-1140, 1300, 24, 32, 304, T('wood_dark'), 8))
-    A(cyl(-1140, 1300, 96, 0, 32, T('wood_dark'), 12))
+    xm('side_table', -1140, 1300, 0)
+    with as_clip():
+        A(cyl(-1140, 1300, 128, 304, 336, CAULK, 16))
+        A(cyl(-1140, 1300, 24, 32, 304, CAULK, 8))
+        A(cyl(-1140, 1300, 96, 0, 32, CAULK, 12))
     mdl_c('pad_cups/pad_cup05.md3', -1100, 1240, 336, angle=200)
     plate(-1170, 1350, 336, 56)
     for (dx, dy) in ((-20, 10), (20, -10), (5, 30)):
         mdl_c('pad_fruits/walnut.md3', -1170 + dx, 1350 + dy, 342)
     mdl_c('pad_ddmix/padlibrary/pipe.md3', -1100, 1370, 336, angle=60)
-    poinsettia(-1180, 1240, 336, 0.45)
+    xm('poinsettia', -1190, 1236, 336)
     # floor lamp (warm glow) behind the chair
-    A(cyl(-1600, 1600, 80, 0, 24, T('brass'), 12)); A(cyl(-1600, 1600, 10, 24, 1240, T('brass'), 6))
-    A(frustum(-1600, 1600, 1240, 1400, 150, 100, {'side': T('cushion_white'), 'top': CAULK, 'bot': T('lampglow')}, 12))
+    xm('floor_lamp', -1600, 1600, 0)
+    A(cyl(-1600, 1600, 80, 0, 24, WCLIP, 12)); A(box((-1610, 1590, 24), (-1590, 1610, 1240), WCLIP))
     light(-1600, 1600, 1200, 900, '1 0.8 0.55')
     # grandfather clock in the corner (face south) with a swinging pendulum behind glass
     cx0, cx1, cy0, cy1 = -2144, -1936, 1568, 1760
-    W = T('wood_dark')
-    A(box((cx0, cy0, 0), (cx1, cy1, 160), W))
-    A(box((cx0, cy0, 1120), (cx1, cy1, 1480), W))
-    A(hull([(cx0 - 16, cy0 - 16, 1480), (cx1 + 16, cy0 - 16, 1480), (cx0 - 16, cy1, 1480), (cx1 + 16, cy1, 1480),
-            (cx0 + 40, cy0 - 16, 1600), (cx1 - 40, cy0 - 16, 1600), (cx0 + 40, cy1, 1600), (cx1 - 40, cy1, 1600)], W))
-    A(box((cx0, cy1 - 24, 160), (cx1, cy1, 1120), W))
-    A(box((cx0, cy0 + 24, 160), (cx0 + 24, cy1 - 24, 1120), W)); A(box((cx1 - 24, cy0 + 24, 160), (cx1, cy1 - 24, 1120), W))
-    A(box((cx0, cy0, 160), (cx1, cy0 + 8, 1120), T('glass')))
-    A(box((cx0, cy0 + 8, 160), (cx0 + 24, cy0 + 24, 1120), W)); A(box((cx1 - 24, cy0 + 8, 160), (cx1, cy0 + 24, 1120), W))
-    A(sign_box((cx0 + 24, cy0 - 4, 1180), (cx1 - 24, cy0, 1340), T('clockface'), 256, 256, back=T('brass'), facing='s'))
+    xm('grandfather_clock', (cx0 + cx1) / 2, (cy0 + cy1) / 2, 0, angle=270, w=cx1 - cx0, d=cy1 - cy0)
+    with as_clip():
+        A(box((cx0, cy0, 0), (cx1, cy1, 160), CAULK))
+        A(box((cx0, cy0, 1120), (cx1, cy1, 1480), CAULK))
+        A(hull([(cx0 - 16, cy0 - 16, 1480), (cx1 + 16, cy0 - 16, 1480), (cx0 - 16, cy1, 1480), (cx1 + 16, cy1, 1480),
+                (cx0 + 40, cy0 - 16, 1600), (cx1 - 40, cy0 - 16, 1600), (cx0 + 40, cy1, 1600), (cx1 - 40, cy1, 1600)], CAULK))
+        A(box((cx0, cy1 - 24, 160), (cx1, cy1, 1120), CAULK))
+        A(box((cx0, cy0 + 24, 160), (cx0 + 24, cy1 - 24, 1120), CAULK)); A(box((cx1 - 24, cy0 + 24, 160), (cx1, cy1 - 24, 1120), CAULK))
+        A(box((cx0, cy0, 160), (cx1, cy0 + 8, 1120), CAULK))
+        A(box((cx0, cy0 + 8, 160), (cx0 + 24, cy0 + 24, 1120), CAULK)); A(box((cx1 - 24, cy0 + 8, 160), (cx1, cy0 + 24, 1120), CAULK))
     px, py, pz = (cx0 + cx1) / 2, (cy0 + cy1) / 2, 1100
     br = [box((round(px) - 8, round(py) - 8, pz - 8), (round(px) + 8, round(py) + 8, pz + 8), ORIGIN),
           box((round(px) - 3, round(py) - 3, 420), (round(px) + 3, round(py) + 3, pz - 8), T('brass_ns')),
@@ -789,60 +752,29 @@ def nw_corner():
     M.ent('station_health', (-1240, 900, 0), angle=225)
 
 
-def poinsettia(x, y, z, s=1.0):
-    q = lambda v: v * s
-    A(frustum(x, y, z, z + q(120), q(70), q(90), {'side': T('pot_terra'), 'top': T('needles'), 'bot': T('pot_terra')}, 10))
-    for k in range(6):
-        a = 2 * math.pi * k / 6
-        tx, ty = x + q(150) * math.cos(a), y + q(150) * math.sin(a)
-        nx, ny = -math.sin(a) * q(40), math.cos(a) * q(40)
-        A(hull([(x, y, z + q(130)), (x + nx * 0.3, y + ny * 0.3, z + q(150)), (tx, ty, z + q(150)), (x - nx * 0.3, y - ny * 0.3, z + q(150)),
-                (x + nx + q(70) * math.cos(a), y + ny + q(70) * math.sin(a), z + q(150)), (x - nx + q(70) * math.cos(a), y - ny + q(70) * math.sin(a), z + q(150)),
-                (tx, ty, z + q(160))], T('poinsettia_ns'), round_pts=False))
-
-
 # =================================================================================================== NE: sideboard
 def sideboard():
     X0, X1, Y0, Y1 = 1216, 2144, 1488, 1792
-    W = T('wood_mid')
-    A(box((X0, Y0, 0), (X1, Y1, 48), W))
-    for k in range(3):
-        xa = X0 + k * (X1 - X0) // 3; xb = X0 + (k + 1) * (X1 - X0) // 3
-        b = box((xa, Y0, 48), (xb, Y1, 560), W)
-        A(b)
-    A(box((X0 - 16, Y0 - 16, 560), (X1, Y1, 592), {'side': T('wood_dark'), 'top': T('marble'), 'bot': T('wood_dark')}))
+    xm('sideboard', (X0 + X1) / 2, (Y0 + Y1) / 2, 0, angle=270, L=X1 - X0, D=Y1 - Y0, lm=1.0)
+    with as_clip():
+        A(box((X0, Y0, 0), (X1, Y1, 560), CAULK))
+        A(box((X0 - 16, Y0 - 16, 560), (X1, Y1, 592), CAULK))
     Z = 592
-    # Christmas pyramid (rotating carousel driven by candles): base, mast, rotating vanes + figures
+    # Christmas pyramid: static base with candles (MD3) + a rotating carousel (MD3 model2 on a func_rotating)
     pcx, pcy = 1680, 1650
-    A(cyl(pcx, pcy, 112, Z, Z + 24, T('pyramid_wood'), 12))
+    xm('pyramid_base', pcx, pcy, Z)
+    A(cyl(pcx, pcy, 112, Z, Z + 24, WCLIP, 12))
     for k in range(4):
         a = math.radians(45 + 90 * k)
-        candle(round(pcx + 90 * math.cos(a)), round(pcy + 90 * math.sin(a)), Z + 24, 8, 56, 'candle_white')
-    br = [box((pcx - 8, pcy - 8, Z + 200), (pcx + 8, pcy + 8, Z + 216), ORIGIN),
-          cyl(pcx, pcy, 6, Z + 24, Z + 470, T('pyramid_ns'), 6),
-          cyl(pcx, pcy, 80, Z + 180, Z + 188, T('pyramid_ns'), 12),
-          cyl(pcx, pcy, 64, Z + 300, Z + 308, T('pyramid_ns'), 12)]
-    for k in range(6):
-        a = 2 * math.pi * k / 6
-        bx, by = pcx + 120 * math.cos(a), pcy + 120 * math.sin(a)
-        nx, ny = -math.sin(a) * 26, math.cos(a) * 26
-        br.append(hull([(pcx, pcy, Z + 470), (pcx, pcy, Z + 478), (bx + nx, by + ny, Z + 478), (bx - nx, by - ny, Z + 470)], T('pyramid_ns'), round_pts=False))
-    for k in range(4):
-        a = 2 * math.pi * k / 4 + 0.4
-        fx, fy = pcx + 56 * math.cos(a), pcy + 56 * math.sin(a)
-        br.append(cyl(round(fx), round(fy), 10, Z + 188, Z + 236, T('nut_red_ns' if k % 2 else 'nut_green_ns'), 6))
-        br.append(cyl(round(fx), round(fy), 7, Z + 236, Z + 252, T('nut_skin_ns'), 6))
-    M.ent('func_rotating', None, brushes=br, speed=24, spawnflags=0)
+        flame(round(pcx + 90 * math.cos(a)), round(pcy + 90 * math.sin(a)), Z + 84)
+    path, _ = XM.get('pyramid_rotor')
+    M.ent('func_rotating', None, brushes=[box((pcx - 8, pcy - 8, Z + 200), (pcx + 8, pcy + 8, Z + 216), ORIGIN),
+                                         box((pcx - 4, pcy - 4, Z + 204), (pcx + 4, pcy + 4, Z + 212), NODRAW_NS)],
+          model2=path, speed=24, spawnflags=0)
     # snow globe
     gx, gy = 1380, 1640
-    A(cyl(gx, gy, 72, Z, Z + 40, T('wood_dark'), 12))
-    A(box((gx - 30, gy - 24, Z + 40), (gx + 30, gy + 24, Z + 80), T('gingerbread')))
-    A(hull([(gx - 36, gy - 30, Z + 80), (gx + 36, gy - 30, Z + 80), (gx - 36, gy + 30, Z + 80), (gx + 36, gy + 30, Z + 80),
-            (gx - 36, gy, Z + 110), (gx + 36, gy, Z + 110)], T('icing')))
-    pts = []
-    for (zf, rf) in ((0, 0.62), (0.25, 0.92), (0.5, 1.0), (0.75, 0.86), (1.0, 0.25)):
-        pts += [(gx + 70 * rf * math.cos(2 * math.pi * k / 12), gy + 70 * rf * math.sin(2 * math.pi * k / 12), Z + 40 + 140 * zf) for k in range(12)]
-    A(hull(pts, T('globe_glass'), round_pts=False))
+    xm('snow_globe', gx, gy, Z)
+    A(cyl(gx, gy, 72, Z, Z + 180, WCLIP, 12))
     nutcracker(1980, 1640, Z, 0.9)
     nutcracker(2080, 1640, Z, 0.9, coat='nut_blue')
     mdl_c('pad_cake/pad_cakestand.md3', 1540, 1560, Z)
@@ -851,49 +783,27 @@ def sideboard():
     jumppad(1680, 1260, 0, (1840, 1560, Z), Z + 170, 'jp_sideboard')
     # advent calendar + wreath on the north wall
     sign((1500, RY1 - 6, 900), (1884, RY1, 1412), 'advent', 's', 384, 512)
-    wreath(1100, RY1 - 16, 1300, 'y')
+    wreath(1100, RY1, 1300, 270)
     light(1680, 1500, 980, 600, '1 0.8 0.6')
     speaker(1680, 1650, 700, 'sound/world/misc/wind_chimes.ogg', loop=False, targetname='chime_ne')
     M.ent('func_timer', (1680, 1650, 760), target='chime_ne', wait=45, random=15, spawnflags=1)
 
 
-def wreath(x, y, z, axis, r_in=110, r_out=170):
-    """wall wreath ring (16 segments) + bow; axis 'y' = hangs on a north/south wall, 'x' = on an east/west wall"""
-    wall_plane = y if axis == 'y' else x
-    for k in range(16):
-        a0, a1 = 2 * math.pi * k / 16, 2 * math.pi * (k + 1) / 16
-        pts = []
-        for r in (r_in, r_out):
-            for a in (a0, a1):
-                u, v = r * math.cos(a), z + r * math.sin(a)
-                for d in (0, 16 if r == r_out else 28):
-                    if axis == 'y': pts.append((x + u, wall_plane - d if y > 0 else wall_plane + d, v))
-                    else: pts.append((wall_plane - d if x > 0 else wall_plane + d, y + u, v))
-        A(hull(pts, T('needles'), round_pts=False))
-        if k % 3 == 0:
-            a = (a0 + a1) / 2; u, v = (r_in + r_out) / 2 * math.cos(a), z + (r_in + r_out) / 2 * math.sin(a)
-            o = 46
-            if axis == 'y': A(sphere(x + u, (wall_plane - o) if y > 0 else (wall_plane + o), v, 12, T('bauble_red'), 6))
-            else: A(sphere((wall_plane - o) if x > 0 else (wall_plane + o), y + u, v, 12, T('bauble_red'), 6))
-    s = -1 if (y > 0 if axis == 'y' else x > 0) else 1
-    if axis == 'y':
-        A(box((x - 70, min(wall_plane, wall_plane + s * 30), z - r_out - 50), (x + 70, max(wall_plane, wall_plane + s * 30), z - r_out - 2), T('ribbon_red')))
-    else:
-        A(box((min(wall_plane, wall_plane + s * 30), y - 70, z - r_out - 50), (max(wall_plane, wall_plane + s * 30), y + 70, z - r_out - 2), T('ribbon_red')))
+def wreath(x, y, z, angle):
+    """MD3 pine wreath with berries, cones and a red bow; (x, y) = point on the wall, angle = direction into the room"""
+    xm('wreath', x, y, z, angle=angle)
 
 
 # =================================================================================================== east: sofa + coffee table
 def sofa_corner():
     X0, X1, Y0, Y1 = 1728, 2176, -448, 576
-    V = T('velvet_green')
-    A(box((X0, Y0, 0), (X1, Y1, 256), V))
-    A(box((1984, Y0 + 128, 256), (X1, Y1 - 128, 640), V))                         # back
-    for (ya, yb) in ((Y0, Y0 + 128), (Y1 - 128, Y1)):
-        A(box((X0, ya, 256), (X1, yb, 416), V))                                 # arms
-    A(box((X0 + 16, Y0 + 128, 256), (1984, Y1 - 128, 288), {'side': T('tartan'), 'top': T('tartan')}))     # seat cushion
-    for (yc, tex) in ((-160, 'velvet_red'), (300, 'tartan')):
-        A(hull([(1984, yc - 80, 288), (1984, yc + 80, 288), (1930, yc - 80, 288), (1930, yc + 80, 288),
-                (1984, yc - 64, 440), (1984, yc + 64, 440), (1950, yc - 64, 430), (1950, yc + 64, 430)], T(tex)))
+    xm('sofa', (X0 + X1) / 2, (Y0 + Y1) / 2, 0, angle=180, L=Y1 - Y0, D=X1 - X0, lm=1.0)
+    with as_clip():
+        A(box((X0, Y0, 0), (X1, Y1, 256), CAULK))
+        A(box((1984, Y0 + 128, 256), (X1, Y1 - 128, 640), CAULK))                     # back
+        for (ya, yb) in ((Y0, Y0 + 128), (Y1 - 128, Y1)):
+            A(box((X0, ya, 256), (X1, yb, 416), CAULK))                             # arms
+        A(box((X0 + 16, Y0 + 128, 256), (1984, Y1 - 128, 288), CAULK))              # seat cushion
     item('ammo_boaster', 1850, 60, 288)
     spawn(1860, -200, 288, 180)
     jumppad(1830, 140, 288, (2080, 140, 640), 820, 'jp_sofaback', glow=False)
@@ -901,26 +811,19 @@ def sofa_corner():
     item('ammo_betty', 2080, -150, 640)
     item('item_jumper', 2080, 400, 640)
     # wreath above the sofa
-    wreath(RX1 - 16, 64, 1200, 'x')
+    wreath(RX1, 64, 1200, 180)
     # coffee table with an Advent wreath (4 candles), cocoa, cookies (decoration only)
     TX0, TX1, TY0, TY1 = 1216, 1600, -224, 320
-    W = T('wood_dark')
-    for (x, y) in ((TX0 + 16, TY0 + 16), (TX1 - 48, TY0 + 16), (TX0 + 16, TY1 - 48), (TX1 - 48, TY1 - 48)):
-        A(box((x, y, 0), (x + 32, y + 32, 288), W))
-    A(box((TX0, TY0, 288), (TX1, TY1, 320), W))
+    xm('coffee_table', (TX0 + TX1) / 2, (TY0 + TY1) / 2, 0, w=TX1 - TX0, d=TY1 - TY0)
+    with as_clip():
+        for (x, y) in ((TX0 + 16, TY0 + 16), (TX1 - 48, TY0 + 16), (TX0 + 16, TY1 - 48), (TX1 - 48, TY1 - 48)):
+            A(box((x, y, 0), (x + 32, y + 32, 288), CAULK))
+        A(box((TX0, TY0, 288), (TX1, TY1, 320), CAULK))
     acx, acy = 1408, 60
-    for k in range(12):
-        a0, a1 = 2 * math.pi * k / 12, 2 * math.pi * (k + 1) / 12
-        pts = []
-        for r in (70, 120):
-            for a in (a0, a1):
-                pts += [(acx + r * math.cos(a), acy + r * math.sin(a), 320), (acx + r * math.cos(a), acy + r * math.sin(a), 356)]
-        A(hull(pts, T('needles'), round_pts=False))
+    xm('advent_wreath', acx, acy, 320)
     for k, lit in enumerate((True, True, True, False)):
         a = math.radians(45 + 90 * k)
-        x, y = round(acx + 95 * math.cos(a)), round(acy + 95 * math.sin(a))
-        if lit: candle(x, y, 356, 12, 96, 'candle_red')
-        else: A(cyl(x, y, 12, 356, 452, {'side': T('candle_red'), 'top': T('wax_top')}, 8))
+        if lit: flame(round(acx + 95 * math.cos(a)), round(acy + 95 * math.sin(a)), 320 + 138)
     light(acx, acy, 560, 260, '1 0.7 0.4')
     mdl_c('pad_cups/pad_cup02.md3', 1280, -150, 320, angle=40)
     mdl_c('pad_cups/pad_cup04.md3', 1540, 260, 320, angle=200)
@@ -940,14 +843,14 @@ GH = dict(x0=1280, x1=1920, y0=-1600, y1=-1088, hw=288)
 def ginger_house():
     x0, x1, y0, y1, hw = GH['x0'], GH['x1'], GH['y0'], GH['y1'], GH['hw']
     t = 32
-    Wt = lambda inner: {'side': T('ginger_wall'), 'top': T('icing'), 'bot': T('gingerbread'), inner: T('gingerbread')}
+    xm('ginger_house', (x0 + x1) / 2, (y0 + y1) / 2, 0, x0=x0, x1=x1, y0=y0, y1=y1, hw=hw, door=(1536, 1664, 192),
+       windows=(-1400, -1288, 96, 192), lm=1.0)
+    _CLIP[0] = True                       # every brush below up to the ramp is collision for the MD3 house
+    Wt = lambda inner: CAULK
     # north wall with the door (x 1536..1664, z 0..192)
     DX0, DX1, DZ = 1536, 1664, 192
     A(box((x0, y1 - t, 0), (DX0, y1, hw), Wt('s'))); A(box((DX1, y1 - t, 0), (x1, y1, hw), Wt('s')))
     A(box((DX0, y1 - t, DZ), (DX1, y1, hw), Wt('s')))
-    A(box((DX0 - 16, y1, DZ), (DX1 + 16, y1 + 12, DZ + 20), T('icing')))
-    for xd in (DX0 - 16, DX1):
-        A(box((xd, y1, 0), (xd + 16, y1 + 12, DZ), T('candystripe')))
     A(box((x0, y0, 0), (x1, y0 + t, hw), Wt('n')))                       # south wall
     # side walls with a window each (y -1400..-1288, z 96..192)
     for (xa, xb, inner) in ((x0, x0 + t, 'e'), (x1 - t, x1, 'w')):
@@ -970,6 +873,7 @@ def ginger_house():
                 (x0 - ov, yc, ridge_b), (x1 + ov, yc, ridge_b), (x0 - ov, yc, ridge_b + th), (x1 + ov, yc, ridge_b + th)], RF, round_pts=False))
     # icing ridge cap (low, does not block shots)
     A(box((x0 - ov, round(yc) - 12, round(ridge_b + th)), (x1 + ov, round(yc) + 12, round(ridge_b + th) + 12), T('icing')))
+    _CLIP[0] = False
     # candy-cane ramp up to the north eave (38 deg) + a standing candy cane
     eave_top = hw - ov * tan + th
     run = round(eave_top / tan)                  # ~30 deg like the roof; ends 8u above the eave (a seam bspc can walk across)
@@ -979,11 +883,14 @@ def ginger_house():
     candycane(2060, -860, 0, 360, flip=True)
     # gumdrops along the walls outside (cover)
     for (gx, gy, c) in ((1220, -1200, 'red'), (1220, -1450, 'green'), (1980, -1250, 'yellow'), (1980, -1500, 'purple')):
-        A(frustum(gx, gy, 0, 72, 44, 26, T('gumdrop_' + c), 10)); A(cyl(gx, gy, 26, 72, 84, T('gumdrop_' + c), 10))
+        xm('gumdrop', gx, gy, 0, key='gumdrop_' + c, col=c)
+        A(frustum(gx, gy, 0, 72, 44, 26, WCLIP, 10)); A(cyl(gx, gy, 26, 72, 84, WCLIP, 10))
     # inside: chocolate table, gumdrop stools, a cookie man on the wall
-    A(box((1500, -1450, 0), (1700, -1330, 120), T('choco')))
+    xm('choc_table', 1600, -1390, 0)
+    A(box((1500, -1450, 0), (1700, -1330, 120), WCLIP))
     for (sx, c) in ((1440, 'red'), (1760, 'green')):
-        A(frustum(sx, -1390, 0, 64, 40, 24, T('gumdrop_' + c), 10))
+        xm('gumdrop', sx, -1390, 0, key='stool_' + c, r=40, h=64, col=c)
+        A(frustum(sx, -1390, 0, 64, 40, 24, WCLIP, 10))
     A(sign_box((x0 + t, -1560, 40), (x0 + t + 4, -1480, 200), T('gingerman'), 128, 256, back=T('gingerbread'), facing='e'))
     item('holdable_bambam', 1600, -1220, 0)
     item('ammo_balloony', 1380, -1500, 0)
@@ -996,55 +903,36 @@ def ginger_house():
     spawn(1450, yc + 120, round(hw + (half - 120) * tan + th) + 10, 90)
     # gingerbread men cut-outs in the garden of the house
     for (gx, gy, ang) in ((1150, -1300, 'e'), (2050, -1350, 'w')):
-        if ang == 'e': A(sign_box((gx, gy - 64, 0), (gx + 16, gy + 64, 256), T('gingerman'), 128, 256, back=T('gingerbread'), facing='ew'))
-        else: A(sign_box((gx - 16, gy - 64, 0), (gx, gy + 64, 256), T('gingerman'), 128, 256, back=T('gingerbread'), facing='ew'))
+        xa = gx if ang == 'e' else gx - 16
+        xm('gingerman', xa + 8, gy, 0, angle=0 if ang == 'e' else 180)
+        A(box((xa, gy - 56, 0), (xa + 16, gy + 56, 240), WCLIP))
 
 
 def candycane(x, y, z, h, flip=False):
-    """standing candy cane: striped pole + hook (convex segments)"""
-    S = T('candystripe')
-    A(cyl(x, y, 18, z, z + h, S, 8))
-    r = 56; s = -1 if flip else 1
-    cx = x + s * r
-    for k in range(6):
-        a0 = math.pi - math.pi * k / 6; a1 = math.pi - math.pi * (k + 1) / 6
-        pts = []
-        for a in (a0, a1):
-            for rr in (r - 16, r + 16):
-                px = cx + s * rr * math.cos(a); pz = z + h + rr * math.sin(a)
-                for dy in (-16, 16):
-                    pts.append((px, y + dy, pz))
-        A(hull(pts, S, round_pts=False))
+    """standing candy cane: MD3 (striped tube with a hook) + clip pole"""
+    xm('candy_cane', x, y, z, key=f'candy_cane_{h}' + ('_f' if flip else ''), h=h, flip=flip)
+    A(cyl(x, y, 18, z, z + h, WCLIP, 8))
 
 
 # =================================================================================================== SW + centre: toys
 def toys():
-    # rocking horse on curved rockers (SW)
+    # rocking horse on red bow rockers (SW): MD3 + the old blocky shape as clip
     hx, hy = -1500, -1150
-    for sg in (-1, 1):
-        for k in range(6):
-            a0 = math.radians(-60 + 20 * k); a1 = math.radians(-60 + 20 * (k + 1))
-            pts = []
-            for a in (a0, a1):
-                for r in (380, 400):
-                    pts += [(hx + r * math.sin(a), hy + sg * 70 - 8, 400 - r * math.cos(a) + 0), (hx + r * math.sin(a), hy + sg * 70 + 8, 400 - r * math.cos(a))]
-            if min(p[2] for p in pts) >= 0: A(hull(pts, T('paint_red'), round_pts=False))
-    for (dx, sg) in ((-130, -1), (130, -1), (-130, 1), (130, 1)):
-        A(box((hx + dx - 10, hy + sg * 70 - 8, 48), (hx + dx + 10, hy + sg * 70 + 8, 200), T('wood_light')))
-    A(box((hx - 180, hy - 80, 200), (hx + 180, hy + 80, 330), T('horse_white')))
-    A(box((hx - 60, hy - 82, 330), (hx + 60, hy + 82, 346), T('paint_red')))
-    A(hull([(hx + 130, hy - 50, 330), (hx + 130, hy + 50, 330), (hx + 180, hy - 50, 330), (hx + 180, hy + 50, 330),
-            (hx + 170, hy - 44, 450), (hx + 170, hy + 44, 450), (hx + 230, hy - 44, 450), (hx + 230, hy + 44, 450)], T('horse_white')))
-    A(box((hx + 170, hy - 46, 450), (hx + 320, hy + 46, 530), T('horse_white')))
-    A(box((hx + 110, hy - 12, 330), (hx + 130, hy + 12, 470), T('horse_mane')))
-    A(box((hx - 230, hy - 14, 230), (hx - 180, hy + 14, 330), T('horse_mane')))
+    xm('rocking_horse', hx, hy, 0)
+    with as_clip():
+        A(box((hx - 180, hy - 80, 200), (hx + 180, hy + 80, 330), CAULK))
+        A(box((hx + 130, hy - 50, 330), (hx + 230, hy + 50, 450), CAULK))
+        A(box((hx + 170, hy - 46, 450), (hx + 320, hy + 46, 530), CAULK))
+        for (dx, sg) in ((-130, -1), (130, -1), (-130, 1), (130, 1)):
+            A(box((hx + dx - 10, hy + sg * 70 - 8, 48), (hx + dx + 10, hy + sg * 70 + 8, 200), CAULK))
     item('ammo_betty', -1500, -900, 0)
     # Santa's sack + presents spilling out (SW corner)
     sx, sy = -1850, -1450
+    xm('sack', sx, sy, 0, key='sack_big', rx=200, ry=180, h=420, gifts=True, seed=7)
     pts = []
     for (zf, rf) in ((0, 0.8), (0.4, 1.0), (0.8, 0.7), (1.0, 0.3)):
         pts += [(sx + 200 * rf * math.cos(2 * math.pi * k / 12), sy + 180 * rf * math.sin(2 * math.pi * k / 12), 420 * zf) for k in range(12)]
-    A(hull(pts, T('burlap'), round_pts=False))
+    A(hull(pts, WCLIP, round_pts=False))
     gift(-1640, -1700, 0, -1480, -1560, 128, 'gold')
     gift(-1470, -1740, 0, -1270, -1580, 192, 'dots', bow=False)
     gift(-1440, -1720, 192, -1310, -1610, 272, 'red', bow=True)
@@ -1052,10 +940,8 @@ def toys():
     item('ammo_bubbleg', -1720, -1180, 0)
     # toy drum
     dx_, dy_ = -1150, -1600
-    A(cyl(dx_, dy_, 110, 16, 134, {'side': T('paint_red'), 'top': T('paint_red'), 'bot': T('paint_red')}, 14))
-    A(cyl(dx_, dy_, 116, 0, 16, T('trim_gold'), 14)); A(cyl(dx_, dy_, 116, 134, 150, {'side': T('trim_gold'), 'top': T('cushion_white')}, 14))
-    for dx in (-40, 40):
-        A(box((dx_ + dx - 5, dy_ - 20, 150), (dx_ + dx + 5, dy_ + 100, 160), T('wood_light')))
+    xm('drum', dx_, dy_, 0)
+    A(cyl(dx_, dy_, 116, 0, 150, WCLIP, 14))
     item('ammo_nipper', dx_ + 170, dy_, 0)
     # toy train on an oval wooden track (centre south)
     train_set(-80, -1050)
@@ -1069,54 +955,42 @@ def toys():
     gift(-900, 1500, 0, -700, 1700, 176, 'stripe')
     gift(-660, 1560, 0, -540, 1680, 96, 'dots')
     item('ammo_balloony', -1145, -500, 0)
-    # ceiling: mistletoe, paper stars, central lamp
-    for (x, y, h) in ((-300, -900, 300), (900, -800, 360), (-900, -300, 260), (1200, 1100, 320), (-1000, 1300, 280)):
-        A(box((x - 1, y - 1, CZ - h), (x + 1, y + 1, CZ), T('wire_ns')))
-        pts = star_outline(x, CZ - h - 70, 70, 30)
-        for k in range(5):
-            tri = [pts[(2 * k - 1) % 10], pts[2 * k], pts[2 * k + 1]]
-            A(hull([(px, y + s, pz) for (px, pz) in tri + [(x, CZ - h - 70)] for s in (-5, 5)], T('star_gold'), round_pts=False))
-    mx, my = 300, -600
-    A(box((mx - 1, my - 1, CZ - 260), (mx + 1, my + 1, CZ), T('wire_ns')))
-    A(sphere(mx, my, CZ - 320, 60, T('needles_ns'), 8))
-    for (dx, dy, dz) in ((-30, 10, -40), (20, -25, -50), (10, 30, -30)):
-        A(sphere(mx + dx, my + dy, CZ - 320 + dz, 9, T('nut_white_ns'), 6))
-    A(box((mx - 40, my - 4, CZ - 270), (mx + 40, my + 4, CZ - 250), T('fabric_ns')))
+    # ceiling: glowing paper stars and a bunch of mistletoe on threads (MD3)
+    for (x, y, h, ang) in ((-300, -900, 300, 0), (900, -800, 360, 40), (-900, -300, 260, 80), (1200, 1100, 320, 120), (-1000, 1300, 280, 160)):
+        xm('paper_star', x, y, CZ, key=f'paper_star_{h}', hang=h, angle=ang)
+    xm('mistletoe', 300, -600, CZ)
 
 
 def train_set(cx, cy):
-    """oval track (2 straights + 2 half circles) with a little train standing on it"""
+    """wooden toy train set (MD3): oval track of sleepers and rails, a steam engine and two wagons carrying presents;
+    collision = the old boxes as clip (track 8u high, so you can walk over it)"""
     L, R0, R1 = 640, 300, 380
-    tr = {'top': T('track'), 'side': T('track'), 'bot': CAULK}
-    for sg in (-1, 1):
-        y0 = cy + sg * R0 if sg > 0 else cy - R1
-        y1 = cy + R1 if sg > 0 else cy - R0
-        A(box((cx - L // 2, y0, 4), (cx + L // 2, y1, 12), tr))
-    for sg in (-1, 1):
-        ex = cx + sg * L // 2
-        for k in range(8):
-            a0 = -math.pi / 2 + math.pi * k / 8; a1 = -math.pi / 2 + math.pi * (k + 1) / 8
-            pts = []
-            for a in (a0, a1):
-                for r in (R0, R1):
-                    pts += [(ex + sg * r * math.cos(a), cy + r * math.sin(a), 4), (ex + sg * r * math.cos(a), cy + r * math.sin(a), 12)]
-            A(hull(pts, tr, round_pts=False))
-    # train on the south straight: engine + 2 wagons with presents
+    xm('track_oval', cx, cy, 4, L=L, R0=R0, R1=R1)
+    with as_clip():
+        for sg in (-1, 1):
+            y0 = cy + sg * R0 if sg > 0 else cy - R1
+            y1 = cy + R1 if sg > 0 else cy - R0
+            A(box((cx - L // 2, y0, 4), (cx + L // 2, y1, 12), CAULK))
+        for sg in (-1, 1):
+            ex = cx + sg * L // 2
+            for k in range(8):
+                a0 = -math.pi / 2 + math.pi * k / 8; a1 = -math.pi / 2 + math.pi * (k + 1) / 8
+                pts = []
+                for a in (a0, a1):
+                    for r in (R0, R1):
+                        pts += [(ex + sg * r * math.cos(a), cy + r * math.sin(a), 4), (ex + sg * r * math.cos(a), cy + r * math.sin(a), 12)]
+                A(hull(pts, CAULK, round_pts=False))
     yb = cy - (R0 + R1) // 2
     y0, y1 = yb - 48, yb + 48
-    def wheels(xa, xb):
-        for wx in (xa + 30, xb - 30):
-            for (ya, yb2) in ((y0, y0 + 12), (y1 - 12, y1)):
-                A(hull([(wx + 22 * math.cos(2 * math.pi * k / 8), yy, 12 + 22 + 22 * math.sin(2 * math.pi * k / 8)) for k in range(8) for yy in (ya, yb2)], T('paint_red'), round_pts=False))
     ex0 = cx + 120
-    wheels(ex0, ex0 + 200)
-    A(box((ex0, y0 + 12, 34), (ex0 + 200, y1 - 12, 64), T('paint_blue')))
-    A(box((ex0, y0 + 12, 64), (ex0 + 80, y1 - 12, 184), T('paint_red'))); A(box((ex0 - 8, y0 + 4, 184), (ex0 + 88, y1 - 4, 200), T('paint_yellow')))
-    A(hull([(x, (y0 + y1) / 2 + 34 * math.cos(2 * math.pi * k / 8), 64 + 34 + 34 * math.sin(2 * math.pi * k / 8)) for k in range(8) for x in (ex0 + 80, ex0 + 200)], T('paint_green'), round_pts=False))
-    A(cyl(ex0 + 170, (y0 + y1) // 2, 14, 132, 204, T('metal_black'), 8))
-    for (xa, pat) in ((cx - 120, 'red'), (cx - 360, 'gold')):
-        wheels(xa, xa + 200)
-        A(box((xa, y0 + 12, 34), (xa + 200, y1 - 12, 64), T('paint_green')))
+    xm('toy_engine', ex0 + 100, yb, 0)
+    with as_clip():
+        A(box((ex0, y0 + 12, 12), (ex0 + 200, y1 - 12, 64), CAULK))
+        A(box((ex0, y0 + 12, 64), (ex0 + 80, y1 - 12, 200), CAULK))
+        A(box((ex0 + 80, yb - 34, 64), (ex0 + 200, yb + 34, 132), CAULK))
+    for (xa, pat, col) in ((cx - 120, 'red', 'paint_green'), (cx - 360, 'gold', 'paint_yellow')):
+        xm('toy_wagon', xa + 100, yb, 0, key='wagon_' + col, col=col)
+        A(box((xa, y0 + 12, 12), (xa + 200, y1 - 12, 64), WCLIP))
         gift(xa + 40, y0 + 18, 64, xa + 160, y1 - 18, 154, pat)
     item('ammo_pumper', cx + 200, cy, 4)
     item('ammo_nipper', cx - 230, cy - 200, 4)
@@ -1187,9 +1061,12 @@ def room_lights_and_floor():
 # =================================================================================================== main
 def main():
     W = TX.make_all(OUT)
+    XM.init(OUT)
     room_shell(); tree(); tree_pads_and_loot(); under_tree(); fireplace(); roof(); window_garden(); nw_corner(); sideboard()
     sofa_corner(); ginger_house(); toys(); cover(); room_lights_and_floor()
     M.ent('info_player_intermission', (-1400, -1200, 1500), angles='18 40 0')
+    with open(os.path.join(OUT, 'scripts', TX.NS + '.shader'), 'a') as f:
+        f.write(XM.shaders())
     os.makedirs(os.path.join(OUT, 'maps'), exist_ok=True)
     open(os.path.join(OUT, 'maps', MAPNAME + '.map'), 'w').write(
         M.text("// Padman's Christmas - generated by wop_tools/xmas/build_xmas.py\n"))
