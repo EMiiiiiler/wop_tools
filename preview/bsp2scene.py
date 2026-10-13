@@ -130,6 +130,7 @@ def shader_info(body):
             info['img'] = img
             info['blend'] = None if bf == 'filter' else bf
             if 'alphafunc' in sl: info['alpha'] = True
+            info['env'] = 'tcgen' in sl and sl[sl.index('tcgen') + 1:sl.index('tcgen') + 2] == ['environment']
             if bf == 'filter': info['blend'] = None
             filter_only = (bf == 'filter' and not has_lm)
             info['tint'] = None
@@ -277,10 +278,12 @@ def main():
             ctrl = np.concatenate([V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)], 1).reshape(h, w, -1)
             verts, tris = bezier_patch(ctrl, w, h)
             xyz, st, lmst, col = verts[:, :3], verts[:, 3:5], verts[:, 5:7], np.clip(verts[:, 7:11], 0, 255)
+            nrm = np.zeros((len(xyz), 3), np.float32)
         else:
             fv, nv, fi, ni = s['fv'], s['nv'], s['fi'], s['ni']
             V = dv[fv:fv + nv]
             xyz, st, lmst, col = V['xyz'], V['st'], V['lm'], V['c'].astype(np.float32)
+            nrm = V['n']
             tris = di[fi:fi + ni].astype(np.int64)
         if surf_off[si].any(): xyz = np.asarray(xyz, np.float32) + surf_off[si]   # (an ndarray: 'si in surf_off' tested values)
         lmn = int(s['lm'])
@@ -292,7 +295,8 @@ def main():
         else:
             lm2 = np.zeros((len(xyz), 2), np.float32)
         key = (sname, lmn >= 0, surf_anim.get(si, -1))
-        g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
+        g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'nrm': [], 'n': 0})
+        g['nrm'].append(np.asarray(nrm, np.float32))
         g['pos'].append(np.asarray(xyz, np.float32)); g['uv'].append(np.asarray(st, np.float32))
         g['uv2'].append(np.asarray(lm2, np.float32)); g['col'].append(np.asarray(col, np.float32)[:, :3])
         g['idx'].append(tris + g['n']); g['n'] += len(xyz)
@@ -324,7 +328,8 @@ def main():
         for srf in md['surfaces']:
             sname = srf['shader'] or ''
             key = (sname, False, anim)
-            g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'n': 0})
+            g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'nrm': [], 'n': 0})
+            g['nrm'].append((np.asarray(srf['normals'], np.float32) @ R).astype(np.float32))
             v = srf['verts'] @ R + (o if anim < 0 else 0)
             g['pos'].append(v.astype(np.float32)); g['uv'].append(srf['st'].astype(np.float32))
             g['uv2'].append(np.zeros((len(v), 2), np.float32)); g['col'].append(np.full((len(v), 3), 118, np.float32))
@@ -350,12 +355,17 @@ def main():
         # q3 (x,y,z) -> three (x, z, -y)
         p3 = np.stack([pos[:, 0], pos[:, 2], -pos[:, 1]], 1).astype(np.float32)
         rec = {'shader': sname, 'lit': bool(lit), 'tex': tid, 'blend': info.get('blend'), 'alpha': bool(info.get('alpha')),
-               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'nv': int(len(pos)), 'ni': int(len(idx)),
+               'scroll': info.get('scroll'), 'tint': info.get('tint'), 'env': bool(info.get('env')), 'nv': int(len(pos)), 'ni': int(len(idx)),
                'anim': (anim if anim >= 0 else None)}
         for k, arr in (('pos', p3), ('uv', uv.astype(np.float32)), ('uv2', uv2.astype(np.float32)),
                        ('col', (np.clip(col, 0, 255)).astype(np.uint8)), ('idx', idx)):
             while blob.tell() % 4: blob.write(b'\0')
             rec[k] = blob.tell(); blob.write(arr.tobytes())
+        if info.get('env') and len(g['nrm']) == len(g['pos']):      # smooth chrome: real vertex normals
+            nr = np.concatenate(g['nrm'])
+            n3 = np.stack([nr[:, 0], nr[:, 2], -nr[:, 1]], 1).astype(np.float32)
+            while blob.tell() % 4: blob.write(b'\0')
+            rec['nrm'] = blob.tell(); blob.write(n3.tobytes())
         meta.append(rec)
 
     # sky
@@ -465,14 +475,17 @@ pending++; const atlas = loader.load(D.atlas, ()=>{pending--;}); atlas.flipY=fal
 atlas.magFilter = THREE.LinearFilter; atlas.minFilter = THREE.LinearFilter; atlas.generateMipmaps=false;
 const white = new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1); white.needsUpdate = true;
 const scrollers = []; const movers = [];
-const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol; varying float vDist;
+const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol; varying float vDist; varying vec3 vView; varying vec3 vN;
  uniform vec2 scroll; uniform float time;
- void main(){ vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; vec4 mv = modelViewMatrix*vec4(position,1.0); vDist = length(mv.xyz);
+ void main(){ vN = normalMatrix * normal; vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; vec4 mv = modelViewMatrix*vec4(position,1.0); vDist = length(mv.xyz); vView = mv.xyz;
   gl_Position = projectionMatrix*mv;} `;
 const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; uniform float alphaTest; uniform float opacity; uniform float add; uniform vec3 tint;
- uniform vec4 fog; varying float vDist;
+ uniform vec4 fog; uniform float env; varying float vDist; varying vec3 vView; varying vec3 vN;
  varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol;
- void main(){ vec4 c = texture2D(map, vUv); if(c.a < alphaTest) discard;
+ void main(){ vec2 tuv = vUv;
+  if (env > 0.5) { vec3 n = length(vN) > 0.1 ? normalize(vN) : normalize(cross(dFdx(vView), dFdy(vView))); vec3 r = reflect(normalize(vView), n);
+    float m = 2.0*sqrt(r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0)); tuv = vec2(r.x/m + 0.5, 0.5 - r.y/m); }
+  vec4 c = texture2D(map, tuv); if(c.a < alphaTest) discard;
   vec3 light = lit > 0.5 ? texture2D(lm, vUv2).rgb : vCol/255.0;
   vec3 col = add > 0.5 ? c.rgb * tint : c.rgb * min(light*2.0, vec3(1.6));
   col = pow(col, vec3(0.9));
@@ -485,10 +498,11 @@ for (const m of D.meta){
   g.setAttribute('lmuv', new THREE.BufferAttribute(new Float32Array(bin, m.uv2, m.nv*2), 2));
   g.setAttribute('vcol', new THREE.BufferAttribute(new Uint8Array(bin, m.col, m.nv*3), 3));
   g.setIndex(new THREE.BufferAttribute(new Uint32Array(bin, m.idx, m.ni), 1));
+  if (m.nrm !== undefined) g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(bin, m.nrm, m.nv*3), 3));
   const blend = m.blend; const t = tex(m.tex) || white;
   const u = {map:{value:t}, lm:{value:atlas}, lit:{value:m.lit?1:0}, alphaTest:{value:m.alpha?0.5:0.0},
              opacity:{value: blend==='blend'?0.55:1.0}, add:{value: blend==='add'?1:0}, tint:{value:new THREE.Vector3(...(m.tint||[1,1,1]))}, scroll:{value:new THREE.Vector2(...(m.scroll||[0,0]))}, time:{value:0},
-             fog:{value: D.fog ? new THREE.Vector4(...D.fog) : new THREE.Vector4(0,0,0,0)}};
+             fog:{value: D.fog ? new THREE.Vector4(...D.fog) : new THREE.Vector4(0,0,0,0)}, env:{value: m.env?1:0}};
   const mat = new THREE.ShaderMaterial({uniforms:u, vertexShader:VS, fragmentShader:FS, side:THREE.DoubleSide,
      transparent: !!blend, depthWrite: !blend});
   if (blend==='add'){ mat.blending = THREE.AdditiveBlending; }

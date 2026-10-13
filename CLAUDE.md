@@ -70,3 +70,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Custom MD3 buildings (padtank bell): misc_model spawnflags 4 for lightmaps + `_castshadows 1`, collision as invisible
   weapclip brushes of the same shape; pass `--md3root` twice (WoP models + the map folder) to audit_map. The audit's sink
   check now tests real model vertices, so hollow models don't flag scenery inside their bounding box.
+- A misc_model's *origin* must be inside the world too: models whose origin sits far above their base (catalog
+  `pad_ducktape`) placed on a low floor put the origin under the map and q3map2 reports "Entity leaked".
+- Don't put a misc_teleporter_dest inside a trigger_push (audit flags it); put it just behind the pad: the 400 u/s
+  teleport exit speed slides the player onto it.
+- `pkill -f wopded` from the Bash tool kills the tool's own shell (its command line contains the pattern); start
+  wopded with `setsid nohup ... < /dev/null &` and stop it with its pid or `timeout`.

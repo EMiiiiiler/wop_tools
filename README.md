@@ -16,6 +16,9 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   func_rotating IQM movers; see padtank/README.md.
 - `md3write.py` - minimal MD3 writer for custom map objects (single frame).
 - `iqmtool.py` - static IQM writer/reader (float vertices: mover models that reach beyond MD3's +-512 limit).
+- `padpinball/` - *Tilt!* (`wop_padpinball`): Padman inside a giant pinball machine (flippers, pop bumpers and a chrome
+  steel ball as MD3 centrepieces, plunger lanes, ramps to corner booths, backbox jackpot room, underworld with the coin box);
+  CTL/1LC/FFA, see padpinball/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
@@ -41,6 +44,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 
 ## Preview
 - `preview/bsp2scene.py` - compiled .bsp -> self-contained three.js page (lightmaps, vertex-lit models, sky, `--fog`,
+  `tcGen environment` stages as smooth sphere-map chrome using the BSP vertex normals,
   func_rotating model2s (MD3 or IQM) spinning live,
   item markers, camera buttons). Brush movers with an origin are put back in place, and mover `model2`s and
   `misc_externalmodel`s (not baked into the bsp) are loaded, func_bobbing movers bob live, from the md3s in the --vfs folders. `--threeurl` for a CDN build, `--three` to inline a local one.
