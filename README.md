@@ -19,6 +19,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `padpinball/` - *Tilt!* (`wop_padpinball`): Padman inside a giant pinball machine (flippers, pop bumpers and a chrome
   steel ball as MD3 centrepieces, plunger lanes, ramps to corner booths, backbox jackpot room, underworld with the coin box);
   CTL/1LC/FFA, see padpinball/README.md.
+- `lounge/` - *Couch Lock* (`wop_padlounge`): FFA in a stoner's living room at night (giant glass bong, lava lamps, hookah,
+  cannabis plants as MD3s, grow tent, crawl space under the couch, secret stash shelf); see lounge/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,

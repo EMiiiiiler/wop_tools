@@ -1,0 +1,14 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @lounge/routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height)
+tent_door:            -900,-1376,0 > -1400,-1376,8
+blanket_ramp:         680,500,8 > 680,1200,360
+skateboard_ramp:      -320,-600,0 > -320,300,360
+pizza_stairs:         -1256,700,0 > -1250,1600,320
+couch_seat:           -600,1250,360 > 600,1250,360
+couch_back_top:       -700,1712,760 > 700,1712,760
+fridge_inside:        1616,1100,0 > 1616,1500,16
+tv_north_box:         -1500,376,0 > -1800,376,16
+tv_middle_box:        -1500,0,0 > -1760,0,16
+tv_south_box:         -1500,-376,0 > -1800,-376,16
+bookshelf_bottom:     1600,100,0 > 1900,100,16
+table_top:            -300,250,360 > 380,560,360

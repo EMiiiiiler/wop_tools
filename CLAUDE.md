@@ -83,3 +83,5 @@ Tools and standing rules for building World of Padman (WoP) maps.
   teleport exit speed slides the player onto it.
 - `pkill -f wopded` from the Bash tool kills the tool's own shell (its command line contains the pattern); start
   wopded with `setsid nohup ... < /dev/null &` and stop it with its pid or `timeout`.
+- bspc predicts jump pad flights for at most ~3 s: a longer flight gets no reachability (bots never use the pad). Keep
+  pad_check's `t=` under ~2.9 s.
