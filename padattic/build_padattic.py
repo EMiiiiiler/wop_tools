@@ -590,10 +590,11 @@ def town_hall():
         A(sb(s, x0, y0 + 32, TZ, x0 + 32, -400, zt, wall)); A(sb(s, x0, -320, TZ, x0 + 32, y1 - 32, zt, wall))
         A(sb(s, x0, -400, 496, x0 + 32, -320, zt, wall))
     A(box((x0, y0, zt), (x1, y1, zt + 16), {'top': T('roof_flat'), 'side': T('trim_white'), 'bot': T('wallpaper')}))
-    ct = box((-48, -284, zt + 16), (48, -236, 704), {'side': T('stone'), 'top': T('tiles_red'), 'bot': CAULK})
-    A(ct)
-    A(sign_box((-32, -288, 620), (32, -284, 684), T('clock'), 128, 128, back=T('stone'), facing='s'))
-    A(sign_box((-32, -236, 620), (32, -232, 684), T('clock'), 128, 128, back=T('stone'), facing='n'))
+    # clock tower (MD3) on the roof, weapclip shaft + roof
+    own('clock_tower', 0, -290, zt + 16, angle=0, spawnflags=4, _castshadows=1)
+    A(box((-58, -348, zt + 16), (58, -232, zt + 16 + 262), WCLIP))
+    A(hull([(x, y, zt + 16 + 262) for x in (-56, 56) for y in (-346, -234)] + [(0, -290, zt + 16 + 330)], WCLIP))
+    light(0, -400, zt + 260, 160, '1 0.95 0.8'); light(0, -180, zt + 260, 160, '1 0.95 0.8')
     A(sign_box((-128, y1, 480), (128, y1 + 4, 528), T('sign_hall'), 512, 128, back=T('trim_white'), facing='n'))
     st = {'top': T('paving'), 'side': T('stone'), 'bot': CAULK}
     for s in (1, -1):
@@ -647,7 +648,7 @@ def village():
         item(s, 'ammo_bubbleg', -560, -380, TZ)
         item(s, 'ammo_pumper', -660, 260, TZ)
         weapon(s, 'bubbleg', -400, -110, TZ, 'blue')
-        for (x, y) in ((-300, -120), (-300, 150), (-740, -600)):
+        for (x, y) in ((-300, -120), (-300, 150), (-620, -570)):
             mdl_c('pad_ddmix/padship/shiplamp.md3', s * x, y, TZ, 1.0, 0)
             slight(s, x, y, TZ + 170, 220, '1 0.8 0.5')
     item(1, 'item_jumper', 0, -120, TZ)

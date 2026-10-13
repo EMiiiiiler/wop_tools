@@ -443,6 +443,76 @@ def signal():
     return M
 
 
+def clock_tower(hour=10.0, minute=8.0):
+    """town hall clock tower (stands on the roof): stone shaft with corner pilasters, cornices, a clock stage with four
+    brass-bezelled faces and modelled hands, slate pyramid roof, brass finial. Footprint +-60, top z 362."""
+    M = Model()
+    st, tr = M['tower_stone'], M['tower_trim']
+    tr.box((-60, -60, 0), (60, 60, 16), faces='xXyYZ', sc=64)
+    st.box((-50, -50, 16), (50, 50, 150), faces='xXyY', sc=96)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x0, x1 = sorted((sx * 42, sx * 56)); y0, y1 = sorted((sy * 42, sy * 56))
+            tr.box((x0, y0, 16), (x1, y1, 150), faces='xXyY', sc=64)
+    tr.box((-60, -60, 150), (60, 60, 164), faces='xXyYzZ', sc=64)
+    st.box((-48, -48, 164), (48, 48, 252), faces='xXyY', sc=96)
+    tr.box((-58, -58, 252), (58, 58, 264), faces='xXyYzZ', sc=64)
+    M['tower_roof'].hull([(-58, -58, 264), (58, -58, 264), (58, 58, 264), (-58, 58, 264), (0, 0, 334)], sc=64)
+    M['brass'].cyl('z', (0, 0), 3, 330, 352, 8, caps=False, sc=16)
+    M['brass'].revolve([(0.01, 350), (6, 354), (6, 358), (0.01, 362)], 0, 0, 10, sc=16)
+    # four clock faces at z 208 (centre), facing +-x and +-y
+    zc = 208.0
+    for k in range(4):
+        a = math.radians(90 * k); n = np.array([math.cos(a), math.sin(a), 0.0]); u = np.array([-math.sin(a), math.cos(a), 0.0])
+        def P(d, uu, zz): return tuple(n * d + u * uu + np.array([0, 0, zz]))
+        def disc(mesh, r, d, nseg=24, uvfit=True):
+            pts = [P(d, r * math.cos(2 * math.pi * j / nseg), zc + r * math.sin(2 * math.pi * j / nseg)) for j in range(nseg)]
+            uvs = [(0.5 + 0.5 * math.cos(2 * math.pi * j / nseg), 0.5 - 0.5 * math.sin(2 * math.pi * j / nseg)) for j in range(nseg)]
+            mesh.poly(pts, n, uvs if uvfit else [(p[0] / 32, p[2] / 32) for p in pts])
+            # rim (side band) so the disc has thickness
+            for j in range(nseg):
+                c0 = 2 * math.pi * j / nseg; c1 = 2 * math.pi * (j + 1) / nseg
+                q = [P(48, r * math.cos(c0), zc + r * math.sin(c0)), P(d, r * math.cos(c0), zc + r * math.sin(c0)),
+                     P(d, r * math.cos(c1), zc + r * math.sin(c1)), P(48, r * math.cos(c1), zc + r * math.sin(c1))]
+                cm = (c0 + c1) / 2
+                mesh.poly(q, tuple(u * math.cos(cm) + np.array([0, 0, math.sin(cm)])), [(j / nseg, 0), (j / nseg, 0.1), ((j + 1) / nseg, 0.1), ((j + 1) / nseg, 0)])
+        disc(M['brass'], 42, 52, uvfit=False)
+        disc(M['clock_face'], 37, 53.5)
+        for (ang_h, L, w) in ((90 - 30 * (hour + minute / 60), 20, 3.0), (90 - 6 * minute, 31, 2.0)):
+            t = math.radians(ang_h); dirv = (math.cos(t), math.sin(t)); pv = (-math.sin(t), math.cos(t))
+            q = [(-4 * dirv[0] - w * pv[0], -4 * dirv[1] - w * pv[1]), (L * dirv[0] - w * 0.4 * pv[0], L * dirv[1] - w * 0.4 * pv[1]),
+                 (L * dirv[0] + w * 0.4 * pv[0], L * dirv[1] + w * 0.4 * pv[1]), (-4 * dirv[0] + w * pv[0], -4 * dirv[1] + w * pv[1])]
+            for dd, nn in ((55.5, n), (54.0, -n)):
+                M['loco_black'].poly([P(dd, uu, zc + vv) for (uu, vv) in q], tuple(nn), [(0, 0), (1, 0), (1, 1), (0, 1)])
+            for j in range(4):
+                (u0, v0), (u1, v1) = q[j], q[(j + 1) % 4]
+                M['loco_black'].poly([P(54.0, u0, zc + v0), P(55.5, u0, zc + v0), P(55.5, u1, zc + v1), P(54.0, u1, zc + v1)],
+                                     tuple(u * (v1 - v0) - np.array([0, 0, u1 - u0])), [(0, 0), (1, 0), (1, 1), (0, 1)])
+        hub = [P(56.5, 3 * math.cos(2 * math.pi * j / 8), zc + 3 * math.sin(2 * math.pi * j / 8)) for j in range(8)]
+        M['brass'].poly(hub, tuple(n), [(0.5, 0.5)] * 8)
+        # arched louvre panel under the clock
+        M['tower_dark'].poly([P(50.5, -16, 40), P(50.5, 16, 40), P(50.5, 16, 120), P(50.5, -16, 120)], tuple(n), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    return M
+
+
+def clock_face_tex(n=256):
+    im = Image.new('RGB', (n, n), (40, 34, 30)); d = ImageDraw.Draw(im)
+    c = n / 2
+    d.ellipse((2, 2, n - 2, n - 2), fill=(248, 240, 214))
+    d.ellipse((10, 10, n - 10, n - 10), outline=(60, 50, 40), width=3)
+    nums = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI']
+    f = font(20, FONTS)
+    for k in range(60):
+        a = 2 * math.pi * k / 60 - math.pi / 2
+        r0 = 112 if k % 5 else 104
+        d.line([(c + r0 * math.cos(a), c + r0 * math.sin(a)), (c + 118 * math.cos(a), c + 118 * math.sin(a))], fill=(40, 34, 30), width=4 if k % 5 == 0 else 2)
+    for k, t in enumerate(nums):
+        a = 2 * math.pi * k / 12 - math.pi / 2
+        d.text((c + 84 * math.cos(a), c + 84 * math.sin(a)), t, font=f, fill=(30, 26, 22), anchor='mm')
+    d.text((c, c + 40), 'PAD & SONS', font=font(12, FONTS), fill=(120, 90, 50), anchor='mm')
+    return im
+
+
 # ------------------------------------------------------------------------------------------------ train loop (IQM)
 def train_cars():
     return [('loco', loco()), ('tender', tender()), ('carriage', carriage()), ('carriage', carriage()), ('carriage', carriage())]
@@ -616,19 +686,30 @@ def make_textures(out):
     S('signal_post', paint(64, (230, 230, 226), 3, 28))
     arm = Image.new('RGB', (128, 32), (200, 30, 30)); ImageDraw.Draw(arm).rectangle((92, 6, 104, 26), fill=(240, 240, 240)); S('signal_arm', arm)
     S('signal_lamp', paint(32, (255, 70, 50), 2, 29))
+    S('clock_face', clock_face_tex())
+    ts = img(paint(256, (196, 180, 150), 6, 30)); dt = ImageDraw.Draw(ts)
+    for row in range(8):
+        y = row * 32; off = 0 if row % 2 == 0 else 24
+        dt.line([(0, y), (256, y)], fill=(140, 126, 104), width=2)
+        for x in range(-48 + off, 256, 48): dt.line([(x, y), (x, y + 32)], fill=(140, 126, 104), width=2)
+    S('tower_stone', ts)
+    S('tower_trim', paint(64, (224, 214, 192), 4, 31))
+    rf = paint(128, (60, 66, 78), 4, 32); rf[::16] *= 0.7
+    S('tower_roof', rf)
+    S('tower_dark', paint(32, (36, 30, 26), 3, 33))
 
 
 def shaders():
     S = '// ---- railway models (rail_models.py)\n'
     lit = ['loco_green', 'loco_black', 'loco_red', 'cab_dark', 'coal', 'wheel', 'wheel_small', 'smokebox_door', 'cab_side', 'tender_side',
            'carriage_end', 'carriage_roof', 'tie', 'rail', 'bark', 'needles', 'portal_stone', 'portal_trim', 'portal_dark', 'portal_plaque',
-           'tank_wood', 'tank_roof', 'iron', 'signal_post', 'signal_arm']
+           'tank_wood', 'tank_roof', 'iron', 'signal_post', 'signal_arm', 'tower_stone', 'tower_trim', 'tower_roof', 'tower_dark']
     for nme in lit:
         S += f'{MD}/{nme}\n{{\n\tqer_editorimage {MD}/{nme}.jpg\n\t{{\n\t\tmap {MD}/{nme}.jpg\n\t\trgbGen vertex\n\t}}\n}}\n\n'
     for nme, k in (('brass', 0.35), ('metal', 0.3), ('rail_top', 0.4)):
         S += (f'{MD}/{nme}\n{{\n\tqer_editorimage {MD}/{nme}.jpg\n\t{{\n\t\tmap {MD}/{nme}.jpg\n\t\trgbGen vertex\n\t}}\n'
               f'\t{{\n\t\tmap {MD}/{nme}.jpg\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen const ( {k} {k} {k} )\n\t\ttcGen environment\n\t}}\n}}\n\n')
-    for nme in ('headlamp', 'signal_lamp'):
+    for nme in ('headlamp', 'signal_lamp', 'clock_face'):
         S += f'{MD}/{nme}\n{{\n\tqer_editorimage {MD}/{nme}.jpg\n\tsurfaceparm nolightmap\n\t{{\n\t\tmap {MD}/{nme}.jpg\n\t\trgbGen identity\n\t}}\n}}\n\n'
     S += f'''{MD}/carriage_side
 {{
@@ -660,7 +741,7 @@ def shaders():
 def make(out):
     make_textures(out)
     for name, fn in (('loco', loco), ('tender', tender), ('carriage', carriage), ('track_arc', track_arc), ('track_straight', track_straight),
-                     ('portal', portal), ('water_tower', water_tower), ('signal', signal)):
+                     ('portal', portal), ('water_tower', water_tower), ('signal', signal), ('clock_tower', clock_tower)):
         fn().save_md3(out, name)
     for k in range(3): pine(seed=k).save_md3(out, 'pine%d' % (k + 1))
     return shaders()

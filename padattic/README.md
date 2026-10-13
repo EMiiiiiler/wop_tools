@@ -25,7 +25,7 @@ Everything is detail: 0 portals, BSP+fast light ~25 s, AAS ~2 s.
   - **stations** (`station()`): Red Hill (brick, west) / Blue Valley (blue timber, east). The track runs through the
     hall; outer platform holds the team lolly, inner platform the health station; doors on both long walls; stairs to the
     roof (Pumper); roof kicker up to the catwalk. Siding with a parked MD3 loco + carriage, water tower.
-  - **village**: town hall in the middle (neutral lolly, clock tower, stairs up to the roof), two cottages per side
+  - **village**: town hall in the middle (neutral lolly, MD3 clock tower on the roof, stairs up to the roof), two cottages per side
     (walk in, stairs up to the 28-degree tiled roof), ship lamps as street lamps.
   - **pond**: 48u deep, sunk into the table at the south; the track crosses on timber trestle wedges with legs; sand
     ramps at both ends.
@@ -36,7 +36,7 @@ Everything is detail: 0 portals, BSP+fast light ~25 s, AAS ~2 s.
     tyre, rolled rug.
   - **hatch** (`hatch()`): the loft hatch drops into the closet below (Pad Power); a kicker shoots you back up.
 - `rail_models.py` - MD3s: steam loco, tender, carriage, track arc / straight, three pines, tunnel portal, water tower,
-  signal; `train_loop()` bakes the whole train into `models/padattic/train_loop.iqm` on the R 1000 circle.
+  signal, clock tower (four faces with modelled hands, slate roof); `train_loop()` bakes the whole train into `models/padattic/train_loop.iqm` on the R 1000 circle.
 - `attic_textures.py` - all textures (original art), `padattic.shader` (sky + moon, pond water, glass, cobwebs, glowing
   bulbs / lit windows / clock / signs) and `wop_padattic.arena`.
 - `routes.txt` - on-foot routes for `aas_check.py --route`.
