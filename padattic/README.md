@@ -51,3 +51,8 @@ Everything is detail: 0 portals, BSP+fast light ~25 s, AAS ~2 s.
 - A plaza pocket boxed in by the mountain stairs, a cottage and its stairs was a bot trap (they could drop in, not
   climb out); `aas_check` reports these as TRAP. Leave a 48u+ gap between neighbouring stair flights.
 - The pond is 48u deep: walking into it counts as swimming for bots, so its routes stop on the ramps.
+
+## Bot tests (wopded, 10 bots)
+- FFA 3 min: 51 kills, every weapon taken (Bubble G 38, Pumper 31, Betty 24, Imperius 14, Boaster 11, Splasher 7,
+  Balloony 1). The catwalk Splasher was only taken once the gable-end kickers gave a second way up.
+- CTL 5v5 5 min: 77 kills, 31 lolly steals, 4 captures.
