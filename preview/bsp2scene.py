@@ -218,6 +218,7 @@ def main():
     ap.add_argument('--threeurl', default=None)
     ap.add_argument('--sky', default=None)
     ap.add_argument('--texsize', type=int, default=256)
+    ap.add_argument('--bigtex', default='', help='"substring=size;..." larger texture sizes for matching image paths (e.g. a fitted playfield painting)')
     ap.add_argument('--title', default=None)
     ap.add_argument('--markers', type=int, default=1)
     ap.add_argument('--sub', default='Compiled BSP preview')
@@ -345,7 +346,11 @@ def main():
         tid = None
         if p:
             if p not in tex_cache:
-                url = load_img(p, a.texsize)
+                tsz = a.texsize
+                for kv in filter(None, a.bigtex.split(';')):
+                    k_, v_ = kv.split('=')
+                    if k_ in p: tsz = max(tsz, int(v_))
+                url = load_img(p, tsz)
                 tex_cache[p] = None if url is None else f't{len(textures)}'
                 if url: textures[tex_cache[p]] = url
             tid = tex_cache[p]
