@@ -142,6 +142,7 @@ def kind(texs):
         if all(k == 'decor' or 'caulk' in x or 'nodraw' in x for k, x in zip(pk, t)) and 'decor' in pk: return 'decor'
         if 'water' in pk and not any(any(s in x for s in TRIGGER) for x in t): return 'water'
     if all(any(s in x for s in SKIP_TEX) for x in t): return 'skip'
+    if all('botclip' in x for x in t): return 'decor'          # bots only (nonsolid for players/shots) even without --shaders
     if all(any(s in x for s in DECOR) or 'caulk' in x or 'nodraw' in x for x in t) and any(any(s in x for s in DECOR) for x in t):
         return 'decor'
     if any(any(s in x for s in TRIGGER) for x in t): return 'trigger'

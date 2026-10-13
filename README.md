@@ -16,6 +16,9 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   func_rotating IQM movers; see padtank/README.md.
 - `md3write.py` - minimal MD3 writer for custom map objects (single frame).
 - `iqmtool.py` - static IQM writer/reader (float vertices: mover models that reach beyond MD3's +-512 limit).
+- `padattic/` - *Attic Express* (`wop_padattic`): a model railway in the attic at night; the train (MD3 parts baked into one
+  IQM) circles the table on a func_rotating and can be ridden; mountain tunnel, stations, village, pond trestle, under-table,
+  rafter catwalk, dormer window; see padattic/README.md.
 - `padpinball/` - *Tilt!* (`wop_padpinball`): Padman inside a giant pinball machine (flippers, pop bumpers and a chrome
   steel ball as MD3 centrepieces, plunger lanes, ramps to corner booths, backbox jackpot room, underworld with the coin box);
   CTL/1LC/FFA, see padpinball/README.md.
