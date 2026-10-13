@@ -264,7 +264,11 @@ def make_textures(W):
             for b in (124, 132):
                 side[:, b:b + 3] = C(rib); top[:, b:b + 3] = C(rib); top[b:b + 3, :] = C(rib)
         W.save('gift_%s_side' % nm, side); W.save('gift_%s_top' % nm, top)
-        W.save('ribbon_%s' % nm, fill(64, rib, 3, 200 + k))
+        W.save('paper_%s' % nm, paper)
+        sat = np.zeros((128, 128, 3), np.float32) + C(rib)
+        prof = 0.82 + 0.3 * np.sin(np.linspace(0, math.pi, 128)) ** 8 + 0.08 * np.sin(np.linspace(0, 9 * math.pi, 128))
+        sat = sat * prof[None, :, None] + N3(128, 0.6, 210 + k, 3)
+        W.save('ribbon_%s' % nm, np.clip(sat, 0, 255))
     W.save('tissue', fill(n, (248, 236, 240), 6, 131) + N3(n, 0.4, 132, 6))
     W.save('box_inside', fill(n, (220, 200, 170), 4, 133))
 
