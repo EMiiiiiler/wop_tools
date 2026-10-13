@@ -7,21 +7,21 @@ Writes <OUT>/maps/wop_padtank.map, textures/padtank/*, models/padtank/* (swimmin
 scripts/wop_padtank.arena.
 
 Inside a giant aquarium at Padman scale (catalog models at 1.0). x east, y north, gravel at z 0, the water surface
-(seen from below) is the ceiling at z 1664. The whole tank is one fog volume (blue haze) - breathable "water"; only
-the Blue Hole in the middle is real, swimmable water.
+(seen from below) is the ceiling at z 1664. The whole tank is one fog volume (blue haze) - the "water" is breathable,
+and there is no separate water anywhere.
 The map is point-symmetric about (0, 0): every red-side piece is built by a function taking s = +1 (red, west) and
 rotated 180 degrees for blue (s = -1, east).
   bases     sunken sandstone temples with a stone face on the front (mouth = door, glowing team eyes), the team
             lolly inside (3 doors), outside stairs to the roof; a roof bubble-lift to the aquarium filter (Boaster)
-  causeway  stone walkway on pillars from each temple roof over the Blue Hole to the ring around the central rock
+  causeway  stone walkway on pillars from each temple roof to the ring around the central rock
             spire; stairs down to the gravel on both sides
-  centre    the Blue Hole: deep pool (Betty + Pad Power on the bottom), rock spire (Imperius on top, bubble lifts
-            from the ring), stone steps out of the water under the causeways
+  centre    rock spire (Imperius on top, bubble lifts from the ring deck); a treasure grotto inside its base with
+            doorways to the north and south lanes (Betty + Pad Power)
   north/south  red reef (rock mesa + coral plate spiral to a sniper perch, Splasher) / blue diving bell (enter
             through two hatches, climb the coral plates or ride the bubble lift to the roof, Pumper); point-symmetric
             so each lane has one of each; treasure chests mid-lane (enterable, gold-bar steps to the lid)
   fish      func_rotating movers carrying IQM models: leopard sharks circling the tank, a whale shark, a blue-tang
-            school round the spire and round each diving bell, angel fish in the Blue Hole
+            school round the spire and round each diving bell, angel fish circling high over the middle
 """
 import os, sys, math, json
 import numpy as np
@@ -56,7 +56,8 @@ TXI, TYI = 2560, 1216            # tank interior half sizes (glass inner faces);
 TYN = TYI - 4                    # poster face
 CZ = 1664                        # water surface (ceiling)
 BZ = -480                        # bottom of the gravel fill
-PR, PZ = 512, -448               # Blue Hole radius (16-gon), pool floor
+PR = 512                         # radius of the central gravel disc (16-gon) inside the ground sectors
+GROTTO_R = 112                   # treasure grotto inside the spire base
 OX, OYS, OZ = 3072, -1856, CZ + 384   # outer room (behind the glass)
 # temples (red values; blue = rotated)
 TX0, TX1, TY = -2240, -1664, 288      # temple outer x range, half width
@@ -319,7 +320,7 @@ def tank_shell():
 
 
 def ground():
-    """gravel fill from BZ to 0 around the Blue Hole: 16 convex sectors between the pool 16-gon and the tank walls"""
+    """gravel fill from BZ to 0: 16 convex sectors between a central 16-gon and the tank walls, plus the 16-gon"""
     n = 16
     angs = [math.radians(11.25 + 22.5 * i) for i in range(n)]
     P = [(PR * math.cos(a), PR * math.sin(a)) for a in angs]
@@ -352,12 +353,11 @@ def ground():
             if nn[2] < -0.7: return CAULK
             return T('rock_dark') if (nn[0] * ux + nn[1] * uy) < -0.9 else CAULK
         A(hull([(x, y, z) for (x, y) in poly for z in (BZ, 0)], tf))
-    # pool floor + water
-    A(cyl(0, 0, PR, BZ, PZ, {'top': T('sand'), 'side': CAULK, 'bot': CAULK}, 16))
-    A(cyl(0, 0, PR, PZ, 0, T('water'), 16))
+    # the middle: plain gravel round the spire (no water in a tank that is already underwater)
+    A(cyl(0, 0, PR, BZ, 0, {'top': T('gravel'), 'side': CAULK, 'bot': CAULK}, 16))
 
 
-# =================================================================================================== Blue Hole + spire
+# =================================================================================================== spire + grotto
 def spire():
     rk = {'side': T('rock_moss'), 'top': T('rock_moss'), 'bot': CAULK}
     rr = np.random.default_rng(7)
@@ -365,8 +365,18 @@ def spire():
         return [((rr.uniform(r0, r1)) * math.cos(ph + 2 * math.pi * (k + rr.uniform(-0.2, 0.2)) / n),
                  (rr.uniform(r0, r1)) * math.sin(ph + 2 * math.pi * (k + rr.uniform(-0.2, 0.2)) / n), z) for k in range(n)]
     deck_ring = [(x, y, z) for (x, y) in ngon(0, 0, SP_R1, 12) for z in (CZ0,)]
-    # under water: a rough rock base narrowing to the deck's 12-gon
-    A(hull(jring(10, 190, 212, PZ) + jring(10, 192, 208, -200, 0.3) + deck_ring, rk))
+    # rock base round a small treasure grotto (12 wedges, inner 12-gon r 112), openings to the north and south lanes
+    gin = ngon(0, 0, GROTTO_R, 12); g0 = ngon(0, 0, SP_R0, 12); g1 = ngon(0, 0, SP_R1, 12)
+    for k in range(12):
+        z0 = 128 if k in (2, 8) else 0          # wedges centred on 90 / 270 deg are the doorways
+        def at(p, q, z):
+            t = (z - 0) / CZ0
+            return (p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, z)
+        pts = [(gin[k][0], gin[k][1], z0), (gin[(k + 1) % 12][0], gin[(k + 1) % 12][1], z0),
+               (gin[k][0], gin[k][1], CZ0), (gin[(k + 1) % 12][0], gin[(k + 1) % 12][1], CZ0),
+               at(g0[k], g1[k], z0), at(g0[(k + 1) % 12], g1[(k + 1) % 12], z0),
+               (g1[k][0], g1[k][1], CZ0), (g1[(k + 1) % 12][0], g1[(k + 1) % 12][1], CZ0)]
+        A(hull(pts, {'side': T('rock_moss'), 'top': CAULK, 'bot': T('rock_dark')}))
     A(cyl(0, 0, SP_R1, CZ0, TRZ, T('rock_moss'), 12))
     # above the deck: two craggy chunks, the top one flat (Imperius)
     mid = [(round(x), round(y), z) for (x, y, z) in jring(9, 150, 168, 470, 0.5)]
@@ -377,10 +387,10 @@ def spire():
     for k in range(12):
         q = [inner[k], outer[k], outer[(k + 1) % 12], inner[(k + 1) % 12]]
         A(hull([(x, y, z) for (x, y) in q for z in (CZ0, TRZ)], {'top': T('flagstone'), 'side': T('key_band'), 'bot': T('sandstone_plain')}))
-    # decorative pillars under the deck's diagonal corners (standing on the pool floor)
+    # pillars under the deck's diagonal corners
     for a in (45, 135, 225, 315):
         x, y = 260 * math.cos(math.radians(a)), 260 * math.sin(math.radians(a))
-        A(box((round(x) - 28, round(y) - 28, PZ), (round(x) + 28, round(y) + 28, CZ0), T('pillar')))
+        A(box((round(x) - 28, round(y) - 28, 0), (round(x) + 28, round(y) + 28, CZ0), T('pillar')))
     # low posts around the deck rim (cover), not where the causeways or the lifts are
     for k in range(12):
         a = 15 + 30 * k
@@ -406,46 +416,22 @@ def spire():
         light(300 * math.cos(math.radians(a)), 300 * math.sin(math.radians(a)), TRZ + 120, 380, '1 0.95 0.85')
 
 
-def blue_hole():
-    # stone steps out of the water under each causeway (west for red, east for blue), from -224 up to the gravel
+def grotto():
+    """the treasure grotto inside the spire base: Betty and Pad Power, equally far from both bases"""
+    weapon(1, 'betty', 0, 52, 0, 'black')
+    item(1, 'item_padpower', 0, -52, 0)
     for s in (1, -1):
-        for b in stairs(-502, -64, -278, 64, -224, 0, 'w', {'top': T('sandstone_plain'), 'side': T('sandstone')}, base=PZ, thick=64):
-            mn, mx = b.bounds()
-            A(sb(s, mn[0], mn[1], mn[2], mx[0], mx[1], mx[2], {'top': T('sandstone_plain'), 'side': T('sandstone'), 'bot': CAULK}))
-    # bottom loot (equally far from both bases)
-    weapon(1, 'betty', 0, 400, PZ, 'black')
-    item(1, 'item_padpower', 0, -400, PZ)
-    for s in (1, -1):
-        item(s, 'ammo_betty', -330, -300, PZ)
-    # sunken treasure on the bottom
-    mdl_c('pad_ddmix/padship/amphora.md3', 300, 300, PZ, 0.8, 30)
-    mdl_c('pad_ddmix/padship/amphora.md3', -300, -300, PZ, 0.8, 210)
-    mdl_c('pad_ddmix/jail/skull.md3', -330, 250, PZ, 0.8, 300)
-    mdl_c('pad_ddmix/door/ancient_key_lying.md3', 120, -330, PZ, 1.5, 40)
-    for (x, y) in ((0, 360), (0, -360), (330, 0), (-330, 0)):
-        light(x, y, -250, 420, '0.45 0.8 1')
-    speaker(0, 0, -100, 'sound/world/ambient/water_bubble.ogg')
-    # kelp on the bottom of the hole
-    for (x, y, h) in ((260, 380, 300), (-260, -380, 300), (380, -230, 260), (-380, 230, 260)):
-        kelp(x, y, h, PZ, 'kelp2')
-
-
-def carve_water():
-    wi = next(i for i, b in enumerate(M.world) if T('water') in b.textures())
-    wb = M.world[wi]
-    wmn, wmx = wb.bounds()
-    cut = []
-    for i, b in enumerate(M.world):
-        if i == wi or not b.is_solid(): continue
-        if b.textures() <= {NODRAW_NS, T('kelp'), T('kelp2'), T('bubbles')}: continue
-        mn, mx = b.bounds()
-        if np.all(mn < wmx - 0.5) and np.all(mx > wmn + 0.5): cut.append(b)
-    pieces = carve(wb, cut, T('water'))
-    for b in pieces:
-        for f in b.faces:
-            f.tex = T('water') if (f.n[2] > 0.99 and abs(f.d) < 0.01) else T('water_inner')
-    M.world[wi:wi + 1] = pieces
-    print('water pieces', len(pieces), 'cutters', len(cut))
+        item(s, 'ammo_betty', -330, -300, 0)
+    mdl_c('pad_ddmix/padship/amphora.md3', -64, 0, 0, 0.35, 30)
+    mdl_c('pad_ddmix/padship/amphora.md3', 64, 0, 0, 0.35, 210)
+    mdl_c('pad_ddmix/jail/skull.md3', -420, 260, 0, 0.8, 300)
+    mdl_c('pad_ddmix/door/ancient_key_lying.md3', 420, -280, 0, 1.5, 40)
+    light(0, 0, 170, 260, '1 0.85 0.6')
+    for (x, y) in ((0, 300), (0, -300), (300, 0), (-300, 0)):
+        light(x, y, 120, 300, '0.8 0.92 1')
+    speaker(0, 0, 100, 'sound/world/ambient/water_bubble.ogg')
+    for (x, y, h) in ((280, 420, 420), (-280, -420, 420), (440, -200, 360), (-440, 200, 360)):
+        kelp(x, y, h, 0, 'kelp2')
 
 
 # =================================================================================================== causeways
@@ -794,7 +780,7 @@ def fish_loops():
     specs = [dict(name='sharks', centre=(0, 0, 760), speed=9, kind='sharks'),
              dict(name='whaleshark', centre=(0, 0, 1180), speed=-6, kind='whaleshark'),
              dict(name='tangs_spire', centre=(0, 0, 430), speed=16, kind='tangs_spire'),
-             dict(name='angels_hole', centre=(0, 0, -360), speed=-12, kind='angels_hole')] + LOOPS
+             dict(name='angels_high', centre=(0, 0, 980), speed=-12, kind='angels_high')] + LOOPS
     out = []
     for sp in specs:
         Lm = FM.LoopModel(sp['name'])
@@ -809,8 +795,8 @@ def fish_loops():
         elif k == 'tangs_spire':
             for j in range(9): FM.add_tang(Lm, 410 + 22 * (j % 4), 8 * j, -30 + 9 * ((j * 5) % 7), ccw)
             for j in range(7): FM.add_tang(Lm, 420 + 20 * (j % 3), 180 + 9 * j, -20 + 10 * ((j * 3) % 5), ccw)
-        elif k == 'angels_hole':
-            for j in range(6): FM.add_angel(Lm, MD3ROOT, 330 + 18 * (j % 3), 60 * j, -30 + 12 * (j % 5), ccw,
+        elif k == 'angels_high':
+            for j in range(6): FM.add_angel(Lm, MD3ROOT, 560 + 18 * (j % 3), 60 * j, -30 + 12 * (j % 5), ccw,
                                             ['flame_angel', 'flame_angel02', 'flame_angel05'][j % 3], 1.0)
         elif k == 'tang_ring':
             for j in range(6): FM.add_tang(Lm, sp['R'] + 14 * (j % 3), 10 * j, -15 + 8 * ((j * 3) % 4), ccw)
@@ -858,11 +844,10 @@ def sweep_check(loops):
 # =================================================================================================== main
 def main():
     TX.make_all(OUT)
-    tank_shell(); ground(); spire(); blue_hole()
+    tank_shell(); ground(); spire(); grotto()
     for s in (1, -1):
         temple(s); filter_box(s); causeway(s); reef(s); diving_bell(s); chest(s); scenery(s)
     lights_and_sound()
-    carve_water()
     loops = fish_loops()
     sweep_check(loops)
     M.ent('info_player_intermission', (-2300, -1000, 900), angles='18 30 0')
