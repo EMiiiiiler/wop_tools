@@ -65,10 +65,11 @@ SK = (-640, -1024, 640, -384)         # sink basin interior (x0, y0, x1, y1)
 SKZ, WZ = -448, -400                  # basin floor, water surface
 KILLZ = -640                          # anything that falls below this dies
 # toaster (red): footprint, wall thickness, roof top, slots
-TA = (-2816, -960, -2368, 64)
+TA = (-XW + 8, -960, -XW + 456, 64)   # flush against the end wall's backsplash
 TT, TROOF, TCH = 32, 512, 48
-SLOT_A, SLOT_B, SLOT_Y = (-2704, -2640), (-2544, -2480), (-768, -128)
-TXM, TYM = -2592, -448                # toaster centre (lolly)
+TXM, TYM = (TA[0] + TA[2]) // 2, -448  # toaster centre (lolly)
+SLOT_A, SLOT_B, SLOT_Y = (TXM - 112, TXM - 48), (TXM + 48, TXM + 112), (-768, -128)
+TST = (TA[2], TA[2] + 256)             # toast-stack stairs on the toaster's east side (x range)
 # stove / hood / cabinets
 ST_X = 768
 CAB_Z0, CAB_Z1, CAB_Y0 = 944, 1728, 960
@@ -288,7 +289,7 @@ def shell():
     for s in (1, -1):
         A(sb(s, -XW, SY0, 0, -XW + 8, YB - 8, 0 + 576, {'e': T('backsplash'), 'side': CAULK, 'top': T('backsplash'), 'bot': CAULK}))
     # baseboards round the kitchen floor
-    for (mn, mx) in (((-XW, YS, ZF), (1600, YS + 12, ZF + 64)), ((2200, YS, ZF), (XW, YS + 12, ZF + 64))):
+    for (mn, mx) in (((-XW, YS, ZF), (DOOR[0], YS + 12, ZF + 64)), ((DOOR[1], YS, ZF), (XW, YS + 12, ZF + 64))):
         A(box(mn, mx, T('baseboard')))
 
 
@@ -447,7 +448,7 @@ def toaster(s):
     inner = oct_pts(x0 + TT, y0 + TT, x1 - TT, y1 - TT, TCH - 14)
     # doors: (edge index, centre along the edge param 0..1 is not needed: give the opening as coordinate ranges)
     # edge 0 = south (y0), 2 = east (x1), 4 = north (y1)
-    doors = {0: ('x', TXM - 64, TXM + 64), 4: ('x', TXM - 64, TXM + 64), 2: ('y', -512, -384)}
+    doors = {0: ('x', TXM - 64, TXM + 64), 4: ('x', TXM - 64, TXM + 64), 2: ('y', -128, 0)}
     DZ = 176
     bands = ((16, 360, en), (360, 400, T('chrome')), (400, 480, en))
     for k in range(8):
@@ -507,10 +508,10 @@ def toaster(s):
         if f.tex == T('toast'): fit_face(f, SLOT_Y[0], -448, 16, tz, 256, 256)
     A(tb)
     # exterior details: team logo on the east face, lever + dial, chrome feet
-    A(ssign(s, (x1, -320, 220), (x1 + 4, -64, 284), T('logo_' + team), 512, 128, 'e', T('chrome')))
-    A(sb(s, x1, -760, 400, x1 + 40, -680, 440, T('toaster_base')))
-    A(sb(s, x1, -730, 300, x1 + 4, -710, 400, T('toaster_base')))     # lever slot plate
-    A(sh(s, [(x1 + dz, -820 + 32 * math.cos(a), 260 + 32 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 12, endpoint=False) for dz in (0, 24)],
+    A(ssign(s, (TXM - 128, y1, 220), (TXM + 128, y1 + 4, 284), T('logo_' + team), 512, 128, 'n', T('chrome')))
+    A(sb(s, TXM + 120, y0 - 40, 400, TXM + 200, y0, 440, T('toaster_base')))
+    A(sb(s, TXM + 150, y0 - 4, 300, TXM + 170, y0, 400, T('toaster_base')))     # lever slot plate
+    A(sh(s, [(TXM - 170 + 32 * math.cos(a), y0 - dz, 260 + 32 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 12, endpoint=False) for dz in (0, 24)],
          T('toaster_base'), rnd=True))
     # interior: lolly dais, health station
     A(sb(s, TXM - 48, TYM - 48, 16, TXM + 48, TYM + 48, 32, {'top': T('chrome'), 'side': T('toaster_base'), 'bot': CAULK}))
@@ -527,7 +528,7 @@ def toaster(s):
     slight(s, TXM, -400, TROOF + 260, 400)
     # toast-stack stairs up the wall side to the roof (16u steps)
     stt = {'top': T('bread'), 'side': T('crust'), 'bot': CAULK}
-    for b in stairs(-XW + 8, -1216, x0, -192, 0, TROOF, 'n', stt):
+    for b in stairs(TST[0], -1216, TST[1], -192, 0, TROOF, 'n', stt):
         mn, mx = b.bounds(); A(sb(s, mn[0], mn[1], mn[2], mx[0], mx[1], mx[2], stt))
 
 
@@ -554,17 +555,17 @@ def side_counter(s):
     M.model(f'models/padkitchen/kettle_{team}.md3', (s * -2400, 360, 0), angle=90, spawnflags=4, _castshadows=1, _lightmapscale=0.5)
     A(scyl(s, -2400, 360, 130, 0, 300, WCLIP, 16))
     speaker(s * -2400, 360, 200, 'sound/world/machine/coffee_maker.ogg')
-    smdl(s, 'pad_tins/tomatoes_tl.md3', -2740, -1190, 0, 1.3, 30, round_n=12)
+    smdl(s, 'pad_tins/tomatoes_tl.md3', -2980, -1180, 0, 1.3, 30, round_n=12)
     smdl(s, 'pad_fruits/orange.md3', -2780, 200, 0, 1.4, 0)
     # spawns
-    for (x, y, a) in ((-2700, 300, 0), (-2400, 160, 0), (-2560, -1120, 90), (-2300, -1040, 90)):
+    for (x, y, a) in ((-2700, 300, 0), (-2400, 160, 0), (-2840, -1120, 90), (-2300, -1040, 90)):
         spawn(s, 'team_%splayer' % team, x, y, 0, a)
-    for (x, y, z, a) in ((-2830, 400, 0, 0), (-2600, 160, 0, 0), (-2600, -1010, 0, 0), (-2272, -300, 0, 90), (-2350, 960, 0, 0),
+    for (x, y, z, a) in ((-2830, 400, 0, 0), (-2600, 160, 0, 0), (-2950, -1040, 0, 0), (-2272, -300, 0, 90), (-2350, 960, 0, 0),
                          (TXM, -500, TROOF, 0), (-2272, -840, 0, 90)):
         spawn(s, 'team_%sspawn' % team, x, y, z, a)
     # loot
     item(s, 'ammo_bubbleg', -2560, 230, 0)
-    item(s, 'ammo_pumper', -2440, -1120, 0)
+    item(s, 'ammo_pumper', -2750, -1180, 0)
     item(s, 'ammo_splasher', -2290, -160, 0)
     item(s, 'item_speedy', -2290, -1110, 0)
     slight(s, -2600, 300, 400, 700); slight(s, -2500, -1100, 400, 600); slight(s, -2272, -400, 300, 400)
@@ -774,6 +775,40 @@ def fork(s, x, y, zsurf):
 
 # =================================================================================================== far side of the kitchen (decoration)
 FRIDGE = (-448, YS + 12, 448, YS + 652, 1100)     # x0, y0, x1, y1, top
+DOOR = (1700, 2800, 2560)                          # x0, x1, height (life-size next to the 2250-tall fridge)
+TABLE = (-2500, -2500, -1300, -1800, -177)         # x0, y0, x1, y1, top: too far from the island to jump to
+LEGS = []                                          # (x0, y0, x1, y1) of every table/chair leg (holes in the kill zone)
+
+
+def dining_table():
+    """dining table and chairs on the far side of the kitchen (out of reach, 520u from the island edge)"""
+    x0, y0, x1, y1, top = TABLE
+    wd = {'top': T('board'), 'side': T('board_dark'), 'bot': T('board_dark')}
+    A(box((x0, y0, top - 40), (x1, y1, top), wd))
+    for (lx, ly) in ((x0 + 40, y0 + 40), (x1 - 104, y0 + 40), (x0 + 40, y1 - 104), (x1 - 104, y1 - 104)):
+        A(box((lx, ly, ZF), (lx + 64, ly + 64, top - 40), T('board_dark'))); LEGS.append((lx, ly, lx + 64, ly + 64))
+    seat, sz = 340, -567
+    def chair(cx, cy, back):
+        sx0, sy0 = cx - seat // 2, cy - seat // 2
+        A(box((sx0, sy0, sz - 40), (sx0 + seat, sy0 + seat, sz), wd))
+        for (lx, ly) in ((sx0 + 16, sy0 + 16), (sx0 + seat - 56, sy0 + 16), (sx0 + 16, sy0 + seat - 56), (sx0 + seat - 56, sy0 + seat - 56)):
+            A(box((lx, ly, ZF), (lx + 40, ly + 40, sz - 40), T('board_dark'))); LEGS.append((lx, ly, lx + 40, ly + 40))
+        bx = {'w': (sx0, sy0, sx0 + 36, sy0 + seat), 'e': (sx0 + seat - 36, sy0, sx0 + seat, sy0 + seat),
+              's': (sx0, sy0, sx0 + seat, sy0 + 36)}[back]
+        A(box((bx[0], bx[1], sz), (bx[2], bx[3], sz + 500), wd))
+    chair(x0 - 230, (y0 + y1) // 2, 'w'); chair(x1 + 230, (y0 + y1) // 2, 'e')
+    chair(-2030, y0 - 120, 's'); chair(-1670, y0 - 120, 's')
+    # laid table: plates, cake stand with cake, cups, fruit (all resting on the table top)
+    mdl_c('pad_plates/plate_hp1.md3', -2200, -2150, top, 1.3, 0)
+    mdl_c('pad_plates/plate_hp2.md3', -1600, -2150, top, 1.3, 40)
+    mdl_c('pad_cake/pad_cakestand.md3', -1900, -2050, top, 1.6, 0)
+    mdl_c('pad_cake/pad_cakeslice.md3', -2380, -2330, top, 2.0, 30)
+    mdl_c('pad_cups/pad_cup04.md3', -2380, -1950, top, 1.4, 120)
+    mdl_c('pad_cups/pad_cup07.md3', -1420, -2350, top, 1.4, 300)
+    mdl_c('pad_fruits/orange.md3', -1900, -2350, top, 1.4, 0)
+    mdl_c('pad_fruits/apple.md3', -1780, -2380, top, 1.6, 0)
+    mdl_c('pad_fruits/banana.md3', -2050, -2380, top, 1.4, 20)
+    light(-1900, -2150, top + 500, 900, '1 0.9 0.75')
 
 
 def room_decor():
@@ -785,12 +820,13 @@ def room_decor():
         if f.tex == T('fridge'): fit_face(f, fx0, fx1, ZF, ftop, 1024, 2048)
     A(b)
     speaker(0, fy1 + 40, ZF + 1200, 'sound/world/machine/freezer.ogg')
-    A(sign_box((1600, YS, ZF), (2200, YS + 4, ZF + 1300), T('door'), 512, 1024, facing='n', back=T('baseboard')))
+    A(sign_box((DOOR[0], YS, ZF), (DOOR[1], YS + 4, ZF + DOOR[2]), T('door'), 512, 1024, facing='n', back=T('baseboard')))
+    dining_table()
     A(sign_box((-2300, YS, ZF + 900), (-1500, YS + 8, ZF + 1500), T('painting'), 512, 384, facing='n', back=T('window_frame')))
     for s in (1, -1):         # wall clocks above the windows
         A(ssign(s, (-XW, -416, 1620), (-XW + 4, -160, 1876), T('clock'), 256, 256, 'e', T('wall')))
     mdl('pad_ddmix/trashcan/cannedfish.md3', 1500, -1900, ZF, 2.5, 0)
-    A(box((-1200, -2100, ZF), (1200, -1500, ZF + 2), {'top': T('mat_red'), 'side': T('mat_red'), 'bot': CAULK}))
+    A(box((-860, -2100, ZF), (1200, -1500, ZF + 2), {'top': T('mat_red'), 'side': T('mat_red'), 'bot': CAULK}))
     for (x, y) in ((-2000, -2200), (2000, -2200)):
         light(x, y, ZF + 900, 1500, '1 0.92 0.8')
     # ---- the secret: a mouse hole in the back of each cereal box tunnel -> the top of the fridge
@@ -857,7 +893,7 @@ def _gapped(a, b, gaps):
 
 def kill_zone():
     foot = [(-XW, SY0, -SX, YB), (SX, SY0, XW, YB), (-SX, BC0, SX, YB), (-IX, IY0, IX, IY1), (FRIDGE[0], YS, FRIDGE[2], FRIDGE[3])]
-    for r in sub_rects((-XW, YS, XW, YB), foot):
+    for r in sub_rects((-XW, YS, XW, YB), foot + LEGS):
         M.ent('trigger_hurt', brushes=[box((r[0], max(r[1], YS + 16), -900), (r[2], r[3], KILLZ), TRIG)], dmg=9999)
 
 
@@ -880,7 +916,7 @@ def lights_and_sound():
 def ffa_spawns():
     for s in (1, -1):
         for (x, y, z, a) in ((-1500, 760, 0, 90), (-1100, 760, 0, 90), (-1150, -880, 0, 0), (-1600, -680, 0, 0), (-500, -250, 0, 0),
-                             (-2450, -1080, 0, 90), (-2600, 300, 0, 0), (-250, -1150, 0, 0)):
+                             (-2280, -960, 0, 90), (-2600, 300, 0, 0), (-250, -1150, 0, 0)):
             spawn(s, 'info_player_deathmatch', x, y, z, a)
 
 
