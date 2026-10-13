@@ -47,6 +47,11 @@ Tools and standing rules for building World of Padman (WoP) maps.
   on the item entity (NULL client) and the server segfaults on pickup (found with wopded + gdb on WoP main, Oct 2026).
 - misc_model has no collision. Give big models a weapclip box (`playroom/build_playroom.py` solid_mdl()).
 - misc_model has no collision for other models either: food on a plate *model* floats; use a thin brush plate.
+- Main pieces should be custom MD3s (user rule). Recipe: build the mesh with `meshlib.py`, lightmapped misc_model
+  (spawnflags 4, `_castshadows 1`), collision = the old brush shapes as common/weapclip, look at it with
+  `preview/md3sheet.py` before placing. `xmas/xmas_models.py` has ~45 examples (furniture, tree, presents, figures).
+- `bsp2scene.py --compact` halves the walk-through page (int16 geometry); use it when a map with many MD3s goes over
+  the 16 MB artifact limit.
 - bspc gives no walk-off links from steep (unwalkable) skirts, so bots get trapped on stacked cone tiers: add an outward
   "fling" jump pad per tier. A ramp meeting a separate roof slab at the same pitch leaves a groundless AAS strip at the
   seam (bots can't walk up): give bots a pad (`xmas/`).

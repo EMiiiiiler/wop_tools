@@ -224,6 +224,8 @@ def main():
     ap.add_argument('--sub', default='Compiled BSP preview')
     ap.add_argument('--style', default=None, help='CSS file appended after the built-in style (palette/type overrides)')
     ap.add_argument('--views', default='', help='"Name:x,y,z,yaw,pitch;Name2:..." camera buttons (first = start view)')
+    ap.add_argument('--compact', action='store_true', help='quantised geometry (int16 positions at 1/4u and UVs, uint16 '
+                    'lightmap UVs and indices): about half the page size, for phone-friendly / <16 MB artifacts')
     ap.add_argument('--fog', default=None, help='"r,g,b,dist": distance fog (Q3 fogparms colour + distance to opaque), e.g. for a map inside a fog volume')
     a = ap.parse_args()
 
@@ -362,8 +364,17 @@ def main():
         rec = {'shader': sname, 'lit': bool(lit), 'tex': tid, 'blend': info.get('blend'), 'alpha': bool(info.get('alpha')),
                'scroll': info.get('scroll'), 'tint': info.get('tint'), 'env': bool(info.get('env')), 'nv': int(len(pos)), 'ni': int(len(idx)),
                'anim': (anim if anim >= 0 else None)}
-        for k, arr in (('pos', p3), ('uv', uv.astype(np.float32)), ('uv2', uv2.astype(np.float32)),
-                       ('col', (np.clip(col, 0, 255)).astype(np.uint8)), ('idx', idx)):
+        arrs = (('pos', p3), ('uv', uv.astype(np.float32)), ('uv2', uv2.astype(np.float32)),
+                ('col', (np.clip(col, 0, 255)).astype(np.uint8)), ('idx', idx))
+        if a.compact:
+            us = max(float(np.abs(uv).max()) if len(uv) else 1.0, 1e-3) / 32000.0
+            rec['q'] = 1; rec['uvs'] = us; rec['i16'] = bool(len(pos) < 65536)
+            arrs = (('pos', np.clip(np.round(p3 * 4), -32767, 32767).astype(np.int16)),
+                    ('uv', np.round(uv / us).astype(np.int16)),
+                    ('uv2', np.clip(np.round(uv2 * 65535), 0, 65535).astype(np.uint16)),
+                    ('col', (np.clip(col, 0, 255)).astype(np.uint8)),
+                    ('idx', idx.astype(np.uint16) if len(pos) < 65536 else idx))
+        for k, arr in arrs:
             while blob.tell() % 4: blob.write(b'\0')
             rec[k] = blob.tell(); blob.write(arr.tobytes())
         if info.get('env') and len(g['nrm']) == len(g['pos']):      # smooth chrome: real vertex normals
@@ -481,8 +492,8 @@ atlas.magFilter = THREE.LinearFilter; atlas.minFilter = THREE.LinearFilter; atla
 const white = new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1); white.needsUpdate = true;
 const scrollers = []; const movers = [];
 const VS = `attribute vec2 lmuv; attribute vec3 vcol; varying vec2 vUv; varying vec2 vUv2; varying vec3 vCol; varying float vDist; varying vec3 vView; varying vec3 vN;
- uniform vec2 scroll; uniform float time;
- void main(){ vN = normalMatrix * normal; vUv = uv + scroll*time; vUv2 = lmuv; vCol = vcol; vec4 mv = modelViewMatrix*vec4(position,1.0); vDist = length(mv.xyz); vView = mv.xyz;
+ uniform vec2 scroll; uniform float time; uniform float posScale; uniform float uvScale;
+ void main(){ vN = normalMatrix * normal; vUv = uv*uvScale + scroll*time; vUv2 = lmuv; vCol = vcol; vec4 mv = modelViewMatrix*vec4(position*posScale,1.0); vDist = length(mv.xyz); vView = mv.xyz;
   gl_Position = projectionMatrix*mv;} `;
 const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; uniform float alphaTest; uniform float opacity; uniform float add; uniform vec3 tint;
  uniform vec4 fog; uniform float env; varying float vDist; varying vec3 vView; varying vec3 vN;
@@ -498,16 +509,24 @@ const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; unif
   gl_FragColor = vec4(col, add > 0.5 ? 1.0 : (opacity < 1.0 ? opacity : c.a)); }`;
 for (const m of D.meta){
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(bin, m.pos, m.nv*3), 3));
-  g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(bin, m.uv, m.nv*2), 2));
-  g.setAttribute('lmuv', new THREE.BufferAttribute(new Float32Array(bin, m.uv2, m.nv*2), 2));
+  if (m.q){
+    g.setAttribute('position', new THREE.BufferAttribute(new Int16Array(bin, m.pos, m.nv*3), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Int16Array(bin, m.uv, m.nv*2), 2));
+    g.setAttribute('lmuv', new THREE.BufferAttribute(new Uint16Array(bin, m.uv2, m.nv*2), 2, true));
+    g.setIndex(new THREE.BufferAttribute(m.i16 ? new Uint16Array(bin, m.idx, m.ni) : new Uint32Array(bin, m.idx, m.ni), 1));
+  } else {
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(bin, m.pos, m.nv*3), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(bin, m.uv, m.nv*2), 2));
+    g.setAttribute('lmuv', new THREE.BufferAttribute(new Float32Array(bin, m.uv2, m.nv*2), 2));
+    g.setIndex(new THREE.BufferAttribute(new Uint32Array(bin, m.idx, m.ni), 1));
+  }
   g.setAttribute('vcol', new THREE.BufferAttribute(new Uint8Array(bin, m.col, m.nv*3), 3));
-  g.setIndex(new THREE.BufferAttribute(new Uint32Array(bin, m.idx, m.ni), 1));
   if (m.nrm !== undefined) g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(bin, m.nrm, m.nv*3), 3));
   const blend = m.blend; const t = tex(m.tex) || white;
   const u = {map:{value:t}, lm:{value:atlas}, lit:{value:m.lit?1:0}, alphaTest:{value:m.alpha?0.5:0.0},
              opacity:{value: blend==='blend'?0.55:1.0}, add:{value: blend==='add'?1:0}, tint:{value:new THREE.Vector3(...(m.tint||[1,1,1]))}, scroll:{value:new THREE.Vector2(...(m.scroll||[0,0]))}, time:{value:0},
-             fog:{value: D.fog ? new THREE.Vector4(...D.fog) : new THREE.Vector4(0,0,0,0)}, env:{value: m.env?1:0}};
+             fog:{value: D.fog ? new THREE.Vector4(...D.fog) : new THREE.Vector4(0,0,0,0)}, env:{value: m.env?1:0},
+             posScale:{value: m.q ? 0.25 : 1.0}, uvScale:{value: m.q ? m.uvs : 1.0}};
   const mat = new THREE.ShaderMaterial({uniforms:u, vertexShader:VS, fragmentShader:FS, side:THREE.DoubleSide,
      transparent: !!blend, depthWrite: !blend});
   if (blend==='add'){ mat.blending = THREE.AdditiveBlending; }

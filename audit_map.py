@@ -10,7 +10,9 @@ Checks
   2. point entities: item/weapon/ammo bounding box (+-15) and spawn-point player box
      (-15,-15,-24..15,15,32) must not intersect solid brushes; nothing may sit inside a trigger.
   3. misc_model support: model's lowest vertices (scaled/rotated) must rest on a solid or water-floor
-     surface within 3u below; reports % of the footprint that is unsupported (overhang) and floaters.
+     surface within 3u below; reports % of the footprint that is unsupported (overhang) and floaters. A model whose
+     vertices touch a wall brush (>= 2% of them within 3u) counts as mounted there (wreaths, frames); one whose top
+     touches a ceiling brush counts as hanging from it (stars and mistletoe on threads).
   4. misc_model vs brush: model bbox shrunk by 25% must not sink into solid brushes.
      misc_externalmodel (animated, frame 0) gets the same support/sink checks.
   5. counts: weapons, ammo per weapon type (rule: 3-6), spawns, models.
@@ -287,6 +289,23 @@ def main():
                         ok = True; break
                 if not ok: unsup += 1
             frac = unsup / max(1, len(ring))
+            attached = False
+            if frac > 0.2:
+                # wall- or ceiling-mounted (wreath, picture frame, hanging star): enough vertices touch a solid/clip
+                # brush away from the bottom ring
+                sv = v[::max(1, len(v) // 3000)]
+                sv = sv[sv[:, 2] > zb + max(2.0, 0.04 * (v[:, 2].max() - zb))]
+                touch = 0; hang = False
+                vmn, vmx = v.min(0) - 3, v.max(0) + 3
+                cand = [b for b in B if b[1] in ('solid', 'clip') and np.all(b[4] <= vmx) and np.all(b[5] >= vmn)]
+                for b in cand:
+                    A_ = np.array([n for n, d in b[0]]); d_ = np.array([d for n, d in b[0]])
+                    hit = np.all(sv @ A_.T - d_ <= 3.0, 1)
+                    touch += int(np.sum(hit))
+                    hang |= bool(np.any(sv[hit][:, 2] >= v[:, 2].max() - 2)) if hit.any() else False
+                # mounted on a wall (>= 2% of vertices touch) or hanging from a ceiling (its top touches a brush)
+                attached = len(sv) > 0 and touch >= 3 and (touch >= 0.02 * len(sv) or hang)
+                if attached: frac = 0.0
             # sink check: shrunk bbox vs solids
             mn, mx = v.min(0), v.max(0); c0 = (mn + mx) / 2; h = (mx - mn) / 2 * 0.75
             smn2, smx2 = c0 - h, c0 + h
