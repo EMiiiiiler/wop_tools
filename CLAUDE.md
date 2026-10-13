@@ -63,3 +63,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
   as plain profiles.
 - Water overlapping solids fails audit_map: build one water box and `carve()` it; draw only the surface faces and give the
   internal faces a nodraw water shader (q3map2 only culls exactly coincident faces).
+- Fish/creatures that loop round a map: func_rotating + IQM model2 (`iqmtool.py`, `padtank/fish_models.py`); MD3 can't
+  hold geometry beyond +-512 of its origin. Fog volumes: run audit_map/sightlines with `--shaders` so the fog brush is
+  ignored instead of counted as a solid.
+- Bots may skip a long chain of 32u barrier-jump steps even when the AAS links every step; give the reward spot a pad too.

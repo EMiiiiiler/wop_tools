@@ -15,7 +15,8 @@ Checks
      misc_externalmodel (animated, frame 0) gets the same support/sink checks.
   5. counts: weapons, ammo per weapon type (rule: 3-6), spawns, models.
 --shaders: read every scripts/*.shader below the given dir(s) and classify brushes by surfaceparm
-  (water/slime/lava/fog -> liquid, nonsolid -> decoration) instead of guessing from the texture name.
+  (water/slime/lava -> liquid, fog -> ignored (a fog volume may enclose everything), nonsolid -> decoration)
+  instead of guessing from the texture name.
 Exit status 1 if anything failed.
 """
 import re, sys, os, math, json, argparse
@@ -127,7 +128,8 @@ def load_shaders(dirs):
 def parm_kind(tex):
     p = SHADER_PARMS.get('textures/' + tex.lower())
     if p is None: return None
-    if p & {'water', 'slime', 'lava', 'fog'}: return 'water'
+    if 'fog' in p: return 'fog'                 # fog volumes legitimately contain geometry
+    if p & {'water', 'slime', 'lava'}: return 'water'
     if 'nonsolid' in p: return 'decor'
     return 'solid'
 
@@ -136,6 +138,7 @@ def kind(texs):
     t = [x.lower() for x in texs]
     if SHADER_PARMS:
         pk = [parm_kind(x) for x in t]
+        if 'fog' in pk: return 'fog'
         if all(k == 'decor' or 'caulk' in x or 'nodraw' in x for k, x in zip(pk, t)) and 'decor' in pk: return 'decor'
         if 'water' in pk and not any(any(s in x for s in TRIGGER) for x in t): return 'water'
     if all(any(s in x for s in SKIP_TEX) for x in t): return 'skip'
@@ -201,7 +204,7 @@ def main():
             B.append((P, k, ei, bi, mn, mx, texs, cls))
     fails = 0
     # 1. overlaps
-    idx = [i for i, b in enumerate(B) if b[1] != 'decor']
+    idx = [i for i, b in enumerate(B) if b[1] not in ('decor', 'fog')]
     mns = np.array([B[i][4] for i in idx]); mxs = np.array([B[i][5] for i in idx])
     ov = []
     for ii, i in enumerate(idx):
