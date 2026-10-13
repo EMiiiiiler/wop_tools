@@ -81,3 +81,10 @@ Tools and standing rules for building World of Padman (WoP) maps.
   teleport exit speed slides the player onto it.
 - `pkill -f wopded` from the Bash tool kills the tool's own shell (its command line contains the pattern); start
   wopded with `setsid nohup ... < /dev/null &` and stop it with its pid or `timeout`.
+- Bots skip pickups reached only by long runs of 32u-riser stairs even when aas_check routes pass; use 16u stairs for
+  anything bots should climb (attic station roofs). A space enclosed by stair flights and walls with only one-way
+  (walk-off) entries is a bot trap: aas_check prints TRAP; keep 48u+ between neighbouring flights.
+- A ridable train on a circle: one func_rotating with the origin at the circle centre, nodraw collision boxes per car
+  and the whole train as an IQM model2 (padattic). Rotating pushers move riders and anyone in front on their own radius,
+  so they never pin players in a tunnel that follows the same circle (func_rotating has no blocked/crush handler).
+
