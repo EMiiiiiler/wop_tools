@@ -9,12 +9,12 @@ scripts/wop_padlounge.arena.
 A stoner's living room at Padman scale (~8u per cm, catalog models at their native scale 1.0), late at night, the air
 hazy with smoke (one fog volume fills the room). x east, y north, floor z 0, ceiling z 2048.
 
-  couch          north wall: olive corduroy three-seater (seat 360, arms 560, back 760). A falsa blanket draped off the
-                 seat is a ramp up; a pad on the seat and one on the side table reach the back (Splasher). Under the couch
+  couch          north wall: olive corduroy three-seater (seat 360, arms 560, back 760). A pad on the rug jumps onto the
+                 seat (falsa blanket thrown over it); pads on the rug and the side table reach the back (Balloony). Under the couch
                  is a 64u crawl space (crouch) with the Boaster, lost lighters and socks, and a mouse hole in the skirting
                  board: the secret teleport up to the stash shelf above the couch (Pad Power, Killer Ducks).
   coffee table   centre, on a 70s shag rug: the giant glass bong (MD3), ashtray with a smouldering joint, grinder,
-                 rolling papers, lighter, Bubble G. A skateboard leaning on the table edge is the ramp up; a pad too.
+                 rolling papers, lighter, Bubble G. A skateboard (MD3) leaning on the table edge is the ramp up; a pad too.
   TV stand       west wall: three open compartments (health station, Pad shield, console), the flat screen showing a
                  psychedelic visualiser, floor speakers either side, "chill out" neon above. Pad to the top (Splasher).
   bookshelf      east wall, 1600 tall: walk-in bottom shelf (records, green lava lamp), a pad into the second shelf
@@ -23,7 +23,7 @@ hazy with smoke (one fog volume fills the room). x east, y north, floor z 0, cei
                  purple LED panel, carbon filter (Pumper inside). Pad to the roof (Betty).
   mini fridge    north-east: door wide open, walk inside (Speedy, munchies on the glass shelf), pad to the top.
   props          big potted cannabis plant (MD3), purple bean bag (MD3), lava lamps (MD3, wax rises and sinks),
-                 crisp bags (MD3), pizza box stairs to the side table, pizza stacks, tie-dye curtains, tapestry and
+                 crisp bags (MD3), pizza stacks, tie-dye curtains, tapestry and
                  black-light posters, fairy lights round the walls, floor lamp, window onto the night city.
 """
 import os, sys, math, json
@@ -305,16 +305,17 @@ def couch():
         # back cushion leaning against the back
         A(hull([(x, y, z) for x in (xa + 6, xb - 6) for (y, z) in ((SEAT_DEPTH_Y, SEAT), (SEAT_DEPTH_Y + 30, SEAT + 230),
                                                                    (SEAT_DEPTH_Y + 70, SEAT + 320), (BACK_Y, SEAT + 340), (BACK_Y, SEAT))], cz))
-    # falsa blanket draped from the east seat cushion down to the rug: the ramp up (37 deg)
-    bxa, bxb, by0 = 520, 840, 620
-    A(hull([(x, y, z) for x in (bxa, bxb) for (y, z) in ((by0, RUG[4]), (CY0, RUG[4]), (CY0, SEAT + 8))], T('blanket')))
+    # falsa blanket thrown over the east seat cushion, hanging down its front; a pad on the rug jumps you onto the seat
+    bxa, bxb = 520, 840
     A(box((bxa, CY0, SEAT), (bxb, 1320, SEAT + 8), T('blanket')))
+    A(box((bxa, CY0 - 8, 120), (bxb, CY0, SEAT + 8), T('blanket')))
+    jumppad(680, 860, RUG[4], (680, 1250, SEAT + 8), SEAT + 200, 'couch_seat')
     # throw pillows (cover on the seat), leaning in the west corner
     A(hull([(x, y, z) for (x, y) in ((-880, 1300), (-860, 1440), (-700, 1440), (-720, 1300)) for z in (SEAT, SEAT + 40)] +
            [(-870, 1350, SEAT + 170), (-860, 1440, SEAT + 180), (-780, 1440, SEAT + 170)], T('blanket')))
     # loot + decoration on the couch
     weapon('balloony', 0, 1712, BACK, 'green')
-    item('ammo_balloony', 640, 1400, SEAT + 8)
+    item('ammo_balloony', 640, 1400, SEAT)
     item('ammo_pumper', 420, 1250, SEAT)
     item('holdable_floater', -988, 1400, ARM)
     item('ammo_splasher', 988, 1500, ARM)
@@ -375,13 +376,13 @@ def side_table():
     mdl_c('pad_cups/pad_cup05.md3', -1180, 1730, top, 1.0, 140)
     item('ammo_splasher', -1340, 1520, top)
     jumppad(-1170, 1540, top, (-760, 1712, BACK), BACK + 220, 'side_back')
-    # pizza box stairs climbing north to the side table: each box 288 square, 32 thick, 40 further north than the last
-    n = top // 32
-    for k in range(n):
-        ya = y0 - 288 - 40 * (n - 1 - k) + 0
-        b = box((-1400, ya, 32 * k), (-1112, ya + 288, 32 * k + 32), {'top': T('pizza_top'), 'side': T('pizza_side'), 'bot': CAULK})
-        hfit(b, -1400, ya, -1112, ya + 288, 512, 512, T('pizza_top'))
+    # a short stack of pizza boxes in front (cover) and a pad up onto the side table
+    for k in range(6):
+        ox = 14 * ((k * 5) % 3 - 1)
+        b = box((-1400 + ox, 856, 32 * k), (-1112 + ox, 1144, 32 * k + 32), {'top': T('pizza_top'), 'side': T('pizza_side'), 'bot': CAULK})
+        hfit(b, -1400 + ox, 856, -1112 + ox, 1144, 512, 512, T('pizza_top'))
         A(b)
+    jumppad(-1256, 1300, 0, (-1200, 1690, top), top + 200, 'side_table')
     item('ammo_bubbleg', -1550, 1300, 0)
 
 
@@ -418,16 +419,17 @@ def coffee_table():
     weapon('bubbleg', 360, 330, top, 'blue')
     light(0, 400, top + 900, 900, '1 0.85 0.65')
     light(bx, by, top + 120, 160, '0.5 1 0.6')
-    # skateboard leaning on the south edge: the ramp up (30 deg). Deck + trucks + wheels (decoration under the deck)
-    sx0, sx1, ys, zs = -400, -240, -440, RUG[4]
-    A(hull([(x, y, z) for x in (sx0, sx1) for (y, z) in ((ys, zs), (y0, top), (y0, top - 14), (ys + 26, zs))],
-           {'top': T('skate_grip'), 'bot': T('skate_bottom'), 'side': T('black')}))
-    def zb(y): return zs + (y - (ys + 26)) / (y0 - ys - 26) * (top - 14 - zs)
-    for yc in (-250, 60):
-        zt = math.floor(zb(yc - 22)) - 1
-        A(deco((sx0 + 20, yc - 16, zt - 16), (sx1 - 20, yc + 16, zt), T('chrome_ns')))
-        for xw in (sx0 - 8, sx1 - 20):
-            A(deco((xw, yc - 22, zt - 60), (xw + 28, yc + 22, zt - 16), T('wheel_ns')))
+    # skateboard (MD3) leaning on the south edge, lower wheels on the rug: the ramp up (33 deg). Collision is a clip slab
+    # whose top follows the deck's grip tape from the rug to the table edge.
+    sx = -320
+    oy, oz = LM.skate_origin()[1:]
+    custom('skateboard', sx, oy, oz, angle=0)
+    (ya, za), (yb, zb) = LM.skate_top(70), LM.skate_top(LM.SKATE_L - 70)
+    k = (zb - za) / (yb - ya)
+    yf = ya - (za - RUG[4]) / k                         # where the grip line meets the rug
+    ze = zb + (y0 - yb) * k                             # and the table edge
+    A(hull([(x, y, z) for x in (sx - 80, sx + 80) for (y, z) in ((yf, RUG[4]), (y0, ze), (y0, top - 4), (yf + 24, RUG[4]))], CLIP,
+           round_pts=False))
     # under the table: comics, a pizza box, ammo
     b = box((-160, 300, RUG[4]), (160, 500, 240), {'side': T('crate'), 'top': T('records'), 'bot': CAULK})
     hfit(b, -160, 300, 160, 500, 512, 256, T('records')); A(b)
@@ -687,6 +689,11 @@ def floor_blockers():
     # leather pouf on the rug
     A(cyl(850, -250, 170, RUG[4], 300, {'side': T('leather'), 'top': T('leather'), 'bot': CAULK}, 16))
     item('ammo_bubbleg', 640, -480, RUG[4])
+    A(cyl(900, 690, 120, RUG[4], 260, {'side': T('leather'), 'top': T('leather'), 'bot': CAULK}, 16))
+    # two moving boxes stacked by the TV (never unpacked)
+    for (x0, y0, x1, y1, z0, z1) in ((-1520, 380, -1280, 620, 0, 240), (-1500, 400, -1300, 600, 240, 420)):
+        A(box((x0, y0, z0), (x1, y1, z1), {'side': T('pizza_side'), 'top': T('pizza_side'), 'bot': CAULK}))
+    mdl_c('pad_ducktape/ducktape.md3', -1400, 500, 420, 1.0, 0)
     # second (smaller) floor cushion between the couch and the table
     A(cyl(-250, 870, 130, RUG[4], 220, {'side': T('leather'), 'top': T('leather'), 'bot': CAULK}, 16))
     # laundry basket with a hoodie spilling out

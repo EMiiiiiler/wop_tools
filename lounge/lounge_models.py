@@ -246,6 +246,160 @@ def hookah():
     return glass, water, brass, clay, foil, coal, hose, tip
 
 
+# ================================================================================================= skateboard
+# Leaning on the coffee table edge: lower wheels on the rug, deck underside resting on the table's south edge.
+# World-aligned (deck runs +y and rises); the map places the model at SKATE_ORIGIN() with angle 0.
+SKATE_L, SKATE_OVER, SKATE_W, SKATE_T = 700.0, 30.0, 80.0, 10.0
+SKATE_TH = math.radians(33.0)
+SKATE_EDGE = (160.0, 360.0)          # table south edge (y, z) the deck bottom rests on, at u = L - OVER
+KICK_L, KICK_A = 70.0, math.radians(16.0)
+
+
+def _sk_frame():
+    d = np.array([0, math.cos(SKATE_TH), math.sin(SKATE_TH)]); n = np.array([0, -math.sin(SKATE_TH), math.cos(SKATE_TH)])
+    b0 = np.array([0, SKATE_EDGE[0], SKATE_EDGE[1]]) - d * (SKATE_L - SKATE_OVER)
+    return b0, d, n
+
+
+def skate_origin():
+    """world offset (y, z) of the model origin (mid-deck on the bottom line) relative to x = deck centre"""
+    b0, d, n = _sk_frame()
+    return b0 + d * SKATE_L / 2
+
+
+def skate_top(u):
+    """world (y, z) of the deck top centre line at u (no concave), for the clip slab"""
+    b0, d, n = _sk_frame()
+    p = b0 + d * u + n * (SKATE_T + _kick(u))
+    return p[1], p[2]
+
+
+def _kick(u):
+    if u < KICK_L: return (KICK_L - u) * math.tan(KICK_A)
+    if u > SKATE_L - KICK_L: return (u - (SKATE_L - KICK_L)) * math.tan(KICK_A)
+    return 0.0
+
+
+def skateboard():
+    deck_top, deck_bot, ply, metal, wheels, bolts = (Mesh() for _ in range(6))
+    b0, d, n = _sk_frame()
+    ex = np.array([1.0, 0, 0])
+    L, W, T = SKATE_L, SKATE_W, SKATE_T
+    def half(u):                                       # rounded nose and tail
+        r = W
+        if u < r: return W * math.sqrt(max(0.0, 1 - ((r - u) / r) ** 2)) * 0.98 + 0.02 * W
+        if u > L - r: return W * math.sqrt(max(0.0, 1 - ((u - (L - r)) / r) ** 2)) * 0.98 + 0.02 * W
+        return W
+    def P(u, v, w):
+        return b0 + d * u + ex * v + n * (w + _kick(u) + 5.0 * (v / W) ** 2)
+    us = np.concatenate([np.linspace(0, W, 12, endpoint=False), np.linspace(W, L - W, 30, endpoint=False), np.linspace(L - W, L, 13)])
+    nv = 12
+    for (w, mesh, sgn) in ((T, deck_top, 1), (0.0, deck_bot, -1)):
+        Pg = np.zeros((len(us), nv + 1, 3)); UV = np.zeros_like(Pg[..., :2])
+        for i, u in enumerate(us):
+            h = half(u)
+            for j in range(nv + 1):
+                v = -h + 2 * h * j / nv
+                Pg[i, j] = P(u, v, w); UV[i, j] = ((v + W) / (2 * W), 1 - u / L) if sgn > 0 else ((W - v) / (2 * W), 1 - u / L)
+        dU = np.gradient(Pg, axis=0); dV = np.gradient(Pg, axis=1)
+        N = np.cross(dU, dV) * (-1 if sgn > 0 else 1); N /= np.maximum(np.linalg.norm(N, axis=2, keepdims=True), 1e-9)
+        if (N[len(us) // 2, nv // 2] @ n) * sgn < 0: N = -N
+        mesh.grid(Pg, N, UV)
+    # plywood edge band round the outline
+    ring = [(u, -half(u)) for u in us] + [(u, half(u)) for u in us[::-1]]
+    ring.append(ring[0])
+    Pg = np.zeros((2, len(ring), 3)); N = np.zeros_like(Pg); UV = np.zeros((2, len(ring), 2))
+    acc = 0.0
+    for j, (u, v) in enumerate(ring):
+        for i, w in enumerate((0.0, T)): Pg[i, j] = P(u, v, w)
+        if j: acc += np.linalg.norm(Pg[0, j] - Pg[0, j - 1])
+        UV[:, j, 0] = acc / 64; UV[0, j, 1] = 1; UV[1, j, 1] = 0
+    for j in range(len(ring)):
+        t = Pg[0, (j + 1) % (len(ring) - 1)] - Pg[0, j - 1 if j else len(ring) - 2]
+        o = np.cross(t, n); o /= max(np.linalg.norm(o), 1e-9)
+        if (o @ (Pg[0, j] - (b0 + d * ring[j][0]))) < 0: o = -o
+        N[:, j] = o
+    ply.grid(Pg, N, UV)
+    # trucks (baseplate, hanger, axle, kingpin) + wheels, at 110 from each end; w is measured below the deck bottom
+    def boxm(m, u0, u1, v0, v1, w0, w1):
+        C = [b0 + d * u + ex * v + n * w for u in (u0, u1) for v in (v0, v1) for w in (w0, w1)]
+        C = np.array(C).reshape(2, 2, 2, 3)
+        F = [((0, 0, 0), (0, 1, 0), (0, 1, 1), (0, 0, 1), -d), ((1, 0, 0), (1, 0, 1), (1, 1, 1), (1, 1, 0), d),
+             ((0, 0, 0), (0, 0, 1), (1, 0, 1), (1, 0, 0), -ex), ((0, 1, 0), (1, 1, 0), (1, 1, 1), (0, 1, 1), ex),
+             ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), -n), ((0, 0, 1), (0, 1, 1), (1, 1, 1), (1, 0, 1), n)]
+        for f in F: m.poly([C[i] for i in f[:4]], f[4], [(0, 0), (1, 0), (1, 1), (0, 1)])
+    for uc in (110.0, L - 110.0):
+        boxm(metal, uc - 32, uc + 32, -26, 26, -8, 0)
+        boxm(metal, uc - 12, uc + 12, -8, 8, -24, -8)                 # kingpin block
+        boxm(metal, uc - 14, uc + 14, -70, 70, -36, -22)              # hanger
+        c = b0 + d * uc + n * -30.0
+        tube(metal, [c - ex * 92, c + ex * 92], [5, 5], 10)          # axle
+        for s in (-1, 1):
+            wc = c + ex * s * 82
+            prof = [(10, -12), (18, -12), (21, -10), (22, -6), (22, 6), (21, 10), (18, 12), (10, 12)]
+            # wheel: revolve round the axle (x axis)
+            nseg = 24
+            Pw = np.zeros((len(prof), nseg + 1, 3)); Nw = np.zeros_like(Pw); UVw = np.zeros((len(prof), nseg + 1, 2))
+            pp = np.array(prof, float); tg = np.gradient(pp, axis=0); pn = np.stack([tg[:, 1], -tg[:, 0]], 1)
+            pn /= np.maximum(np.linalg.norm(pn, axis=1, keepdims=True), 1e-9)
+            for j in range(nseg + 1):
+                a = 2 * math.pi * j / nseg; rdir = d * math.cos(a) + n * math.sin(a)
+                for i, (r, x) in enumerate(prof):
+                    Pw[i, j] = wc + rdir * r + ex * x * s
+                    Nw[i, j] = rdir * pn[i, 0] + ex * pn[i, 1] * s
+                    UVw[i, j] = (j / nseg, i / (len(prof) - 1))
+            if np.dot(Nw[3, 0], Pw[3, 0] - wc) < 0: Nw = -Nw
+            wheels.grid(Pw, Nw, UVw)
+            for (x, nrm) in ((12, s), (-12, -s)):                     # hub faces
+                pts = [wc + (d * math.cos(a) + n * math.sin(a)) * 10 + ex * x * s for a in np.linspace(0, 2 * math.pi, 12, endpoint=False)]
+                metal.poly(pts if nrm > 0 else pts[::-1], ex * nrm, [(0.5, 0.5)] * 12)
+        # four bolt heads on the grip side
+        for du in (-20, 20):
+            for dv in (-16, 16):
+                c2 = P(uc + du, dv, T + 0.4)
+                pts = [c2 + (d * math.cos(a) + ex * math.sin(a)) * 3.5 for a in np.linspace(0, 2 * math.pi, 8, endpoint=False)]
+                bolts.poly(pts, n, [(0.5, 0.5)] * 8)
+    return deck_top, deck_bot, ply, metal, wheels, bolts
+
+
+def tex_grip(w=128, h=512, seed=101):
+    a = _fill(w, (28, 28, 30), 14, seed, h)
+    a += _noise(w, 0.5, seed + 1, h)[..., None] * 10
+    im = _img(a); dr = ImageDraw.Draw(im)
+    # a worn patch where feet go + a little leaf stencil near the nose
+    leaf = fan_leaf(64, (70, 200, 100), (140, 230, 160), seed=103)
+    im.paste(leaf, (w // 2 - 32, 40), leaf)
+    return im
+
+
+def tex_deck_bottom(w=256, h=1024):
+    yy, xx = np.mgrid[0:h, 0:w]
+    a = np.zeros((h, w, 3), np.float32)
+    t = yy / h
+    for c in range(3): a[..., c] = 128 + 110 * np.sin(t * 9 + c * 2.1 + np.sin(xx / w * 3) * 0.6)
+    im = _img(a); dr = ImageDraw.Draw(im)
+    f = ImageFont.truetype(FONTB, 64)
+    txt = Image.new('RGBA', (h, w), (0, 0, 0, 0)); dt = ImageDraw.Draw(txt)
+    dt.text((h / 2, w / 2), 'PADBOARDS', font=f, fill=(255, 255, 255, 255), anchor='mm', stroke_width=5, stroke_fill=(20, 20, 20, 255))
+    txt = txt.rotate(90, expand=True)
+    im.paste(txt, (0, 0), txt)
+    return im
+
+
+def tex_ply():
+    w, h = 128, 16
+    a = np.zeros((h, w, 3), np.float32)
+    cols = [(210, 170, 110), (150, 60, 50), (210, 170, 110), (60, 90, 150), (210, 170, 110), (60, 140, 80), (210, 170, 110)]
+    for i in range(h): a[i] = cols[i * len(cols) // h]
+    return _img(a + _noise(w, 0.7, 105, h)[..., None] * 6)
+
+
+def tex_urethane():
+    n = 64
+    a = _fill(n, (246, 222, 90), 4, 107)
+    return _img(a)
+
+
 # ================================================================================================= lava lamp
 def lava_lamp():
     base, bottle, liquid, pool = Mesh(), Mesh(), Mesh(), Mesh()
@@ -902,6 +1056,7 @@ def shaders():
     S += _vs('anod_green', env=0.25, extra='\tq3map_shadeAngle 70\n') + _vs('knurl_green', env=0.2)
     S += _vs('chips_bag', env=0.12) + _vs('foil', env=0.3) + _vs('crisp')
     S += _vs('beanbag', extra='\tq3map_shadeAngle 120\n') + _vs('lighter', env=0.15)
+    S += _vs('grip') + _vs('deck_bottom', env=0.12) + _vs('ply') + _vs('urethane', env=0.1, extra='\tq3map_shadeAngle 80\n')
     S += _vs('brass', env=0.55, extra='\tq3map_shadeAngle 70\n') + _vs('hose', extra='\tq3map_shadeAngle 80\n')
     return S
 
@@ -920,6 +1075,7 @@ def make(out):
     sv('anod_green', tex_anodised((40, 150, 80), 81)); sv('knurl_green', tex_knurl((40, 150, 80)))
     sv('chips_bag', tex_chips_bag()); sv('foil', tex_foil()); sv('crisp', tex_crisp())
     sv('beanbag', tex_fabric((112, 50, 150), 91)); sv('lighter', tex_lighter()); sv('brass', tex_brass()); sv('hose', tex_hose())
+    sv('grip', tex_grip()); sv('deck_bottom', tex_deck_bottom()); sv('ply', tex_ply()); sv('urethane', tex_urethane())
     # bong (origin at mid-height)
     g, w, b, s, dc, h, e, st = bong()
     for m in (g, w, b, s, dc, h, e, st): m.offset((0, 0, BONG_OFS))
@@ -959,6 +1115,12 @@ def make(out):
                                                   hf.surface('foil', f'{MD}/foil'), hco.surface('coals', f'{MD}/ember_pulse'),
                                                   hh.surface('hose', f'{MD}/hose'), ht.surface('tip', f'{MD}/brass'),
                                                   hw.surface('water', f'{MD}/bong_water'), hg.surface('glass', f'{MD}/glass')], name='hookah')
+    st, sb_, sp, sm, sw, sbo = skateboard()
+    o = skate_origin()
+    for m in (st, sb_, sp, sm, sw, sbo): m.offset(o)
+    md3write.save(os.path.join(d, 'skateboard.md3'), [st.surface('grip', f'{MD}/grip'), sb_.surface('bottom', f'{MD}/deck_bottom'),
+                                                      sp.surface('ply', f'{MD}/ply'), sm.surface('trucks', f'{MD}/steel'),
+                                                      sw.surface('wheels', f'{MD}/urethane'), sbo.surface('bolts', f'{MD}/steel')], name='skateboard')
     lb, lm_ = lighter()
     md3write.save(os.path.join(d, 'lighter.md3'), [lb.surface('body', f'{MD}/lighter'), lm_.surface('metal', f'{MD}/steel')], name='lighter')
     return shaders()
