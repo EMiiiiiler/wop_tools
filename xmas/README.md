@@ -2,7 +2,7 @@
 
 A living room on Christmas Eve at Padman scale (about 8u per cm, so catalog models sit at their native scale 1.0).
 Room x -2176..2176, y -1792..1792, ceiling 2112; a snowy roof terrace above the fireplace and a snowy garden behind the
-window (sky `env/frost-bite512`). 3 portals, VIS instant, fast light ~30 s, full bounce light a few minutes on 2 cores.
+window (sky `env/frost-bite512`). 4 portals, VIS instant, fast light ~30 s, full bounce light ~30 min on 2 cores.
 
 - `build_xmas.py` - the map:
   - **the tree** (centre-north): stand + trunk, 5 stacked fir tiers (16-gon frusta) with necks, baubles under every lip,
