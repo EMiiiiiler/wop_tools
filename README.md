@@ -22,10 +22,14 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `padpinball/` - *Tilt!* (`wop_padpinball`): Padman inside a giant pinball machine (flippers, pop bumpers and a chrome
   steel ball as MD3 centrepieces, plunger lanes, ramps to corner booths, backbox jackpot room, underworld with the coin box);
   CTL/1LC/FFA, see padpinball/README.md.
+- `lounge/` - *Couch Lock* (`wop_padlounge`): FFA in a stoner's living room at night (giant glass bong, lava lamps, hookah,
+  cannabis plants as MD3s, grow tent, crawl space under the couch, secret stash shelf); see lounge/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
   see xmas/README.md.
+- `kitchen/` - *Countertop Clash* (`wop_padkitchen`): CTL on a giant kitchen counter (toaster bases, sink, stove, hood
+  walkway, fridge-top secret), lots of procedural MD3s (`kitchen_models.py`), see kitchen/README.md.
 - `meshlib.py` - mesh helpers for model generators: Mesh (auto winding), revolve (with per-angle radius), tube along a
   path (flat ribbons, twisted UVs), ellipsoid/sphere, rounded and pillowy boxes, prisms (any simple polygon), arc paths,
   and `save_md3()` which shrinks big models to fit MD3's +-512 (returns the modelscale) and drops collapsed triangles.

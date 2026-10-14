@@ -506,7 +506,7 @@ const FS = `uniform sampler2D map; uniform sampler2D lm; uniform float lit; unif
   vec3 col = add > 0.5 ? c.rgb * tint : c.rgb * min(light*2.0, vec3(1.6));
   col = pow(col, vec3(0.9));
   if (fog.w > 0.0) { float f = clamp(vDist / fog.w, 0.0, 1.0); f = sqrt(f); col = add > 0.5 ? col * (1.0 - f) : mix(col, fog.rgb, f); }
-  gl_FragColor = vec4(col, add > 0.5 ? 1.0 : (opacity < 1.0 ? opacity : c.a)); }`;
+  gl_FragColor = vec4(col, add > 0.5 ? 1.0 : (opacity < 1.0 ? (c.a < 0.999 ? c.a : opacity) : c.a)); }`;
 for (const m of D.meta){
   const g = new THREE.BufferGeometry();
   if (m.q){

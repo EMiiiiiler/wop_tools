@@ -75,12 +75,21 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Custom MD3 buildings (padtank bell): misc_model spawnflags 4 for lightmaps + `_castshadows 1`, collision as invisible
   weapclip brushes of the same shape; pass `--md3root` twice (WoP models + the map folder) to audit_map. The audit's sink
   check now tests real model vertices, so hollow models don't flag scenery inside their bounding box.
+- Maps over a deadly drop (counters, islands): bots slip off edges while strafing even though the AAS treats
+  `trigger_hurt` as lava. 24u `common/botclip` strips along every exposed edge (gaps where bridges land) keep bot paths
+  inside: kitchen bot falls went from 52 to 5 per 3-min match. Keep pickups >= 100u from such edges, and prefer flat
+  bridges >= 320 wide (a rounded baguette bridge was a death trap). audit_map/sightlines treat botclip as decor.
+- misc_model `angles` follow audit_map.rot_matrix (z' = -sin(pitch) x + ...): pitch -90 turns a model's -x end down
+  (catalog pad_fork tines are -x). bsp2scene's coloured octahedra are item markers drawn through walls, not geometry
+  (`shoot.py --nomarkers` hides them).
 - A misc_model's *origin* must be inside the world too: models whose origin sits far above their base (catalog
   `pad_ducktape`) placed on a low floor put the origin under the map and q3map2 reports "Entity leaked".
 - Don't put a misc_teleporter_dest inside a trigger_push (audit flags it); put it just behind the pad: the 400 u/s
   teleport exit speed slides the player onto it.
 - `pkill -f wopded` from the Bash tool kills the tool's own shell (its command line contains the pattern); start
   wopded with `setsid nohup ... < /dev/null &` and stop it with its pid or `timeout`.
+- bspc predicts jump pad flights for at most ~3 s: a longer flight gets no reachability (bots never use the pad). Keep
+  pad_check's `t=` under ~2.9 s.
 - Bots skip pickups reached only by long runs of 32u-riser stairs even when aas_check routes pass; use 16u stairs for
   anything bots should climb (attic station roofs). A space enclosed by stair flights and walls with only one-way
   (walk-off) entries is a bot trap: aas_check prints TRAP; keep 48u+ between neighbouring flights.
