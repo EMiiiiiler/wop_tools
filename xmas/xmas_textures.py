@@ -314,7 +314,7 @@ def make_textures(W):
     # falling snow sheet (additive): soft dots
     a = np.zeros((n, n), np.float32)
     im = Image.new('L', (n, n), 0); d = ImageDraw.Draw(im); r2 = random.Random(171)
-    for _ in range(90):
+    for _ in range(40):
         x, y, r = r2.uniform(0, n), r2.uniform(0, n), r2.uniform(1.2, 3.2)
         for ox in (-n, 0, n):
             for oy in (-n, 0, n):
@@ -628,13 +628,13 @@ textures/{NS}/snowfall
 	{{
 		map textures/{NS}/snowfall
 		blendFunc GL_ONE GL_ONE
-		rgbGen const ( 0.55 0.58 0.65 )
+		rgbGen const ( 0.32 0.34 0.4 )
 		tcMod scroll 0.02 0.18
 	}}
 	{{
 		map textures/{NS}/snowfall
 		blendFunc GL_ONE GL_ONE
-		rgbGen const ( 0.35 0.37 0.42 )
+		rgbGen const ( 0.18 0.19 0.22 )
 		tcMod scale 1.7 1.7
 		tcMod scroll -0.03 0.11
 	}}

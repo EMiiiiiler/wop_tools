@@ -678,12 +678,16 @@ def window_garden():
                    ((gx0 - 16, gy0, gz0), (gx0, gy1, gz1)), ((gx1, gy0, gz0), (gx1 + 16, gy1, gz1)),
                    ((gx0 - 16, gy0 - 16, gz0), (gx1 + 16, gy0, gz1))):
         A(box(mn, mx, S, detail=False))
-    A(box((gx0, gy1 - 16, gz0), (gx1, gy1, gz1), {'s': T('house_wall'), 'side': CAULK, 'top': CAULK, 'bot': CAULK}, detail=False))
+    # the house wall seen from the garden, with the window opening cut through it (a solid slab here sealed the garden
+    # off from the room, q3map2 dropped it as outside and the window showed a hall-of-mirrors smear)
+    FAC = {'s': T('house_wall'), 'side': CAULK, 'top': CAULK, 'bot': CAULK}
+    for (xa, xb, za, zb) in ((gx0, WX0, gz0, gz1), (WX1, gx1, gz0, gz1), (WX0, WX1, gz0, WZ0), (WX0, WX1, WZ1, gz1)):
+        A(box((xa, gy1 - 16, za), (xb, gy1, zb), FAC, detail=False))
     A(box((gx0, gy0, gz0), (gx1, gy1 - 16, -64), {'top': T('snow'), 'side': CAULK, 'bot': CAULK}))
     for (x, y, w, h) in ((-1400, -2500, 500, 120), (900, -2300, 700, 90), (-320, -3050, 500, 140)):
         A(hull([(x - w, y - w * 0.6, -64), (x + w, y - w * 0.6, -64), (x - w, y + w * 0.6, -64), (x + w, y + w * 0.6, -64),
                 (x - w * 0.4, y - w * 0.2, -64 + h), (x + w * 0.4, y + w * 0.2, -64 + h)], T('snow_drift')))
-    mdl_c('pad_ddmix/jail/snowman.md3', 0, -2450, -64, scale=6.0, angle=250)
+    mdl_c('pad_ddmix/jail/snowman.md3', 1250, -2450, -64, scale=6.0, angle=250)
     mdl_c('pad_ddmix/trashcan/tree_winter.md3', -1500, -3000, -64, scale=3.4, angle=30)
     mdl_c('pad_ddmix/trashcan/tree_winter.md3', 2150, -2450, -64, scale=2.2, angle=200)
     mdl_c('pad_ddmix/trashcan/tree_winter.md3', -2300, -2300, -64, scale=2.6, angle=120)
@@ -694,7 +698,7 @@ def window_garden():
         if k < 13:
             for (za, zb) in ((120, 170), (300, 350)):
                 A(box((fx + 40, -3500, za), (fx + 380, -3480, zb), T('fence')))
-    snowfall_sheets([(-1500, -2000, 1500, -2000), (-2400, -2600, 2400, -2600), (-2600, -3300, 2600, -3300)], -64, 2600)
+    snowfall_sheets([(-2400, -2700, 2400, -2700), (-2600, -3300, 2600, -3300)], -64, 2600)
     light(0, -2400, 1500, 2600, '0.6 0.7 1')
 
 
