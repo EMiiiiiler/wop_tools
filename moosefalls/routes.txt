@@ -1,0 +1,19 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @moosefalls/routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height)
+spiral_stair:     -64,94,0 > 150,196,448
+north_bridge:     0,186,0 > 0,960,0
+sw_bridge:        -241,1,0 > -927,184,0
+tower_stairs:     1590,760,0 > 1100,1240,480
+tower_door:       1344,780,0 > 1344,1100,0
+snack_door:       560,1488,0 > 0,1520,0
+snack_stairs:     -496,1100,0 > 0,1500,256
+porch_roof:       0,1500,256 > -300,1250,213
+tt_stairs:        1312,-1640,0 > 1312,-1200,160
+tt_tunnel:        840,-1120,0 > 1440,-1100,0
+stump_door:       -941,-621,0 > -1280,-960,0
+hut_door:         -1290,-900,576 > -1430,-904,576
+hut_roof:         -1330,-1000,576 > -1432,-904,712
+cave_exit:        -1400,1540,0 > -1790,1400,0
+river_exit_out:   544,189,-64 > 770,295,0
+river_exit_in:    -491,-408,-64 > -287,-265,0
+plunge_steps:     1520,-420,-32 > 1520,-600,0
