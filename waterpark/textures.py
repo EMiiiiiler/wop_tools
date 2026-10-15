@@ -329,6 +329,55 @@ def make_textures(W):
     im = img(a); d = ImageDraw.Draw(im); f = text_fit(d, 'POPCORN', 220, 40); tw = d.textlength('POPCORN', font=f)
     d.text(((n - tw) / 2, 12), 'POPCORN', fill=(255, 240, 200), font=f)
     W.save('popcorn', im)
+    # ---- tiki bar (MD3 models in tiki_models.py) ----------------------------------------------------------
+    def grain(base, dark, seed, k=10):
+        g = ((np.sin(xx * 2 * np.pi * k / n + noise(n, 12, seed) * 5) + 1) / 2)[..., None]
+        return C(dark) * (1 - g) + C(base) * g + N3(n, 1.0, seed + 1, 7)
+    W.save('tiki_wood', grain((150, 98, 56), (102, 62, 34), 80))
+    W.save('tiki_dark', grain((70, 44, 28), (44, 28, 18), 81))
+    W.save('varnish', grain((176, 104, 50), (128, 70, 32), 82, 6))
+    W.save('driftwood', grain((196, 178, 150), (150, 132, 108), 83, 8))
+    for nme, c in (('tiki_teal', (30, 170, 160)), ('tiki_red', (210, 60, 44)), ('tiki_yellow', (244, 196, 52)),
+                   ('tiki_white', (240, 236, 222))):
+        W.save(nme, C(c) * 0.85 + grain((40, 40, 40), (0, 0, 0), 84) * 0.25)
+    W.save('rope', C((196, 164, 110)) + 25 * np.sin((xx + yy) * 2 * np.pi / 16)[..., None] + N3(n, 1, 85, 6))
+    # bamboo pole (nodes every 64 px)
+    a = C((214, 184, 100)) + N3(n, 1, 86, 8) + 10 * np.sin(xx * 2 * np.pi * 6 / n)[..., None]
+    for k in range(0, n, 64): a[k:k + 6] = C((150, 120, 60))
+    W.save('bamboo_pole', a)
+    # thatch fringe: straw strands with a ragged, alpha-tested bottom edge (t runs down the strands)
+    rng = np.random.default_rng(87)
+    a = C((196, 160, 92)) + N3(n, 0.6, 88, 18) + 20 * np.sin(xx * 2 * np.pi * 40 / n)[..., None]
+    alpha = np.full((n, n), 255.0)
+    ends = 180 + rng.integers(0, 70, n)
+    for x_ in range(n):
+        alpha[ends[x_]:, x_] = 0; a[max(0, ends[x_] - 20):ends[x_], x_] *= 0.8
+    W.save('thatch_fringe', a, alpha=alpha)
+    W.save('coconut', C((110, 70, 40)) + N3(n, 0.8, 89, 22))
+    W.save('coconut_in', C((246, 242, 230)) + N3(n, 2, 90, 4))
+    a = C((240, 200, 60)) + N3(n, 1, 91, 10)
+    for k in range(0, n, 32):
+        for kk in range(0, n, 32): a[k:k + 4, kk:kk + 32] *= 0.6; a[k:k + 32, kk:kk + 4] *= 0.6
+    W.save('pineapple', a)
+    W.save('leaf', C((60, 150, 60)) + N3(n, 1, 92, 10))
+    for nme, c in (('bottle_amber', (220, 130, 30)), ('bottle_green', (40, 180, 80)), ('bottle_blue', (40, 120, 230)),
+                   ('bottle_red', (220, 40, 70)), ('bottle_clear', (210, 230, 240))):
+        a = np.tile(np.linspace(0.65, 1.0, n)[None, :, None], (n, 1, 1)) * C(c)
+        a[:, 40:56] = np.minimum(a[:, 40:56] + 90, 255)          # a highlight stripe
+        W.save(nme, a)
+    W.save('label', C((248, 240, 210)) + N3(n, 1, 93, 5))
+    # flame (animated in the shader) and string-light bulbs
+    fy = np.linspace(1, 0, n)[:, None]; fx = np.abs(np.linspace(-1, 1, n))[None, :]
+    core = np.clip(1.2 - fx * 1.6 - (1 - fy) * 0.2 + noise(n, 6, 94) * 0.15, 0, 1)
+    W.save('flame', np.stack([255 * core, 170 * core ** 1.4, 60 * core ** 3], -1))
+    for nme, c in (('bulb_warm', (255, 210, 120)), ('bulb_pink', (255, 110, 180)), ('bulb_teal', (90, 240, 220))):
+        W.save(nme, np.full((32, 32, 3), c, np.float32))
+    # carved driftwood bar sign
+    im = img(grain((196, 178, 150), (150, 132, 108), 95, 8)).resize((512, 128)); d = ImageDraw.Draw(im)
+    f = text_fit(d, 'INFINITY BAR', 440, 70); tw = d.textlength('INFINITY BAR', font=f)
+    d.text(((512 - tw) / 2 + 3, 22), 'INFINITY BAR', fill=(80, 50, 30), font=f)
+    d.text(((512 - tw) / 2, 19), 'INFINITY BAR', fill=(30, 170, 160), font=f)
+    W.save('sign_tiki', im)
     # tv / scoreboard screen
     im = Image.new('RGB', (n, 128), (16, 24, 40)); d = ImageDraw.Draw(im)
     f = text_fit(d, 'NEXT WAVE IN 0:42', 230, 30)

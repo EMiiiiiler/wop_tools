@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from wopmap import *
 import wopmap
 import textures
+import tiki_models as TK
 
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 T = lambda n: 'waterpark/' + n
@@ -38,7 +39,7 @@ M = Map({'message': 'Splash World: Cloud Lagoon Deluxe', '_ambient': '6', 'grids
 A = M.add
 ISL = (-2048, -1792, 2048, 1792)
 ZB = -448                     # bottom of the deck columns
-CANNON_GAP = (1376, 1504)     # y span of the east edge left open (above z 80) for the sky cannon
+CANNON_GAP = (1376, 1504)     # y span of the east edge left open (above z 52) for the sky cannon
 HOLES = []                    # (rect, wall_tex, fill function)
 ZONES = []                    # (rect, top texture)
 SPOTS = {'weapon': [], 'ammo': [], 'item': [], 'spawn': []}
@@ -55,6 +56,13 @@ def mdl(path, x, y, zsurf, scale=1.0, angle=0, **kw):
     b = BOUNDS.get(p) or next((v for k, v in BOUNDS.items() if k.lower() == p.lower()), None)
     zmin = b['min'][2] if b else 0
     return M.model(p, (round(x), round(y), round(zsurf - zmin * scale, 2)), scale=scale, angle=angle, **kw)
+
+
+def tk(name, x, y, z, angle=0, lm=True, **kw):
+    """place a tiki_models MD3 (origin = base centre); lightmapped unless lm=False (vertex-lit alpha/glow pieces)"""
+    path, sc = TK.get(name, **kw)
+    extra = dict(spawnflags=4, _lightmapscale=0.5, _castshadows=1, _receiveshadows=1) if lm else {}
+    return M.model(path, (round(x, 2), round(y, 2), round(z, 2)), scale=sc, angle=angle, **extra)
 
 
 def hole(rect, wall, fn):
@@ -353,7 +361,7 @@ def perimeter(skip):
     A(box((ISL[0] - 16, ISL[1], 0), (ISL[0], ISL[3], H), CLIP))
     gy0, gy1 = CANNON_GAP                      # sky cannon flight path: clip only up to z 80 there
     A(box((ISL[2], ISL[1], 0), (ISL[2] + 16, gy0, H), CLIP)); A(box((ISL[2], gy1, 0), (ISL[2] + 16, ISL[3], H), CLIP))
-    A(box((ISL[2], gy0, 0), (ISL[2] + 16, gy1, 80), CLIP))
+    A(box((ISL[2], gy0, 0), (ISL[2] + 16, gy1, 52), CLIP))
     # rocky outcrops hugging the cliffs (below deck level, outside the island footprint)
     import random
     rnd = random.Random(21)
@@ -841,8 +849,9 @@ def terrace():
     sq = [(x - 8, 1512, x + 8, 1528) for x in range(-416, -128, 64)] + [(-504, 1560, -488, 1576), (-88, 1560, -72, 1576)]
     for a in sub_rects((-640, 1504, 480, 1728), sq):
         A(box((a[0], a[1], 96), (a[2], a[3], 184), W))
-    for (a0, b0, a1, b1) in sq[:-2]:
-        A(box((a0, b0, 96), (a1, b1, 176), {'top': T('teak'), 'side': T('metal')}))
+    for (a0, b0, a1, b1) in sq[:-2]:                         # swim-up bar stools: clip + MD3
+        clipbox((a0, b0, 96), (a1, b1, 176))
+        tk('swim_stool', (a0 + a1) / 2, (b0 + b1) / 2, 96, h=80)
         A(box((a0, b0, 176), (a1, b1, 184), W))
     for k in range(5):
         zt = 176 - 16 * k
@@ -851,23 +860,33 @@ def terrace():
     A(box((-640, 1800, -1300), (640, 1808, 152), T('waterfall')))                                     # off the edge
     speaker(0, 1760, 100, 'sound/world/ambient/water_falling.ogg')
     # west pool exit steps too
-    # bar (west of rapids landing)
-    A(box((-448, 1472 - 32, TZ), (-128, 1472, TZ + 40), {'top': T('teak'), 'side': T('bamboo')}))     # counter
-    A(box((-448, 1376, TZ), (-128, 1392, TZ + 96), T('bamboo')))                                       # back shelf wall
-    A(box((-448, 1392, TZ + 48), (-128, 1408, TZ + 52), T('teak')))                                    # shelf
-    for (px, py) in ((-496, 1408), (-80, 1408), (-496, 1568), (-80, 1568)):
-        A(box((px - 8, py - 8, 96 if py > 1504 else TZ), (px + 8, py + 8, 320), T('palm_trunk')))
+    # INFINITY BAR: tiki bar built from MD3s (tiki_models.py); the old brush shapes stay as invisible weapon clip
+    clipbox((-448, 1440, TZ), (-128, 1472, TZ + 42))                                                   # counter
+    tk('counter', -288, 1456, TZ)
+    A(box((-448, 1376, TZ), (-128, 1392, TZ + 96), T('bamboo')))                                       # back wall
+    tk('back_bar', -288, 1392, TZ)
+    for (px, py) in ((-496, 1408), (-80, 1408), (-496, 1568), (-80, 1568)):                            # tiki posts
+        z0 = 96 if py > 1504 else TZ
+        clipbox((px - 8, py - 8, z0), (px + 8, py + 8, 320))
+        tk('totem', px, py, z0, h=320 - z0)
     A(box((-512, 1392, 320), (-64, 1584, 336), {'top': T('thatch'), 'side': T('thatch'), 'bot': T('bamboo')}))
+    tk('fringe', -288, 1488, 320, lm=False)
+    tk('bar_sign', -288, 1579, 272)                       # hangs from the roof slab on two ropes
+    tk('string_lights', -288, 1576, 314, lm=False, L=400)
+    for x in (-504, -72):
+        M.model(TK.get('string_lights', L=144)[0], (x, 1488, 314), scale=TK.get('string_lights', L=144)[1], angle=90)
     sign((-400, 1380, 300), (-176, 1384, 320), 'sign_bar', 's')
     for i, (cx, top) in enumerate(((-736, TZ + 32), (-672, TZ + 64), (-608, TZ + 96), (-544, TZ + 128))):
         A(box((cx - 32, 1408, TZ), (cx + 32, 1472, top), T('crate')))
     weapon('betty', -288, 1488, 336)
-    for i, (gx, mname) in enumerate(((-420, 'glass_betty'), (-360, 'glass_sunrise'), (-300, 'glass_midnight'),
-                                    (-220, 'glass_rings'), (-170, 'glass_simple'))):
-        mdl(f'pad_ddmix/diner/{mname}.md3', gx, 1456, TZ + 40, scale=0.13, angle=i * 40)
-    mdl('pad_ddmix/padship/rumbottle1.md3', -400, 1400, TZ + 52, scale=0.15)
-    mdl('pad_ddmix/padship/rumbottle2.md3', -340, 1400, TZ + 52, scale=0.15)
-    mdl('pad_ddmix/diner/coffe_pot.md3', -180, 1400, TZ + 52, scale=0.1)
+    for (dx, k) in ((-420, 0), (-360, 1), (-250, 0), (-170, 1)):                                       # cocktails
+        tk('drink', dx, 1458, TZ + 42, kind=k)
+    for (tx, ty) in ((-40, 1440), (-520, 1350)):                                                        # tiki torches
+        clipbox((tx - 4, ty - 4, TZ), (tx + 4, ty + 4, TZ + 110))
+        tk('torch', tx, ty, TZ)
+        light(tx, ty, TZ + 128, 220, '1 0.6 0.25')
+    light(-400, 1500, 300, 160, '1 0.45 0.75'); light(-170, 1500, 300, 160, '0.35 0.95 0.9')
+    light(-288, 1650, 286, 150, '1 0.92 0.75')                                                        # sign lamp
     item('ammo_betty', -200, 1420, TZ)
     item('item_armor_padshield', 760, 1600, TZ)
     # stairs up to the terrace (west + east)
@@ -1260,7 +1279,7 @@ def plaza():
     A(box((-12, -1552, 224), (12, -1528, 300), T('metal_dark')))
     sign((-64, -1600, 104), (64, -1592, 128), 'sign_gondola', 'n')
     item('ammo_splasher', 60, -1700, 144)
-    item('item_berserker', 0, -1690, 20)
+    item('item_armor_padshield', 0, -1690, 20)        # (item_berserker crashes WoP servers on pickup)
     item('ammo_pumper', -256, -1660, 224)
     item('ammo_balloony', 256, -1660, 224)
     # ---- ticket gate: canopy on posts + 4 booths with turnstile gaps
@@ -1448,7 +1467,8 @@ def extras():
     arm = [box((SX - 4, SY - 4, 100), (SX + 4, SY + 4, 106), 'common/origin'),
            box((SX - 80, SY - 4, 100), (SX + 80, SY + 4, 106), T('metal')),
            box((SX - 82, SY - 2, -10), (SX - 78, SY + 2, 100), T('spray')), box((SX + 78, SY - 2, -10), (SX + 82, SY + 2, 100), T('spray'))]
-    M.ent('func_rotating', (SX, SY, 103), brushes=arm, speed=60, noise='sound/world/ambient/water_shower.ogg')
+    M.ent('func_rotating', brushes=arm,              # origin comes from the origin brush only
+          speed=60, noise='sound/world/ambient/water_shower.ogg')
     # ---------- tower roof raven (animated WoP model, entity)
     M.ent('misc_externalmodel', (224, 548, 512), model='models/mapobjects/animated/raven_sitting_2_small.md3',
           angle=45, animationStart=0, animationEnd=210, animationFPS=30)
@@ -1638,7 +1658,7 @@ def rapids():
 def sky_cannon_and_isle():
     """jump pad on the east beach that fires you across the sky to Paradise Isle (teleporter back)"""
     CX, CY, ZT, R = 2880, 1440, 320, 300
-    jumppad(1984, 1440, 0, (2860, 1440, ZT), apex_extra=96, name='sky_cannon')
+    jumppad(1984, 1440, 0, (2860, 1440, ZT), apex_extra=140, name='sky_cannon')
     # launch ring (open to the west so you can walk in) + striped posts with lamps
     for k in range(12):
         if k in (5, 6, 7): continue
@@ -1730,6 +1750,7 @@ def deluxe():
 # =================================================================================================== main
 def main():
     textures.make_all(OUT)
+    TK.init(OUT)
     # custinfoparms for -custinfoparms (WoP footstep surfaceparms)
     os.makedirs(os.path.join(OUT, 'scripts'), exist_ok=True)
     open(os.path.join(OUT, 'scripts', 'custinfoparms.txt'), 'w').write(
@@ -1750,6 +1771,7 @@ def main():
         glass_rail(a0, ISL[3] - 8, a1, ISL[3], 192)
     skybox(); floating_islets()
     M.ent('info_player_intermission', (-1400, -1500, 900), angles='30 45 0')
+    open(os.path.join(OUT, 'scripts', 'waterpark.shader'), 'a').write(TK.shaders())
     os.makedirs(os.path.join(OUT, 'maps'), exist_ok=True)
     open(os.path.join(OUT, 'maps', 'waterpark.map'), 'w').write(
         M.text('// Splash World: Cloud Lagoon - generated by wop_tools/waterpark/build_waterpark.py\n'))
