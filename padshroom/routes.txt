@@ -3,7 +3,6 @@
 mother_door:          0,-620,0 > 0,-170,0
 big_cottage_door:     -884,664,0 > -1280,1060,8
 small_cottage_door:   -300,1100,0 > -300,1450,8
-small_cottage_stairs: 718,1450,0 > -220,1450,404
 stump_arch:           -885,-625,0 > -1380,-1120,0
 log_tunnel:           -40,-1250,0 > 1650,-1250,130
 log_east_ramp:        1650,-1250,130 > 2000,-1460,0

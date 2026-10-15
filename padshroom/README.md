@@ -15,7 +15,7 @@ full bounce light a few minutes on 2 cores.
     skylights in the chamber roof drop you back in. Four fling pads on the plateau go to the cottage roof, the stump,
     the pond and the log.
   - **Fly-agaric village** (north-west): the big cottage (walk in: Bubble G, Climber, a glowing toadstool lamp;
-    pad from the plaza to the roof: Balloony) and the small cottage (walk in: ammo; 16u stairs up to the roof:
+    pad from the plaza to the roof: Balloony) and the small cottage (walk in: ammo; a jump pad up to the roof:
     Jumper; a pad on to the big roof). Windows and doors are real holes in the MD3 stems and the collision.
   - **Hollow stump** (south-west): walk in through the root arch; a pad inside shoots you up the hollow through a hole
     in the cut top (Boaster). Two shelf fungi on the bark are walkable ledges (Floater, Boaster ammo).

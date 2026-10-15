@@ -34,6 +34,7 @@ import md3write, iqmtool
 MD = 'models/padshroom'
 OUT = None
 REG = {}
+PLACE_SPORES = None
 PLACE = {}          # model name -> (path, scale, zoff)
 
 # ================================================================================================= shared geometry
@@ -78,6 +79,7 @@ STUMP = dict(prof=[(0, 560), (60, 500), (160, 460), (300, 444), (400, 440), (880
 # fallen log (axis along +x from -LOG_L/2 to LOG_L/2 round the model origin, axis height LOG_R)
 LOG_R, LOG_IN, LOG_L, LOG_FLOOR = 280, 212, 1400, 130
 BRACKET_R = 200
+SPORE_Z = 1500                   # rotation origin height of the spore ring (build_shroom.spores())
 PUFF = (100.0, 150.0)            # puffball radius, height (scale 1)
 
 
@@ -757,6 +759,8 @@ def spores_iqm(z0, seed=61):
             meshes.append(dict(name=f'spores{mat_i}{part}', material=mat, verts=V, normals=Nn, st=ST, tris=T))
     path = f'{MD}/spores.iqm'
     iqmtool.save(os.path.join(OUT, path), meshes)
+    global PLACE_SPORES
+    PLACE_SPORES = path
     return path
 
 
@@ -809,6 +813,7 @@ def make(out):
     sv('frog', tex_frog()); sv('eye', tex_eye()); sv('grass', tex_grass()); sv('env', tex_env()); sv('spore', tex_spore())
     mother(); amanita('amanita_big', AMA_BIG); amanita('amanita_small', AMA_SMALL); stump(); log(); bracket(); puffball()
     mycena_models(); snail(); rocks(); frog(); grass(); lamp(); eye_orb()
+    spores_iqm(SPORE_Z)                 # registers the spore shaders before they are written
     return shaders()
 
 
@@ -818,7 +823,7 @@ def tex_bark_flat(w, h, seed): return tex_bark(w, h, seed)
 if __name__ == '__main__':
     o = sys.argv[1] if len(sys.argv) > 1 else 'out'
     make(o)
-    spores_iqm(1500)
+    pass
     import md3tool
     for fn in sorted(os.listdir(os.path.join(o, MD))):
         if fn.endswith('.md3'):

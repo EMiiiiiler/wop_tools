@@ -15,7 +15,7 @@ catalog models at 1.0 unless scaled up on purpose). x east, y north, ground z 0,
                     chamber fires you up through the hatch onto the plateau (Imperius); three skylights drop you back
                     in. Four bouncy pads on the plateau fling you to the stump, the cottage roof, the pond and the log.
   Fly-agaric village  north-west: a big cottage (walk in: Bubble G, Climber; pad to the roof: Balloony) and a small
-                    one (walk in: ammo; 16u stairs to its roof: Jumper; a pad on to the big roof).
+                    one (walk in: ammo; a pad to its roof: Jumper; a pad on to the big roof).
   Hollow stump      south-west: walk in through the root arch, a pad inside shoots you up the hollow onto the cut top
                     (Boaster); two shelf fungi on the outside are ledges to drop onto (Floater, Boaster ammo).
   Fallen log        south-east: walk through the tunnel (Speedy); pads either side to the mossy top (Splasher). A tiny
@@ -40,7 +40,7 @@ MD3ROOT = os.environ.get('MD3ROOT', os.path.expanduser('~/Games/wop/wop/models.p
 MAPNAME = 'wop_padshroom'
 T = lambda n: 'padshroom/' + n
 CAULK = 'common/caulk'; CLIP = 'common/clip'; WCLIP = 'common/weapclip'; TRIG = 'common/trigger'; ORIGIN = 'common/origin'
-PCLIP = 'common/playerclip'; BOTCLIP = 'common/botclip'
+PCLIP = 'common/clip'; BOTCLIP = 'common/botclip'   # WoP's common/clip is the player clip (no common/playerclip)
 NODRAW_NS = T('nodraw_ns')
 
 for k, v in {'moss': (1, 1), 'bank': (1, 1), 'dirt': (0.5, 0.5), 'pebbles': (1, 1), 'planks': (0.5, 0.5), 'rotten': (1, 1),
@@ -476,10 +476,9 @@ def village():
     item('ammo_balloony', sx - 60, sy - 30, 8)
     custom('lamp', sx - 20, sy + 80, 8, angle=0, mul=0.7)
     light(sx, sy, 180, 300, '1 0.75 0.5')
-    # 16u stairs from the east up to the small cap rim (lip top 288)
-    A(stairs(sx + 362, sy - 64, sx + 362 + 18 * 32, sy + 64, 0, 288, 'w', {'top': T('planks'), 'side': T('trim')}))
-    KEEP_OUT.append((sx + 362 + 9 * 32, sy, 340))
+    # jump pad from the east up onto the small cap (replaces the old staircase)
     ztS = lambda r: float(np.interp(r, [p[0] for p in SM.AMA_SMALL['top']], [p[1] for p in SM.AMA_SMALL['top']]))
+    jumppad(sx + 600, sy, 0, (sx + 110, sy + 30, ztS(0)), ztS(0) + 260, 'small_roof')
     item('item_jumper', sx - 100, sy + 60, ztS(116))
     item('ammo_boaster', sx + 120, sy - 90, ztS(150))
     # pad on the small roof to the big roof
@@ -819,8 +818,8 @@ def lights_and_sound():
 
 def spores():
     """glowing spores circling the Mother cap (func_rotating, IQM model2)"""
-    z0 = 1500
-    path = SM.spores_iqm(z0)
+    z0 = SM.SPORE_Z
+    path = SM.PLACE_SPORES
     M.ent('func_rotating', brushes=[box((-8, -8, z0 - 8), (8, 8, z0 + 8), ORIGIN), box((-4, -4, z0 + 140), (4, 4, z0 + 148), NODRAW_NS)],
           model2=path, speed=6, spawnflags=0, dmg=0)
 
