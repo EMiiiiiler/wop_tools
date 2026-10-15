@@ -134,6 +134,9 @@ def shader_info(body):
             if bf == 'filter': info['blend'] = None
             filter_only = (bf == 'filter' and not has_lm)
             info['tint'] = None
+            # fullbright stage (glow bulbs, neon): no lightmap, rgbGen identity / wave / const -> draw at full brightness
+            info['fullbright'] = info.get('nolm') and not any(x == 'rgbgen' and sl[i + 1] in ('vertex', 'exactvertex')
+                                                              for i, x in enumerate(sl[:-1]))
             if 'rgbgen' in sl:                  # rgbGen const ( r g b ): dims additive glass, spray...
                 j = sl.index('rgbgen')
                 if sl[j + 1] == 'const':
@@ -301,6 +304,7 @@ def main():
         g = groups.setdefault(key, {'pos': [], 'uv': [], 'uv2': [], 'col': [], 'idx': [], 'nrm': [], 'n': 0})
         g['nrm'].append(np.asarray(nrm, np.float32))
         g['pos'].append(np.asarray(xyz, np.float32)); g['uv'].append(np.asarray(st, np.float32))
+        if info.get('fullbright') and lmn < 0: col = np.full((len(xyz), 3), 128.0, np.float32)
         g['uv2'].append(np.asarray(lm2, np.float32)); g['col'].append(np.asarray(col, np.float32)[:, :3])
         g['idx'].append(tris + g['n']); g['n'] += len(xyz)
 

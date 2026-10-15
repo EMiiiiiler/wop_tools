@@ -9,7 +9,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `md3write.py` - MD3 writer (one frame, Quake winding, lat/long normals) for custom map objects; `vertex_normals()` helper.
 - `md3tool.py` - MD3 reader. `python3 md3tool.py bounds <models root> md3bounds.json` rebuilds the bounds table.
 - `md3bounds.json` - real bounds of every WoP map object (place models with `origin z = surface - zmin*scale`).
-- `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`), plus dev
+- `waterpark/` - generator for *Splash World: Cloud Lagoon Deluxe* (`OUT=dir python3 build_waterpark.py`; the Infinity Bar's
+  tiki pieces are MD3s from `tiki_models.py`), plus dev
   `compile.sh` / `render.sh`. `textures.py` makes all textures, the shader and the arena.
 - `padcounter/build_padcounter.py` - older generator (giant kitchen counter).
 - `padtank/` - *Fish Tank Temple* (`wop_padtank`): CTL map in an aquarium, fog-volume water, swimming fish schools on
