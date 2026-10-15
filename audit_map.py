@@ -19,6 +19,7 @@ Checks
 --shaders: read every scripts/*.shader below the given dir(s) and classify brushes by surfaceparm
   (water/slime/lava -> liquid, fog -> ignored (a fog volume may enclose everything), nonsolid -> decoration)
   instead of guessing from the texture name.
+  0. with --shaders: every common/* tool texture must exist as a shader (else it renders as a visible grid).
 Exit status 1 if anything failed.
 """
 import re, sys, os, math, json, argparse
@@ -209,6 +210,14 @@ def main():
             mn, mx = brush_bounds(P)
             B.append((P, k, ei, bi, mn, mx, texs, cls))
     fails = 0
+    # 0. tool textures (common/*) have no image: without a shader the game draws them as visible 'missing texture' grids
+    #    (WoP has e.g. common/clip but no common/playerclip)
+    if a.shaders:
+        miss = sorted({t for e in ents for b in e['brushes'] for t in (f[3] for f in b)
+                       if t.lower().startswith('common/') and 'textures/' + t.lower() not in SHADER_PARMS})
+        print(f'[shaders] {len(miss)} tool texture(s) without a shader')
+        for t in miss: print(f'   {t}: no textures/{t} shader in the --shaders dirs (it will render as a grid)')
+        fails += len(miss)
     # 1. overlaps
     idx = [i for i, b in enumerate(B) if b[1] not in ('decor', 'fog')]
     mns = np.array([B[i][4] for i in idx]); mxs = np.array([B[i][5] for i in idx])

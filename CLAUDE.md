@@ -96,4 +96,11 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - A ridable train on a circle: one func_rotating with the origin at the circle centre, nodraw collision boxes per car
   and the whole train as an IQM model2 (padattic). Rotating pushers move riders and anyone in front on their own radius,
   so they never pin players in a tunnel that follows the same circle (func_rotating has no blocked/crush handler).
-
+- `revolve()`/`revolve_grid()` normals follow the profile direction: a cap profile running from the axis outward over the
+  top needs `inward=True`, or the cap faces down (invisible from above in game, black lightmap). See padshroom/README.md.
+- Round hollow MD3 buildings: `padshroom/build_shroom.py` `ring_seg()`/`stem_shell()` build 16-gon wedge collision with
+  doors/windows as skipped wedges, textured by face normal (interior, jambs, caulk under the MD3).
+- A `func_plat` (drawn raised, `height` = travel, a 16u pit for the lowered disc) is a bot-usable elevator (bspc elevator
+  reachabilities); bots rode a 1176u one in padshroom.
+- Bot weapon weights (WoP botfiles/fw_items.c): Bubble G 400 < Boaster 800 < Splasher 900 < Pumper 1000 < Betty/Balloony
+  1200 < Imperius 1600. Low-weight weapons on pad-only spots get ignored by bots.

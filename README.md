@@ -24,6 +24,9 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   CTL/1LC/FFA, see padpinball/README.md.
 - `lounge/` - *Couch Lock* (`wop_padlounge`): FFA in a stoner's living room at night (giant glass bong, lava lamps, hookah,
   cannabis plants as MD3s, grow tent, crawl space under the couch, secret stash shelf); see lounge/README.md.
+- `padshroom/` - *Shroom Trip* (`wop_padshroom`): FFA forest floor on a magic-mushroom trip - a hollow golden Mother
+  Mushroom with a func_plat elevator to the gill chamber in its cap, fly-agaric cottages, hollow stump, walk-through log,
+  rainbow pond, a secret kaleidoscope Void, spores circling on an IQM func_rotating, custom sky cube; see padshroom/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
