@@ -104,3 +104,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
   reachabilities); bots rode a 1176u one in padshroom.
 - Bot weapon weights (WoP botfiles/fw_items.c): Bubble G 400 < Boaster 800 < Splasher 900 < Pumper 1000 < Betty/Balloony
   1200 < Imperius 1600. Low-weight weapons on pad-only spots get ignored by bots.
+- Rooms carved out of a structural slab (`area51/build_area51.py` ground()): texture each carved face by sampling many
+  points across it; a single centroid probe left lab floors and crater slopes as caulk (black holes in game).
+- sightlines.py counts custom MD3s only through their weapclip brushes; open outdoor maps need real cover in the middle
+  band (area51: containers + crate stacks took it from 14.7 % to 4.2 %).
