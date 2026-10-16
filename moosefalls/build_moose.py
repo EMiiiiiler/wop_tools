@@ -251,6 +251,17 @@ def free(x, y, r):
     return all(math.hypot(x - kx, y - ky) >= kr + r for (kx, ky, kr) in KEEP_OUT) and on_deck(x, y, r)
 
 
+def near_free(x, y, r, search=320):
+    """closest free spot to (x, y) within `search` (spiral of candidates), or None"""
+    if free(x, y, r): return (x, y)
+    for d in range(32, search + 1, 32):
+        for k in range(16):
+            a = k * math.pi / 8
+            px, py = x + d * math.cos(a), y + d * math.sin(a)
+            if free(px, py, r): return (round(px), round(py))
+    return None
+
+
 # =================================================================================================== hall: hull, slab, walls, roof
 def hull_box():
     W = 16
@@ -541,10 +552,10 @@ def grotto():
     custom(MM.rockface('rockface_e', ry0 - 20, ry1 - 4, zb_e, rt + 10, [(L.CAVE_EXIT[1] + 4, L.CAVE_EXIT[3] - 4, -10, 122)], 'y', rx1, 1, 37), 0, 0, 0)
     custom(MM.rocktop(rx0, ry0, rx1, ry1, rt, 41), 0, 0, 0)
     # waterfall lip + curtain over the mouth
-    A(box((L.MOUTH[0] - 16, ry0 - 40, 336), (L.MOUTH[2] + 16, ry0 - 26, 352), T('rock')))
+    A(box((L.MOUTH[0] - 16, ry0 - 72, 336), (L.MOUTH[2] + 16, ry0 - 58, 352), T('rock')))
     wx = (L.MOUTH[0] + L.MOUTH[2]) / 2
-    A(sprite(wx, ry0 - 36, L.WATER, 336, 'waterfall', 176))
-    A(sprite(wx, ry0 - 44, L.WATER, 300, 'waterfall', 120))
+    A(sprite(wx, ry0 - 66, L.WATER, 336, 'waterfall', 176))
+    A(sprite(wx, ry0 - 74, L.WATER, 300, 'waterfall', 120))
     speaker(wx, ry0 - 60, 120, 'ambient/water_falling', volume=0.8)
     # inside the cave: secret, Pad Power, ammo, a glow
     cx = (L.CAVE[0] + L.CAVE[2]) / 2; cy = (L.CAVE[1] + L.CAVE[3]) / 2
@@ -553,6 +564,7 @@ def grotto():
     item('item_padpower', cx - 60, cy + 120, 0)
     item('ammo_imperius', cx + 100, cy - 60, 0)
     item('ammo_splasher', cx - 100, cy - 80, 0)
+    item('ammo_betty', cx + 100, cy + 160, 0)
     mdl_c('pad_ducks/pad_duck.md3', cx + 90, cy + 150, 0, 0.35, 220)
     light(cx, cy, 120, 360, '0.4 0.75 1'); light(L.CAVE_EXIT[0] + 40, L.CAVE_EXIT[1] + 64, 90, 180, '0.5 0.8 1')
     speaker(cx, cy, 80, 'ambient/droplets_echoing', volume=0.6)
@@ -684,6 +696,10 @@ def river_island():
         mdl_c('pad_ddmix/plants/fern.md3', x, y, 0, 0.22, a)
     custom(MM.PLACE['boulders_a'], *ang_pt(CX, CY, 330, 140), 0, angle=140)
     A(cyl(*[round(v) for v in ang_pt(CX, CY, 330, 140)], 56, 0, 40, WCLIP, 8))
+    for a in (20, 250):
+        x, y = ang_pt(CX, CY, 340, a)
+        custom(MM.PLACE['tube_stack'], x, y, 0, angle=a)
+        A(cyl(round(x), round(y), 32, 0, 88, WCLIP, 12))
     for a in (0, 120, 240):
         x, y = ang_pt(CX, CY, 260, a); light(x, y, 300, 420, '1 0.85 0.65')
     light(CX, CY, nz + 120, 700, '1 0.85 0.65'); light(CX, CY, cz + 100, 500, '1 0.85 0.7')
@@ -771,7 +787,7 @@ def tower():
     for sg in (-1, 1):
         yo = cy + sg * (W2 + 8); zo_ = e - 8 * s
         A(hull([(x, y, z) for x in (x0 - 8, x1 + 8) for (y, zt) in ((cy, rr), (yo, zo_)) for z in (zt - 10, zt)], WCLIP))
-    jumppad(x0 + 60, y0 - 74, Z, (x0 + 120, cy - 30, L.TW_ROOF_RIDGE - 12), L.TW_ROOF_RIDGE + 130, 'tower_roof')
+    jumppad(x0 + 60, y0 - 56, Z, (x0 + 120, cy - 30, L.TW_ROOF_RIDGE - 12), L.TW_ROOF_RIDGE + 130, 'tower_roof')
     # signs
     A(sign_box((cx - 128, y0 - 26, 128), (cx + 128, y0 - 22, 192), T('sign_peak'), 512, 128, back=CAULK, facing='s'))
     # contents
@@ -1128,6 +1144,67 @@ def stump():
     M.ent('target_location', (round(cx), round(cy), H + 40), message='Lookout Stump')
 
 
+# =================================================================================================== whirlpool spa
+SPA = (-560.0, -1000.0)
+
+
+def spa():
+    """raised rock-ringed whirlpool: wall 56 high (cover), bench inside, steps up on the east side"""
+    cx, cy = SPA
+    n = 24
+    for k in range(n):
+        a0, a1 = k * 360 / n, (k + 1) * 360 / n
+        am = (a0 + a1) / 2
+        A(ring_seg(cx, cy, a0, a1, 176, 208, 0, 56, ring_tex(am, inner=T('pool_band'), outer=T('fieldstone'), top=T('coping'))))
+        A(ring_seg(cx, cy, a0, a1, 136, 176, 0, 24, ring_tex(am, inner=T('pool_tile'), top=T('pool_tile'))))
+        A(water_faces(ring_seg(cx, cy, a0, a1, 136, 176, 24, 40, CAULK)))
+        A(water_faces(ring_seg(cx, cy, a0, a1, 0, 136, 0, 40, CAULK)))
+    for k in range(3):
+        A(rbox(cx, cy, 0, 208 + 32 * (2 - k), 208 + 32 * (3 - k), -48, 48, 0, 16 * (k + 1), {'top': T('coping'), 'side': T('fieldstone'), 'bot': CAULK}))
+    KEEP_OUT.append((cx, cy, 330)); NOGO.append((cx - 320, cy - 230, cx + 330, cy + 230))
+    item('ammo_pumper', cx - 60, cy + 40, 0)
+    light(cx, cy, 30, 260, '0.5 0.85 1'); light(cx, cy, 260, 420, '1 0.85 0.65')
+    speaker(cx, cy, 40, 'ambient/water_bubbling', volume=0.5)
+    custom(MM.PLACE['tube1k'], cx + 40, cy - 60, 40, angle=30)
+
+
+def blockers():
+    """tall cover on the open decks: potted pines, tube racks, giant ducks (sightline breakers)"""
+    rng = np.random.default_rng(31)
+    for (x, y, s) in ((-1650, -520, 0.7), (-1000, -500, 0.65), (1000, -580, 0.65), (-200, -760 - 260, 0.6), (240, -1060, 0.6),
+                      (-560, 520, 0.6), (620, 860, 0.6), (-1650, 100, 0.6), (1600, 600, 0.6), (-1100, -1420, 0.65), (420, -1440, 0.6),
+                      (-1450, -1510, 0.6), (-750, -1510, 0.6), (-60, -1510, 0.6), (1000, 220, 0.6), (-1000, 100, 0.6), (1900, -1450, 0.6)):
+        q = near_free(x, y, 90)
+        if q is None:
+            print('NOTE blocker not free', x, y); continue
+        x, y = q
+        A(cyl(round(x), round(y), 56, 0, 40, {'top': T('rock'), 'side': T('fieldstone'), 'bot': CAULK}, 12))
+        mdl_c('pad_ddmix/trashcan/tree_winter.md3', x, y, 40, s, int(rng.uniform(0, 360)))
+        KEEP_OUT.append((x, y, 130))
+    for (x, y) in ((-1300, -560), (720, -500), (-760, -660), (-150, 560), (1300, -620), (-1950, 1000 - 900), (0, -1560),
+                   (-900, 1300), (900, 1150), (1500, -1580), (-1100, -1590), (380, -1590), (-560, 1000), (560, 700), (-1250, 1580), (1700, 1580), (1150, 450), (-1150, 450 - 600)):
+        q = near_free(x, y, 50)
+        if q is None:
+            print('NOTE blocker not free', x, y); continue
+        x, y = q
+        custom(MM.PLACE['tube_stack'], x, y, 0, angle=int(rng.uniform(0, 360)))
+        A(cyl(round(x), round(y), 32, 0, 88, WCLIP, 12))
+        KEEP_OUT.append((x, y, 60))
+    for (x, y) in ((-1560, -1560), (-860, -1560), (-260, -1560), (1700, -1560), (1860, 160)):
+        q = near_free(x, y, 70, 200)
+        if q is None: print('NOTE bush not free', x, y); continue
+        x, y = q
+        solid_mdl('pad_ddmix/trashcan/bush.md3', x, y, 0, 0.45, 0)
+        KEEP_OUT.append((x, y, 100))
+    for (x, y, s, a) in ((1900, 820, 0.55, 200), (-1880, -1260, 0.5, 30), (-1250, -180, 0.5, 300), (1120, 1560, 0.5, 250), (900, -320, 0.5, 140)):
+        q = near_free(x, y, 70)
+        if q is None:
+            print('NOTE blocker not free', x, y); continue
+        x, y = q
+        solid_mdl('pad_ducks/pad_duck.md3', x, y, 0, s, a)
+        KEEP_OUT.append((x, y, 80))
+
+
 # =================================================================================================== deck furniture, decor
 def decor():
     rng = np.random.default_rng(23)
@@ -1178,10 +1255,6 @@ def decor():
         if not free(x, y, 30): continue
         mdl_c('pad_ball/pad_basketball.md3', x, y, 0, s, int(rng.uniform(0, 360)))
         KEEP_OUT.append((x, y, 30))
-    for (x, y, s, a) in ((1900, 820, 0.55, 200), (-1880, -1260, 0.5, 30)):
-        if not free(x, y, 70): continue
-        solid_mdl('pad_ducks/pad_duck.md3', x, y, 0, s, a)
-        KEEP_OUT.append((x, y, 80))
     # lifeguard chair by the river
     lgx, lgy = ang_pt(CX, CY, L.R_RIV + 70, 340)
     if free(lgx, lgy, 40):
@@ -1198,12 +1271,14 @@ def decor():
 def items_misc():
     for (cls, x, y) in (('ammo_nipper', -1560, -1380), ('ammo_nipper', 600, 1100), ('ammo_nipper', -200, -1500),
                         ('item_armor_shard', 1000, -500), ('item_armor_shard', -400, 900), ('item_armor_shard', 1700, 1400),
-                        ('ammo_balloony', 1700, 1100), ('ammo_betty', -1800, 1460 - 20), ('ammo_betty', -1400, -1400),
+                        ('ammo_balloony', 1700, 1100), ('ammo_betty', -1400, -1400),
                         ('ammo_boaster', -1000, -800), ('ammo_splasher', -820 + 30, 1550), ('ammo_pumper', 1000, 1500),
                         ('item_climber', 880, -300), ('holdable_bambam', -1700, -900), ('ammo_balloony', -380, -960)):
-        if not free(x, y, 24):
-            print('NOTE item spot not free', cls, x, y)
+        q = near_free(x, y, 24, 400)
+        if q is None: print('NOTE item spot not free', cls, x, y)
+        else: x, y = q
         item(cls, x, y, 0)
+        KEEP_OUT.append((x, y, 40))
     M.ent('station_health', (1200, -1560 + 80, 0), angle=90)
     KEEP_OUT.append((1200, -1480, 90))
 
@@ -1213,8 +1288,11 @@ def spawns():
           (900, 1500, 270), (-700, 1500, 270), (-1400, 1580, 300), (-1950, -100, 0), (-1950, -1000, 0), (600, -400, 135),
           (-600, -200, 30), (-300, 920, 300), (900, 600, 225), (1050, -200, 160)]
     for (x, y, a) in sp:
-        if not free(x, y, 40): print('NOTE spawn not free', x, y)
+        q = near_free(x, y, 40, 400)
+        if q is None: print('NOTE spawn not free', x, y)
+        else: x, y = q
         spawn(x, y, 0, a)
+        KEEP_OUT.append((x, y, 50))
 
 
 def lights_and_sound():
@@ -1235,11 +1313,11 @@ def main():
     MM.make(OUT)
     hull_box()
     walls(); hall_timbers()
-    activity_pool(); grotto(); river_island(); tower(); slides(); plunge_pool(); snack_bar(); tiny_timbers(); stump()
+    activity_pool(); grotto(); river_island(); tower(); slides(); plunge_pool(); snack_bar(); tiny_timbers(); stump(); spa()
     ZONES.insert(0, ((L.SB[0] + 16, L.SB[1] + 16, L.SB[2] - 16, L.SB[3]), T('kitchen_tile')))
     ZONES.insert(1, ((L.TW[0] + 12, L.TW[1] + 12, L.TW[2] - 12, L.TW[3] - 12), T('planks')))
     slab()
-    decor(); items_misc(); spawns(); lights_and_sound()
+    blockers(); decor(); items_misc(); spawns(); lights_and_sound()
     M.ent('info_player_intermission', (-1500, -1300, 420), angles='18 40 0')
     TX.make_shader(W, OUT, MM.shaders())
     TX.make_arena(OUT)

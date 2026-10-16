@@ -282,10 +282,10 @@ def tex_glowpanel(n=64):
 def branch_paths():
     """limb centre lines [(points, radii)] for the pine (shared by trunk limbs and needle sprays)"""
     rng = np.random.default_rng(7)
-    whorls = [600, 680, 752, 920, 990, 1050, 1100, 1140]
+    whorls = [580, 640, 700, 760, 900, 960, 1015, 1065, 1105, 1140]
     out = []
     for wi, z in enumerate(whorls):
-        nb = 7 if z < 1100 else 5
+        nb = 8 if z < 1000 else 6
         Lmax = 600 * (1 - (z - 560) / 780) + 90
         a0 = rng.uniform(0, 360)
         for k in range(nb):
@@ -342,17 +342,17 @@ def pine():
     for pts, rad in branch_paths():
         P = np.array([(x - L.C[0], y - L.C[1], z) for (x, y, z) in pts])
         Lb = np.sum(np.linalg.norm(np.diff(P, axis=0), axis=1))
-        nsp = max(3, int(Lb / 55))
+        nsp = max(4, int(Lb / 38))
         for t in np.linspace(0.25, 1.0, nsp):
             i = min(len(P) - 2, int(t * (len(P) - 1)))
             f = t * (len(P) - 1) - i
             c = P[i] + (P[i + 1] - P[i]) * f
             d = P[i + 1] - P[i]
-            spray(c + rng.normal(0, 6, 3), d + rng.normal(0, 0.2 * np.linalg.norm(d), 3), 150 * (1.15 - 0.5 * t))
+            spray(c + rng.normal(0, 6, 3), d + rng.normal(0, 0.2 * np.linalg.norm(d), 3), 175 * (1.15 - 0.5 * t))
             # side twigs
             for s in (-1, 1):
                 b1, _ = frame(d)
-                spray(c + b1 * s * 40, d + b1 * s * np.linalg.norm(d) * 0.8 + np.array([0, 0, 0.2 * np.linalg.norm(d)]), 110 * (1.1 - 0.5 * t))
+                spray(c + b1 * s * 46, d + b1 * s * np.linalg.norm(d) * 0.8 + np.array([0, 0, -0.15 * np.linalg.norm(d)]), 130 * (1.1 - 0.5 * t))
     # crown
     for k in range(18):
         z = 1120 + k * 6
@@ -584,6 +584,23 @@ def innertube(name, img, double=False):
     return _save(name, X)
 
 
+def tube_stack():
+    """rental rack: five inner tubes stacked on a wooden pallet (~92 tall)"""
+    X = Model()
+    wd = S('wood_post', 'lm', tag='pal')
+    box_mesh(X.mesh(wd), (-34, -34, 0), (34, 34, 8))
+    imgs = ['tube_yellow', 'tube_purple', 'tube_pink', 'tube_teal', 'tube_yellow']
+    rng = np.random.default_rng(3)
+    for k, img in enumerate(imgs):
+        sh = S(img, 'lms', v=0.18)
+        R, r = 25, 10
+        c = (rng.uniform(-4, 4), rng.uniform(-4, 4), 8 + r + k * 17)
+        tilt = rot_axis((1, 0, 0), rng.uniform(-0.05, 0.05))
+        ring = [tuple(np.asarray(c) + tilt @ np.array([R * math.cos(t), R * math.sin(t), 0])) for t in np.linspace(0, 2 * math.pi, 25)]
+        tube(X.mesh(sh), ring, r, nseg=10, caps=(False, False), vlen=2 * math.pi * R)
+    return _save('tube_stack', X)
+
+
 def table_set():
     X = Model()
     wh = S('white', 'lm'); ch = S('white', 'lm', tag='ch')
@@ -756,7 +773,8 @@ def rockface(name, u0, u1, zbot_of_u, ztop, holes, axis, plane, outward, seed):
     noi = TX.noise(64, 3, seed) * 0.6 + TX.noise(64, 9, seed + 1) * 0.8
     def disp(u, z):
         i = int((u - u0) / (u1 - u0 + 1e-6) * 63) % 64; j = int((z + 256) / (ztop + 256) * 63) % 64
-        return 10 + 14 * max(-0.6, noi[j, i])
+        strata = 6 * math.sin(z / 23.0 + 2 * math.sin(u / 97.0))
+        return min(50.0, max(4.0, 14 + 30 * max(-0.5, noi[j, i]) + strata))
     M = X.mesh(rk)
     P = np.zeros((nz, nu, 3)); UV = np.zeros((nz, nu, 2))
     for j in range(nz):
@@ -793,7 +811,7 @@ def rocktop(x0, y0, x1, y1, z, seed):
         for i in range(nx):
             x = x0 + (x1 - x0) * i / (nx - 1); y = y0 + (y1 - y0) * j / (ny - 1)
             edge = min(i, j, nx - 1 - i, ny - 1 - j)
-            h = 0 if edge == 0 else 6 + 20 * max(0, noi[j % 32, i % 32] + 0.5)
+            h = 0 if edge == 0 else 8 + 46 * max(0, noi[j % 32, i % 32] + 0.6) * min(1.0, edge / 3)
             P[j, i] = (x, y, z + h); UV[j, i] = (x / 256, -y / 256)
     N = grid_normals(P)
     if N[..., 2].mean() < 0: N = -N
@@ -962,7 +980,7 @@ def make(out):
     rafter(); ridge_beam()
     for nm, img, dbl in (('tube1y', 'tube_yellow', False), ('tube1p', 'tube_purple', False), ('tube1k', 'tube_pink', False), ('tube2t', 'tube_teal', True)):
         innertube(nm, img, dbl)
-    table_set(); lounger(); lifeguard(); hoop(); bucket(); moose()
+    table_set(); tube_stack(); lounger(); lifeguard(); hoop(); bucket(); moose()
     for nm, img in (('adi_wood', 'adi_wood'), ('adi_green', 'adi_green'), ('adi_red', 'adi_red')):
         adirondack(nm, img)
     boulders('boulders_a', [((0, 0), 60, 50, 50), ((70, 30), 44, 40, 36), ((-50, 40), 40, 36, 30)], 3)
