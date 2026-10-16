@@ -1,0 +1,25 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @area51/routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height)
+hangar_door:        600,100,0 > 600,800,0
+hangar_east_stairs: 864,624,0 > 864,1520,416
+hangar_west_stairs: -864,624,0 > -864,1520,416
+north_catwalk:      -864,1630,416 > 864,1630,416
+saucer_ramp:        0,620,0 > 0,1250,232
+hangar_north_door:  150,1650,0 > 150,1850,0
+hangar_side_door:   -880,1560,0 > -1100,1560,0
+tower_door:         1300,896,0 > 1700,896,0
+tower_stairs:       1552,720,0 > 1552,720,512
+bunker_door:        -1000,-768,0 > -1230,-768,0
+bunker_flight_a:    -1230,-850,0 > -1840,-850,-256
+bunker_landing:     -1840,-850,-256 > -1840,-690,-256
+bunker_flight_b:    -1840,-690,-256 > -1184,-690,-512
+lab_corridor:       -1184,-200,-512 > -736,1100,-512
+autopsy_door:       -736,896,-512 > -1184,800,-512
+spec_door:          -736,160,-512 > -1184,160,-512
+vault_duct:         -1300,304,-512 > -1856,250,-512
+radar_stairs:       -1904,500,0 > -1904,1100,192
+hutA:               -1824,-1950,0 > -1824,-1100,0
+hutB:               -1120,-1950,0 > -1120,-1100,0
+jet_stairs:         2080,-1228,0 > 1500,-1150,200
+container_steps:    1820,615,0 > 1700,288,160
+crash_climb:        0,-1380,-112 > 0,-1150,60

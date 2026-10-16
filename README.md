@@ -27,6 +27,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `padshroom/` - *Shroom Trip* (`wop_padshroom`): FFA forest floor on a magic-mushroom trip - a hollow golden Mother
   Mushroom with a func_plat elevator to the gill chamber in its cap, fly-agaric cottages, hollow stump, walk-through log,
   rainbow pond, a secret kaleidoscope Void, spores circling on an IQM func_rotating, custom sky cube; see padshroom/README.md.
+- `area51/` - *Area 51: Dreamland* (`wop_padarea51`): FFA night airbase - Hangar 18 with a flying saucer you can board,
+  the S-4 underground lab carved out of the desert slab (elevator, stairs, vent pad, containment vault), control tower,
+  water tower, radar, quonset huts, black triangle, crash crater with a tractor-beam pad, a mothership secret; see
+  area51/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
