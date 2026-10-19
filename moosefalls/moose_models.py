@@ -584,6 +584,38 @@ def innertube(name, img, double=False):
     return _save(name, X)
 
 
+def small_pine():
+    """potted-size pine (~300 tall above its base): bark trunk + tiers of needle sprays; origin = trunk base"""
+    X = Model()
+    bk = S('pine_bark', 'lm', tag='sp'); nd = S('needles', 'leaf')
+    rng = np.random.default_rng(13)
+    revolve(X.mesh(bk), [(16, 0), (13, 40), (9, 200), (3, 300), (0.5, 310)], n=12, u_tiles=2, vlen=128)
+    N = X.mesh(nd)
+    for k in range(9):
+        z = 70 + k * 27
+        R = 120 * (1 - k / 9) + 22
+        nb = 7 if k < 6 else 5
+        for j in range(nb):
+            a = (j + rng.uniform(-0.2, 0.2)) * 2 * math.pi / nb + k * 0.7
+            d = np.array([math.cos(a), math.sin(a), -0.25])
+            c = np.array([R * 0.55 * math.cos(a), R * 0.55 * math.sin(a), z])
+            s_ = R * 0.95
+            b1, b2 = frame(d / np.linalg.norm(d))
+            dn = d / np.linalg.norm(d)
+            for q in range(2):
+                ang = q * math.pi / 2 + rng.uniform(0, 0.4)
+                w = b1 * math.cos(ang) + b2 * math.sin(ang)
+                quad = [c - dn * s_ * 0.6 - w * s_ * 0.4, c + dn * s_ * 0.6 - w * s_ * 0.4, c + dn * s_ * 0.6 + w * s_ * 0.4, c - dn * s_ * 0.6 + w * s_ * 0.4]
+                N.poly(quad, np.cross(dn, w), [(0, 1), (0, 0), (1, 0), (1, 1)])
+    for k in range(5):
+        a = k * 2.4
+        c = np.array([6 * math.cos(a), 6 * math.sin(a), 300 + k * 4])
+        d = np.array([0.3 * math.cos(a), 0.3 * math.sin(a), 1.0]); d /= np.linalg.norm(d)
+        b1, b2 = frame(d)
+        N.poly([c - d * 40 - b1 * 22, c + d * 40 - b1 * 22, c + d * 40 + b1 * 22, c - d * 40 + b1 * 22], np.cross(d, b1), [(0, 1), (0, 0), (1, 0), (1, 1)])
+    return _save('small_pine', X)
+
+
 def tube_stack():
     """rental rack: five inner tubes stacked on a wooden pallet (~92 tall)"""
     X = Model()
@@ -980,7 +1012,7 @@ def make(out):
     rafter(); ridge_beam()
     for nm, img, dbl in (('tube1y', 'tube_yellow', False), ('tube1p', 'tube_purple', False), ('tube1k', 'tube_pink', False), ('tube2t', 'tube_teal', True)):
         innertube(nm, img, dbl)
-    table_set(); tube_stack(); lounger(); lifeguard(); hoop(); bucket(); moose()
+    table_set(); tube_stack(); small_pine(); lounger(); lifeguard(); hoop(); bucket(); moose()
     for nm, img in (('adi_wood', 'adi_wood'), ('adi_green', 'adi_green'), ('adi_red', 'adi_red')):
         adirondack(nm, img)
     boulders('boulders_a', [((0, 0), 60, 50, 50), ((70, 30), 44, 40, 36), ((-50, 40), 40, 36, 30)], 3)

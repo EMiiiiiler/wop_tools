@@ -106,5 +106,10 @@ Tools and standing rules for building World of Padman (WoP) maps.
   1200 < Imperius 1600. Low-weight weapons on pad-only spots get ignored by bots.
 - Rooms carved out of a structural slab (`area51/build_area51.py` ground()): texture each carved face by sampling many
   points across it; a single centroid probe left lab floors and crater slopes as caulk (black holes in game).
-- sightlines.py counts custom MD3s only through their weapclip brushes; open outdoor maps need real cover in the middle
+- sightlines.py counts custom MD3s only through their weapclip brushes unless you pass `--md3root`; open outdoor maps need real cover in the middle
   band (area51: containers + crate stacks took it from 14.7 % to 4.2 %).
+- `meshlib.save_md3` splits surfaces by vertex count (<4000 verts / <8000 tris); dense alpha foliage overflowed the old
+  fixed 2600-triangle chunks. Railing runs that share corner posts give q3map2 "Duplicate or Flipped triangle" warnings;
+  dedupe posts (moosefalls `gen_railing`).
+- Run `sightlines.py` with `--md3root <map folder>` when the cover is custom MD3s, and `--hot N` to see where a blocker helps.
+- Catalog `tree_winter` is leafless and reads as a dead tree indoors; moosefalls has a custom `small_pine` MD3 to reuse.

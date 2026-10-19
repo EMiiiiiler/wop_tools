@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import audit_map as A
 
 
-def load_blockers(mapfile, bounds_json, md3scale=0.6):
+def load_blockers(mapfile, bounds_json, md3scale=0.6, md3roots=()):
     ents = A.parse(mapfile)
     planes = []      # list of (N,4) arrays
     for e in ents:
@@ -30,6 +30,20 @@ def load_blockers(mapfile, bounds_json, md3scale=0.6):
     nb = len(planes)
     if bounds_json and os.path.exists(bounds_json):
         B = json.load(open(bounds_json))
+        # custom models (the map's own MD3s) from --md3root; skip huge composites (slides, rafters) whose bbox is not a body
+        for e in ents:
+            m = e['kv'].get('model', '')
+            if e['kv'].get('classname') != 'misc_model' or m in B: continue
+            for root in md3roots:
+                q = os.path.join(root, m)
+                if os.path.exists(q):
+                    import md3tool
+                    V = np.concatenate([sf['verts'] for sf in md3tool.load(q)['surfaces']])
+                    mn, mx = V.min(0), V.max(0)
+                    sc = float(e['kv'].get('modelscale', 1))
+                    if max(mx[0] - mn[0], mx[1] - mn[1]) * sc <= 600:
+                        B[m] = {'min': mn.tolist(), 'max': mx.tolist()}
+                    break
         for e in ents:
             kv = e['kv']
             if kv.get('classname') != 'misc_model': continue
@@ -70,16 +84,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('map'); ap.add_argument('out')
     ap.add_argument('--md3bounds', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'md3bounds.json'))
+    ap.add_argument('--md3root', action='append', default=[], help="dir(s) holding the map's own models/ (custom MD3s block views too)")
     ap.add_argument('--step', type=int, default=128)
     ap.add_argument('--min', type=float, default=1600)
     ap.add_argument('--bounds', default='-2048,-1792,2048,1792')
     ap.add_argument('--zmax', type=float, default=64)
+    ap.add_argument('--hot', type=int, default=0, help='print the N 128u floor cells crossed by the most long rays (where a blocker helps most)')
     ap.add_argument('--dirs', type=int, default=16)
     ap.add_argument('--shaders', action='append', default=[], help='dir(s) with scripts/*.shader (classify fog/nonsolid by surfaceparm)')
     a = ap.parse_args()
     if a.shaders: A.load_shaders(a.shaders)
     x0, y0, x1, y1 = [float(v) for v in a.bounds.split(',')]
-    planes, nb = load_blockers(a.map, a.md3bounds)
+    planes, nb = load_blockers(a.map, a.md3bounds, md3roots=a.md3root)
     print(f'{nb} brushes + {len(planes) - nb} model boxes as blockers')
     xs = np.arange(x0 + a.step / 2, x1, a.step); ys = np.arange(y0 + a.step / 2, y1, a.step)
     G = np.array([(x, y) for y in ys for x in xs])
@@ -133,6 +149,17 @@ def main():
     for w in worst:
         k = per[w].argmax()
         print(f'   from {E[w].astype(int)} dir {math.degrees(angs[k]):5.1f}: {per[w, k]:.0f}u')
+    if a.hot:
+        cnt = {}
+        for i in long_:
+            seen = set()
+            for t in np.arange(0, L[i], 32.0):
+                p = RO[i] + RD[i] * t
+                c = (int(p[0] // 128), int(p[1] // 128))
+                if c not in seen: seen.add(c); cnt[c] = cnt.get(c, 0) + 1
+        print('hot cells (centre x, y: long rays through it):')
+        for c, n in sorted(cnt.items(), key=lambda kv: -kv[1])[:a.hot]:
+            print(f'   {c[0] * 128 + 64:6d} {c[1] * 128 + 64:6d}: {n}')
 
 
 if __name__ == '__main__':

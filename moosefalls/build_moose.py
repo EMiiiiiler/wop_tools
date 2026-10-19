@@ -486,8 +486,15 @@ def activity_pool():
            hull([(L.BEACH_X0, y, sz) for y in (by0, by1)] + [(xw, y, W) for y in (by0, by1)] + [(L.BEACH_X0, y, W) for y in (by0, by1)], CAULK),
            hull([(x, L.MOUTH[1], -64) for x in (L.MOUTH[0], L.MOUTH[2])] + [(x, L.MOUTH[1] + 48 * (L.MOUTH[3] - L.MOUTH[1]) / 64, W) for x in (L.MOUTH[0], L.MOUTH[2])] +
                 [(x, L.MOUTH[1], W) for x in (L.MOUTH[0], L.MOUTH[2])], CAULK)]
+    # rock island in the deep end (cover over the water; swim round it, climb out on the ladder or the beach)
+    isl = [cyl(-1730, 820, 104, L.POOL_DEEP, 40, {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}, 12),
+           cyl(-1730, 820, 70, 40, 88, {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}, 10)]
+    for b in isl: A(b)
+    custom(MM.PLACE['boulders_b'], -1735, 815, 88, angle=40, mul=0.6)
+    A(cyl(-1730, 820, 56, 88, 120, WCLIP, 8))
     for b in wat:
-        A(water_faces(b))
+        for pc in carve(b, isl[:1]):
+            A(water_faces(pc))
     # lily-pad crossing (floating discs, top at the deck) under the cargo net
     lx = -1056
     for k, y in enumerate(range(340, 1400, 132)):
@@ -514,14 +521,14 @@ def activity_pool():
     A(box((-812, 360, 0), (-804, 368, 120), T('metal_white')))
     A(sign_box((-804, 300, 120), (-800, 428, 184), T('nodiving'), 256, 128, back=T('metal_white'), facing='e'))
     # contents
-    weapon('splasher', -1720, 640, L.POOL_DEEP, 'orange')
+    weapon('splasher', -1720, 560, L.POOL_DEEP, 'orange')
     item('ammo_splasher', -1300, 1380, L.POOL_SHALLOW)
     item('item_armor_shard', -1600, 160, 0)
     for (x, y, z) in ((-1500, 700, -100), (-1100, 500, -60), (-1100, 1200, -60)):
         light(x, y, z, 220, '0.5 0.85 1')
     speaker(-1200, 860, 0, 'ambient/water_rippling', volume=0.5)
     # beach-side floats
-    for (x, y, nm, a) in ((-1250, 420, 'tube1p', 20), (-1320, 1200, 'tube1y', 80), (-1250, 960, 'tube1k', 150), (-1700, 900, 'tube2t', 40)):
+    for (x, y, nm, a) in ((-1250, 420, 'tube1p', 20), (-1320, 1200, 'tube1y', 80), (-1250, 960, 'tube1k', 150), (-1560, 420, 'tube2t', 40)):
         custom(MM.PLACE[nm], x, y, L.WATER, angle=a)
     mdl_c('pad_ducks/pad_duck.md3', -1620, 380, L.WATER, 0.3, 300)
 
@@ -675,7 +682,7 @@ def river_island():
     item('ammo_imperius', *ang_pt(CX, CY, 300, 200), nz)
     item('item_armor_padshield', *ang_pt(CX, CY, 300, 20), nz)
     item('ammo_bubbleg', *ang_pt(CX, CY, 300, 250), nz)
-    weapon('bubbleg', *ang_pt(CX, CY, 330, 30), 0, 'blue')
+    weapon('bubbleg', *ang_pt(CX, CY, 300, 60), 0, 'blue')
     item('ammo_balloony', *ang_pt(CX, CY, 340, 280), 0)
     item('item_speedy', *ang_pt(CX, CY, 592, 0), L.RIV_FLOOR)
     item('ammo_bubbleg', *ang_pt(CX, CY, 592, 200), L.RIV_FLOOR)
@@ -696,7 +703,14 @@ def river_island():
         mdl_c('pad_ddmix/plants/fern.md3', x, y, 0, 0.22, a)
     custom(MM.PLACE['boulders_a'], *ang_pt(CX, CY, 330, 140), 0, angle=140)
     A(cyl(*[round(v) for v in ang_pt(CX, CY, 330, 140)], 56, 0, 40, WCLIP, 8))
-    for a in (20, 250):
+    for a in (-40, 30):
+        x, y = ang_pt(CX, CY, 385, a)
+        A(cyl(round(x), round(y), 56, 0, 40, {'top': T('rock'), 'side': T('fieldstone'), 'bot': CAULK}, 12))
+        custom(MM.PLACE['small_pine'], x, y, 40, angle=int(a * 7), mul=0.42 / 0.65); A(cyl(round(x), round(y), 18, 40, 240, WCLIP, 8))
+    for (a, r) in ((-12, 600), (275, 590)):
+        x, y = ang_pt(CX, CY, r, a)
+        solid_mdl('pad_ducks/pad_duck.md3', x, y, L.RIV_FLOOR, 0.6, int(a + 90))
+    for a in (5, 250):
         x, y = ang_pt(CX, CY, 340, a)
         custom(MM.PLACE['tube_stack'], x, y, 0, angle=a)
         A(cyl(round(x), round(y), 32, 0, 88, WCLIP, 12))
@@ -1184,10 +1198,10 @@ def blockers():
             print('NOTE blocker not free', x, y); continue
         x, y = q
         A(cyl(round(x), round(y), 56, 0, 40, {'top': T('rock'), 'side': T('fieldstone'), 'bot': CAULK}, 12))
-        mdl_c('pad_ddmix/trashcan/tree_winter.md3', x, y, 40, s, int(rng.uniform(0, 360)))
+        custom(MM.PLACE['small_pine'], x, y, 40, angle=int(rng.uniform(0, 360)), mul=s / 0.65); A(cyl(round(x), round(y), 18, 40, 240, WCLIP, 8))
         KEEP_OUT.append((x, y, 130))
     for (x, y) in ((-1300, -560), (720, -500), (-760, -660), (-150, 560), (1300, -620), (-1950, 1000 - 900), (0, -1560),
-                   (-900, 1300), (900, 1150), (1500, -1580), (-1100, -1590), (380, -1590), (-560, 1000), (560, 700), (-1250, 1580), (1700, 1580), (1150, 450), (-1150, 450 - 600)):
+                   (-900, 1300), (900, 1150), (1500, -1580), (-1100, -1590), (380, -1590), (-560, 1000), (560, 700), (-1250, 1580), (1700, 1580), (1150, 450), (-1150, 450 - 600), (1000, -120), (980, 380)):
         q = near_free(x, y, 50)
         if q is None:
             print('NOTE blocker not free', x, y); continue
@@ -1245,7 +1259,7 @@ def decor():
                       (1960, 1040, 0.7), (-1240, -1560, 0.6), (1950, -600, 0.6), (-200, -560 - 180, 0.5)):
         if not free(x, y, 110): continue
         A(cyl(round(x), round(y), 56, 0, 40, {'top': T('rock'), 'side': T('fieldstone'), 'bot': CAULK}, 12))
-        mdl_c('pad_ddmix/trashcan/tree_winter.md3', x, y, 40, s, int(rng.uniform(0, 360)))
+        custom(MM.PLACE['small_pine'], x, y, 40, angle=int(rng.uniform(0, 360)), mul=s / 0.65); A(cyl(round(x), round(y), 18, 40, 240, WCLIP, 8))
         KEEP_OUT.append((x, y, 130))
     for (x, y) in ((-1560, -180), (1040, 520), (-640, 1080), (640, 1000), (300, -560 - 300)):
         if not free(x, y, 100): continue
