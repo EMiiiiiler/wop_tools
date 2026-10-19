@@ -1113,6 +1113,11 @@ def stump():
     px, py = ang_pt(cx, cy, 96, 270)
     lx, ly = ang_pt(cx, cy, 276, 270)
     jumppad(px, py, 0, (lx, ly, H), H + 185, 'stump_up')
+    # second launcher outside on the deck (south-east of the stump), over the rope rail onto the top deck
+    ox, oy = ang_pt(cx, cy, Rc + 260, 310)
+    lx2, ly2 = ang_pt(cx, cy, 180, 310)
+    jumppad(ox, oy, 0, (lx2, ly2, H), H + 170, 'stump_out')
+    NOGO.append((ox - 80, oy - 80, ox + 80, oy + 80))
     # hut on the deck (walk in from the east; steps on the south side to its roof)
     hx0, hy0, hx1, hy1 = cx - 224, cy - 16, cx - 80, cy + 128
     hcx, hcy = (hx0 + hx1) / 2, (hy0 + hy1) / 2
