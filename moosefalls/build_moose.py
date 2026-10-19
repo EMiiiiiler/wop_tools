@@ -459,6 +459,10 @@ def hall_timbers():
 
 
 # =================================================================================================== activity pool + grotto
+TUN_Z0, TUN_Z1 = -208, -96              # underwater tunnel (top 80u under the surface: invisible from the deck)
+CAVE_POOL_Y1 = 1344                     # pool inside the cave (y MOUTH[3]..CAVE_POOL_Y1): swim up, step out (16u lip)
+
+
 def activity_pool():
     tile = box((POOL_TILE_A[0], POOL_TILE_A[1], L.SLAB_BOT), (POOL_TILE_A[2], POOL_TILE_A[3], 0), CAULK)
     _TILES.append(POOL_TILE_A)
@@ -471,11 +475,16 @@ def activity_pool():
            box((L.SHALLOW_X0, by0, sz), (L.BEACH_X0, by1, 32), CAULK),
            hull([(L.BEACH_X0, y, sz) for y in (by0, by1)] + [(bx1, y, 0) for y in (by0, by1)] +
                 [(x, y, 32) for x in (L.BEACH_X0, bx1) for y in (by0, by1)], CAULK),
-           # cave mouth basin (ramp up into the grotto)
-           hull([(x, L.MOUTH[1], -64) for x in (L.MOUTH[0], L.MOUTH[2])] + [(x, L.MOUTH[3], 0) for x in (L.MOUTH[0], L.MOUTH[2])] +
-                [(x, y, 32) for x in (L.MOUTH[0], L.MOUTH[2]) for y in (L.MOUTH[1], L.MOUTH[3])], CAULK)]
+           # SECRET: underwater tunnel under the waterfall into a pool inside the cave
+           box((L.MOUTH[0], L.MOUTH[1] - 8, TUN_Z0), (L.MOUTH[2], L.MOUTH[3], TUN_Z1), CAULK),
+           box((L.MOUTH[0], L.MOUTH[3], TUN_Z0), (L.MOUTH[2], CAVE_POOL_Y1, 32), CAULK)]
     for b in carve(tile, cut):
-        A(pool_faces(b))
+        pool_faces(b)
+        for f in b.faces:                      # tunnel + cave pool: rough rock, not pool tiles
+            c = np.mean([np.array(q) for q in f.pts], 0)
+            if f.tex != CAULK and c[1] > L.MOUTH[1] + 1 and L.MOUTH[0] - 1 <= c[0] <= L.MOUTH[2] + 1:
+                f.tex = T('rock'); f.sc = (1, 1)
+        A(b)
     # water: same shapes up to the surface (beach part only where deeper than the surface)
     W = L.WATER
     xw = L.BEACH_X0 + (W - sz) / (0 - sz) * (bx1 - L.BEACH_X0)
@@ -484,8 +493,8 @@ def activity_pool():
                 [(x, y, W) for x in (L.DEEP_X1, L.SHALLOW_X0) for y in (by0, by1)], CAULK),
            box((L.SHALLOW_X0, by0, sz), (L.BEACH_X0, by1, W), CAULK),
            hull([(L.BEACH_X0, y, sz) for y in (by0, by1)] + [(xw, y, W) for y in (by0, by1)] + [(L.BEACH_X0, y, W) for y in (by0, by1)], CAULK),
-           hull([(x, L.MOUTH[1], -64) for x in (L.MOUTH[0], L.MOUTH[2])] + [(x, L.MOUTH[1] + 48 * (L.MOUTH[3] - L.MOUTH[1]) / 64, W) for x in (L.MOUTH[0], L.MOUTH[2])] +
-                [(x, L.MOUTH[1], W) for x in (L.MOUTH[0], L.MOUTH[2])], CAULK)]
+           box((L.MOUTH[0], L.MOUTH[1], TUN_Z0), (L.MOUTH[2], L.MOUTH[3], TUN_Z1), CAULK),
+           box((L.MOUTH[0], L.MOUTH[3], TUN_Z0), (L.MOUTH[2], CAVE_POOL_Y1, W), CAULK)]
     # rock island in the deep end (cover over the water; swim round it, climb out on the ladder or the beach)
     isl = [cyl(-1730, 820, 104, L.POOL_DEEP, 40, {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}, 12),
            cyl(-1730, 820, 70, 40, 88, {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}, 10)]
@@ -534,13 +543,11 @@ def activity_pool():
 
 
 def grotto():
-    """rock mass in the north-west corner with a waterfall over the cave mouth; cave chamber with a dry exit east"""
+    """rock mass in the north-west corner with a waterfall; the cave inside is only reached by diving under the waterfall"""
     rx0, ry0, rx1, ry1 = L.ROCK
     rt = L.ROCK_TOP
     rock = box((rx0, ry0, 0), (rx1, ry1, rt), CAULK)
-    cuts = [box((L.CAVE[0], L.CAVE[1], 0), (L.CAVE[2], L.CAVE[3], L.CAVE_Z), CAULK),
-            box((L.MOUTH[0], L.MOUTH[1] - 8, -8), (L.MOUTH[2], L.MOUTH[3] + 8, 112), CAULK),
-            box((L.CAVE_EXIT[0] - 8, L.CAVE_EXIT[1], 0), (L.CAVE_EXIT[2] + 8, L.CAVE_EXIT[3], 128), CAULK)]
+    cuts = [box((L.CAVE[0], L.CAVE[1], 0), (L.CAVE[2], L.CAVE[3], L.CAVE_Z), CAULK)]
     for b in carve(rock, cuts):
         for f in b.faces:
             p = [np.array(q) for q in f.pts]
@@ -554,35 +561,35 @@ def grotto():
         A(b)
     # rock skins
     zb_s = lambda u: L.POOL_DEEP if u >= L.POOL_A[0][0] else 0
-    custom(MM.rockface('rockface_s', rx0 + 4, rx1 + 20, zb_s, rt + 10, [(L.MOUTH[0] + 4, L.MOUTH[2] - 4, -70, 106)], 'x', ry0, -1, 31), 0, 0, 0)
+    custom(MM.rockface('rockface_s', rx0 + 4, rx1 + 20, zb_s, rt + 10, [(L.MOUTH[0] + 4, L.MOUTH[2] - 4, TUN_Z0 + 8, TUN_Z1 - 4)], 'x', ry0, -1, 31), 0, 0, 0)
     zb_e = lambda u: L.POOL_DEEP if u < L.POOL_A[1][3] else 0
-    custom(MM.rockface('rockface_e', ry0 - 20, ry1 - 4, zb_e, rt + 10, [(L.CAVE_EXIT[1] + 4, L.CAVE_EXIT[3] - 4, -10, 122)], 'y', rx1, 1, 37), 0, 0, 0)
+    custom(MM.rockface('rockface_e', ry0 - 20, ry1 - 4, zb_e, rt + 10, [], 'y', rx1, 1, 37), 0, 0, 0)
     custom(MM.rocktop(rx0, ry0, rx1, ry1, rt, 41), 0, 0, 0)
     # waterfall lip + curtain over the mouth
-    A(box((L.MOUTH[0] - 16, ry0 - 72, 336), (L.MOUTH[2] + 16, ry0 - 58, 352), T('rock')))
     wx = (L.MOUTH[0] + L.MOUTH[2]) / 2
     A(sprite(wx, ry0 - 66, L.WATER, 336, 'waterfall', 176))
     A(sprite(wx, ry0 - 74, L.WATER, 300, 'waterfall', 120))
+    A(sprite(wx - 40, ry0 - 80, L.WATER, L.WATER + 70, 'spray', 60))
+    A(sprite(wx + 40, ry0 - 80, L.WATER, L.WATER + 60, 'spray', 50))
+    light(wx, ry0 - 40, TUN_Z0 + 50, 90, '0.4 0.8 1')                      # faint glow under the falls (the only hint)
     speaker(wx, ry0 - 60, 120, 'ambient/water_falling', volume=0.8)
     # inside the cave: secret, Pad Power, ammo, a glow
     cx = (L.CAVE[0] + L.CAVE[2]) / 2; cy = (L.CAVE[1] + L.CAVE[3]) / 2
-    M.ent('trigger_multiple', brushes=[box((L.MOUTH[0] + 8, L.CAVE[1] + 8, 0), (L.MOUTH[2] - 8, L.CAVE[1] + 48, 96), TRIG)], target='secret_snd', wait=8)
-    speaker(wx, L.CAVE[1] + 60, 60, 'misc/secret_found', loop=False, targetname='secret_snd')
+    M.ent('trigger_multiple', brushes=[box((L.CAVE[0] + 8, L.CAVE[1] + 8, 0), (L.CAVE[2] - 8, CAVE_POOL_Y1 + 56, 96), TRIG)], target='secret_snd', wait=8)
+    speaker(wx, CAVE_POOL_Y1 + 40, 60, 'misc/secret_found', loop=False, targetname='secret_snd')
     item('item_padpower', cx - 60, cy + 120, 0)
-    item('ammo_imperius', cx + 100, cy - 60, 0)
-    item('ammo_splasher', cx - 100, cy - 80, 0)
+    item('ammo_imperius', -1664, 1300, 0)
+    item('ammo_splasher', -1912, 1300, 0)
     item('ammo_betty', cx + 100, cy + 160, 0)
-    mdl_c('pad_ducks/pad_duck.md3', cx + 90, cy + 150, 0, 0.35, 220)
-    light(cx, cy, 120, 360, '0.4 0.75 1'); light(L.CAVE_EXIT[0] + 40, L.CAVE_EXIT[1] + 64, 90, 180, '0.5 0.8 1')
+    mdl_c('pad_ducks/pad_duck.md3', -1900, 1560, 0, 0.35, 300)
+    custom(MM.PLACE['boulders_a'], -1680, 1540, 0, angle=200, mul=0.6)
+    light(cx, cy, 120, 360, '0.4 0.75 1'); light(wx, (L.MOUTH[3] + CAVE_POOL_Y1) / 2, -60, 200, '0.4 0.85 1')
     speaker(cx, cy, 80, 'ambient/droplets_echoing', volume=0.6)
     M.ent('target_location', (round(cx), round(cy), 60), message='Grotto')
-    # sign by the exit tunnel
-    A(sign_box((L.CAVE_EXIT[2], L.CAVE_EXIT[3] + 8, 140), (L.CAVE_EXIT[2] + 4, L.CAVE_EXIT[3] + 56, 164), T('sign_grotto'), 256, 64, back=CAULK, facing='e'))
     # boulders on the deck strip and in the shallows
     custom(MM.PLACE['boulders_b'], -1900, 160, 0, angle=10)
     A(box((-1980, 100, 0), (-1830, 220, 50), WCLIP))
     KEEP_OUT.append((-1900, 160, 160))
-    NOGO.append((L.CAVE_EXIT[2], L.CAVE_EXIT[1] - 32, L.CAVE_EXIT[2] + 120, L.CAVE_EXIT[3] + 32))
 
 
 # =================================================================================================== lazy river + tree island
@@ -938,8 +945,39 @@ def snack_bar():
     A(box((x1 - t, 1536, 0), (x1, y1, H - 16), {'side': CAULK, 'w': T('stucco_cream'), 'e': T('logwall'), 'top': CAULK, 'bot': CAULK}))
     A(box((x1 - t, 1440, 120), (x1, 1536, H - 16), {'side': CAULK, 'w': T('stucco_cream'), 'e': T('logwall'), 'bot': T('glulam'), 'top': CAULK}))
     A(box((x0 + t, y1 - 64, 0), (x1 - t, y1, 48), {'top': T('steel'), 'side': T('steel'), 'bot': CAULK}))           # back counter / grill
-    A(box((x0 + t, y1 - 72, 48), (-180, y1, 200), {'side': T('steel'), 'top': CAULK, 'bot': CAULK}))                  # fridge
-    A(sign_box((-128, y1 - 68, 96), (128, y1 - 64, 224), T('menu'), 512, 256, back=CAULK, facing='s'))
+    custom(MM.PLACE['cooler'], -306, y1 - 32, 48)                                                                   # drinks cooler
+    A(box((x0 + t, y1 - 64, 48), (-180, y1, 198), WCLIP))
+    A(sign_box((70, y1 - 4, 112), (326, y1, 240 - 4), T('menu'), 512, 256, back=CAULK, facing='s'))
+    custom(MM.PLACE['griddle'], -60, y1 - 32, 48)
+    custom(MM.PLACE['hood'], -60, y1 - 56, H - 16)
+    custom(MM.PLACE['fryer'], 110, y1 - 34, 48)
+    custom(MM.PLACE['soda'], 380, y1 - 26, 48)
+    custom(MM.PLACE['register'], 200, y0 + 40, 56)
+    custom(MM.PLACE['pizza_warmer'], -110, y0 + 40, 56)
+    # wall shelves (west) with tins and cups
+    for (zs, kind) in ((116, 'tins'), (168, 'cups')):
+        A(box((x0 + t, 1430, zs), (x0 + t + 28, 1580, zs + 4), {'top': T('planks_dark'), 'side': T('planks_dark'), 'bot': T('planks_dark')}))
+        for k, yy in enumerate((1450, 1490, 1530, 1562)):
+            if kind == 'tins':
+                mdl_c(['pad_tins/pad_coke.md3', 'pad_tins/pad_pupsi.md3', 'pad_tins/tomatoes_ts.md3', 'pad_tins/carrots_ts.md3'][k], x0 + t + 14, yy, zs + 4, 0.26, 0)
+            else:
+                mdl_c(['pad_cups/pad_cup01.md3', 'pad_cups/pad_cup03.md3', 'pad_cups/pad_cup05.md3', 'pad_cups/pad_cup07.md3'][k], x0 + t + 14, yy, zs + 4, 0.24, 90)
+    lmp = MM.lamp('lamp24', 24)
+    for xx in (-220, 220):
+        custom(lmp, xx, 1480, H - 16, lit=False)
+        light(xx, 1480, H - 16 - 70, 900, '1 0.85 0.62')
+    # porch: bar stools along the counter, lanterns, specials board, moose trophy by the side door
+    for xx in (-240, -120, 0, 120, 240):
+        custom(MM.PLACE['stool'], xx, y0 - 30, 0, angle=xx)
+    lan = MM.lantern(40)
+    px0_, py0_, px1_, py1_ = L.SB_PORCH
+    for xx in (-300, 300):
+        zb = L.SB_PORCH_EAVE + (H - L.SB_PORCH_EAVE) * (1 - abs(xx) / ((px1_ - px0_) / 2)) - 10
+        custom(lan, xx, 1240, zb, lit=False)
+        light(xx, 1240, zb - 70, 260, '1 0.75 0.45')
+    custom(MM.PLACE['aframe'], -380, 1210, 0, angle=15)
+    A(box((-414, 1186, 0), (-346, 1234, 70), WCLIP))
+    custom(MM.PLACE['trophy'], x1, 1488, 175)
     # roof deck
     A(box((x0, y0, H - 16), (x1, y1, H), {'top': T('planks'), 'side': T('glulam'), 'bot': T('ceiling')}))
     # porch gable roof (ridge along y at x 0) on posts + clip slabs
@@ -967,15 +1005,34 @@ def snack_bar():
     speaker(-200, y1 - 100, 100, 'machine/coffee_maker', volume=0.3)
     speaker(-300, y1 - 100, 100, 'machine/freezer', volume=0.25)
     # contents
-    weapon('boaster', 120, 1560, 0, 'orange')
+    weapon('boaster', 120, 1540, 0, 'orange')
     item('ammo_bubbleg', -200, 1520, 0)
-    item('ammo_boaster', 200, 1500, H)
-    item('item_visionless', -260, 1560, H)
+    item('ammo_boaster', 230, 1500, H)
+    item('item_visionless', -290, 1570, H)
+    # ---- Summit Deck: rooftop patio on the grill (giant burger, umbrella tables, string lights, railings)
+    custom(MM.PLACE['burger'], -120, 1530, H)
+    A(cyl(-120, 1530, 96, H, H + 146, WCLIP, 16))
+    for (ux, uy, ua) in ((140, 1420, 10), (320, 1580, 40)):
+        custom(MM.PLACE['umbrella'], ux, uy, H, angle=ua)
+        A(cyl(ux, uy, 40, H, H + 31, WCLIP, 12))
+    custom(MM.PLACE['hvac'], -360, 1410, H)
+    A(box((-408, 1374, H), (-312, 1446, H + 56), WCLIP))
+    for i, (a_, b_) in enumerate((((-436, 1352), (436, 1352)), ((-436, 1352), (-150, 1652)), ((436, 1352), (150, 1652)))):
+        path, sc, zo, o = MM.string_lights(f'sb_lights{i}', (a_[0], a_[1], H), (b_[0], b_[1], H), sag=34, h=150)
+        custom((path, sc, zo), o[0], o[1], o[2], lit=False)
+    for (px_, py_) in ((-436, 1352), (436, 1352), (-150, 1652), (150, 1652)):
+        A(box((px_ - 4, py_ - 4, H), (px_ + 4, py_ + 4, H + 150), WCLIP))
+    for (xx, y_a, y_b) in ((444, 1360, 1660), (-444, 1360, 1540)):
+        path, sc, zo, o = MM.gen_railing(f'sb_roof_rail{xx}', [(xx, y_a, H), (xx, y_b, H)], tex='glulam')
+        custom((path, sc, zo), o[0], o[1], o[2])
+        A(box((xx - 3, y_a, H), (xx + 3, y_b, H + 40), WCLIP))
+    A(sign_box((-160, y1 - 6, 330), (160, y1, 410), T('sign_summit'), 512, 128, back=CAULK, facing='s'))
+    light(0, 1500, H + 160, 500, '1 0.8 0.55')
+    M.ent('target_location', (0, 1500, H + 40), message='Summit Deck')
     item('ammo_pumper', -300, 1260, 0)
     M.ent('station_health', (300, 1220, 0), angle=270)
     KEEP_OUT.append((300, 1220, 90))
     mdl_c('pad_condiments/pad_ketchup.md3', -240, y0 + 40, 56, 0.25, 0); mdl_c('pad_condiments/pad_mustard.md3', -210, y0 + 40, 56, 0.25, 0)
-    mdl_c('padtv/padtv2.md3', 260, y1 - 40, 48, 0.22, 270)
     light(0, 1500, 200, 500, '1 0.85 0.6'); light(0, 1250, 150, 350, '1 0.8 0.55')
     M.ent('target_location', (0, 1500, 60), message='Moose Lodge Grill')
     # picnic tables in front (tables with chairs)

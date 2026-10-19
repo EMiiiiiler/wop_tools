@@ -340,8 +340,9 @@ def water_tex(n=256, seed=101):
 def waterfall(w=128, h=512, seed=103):
     x, y = tile_xy(w, h)
     st = noise(w, 1.2, seed, h) * 0.5 + np.sin(x * 2 * math.pi * 9) * 0.2
-    col = np.zeros((h, w, 3), np.float32) + C((220, 240, 250)) * np.clip(0.75 + 0.25 * st, 0, 1)[..., None]
-    al = np.clip(0.5 + 0.45 * st, 0, 1) * 255 * np.clip(np.sin(x * math.pi) * 3, 0, 1)
+    streak = np.clip(np.sin(x * 2 * math.pi * 13 + noise(w, 6, seed + 1, h) * 2.0), 0, 1) ** 2
+    col = np.zeros((h, w, 3), np.float32) + C((176, 214, 232)) * np.clip(0.7 + 0.3 * st, 0, 1)[..., None]
+    al = np.clip(0.12 + 0.45 * streak + 0.15 * st, 0, 0.75) * 255 * np.clip(np.sin(x * math.pi) * 3, 0, 1)
     return col, al
 
 
@@ -523,6 +524,7 @@ def lily(n=256, seed=251):
 
 def extra_textures(W):
     W.save('lily', lily()); W.save('lily_side', fill(64, (50, 120, 50), 4, 253))
+    W.save('sign_summit', sign_board('SUMMIT DECK', 512, 128, (90, 56, 28), sub='ROOFTOP PATIO  -  MOOSE LODGE GRILL'))
 
 
 # ------------------------------------------------------------------------------------------- shader
@@ -657,14 +659,14 @@ textures/{NS}/waterfall
 	cull none
 	{{
 		map textures/{NS}/waterfall.tga
-		blendFunc GL_SRC_ALPHA GL_ONE
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen identity
 		tcMod scroll 0.02 -1.3
 	}}
 	{{
 		map textures/{NS}/waterfall.tga
 		blendFunc GL_SRC_ALPHA GL_ONE
-		rgbGen const ( 0.5 0.5 0.5 )
+		rgbGen const ( 0.25 0.25 0.28 )
 		tcMod scale 1.3 1
 		tcMod scroll -0.03 -1.9
 	}}
