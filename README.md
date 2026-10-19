@@ -32,6 +32,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   the S-4 underground lab carved out of the desert slab (elevator, stairs, vent pad, containment vault), control tower,
   water tower, radar, quonset huts, black triangle, crash crater with a tractor-beam pad, a mothership secret; see
   area51/README.md.
+- `moosefalls/` - *Moose Mountain Falls* (`wop_moosefalls`): FFA indoor water park in a timber lodge (giant pine on a tree
+  island ringed by a lazy river, Eagle's Nest + crow's nest, log slide tower with a closed tube and an open flume, activity
+  pool with lily pads and a grotto waterfall secret, snack bar, kids' play structure with a tipping bucket, hollow stump
+  lookout); see moosefalls/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
@@ -55,6 +59,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   With team spawns + lollies it also prints each team's capture run (spawns -> enemy lolly -> home) and the travel types.
   Limit: the AAS sometimes links steps under a low overhang anyway, so still look at stair/ceiling junctions.
 - `sightlines.py map out.png` - long eye-level sightlines (brushes + model boxes block), with a top-down plot.
+  `--md3root <map folder>` counts the map's own MD3s as blockers; `--hot N` lists the 128u cells most long rays cross.
 - `pad_check.py map --shaders <dirs>` - flies every jump pad (AimAtTarget velocity, player box, 125 Hz) against the
   solid/clip brushes and reports where it lands or what blocks the arc. bspc is stricter, so still run aas_check.
 - `mover_sweep.py map` - every func_bobbing's swept volume (+-height along its axis) must clear the static brushes.

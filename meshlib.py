@@ -328,9 +328,17 @@ def save_md3(path, surfaces, name=None, with_offset=False):
         # split surfaces over the MD3 limits
         if len(V) < 4000 and len(T) < 8000:
             out.append(s); continue
-        for k0 in range(0, len(T), 2600):
-            tt = T[k0:k0 + 2600]; used = np.unique(tt); remap = {v: i for i, v in enumerate(used)}
-            out.append(dict(name=f"{s['name']}{k0 // 2600}", shader=s['shader'], verts=V[used], normals=np.asarray(s['normals'])[used],
+        # greedy chunks that stay under 4000 vertices and 8000 triangles each
+        k0, part = 0, 0
+        while k0 < len(T):
+            seen = set(); k1 = k0
+            while k1 < len(T) and k1 - k0 < 7900:
+                new = set(T[k1].tolist()) - seen
+                if len(seen) + len(new) > 3990: break
+                seen |= new; k1 += 1
+            tt = T[k0:k1]; used = np.unique(tt); remap = {v: i for i, v in enumerate(used)}
+            out.append(dict(name=f"{s['name']}{part}", shader=s['shader'], verts=V[used], normals=np.asarray(s['normals'])[used],
                             st=np.asarray(s['st'])[used], tris=np.vectorize(remap.get)(tt)))
+            k0 = k1; part += 1
     md3write.save(path, out, name or path.rsplit('/', 1)[-1].split('.')[0])
     return (scale, zoff) if with_offset else scale
