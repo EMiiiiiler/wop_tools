@@ -36,6 +36,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   island ringed by a lazy river, Eagle's Nest + crow's nest, log slide tower with a closed tube and an open flume, activity
   pool with lily pads and a grotto waterfall secret, snack bar, kids' play structure with a tipping bucket, hollow stump
   lookout); see moosefalls/README.md.
+- `padcandy/` - *Candy Garden* (`wop_padcandy`): FFA candy room under a glass factory roof - chocolate river and
+  waterfall off a layered limestone cliff (cave + spiral stair behind the falls), glass suction pipe onto the summit, pump
+  house deck, mushroom house, crepe-paper flower trees, lollipop grove, swan boat, Tunnel of Wonder -> Fizzy Lifting Room
+  secret; see padcandy/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
