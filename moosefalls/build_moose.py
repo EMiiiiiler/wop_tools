@@ -554,16 +554,16 @@ def grotto():
             c = sum(p) / 3
             on_outer = (abs(f.n[1] + 1) < 1e-3 and abs(c[1] - ry0) < 0.5) or (abs(f.n[0] - 1) < 1e-3 and abs(c[0] - rx1) < 0.5) or \
                        (f.n[2] > 0.99 and abs(c[2] - rt) < 0.5)
-            f.tex = CAULK if on_outer or f.n[2] < -0.99 and abs(c[2]) < 0.5 else T('rock')
+            f.tex = CAULK if f.n[2] < -0.99 and abs(c[2]) < 0.5 else T('rock')      # outer faces too: gaps between the skins read as crevices
             if abs(f.n[0] + 1) < 1e-3 and abs(c[0] - rx0) < 0.5: f.tex = CAULK
             if abs(f.n[1] - 1) < 1e-3 and abs(c[1] - ry1) < 0.5: f.tex = CAULK
             f.sc = (1, 1)
         A(b)
     # rock skins
     zb_s = lambda u: L.POOL_DEEP if u >= L.POOL_A[0][0] else 0
-    custom(MM.rockface('rockface_s', rx0 + 4, rx1 + 20, zb_s, rt + 10, [(L.MOUTH[0] + 4, L.MOUTH[2] - 4, TUN_Z0 + 8, TUN_Z1 - 4)], 'x', ry0, -1, 31), 0, 0, 0)
+    custom(MM.rockface('rockface_s', rx0 + 4, rx1 + 72, zb_s, rt + 10, [(L.MOUTH[0] + 4, L.MOUTH[2] - 4, TUN_Z0 + 8, TUN_Z1 - 4)], 'x', ry0, -1, 31), 0, 0, 0)
     zb_e = lambda u: L.POOL_DEEP if u < L.POOL_A[1][3] else 0
-    custom(MM.rockface('rockface_e', ry0 - 20, ry1 - 4, zb_e, rt + 10, [], 'y', rx1, 1, 37), 0, 0, 0)
+    custom(MM.rockface('rockface_e', ry0 - 72, ry1 - 4, zb_e, rt + 10, [], 'y', rx1, 1, 37), 0, 0, 0)
     custom(MM.rocktop(rx0, ry0, rx1, ry1, rt, 41), 0, 0, 0)
     # waterfall lip + curtain over the mouth
     wx = (L.MOUTH[0] + L.MOUTH[2]) / 2
