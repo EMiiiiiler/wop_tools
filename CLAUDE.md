@@ -130,3 +130,13 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Smooth cut-outs in lathe surfaces (carved pumpkin faces, doors in round walls): `padhalloween/hw_models.carved_shell()`
   (quadtree-refined cells + jambs along the true polygon edges).
 - `preview/shoot.py` now waits up to 4 minutes per screenshot (software GL on big outdoor scenes needs > 30 s).
+- A flat ridge walk flush with the top edges of two roof slopes got no bspc walk link onto it (route blocked both
+  ways); make the ridge walk 4u proud of the slopes (`paddollhouse` house()). Slope brushes clipped at the attic floor
+  must leave the gable wall polygon as the eaves moved in by T/tan(pitch) to the ridge underside, or the hull cuts into
+  the roof slab.
+- Mesh axis swaps for MD3s must be rotations (det +1): a reflection keeps the vertex normals but flips the winding, and
+  the faces are culled in game (`paddollhouse/dh_models.RX90`).
+- Brush texture names in the .map have no `textures/` prefix (`paddollhouse/wp_hall`); with the prefix q3map2 finds no
+  shader/image and the faces render untextured.
+- A gable roof drawn as one quad per slope has too few vertices touching the roof brush for the audit's support test:
+  build roof shingles as a grid.
