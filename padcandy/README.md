@@ -9,7 +9,7 @@ into the river, and the entrance balcony with its ornate iron railings and grand
 Padman is gummy-bear sized (~200u per metre). x east, y north, meadow z 0, chocolate surface z -8 (river 48 deep).
 Hall 4608 x 3840 under a glass roof at z 2048 (WoP's `env/fort-pad512` sunny garden sky through the windows and
 roof; the iron glazing bars cast grid shadows via `alphashadow`). Everything except the sky hull and the sealed secret
-room is detail: 0 portals, fast compile ~3 min, full bounce light (-bounce 2 -bouncegrid) ~ see below, on 2 cores.
+room is detail: 0 portals, fast compile ~3 min, full bounce light (-bounce 2 -bouncegrid) ~22 min on 2 cores, BSP ~24 MB.
 
 - `build_candy.py` - the map:
   - **Balcony + lobby** (south): grand staircases down both ends, iron railings, colonnade under the balcony (health
