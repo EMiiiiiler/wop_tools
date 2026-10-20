@@ -40,6 +40,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   waterfall off a layered limestone cliff (cave + spiral stair behind the falls), glass suction pipe onto the summit, pump
   house deck, mushroom house, crepe-paper flower trees, lollipop grove, swan boat, Tunnel of Wonder -> Fizzy Lifting Room
   secret; see padcandy/README.md.
+- `padhalloween/` - *Pumpkin Hollow* (`wop_padhalloween`): FFA Halloween night - Blackwood Manor (two floors, mansard roof deck,
+  cupola), a graveyard with a mausoleum over a crypt (open-coffin secret to the witch's lair), the Great Pumpkin (walk-in carved
+  jack-o'-lantern), a hanging tree with a spiral stair to a treehouse, the witch's cottage and a giant cauldron, a corn maze;
+  see padhalloween/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,

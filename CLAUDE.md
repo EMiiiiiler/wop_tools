@@ -118,3 +118,15 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Models floating on water fail the support audit: make them a slow func_rotating model2 (padcandy splash ring).
 - Stair railings pass the support audit when an iron stringer plate touches the tread ends (padcandy stairbridge_model).
 - aas_check `--route` can't start in wadeable (48u) water: those are swim areas; use the main reachability check.
+- Stairs whose steps are shallower than the player box (28u < 30u) always put a standing player over the next step up:
+  open a ceiling slab over the stairwell two steps before the step+56 headroom rule says (`padhalloween/hw_houses.stair_e_hole`),
+  or aas_check reports the route "there blocked" (walking down still works).
+- A faceted sloped roof made of many wedge brushes (pumpkin top) gives bspc ungrounded sliver areas and bots get trapped:
+  give the walkable top flat terraces (<= 16u steps) instead (`padhalloween` GP_TERRACES).
+- `autosprite2` only works on single quads; misc_model surfaces get merged per shader, so q3map2 warns and the flames break.
+  `padhalloween/hwlib.cross_sprites()` turns such quads into crossed quads at save time.
+- Don't give `q3map_surfacelight` to shaders on many-triangle MD3s (potion bottles): q3map2 makes emitters per triangle
+  (13k lights, slow light). Use point lights; add `q3map_lightSubdivide` to the rest.
+- Smooth cut-outs in lathe surfaces (carved pumpkin faces, doors in round walls): `padhalloween/hw_models.carved_shell()`
+  (quadtree-refined cells + jambs along the true polygon edges).
+- `preview/shoot.py` now waits up to 4 minutes per screenshot (software GL on big outdoor scenes needs > 30 s).

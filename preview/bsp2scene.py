@@ -229,6 +229,8 @@ def main():
     ap.add_argument('--views', default='', help='"Name:x,y,z,yaw,pitch;Name2:..." camera buttons (first = start view)')
     ap.add_argument('--compact', action='store_true', help='quantised geometry (int16 positions at 1/4u and UVs, uint16 '
                     'lightmap UVs and indices): about half the page size, for phone-friendly / <16 MB artifacts')
+    ap.add_argument('--dropout', default=None, help='"x0,y0,x1,y1:sub1,sub2": leave out surfaces whose shader contains one of the '
+                    'substrings and that lie entirely outside the rectangle (scenery beyond the playable area, to keep phone pages small)')
     ap.add_argument('--fog', default=None, help='"r,g,b,dist": distance fog (Q3 fogparms colour + distance to opaque), e.g. for a map inside a fog volume')
     a = ap.parse_args()
 
@@ -278,6 +280,13 @@ def main():
         if info.get('sky') is not None:
             if not sky_name and info.get('sky'): sky_name = info['sky']
             continue
+        if a.dropout and s['type'] != 2:
+            rect, subs = a.dropout.split(':')
+            rx0, ry0, rx1, ry1 = (float(v) for v in rect.split(','))
+            if any(k in sname for k in subs.split(',')):
+                Vd = dv['xyz'][s['fv']:s['fv'] + s['nv']]
+                if len(Vd) and (Vd[:, 0].min() > rx1 or Vd[:, 0].max() < rx0 or Vd[:, 1].min() > ry1 or Vd[:, 1].max() < ry0):
+                    continue
         if s['type'] == 2:
             fv, nv = s['fv'], s['nv']; w, h = s['pw'], s['ph']
             V = dv[fv:fv + nv]
