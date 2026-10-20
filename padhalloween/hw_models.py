@@ -538,12 +538,12 @@ def jack(name, R, style=0, kind='orange', lit=True, seed=1):
     H = R * 1.72
     prof = [(R * 0.62, 0), (R * 0.85, H * 0.06), (R * 0.97, H * 0.22), (R, H * 0.45), (R * 0.95, H * 0.66), (R * 0.78, H * 0.86),
             (R * 0.5, H * 0.97), (R * 0.12, H)]
-    zs = sorted(set(np.round(np.linspace(0, H, 20), 2)) | {round(z, 2) for (_, z) in prof})
+    zs = sorted(set(np.round(np.linspace(0, H, 14), 2)) | {round(z, 2) for (_, z) in prof})
     rows = [(float(np.interp(z, [p[1] for p in prof], [p[0] for p in prof])), z) for z in zs]
     polys = face_polys(R, style=style)
     if lit:
-        carved_shell(X.mesh(out_sh), X.mesh(in_sh), X.mesh(jam_sh), rows, 48, max(3, R * 0.08), polys, 270.0, R,
-                     deform=rib_deform(R, 0.08, 12, 0.02, seed), u_tiles=6, depth=3, jstep=max(2.0, R / 16))
+        carved_shell(X.mesh(out_sh), X.mesh(in_sh), X.mesh(jam_sh), rows, 40, max(3, R * 0.08), polys, 270.0, R,
+                     deform=rib_deform(R, 0.08, 12, 0.02, seed), u_tiles=6, depth=2, jstep=max(3.0, R / 10))
     else:
         lathe(X.mesh(out_sh), rows, 48, deform=rib_deform(R, 0.08, 12, 0.03, seed), u_tiles=6)
     stem(X, R, H, seed)
@@ -683,7 +683,7 @@ def dead_tree(name, H=900, seed=1, spread=1.0, trunk_r=60, lanterns=(), ropes=()
     tp = np.array(tp)
     tr = np.linspace(trunk_r, trunk_r * 0.55, len(tp))
     tr[0] *= 1.35; tr[1] *= 1.12
-    tube(X.mesh(bark), tp, tr, nseg=14, utiles=3, vlen=512, caps=(False, True))
+    tube(X.mesh(bark), tp, tr, nseg=10, utiles=3, vlen=512, caps=(False, True))
     # roots flaring out along the ground
     for k in range(6):
         a = k * 2 * math.pi / 6 + rng.uniform(-0.3, 0.3)
@@ -695,7 +695,7 @@ def dead_tree(name, H=900, seed=1, spread=1.0, trunk_r=60, lanterns=(), ropes=()
         radii = np.linspace(trunk_r * 0.42, trunk_r * 0.07, len(pts))
         P = np.array(pts, float)
         P[:, 2] = np.maximum(P[:, 2], radii * 0.75 + 0.0)             # the root's underside rests on z >= 0
-        tube(X.mesh(bark), P, radii, nseg=8, utiles=1, vlen=256, ry=radii * 0.75)
+        tube(X.mesh(bark), P, radii, nseg=6, utiles=1, vlen=256, ry=radii * 0.75)
     # branches from the upper trunk
     BR = []
     for k in range(branches):
@@ -710,21 +710,21 @@ def dead_tree(name, H=900, seed=1, spread=1.0, trunk_r=60, lanterns=(), ropes=()
         Lb = H * spread * rng.uniform(0.42, 0.62) * (1.1 - 0.4 * t)
         pts = gnarl_path(p0, d0, Lb, 7, rng, 0.28, -0.02)
         rad = np.linspace(tr[i] * 0.55, 4, len(pts))
-        tube(X.mesh(bark), pts, rad, nseg=8, utiles=1, vlen=256)
+        tube(X.mesh(bark), pts, rad, nseg=6, utiles=1, vlen=256)
         BR.append((pts, rad))
         for j in (3, 5):                                  # forks
             d1 = (pts[j + 1] - pts[j]); d1 /= np.linalg.norm(d1)
             side = np.cross(d1, [0, 0, 1.0]); side /= max(1e-6, np.linalg.norm(side))
             q = gnarl_path(pts[j], d1 + side * rng.choice([-1, 1]) * 0.9 + [0, 0, 0.3], Lb * 0.45, 5, rng, 0.35)
-            tube(X.mesh(bark), q, np.linspace(rad[j] * 0.6, 2, len(q)), nseg=6, utiles=1, vlen=256)
+            tube(X.mesh(bark), q, np.linspace(rad[j] * 0.6, 2, len(q)), nseg=4, utiles=1, vlen=256)
             for m in (2, 4):                              # twigs
                 d2 = q[m + 1] - q[m]; d2 /= np.linalg.norm(d2)
                 tw = gnarl_path(q[m], d2 + rng.normal(0, 0.8, 3), Lb * 0.18, 3, rng, 0.5)
-                tube(X.mesh(bark), tw, np.linspace(2.5, 0.8, len(tw)), nseg=4, caps=(False, False))
+                tube(X.mesh(bark), tw, np.linspace(2.5, 0.8, len(tw)), nseg=3, caps=(False, False))
     # crown twigs at the top of the trunk
     for k in range(4):
         q = gnarl_path(tp[-1], [math.cos(k * 1.6), math.sin(k * 1.6), 1.2], H * 0.25, 5, rng, 0.4)
-        tube(X.mesh(bark), q, np.linspace(tr[-1] * 0.5, 2, len(q)), nseg=6)
+        tube(X.mesh(bark), q, np.linspace(tr[-1] * 0.5, 2, len(q)), nseg=4)
     for Mm in X.m.values():
         Mm.V = [np.array([v[0], v[1], max(v[2], 0.0)]) for v in Mm.V]
     rope = S('rope', 'vl'); lan_i = S('iron', 'vl', tag='lan'); lan_g = S('win_glow', 'flicker', ph=0.3)
