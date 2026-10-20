@@ -16,6 +16,7 @@ async def run(page_path, outdir, shots, size, markers):
         b = await p.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
                                           '--ignore-gpu-blocklist'])
         pg = await b.new_page(viewport={'width': w, 'height': h})
+        pg.set_default_timeout(240000)          # software GL is slow on big scenes
         msgs = []
         pg.on('console', lambda m: msgs.append(m.text))
         pg.on('pageerror', lambda e: msgs.append('ERR ' + str(e)))
