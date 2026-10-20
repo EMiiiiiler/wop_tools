@@ -46,10 +46,11 @@ CHANNEL = (FALL_X - 150, 1490, FALL_X + 150, 1900)   # summit channel feeding th
 CHANNEL_FLOOR = SUMMIT_Z - 24
 # cave behind the waterfall + spiral stair inside the cliff up to the summit
 LEDGE = (440, 1400, 1060, 1480)          # dry ledge (z 0) between the falling curtain and the cliff foot
-CAVE = (476, 1480, 924, 1820)            # rock-candy cave (floor 0, ceiling CAVE_Z)
+CAVE = (476, 1480, 900, 1900)            # rock-candy cave (floor 0, ceiling CAVE_Z)
 CAVE_Z = 288
 WELL = (924, 1516, 1308, 1900)           # square stair well (384 x 384), opening west into the cave
-WELL_PILLAR = 64                          # half size of the central pillar
+WELL_PILLAR = 64
+WELL_DOOR = (1780, 1892, 144)            # doorway cave -> bottom landing of the stair well: y0, y1, height                          # half size of the central pillar
 # ---------------------------------------------------------------- pump house on its iron deck (north-west)
 DECK = (-1100, 900, -460, 1480)          # deck x0, y0, x1, y1
 DECK_Z = 448

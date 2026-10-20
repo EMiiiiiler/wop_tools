@@ -424,19 +424,27 @@ def tex_ticket(w=512, h=256):
     c = _lerp(_C((250, 214, 90)), _C((200, 140, 30)), (0.5 + 0.5 * np.sin(x * 14 + y * 6))[..., None])
     im = _img(c).convert('RGB'); d = ImageDraw.Draw(im)
     d.rectangle((10, 10, w - 10, h - 10), outline=(120, 70, 10), width=6)
-    f = ImageFont.truetype(FONTB, 54); f2 = ImageFont.truetype(FONTB, 28)
-    for (t, ff, yy) in (('GOLDEN TICKET', f, 60), ('ADMIT ONE TO THE CANDY GARDEN', f2, 150)):
+    for (t, sz, yy) in (('GOLDEN TICKET', 54, 60), ('ADMIT ONE TO THE CANDY GARDEN', 28, 150)):
+        ff = ImageFont.truetype(FONTB, sz)
+        while d.textlength(t, font=ff) > w - 70: sz -= 1; ff = ImageFont.truetype(FONTB, sz)
         tw = d.textlength(t, font=ff); d.text(((w - tw) / 2, yy), t, font=ff, fill=(100, 50, 10))
     return np.asarray(im, np.float32)
 
 
 def tex_label(text, col, fg, w=256, h=128):
     im = _img(np.zeros((h, w, 3)) + _C(col)).convert('RGB'); d = ImageDraw.Draw(im)
-    f = ImageFont.truetype(FONTB, 30)
     lines = text.split('\n')
+    pad = max(10, h // 8)
+    sz = int((h - 2 * pad) / len(lines) / 1.15)
+    f = ImageFont.truetype(FONTB, sz)
+    while max(d.textlength(t, font=f) for t in lines) > w - 2.5 * pad and sz > 8:
+        sz -= 1; f = ImageFont.truetype(FONTB, sz)
+    tot = len(lines) * sz * 1.15
     for i, t in enumerate(lines):
-        tw = d.textlength(t, font=f); d.text(((w - tw) / 2, h / 2 - 20 * len(lines) + i * 40), t, font=f, fill=fg)
-    d.rectangle((4, 4, w - 4, h - 4), outline=fg, width=3)
+        tw = d.textlength(t, font=f)
+        top, bot = d.textbbox((0, 0), t, font=f)[1::2]
+        d.text(((w - tw) / 2, (h - tot) / 2 + i * sz * 1.15 - top + (sz * 1.15 - (bot - top)) / 2), t, font=f, fill=fg)
+    d.rectangle((4, 4, w - 5, h - 5), outline=fg, width=3)
     return np.asarray(im, np.float32)
 
 
@@ -870,8 +878,7 @@ def deck_frame():
         tube(X.mesh(iron), [(a[0], a[1], Z - 28), (b[0], b[1], Z - 28)], 10, nseg=6)
     # railing posts + top rail along the south and west edges and the east edge south of the stair landing
     rail = S('iron_dark', 'lm', tag='r')
-    runs = [[(-hx + 8, -hy + 8), (hx - 8, -hy + 8)], [(-hx + 8, -hy + 8), (-hx + 8, hy - 8)],
-            [(hx - 8, -hy + 8), (hx - 8, 200 - cy - 8)]]
+    runs = [[(-hx + 8, -hy + 8), (hx - 8, -hy + 8)], [(-hx + 8, -hy + 8), (-hx + 8, hy - 8)]]   # east edge: build_candy
     seen = set()
     for run in runs:
         (ax, ay), (bx, by) = run
@@ -1057,6 +1064,16 @@ def boat():
     N = grid_normals(P)
     if N[len(xs) // 2, na // 2, 2] > 0: N = -N
     X.mesh(hull).grid(P, N, UV)
+    # inside of the hull, from the gunwale down to the deck
+    inner = S('boat_pink', 'lm', tag='in')
+    for sgn in (1, -1):
+        P = np.zeros((len(rows), 2, 3)); UV = np.zeros((len(rows), 2, 2))
+        for i, (x, half) in enumerate(rows):
+            top = 40 + 30 * max(0, x / Lh) ** 2 + 16 * max(0, -x / Lh) ** 2
+            P[i, 0] = (x, sgn * max(half - 5, 1), top - 1); P[i, 1] = (x, sgn * max(half - 10, 0.5), 2.5)
+            UV[i, 0] = (x / 256, 0.1); UV[i, 1] = (x / 256, 0.4)
+        N = np.zeros_like(P); N[..., 1] = -sgn; N[..., 2] = 0.2
+        X.mesh(inner).grid(P, N, UV)
     # gunwale rail (white trim tube) along both sides
     for sgn in (1, -1):
         tube(X.mesh(trim), [(x, sgn * half, 40 + 30 * max(0, x / Lh) ** 2 + 16 * max(0, -x / Lh) ** 2) for (x, half) in rows], 7, nseg=6)
@@ -1424,7 +1441,7 @@ def make(out):
     for k, c in (('enamel_red', (210, 40, 40)), ('enamel_pink', (236, 110, 170)), ('enamel_yellow', (240, 200, 40)), ('enamel_white', (236, 236, 228))):
         sv(k, tex_solid(c, 64, 3, len(k)))
     sv('gauge', tex_glow((250, 240, 200))); sv('lamp_warm', tex_glow((255, 220, 150)))
-    sv('sign_pump', tex_label('PUMP\nHOUSE', (40, 70, 70), (250, 214, 90), 256, 64))
+    sv('sign_pump', tex_label('PUMP HOUSE', (40, 70, 70), (250, 214, 90), 512, 128))
     sv('chocfall', tex_chocfall()); sv('chocsplash', tex_choc_surface())
     sm = tex_chocfall(128, 256, 77)
     al = np.clip(_noise(128, 3, 78, 256) * 120 - 60, 0, 200)

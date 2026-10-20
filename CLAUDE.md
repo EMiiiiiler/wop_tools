@@ -118,3 +118,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Models floating on water fail the support audit: make them a slow func_rotating model2 (padcandy splash ring).
 - Stair railings pass the support audit when an iron stringer plate touches the tread ends (padcandy stairbridge_model).
 - aas_check `--route` can't start in wadeable (48u) water: those are swim areas; use the main reachability check.
+- Every face a player can see must be textured, not caulk: the far side of a wall that backs onto another room (padcandy
+  lobby) and the jambs of door/window/tunnel holes cut in a wall were caulk and rendered see-through.
+- Railing MD3s have no collision: put common/clip (player clip) behind every railing, per step on stairs, or players
+  walk through them. Check rail polylines stay over the floor they belong to (one deck run went out over the river).
+- One-sided hull meshes (boats, tubs) need an inner surface or they vanish from inside.
+- Sign text: fit the font to the sign's aspect (padcandy candy_models.tex_label auto-fits); two lines on a 4:1 sign got cut off.

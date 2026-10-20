@@ -317,9 +317,13 @@ def hall():
             return box((xx0, u0, z0_), (xx1, u1, z1_), tex)
         inner = {'y': {1: 's', -1: 'n'}, 'x': {1: 'w', -1: 'e'}}[ax][sg]
         tex = dict(stone); tex[inner] = T('wall_stone')
+        for k in (('e', 'w') if ax == 'y' else ('n', 's')): tex[k] = T('wall_stone')      # door/window/tunnel jambs
         # stone band with holes, as columns of z ranges
-        cuts = sorted(set([a0, a1] + [h[0] for h in holes] + [h[1] for h in holes]))
+        lob = [-(L.LOBBY[2] - L.LOBBY[0]) // 2, (L.LOBBY[2] - L.LOBBY[0]) // 2] if (ax == 'y' and sg < 0) else []
+        cuts = sorted(set([a0, a1] + [h[0] for h in holes] + [h[1] for h in holes] + lob))
         for ua, ub in zip(cuts, cuts[1:]):
+            tex = dict(tex)
+            if lob: tex['s'] = T('damask') if lob[0] <= ua and ub <= lob[1] else CAULK     # the lobby sees this side
             hz = [(h[2], h[3]) for h in holes if h[0] <= ua and h[1] >= ub]
             zs = [L.SLAB_BOT]
             for (hz0, hz1) in sorted(hz): zs += [hz0, hz1]
@@ -493,6 +497,7 @@ def cliff_cutters():
     c = []
     x0, y0, x1, y1 = L.CAVE
     c.append(('cave', box((x0, y0, 0), (x1, y1, L.CAVE_Z), CAULK)))
+    c.append(('cave', box((x1 - 4, L.WELL_DOOR[0], 0), (L.WELL[0] + 4, L.WELL_DOOR[1], L.WELL_DOOR[2]), CAULK)))
     x0, y0, x1, y1 = L.WELL
     c.append(('cave', box((x0, y0, 0), (x1, y1, L.SUMMIT_Z + 8), CAULK)))
     x0, y0, x1, y1 = L.CHANNEL
@@ -591,15 +596,16 @@ def cave_and_well():
     x0, y0, x1, y1 = L.CAVE
     cx = (x0 + x1) / 2
     # rock candy crystals on the cave floor (glowing) + lights
-    for (x, y, nm, a) in ((x0 + 70, y0 + 120, 'crystal_a', 30), (x0 + 90, y1 - 100, 'crystal_b', 200), (x1 - 100, y1 - 100, 'crystal_a', 120),
-                          (cx + 20, y1 - 110, 'crystal_b', 300)):
+    # crystals along the west wall and in the NW corner, clear of the walk from the mouth to the stair-well door (NE)
+    for (x, y, nm, a) in ((x0 + 70, y0 + 120, 'crystal_a', 30), (x0 + 80, y1 - 110, 'crystal_b', 200), (cx - 20, y1 - 60, 'crystal_a', 120),
+                          (x1 - 60, y0 + 40, 'crystal_b', 300)):
         custom(nm, x, y, 0, angle=a, lit=False)
         KEEP_OUT.append((x, y, 90))
     for (x, y, c) in ((x0 + 100, y0 + 160, '1 0.6 0.9'), (cx, y1 - 90, '0.6 0.8 1'), (x1 - 100, y1 - 100, '1 0.9 0.6')):
         light(x, y, 200, 300, c)
     item('item_armor_padshield', cx - 40, y0 + 210, 0)
     item('ammo_imperius', x0 + 90, y1 - 170, 0)
-    item('ammo_boaster', cx + 120, y0 + 110, 0)
+    item('ammo_boaster', cx + 60, y0 + 260, 0)
     speaker(cx, y0 + 150, 120, 'sound/world/ambient/droplets_echoing.ogg', volume=0.6)
     # square spiral stair round a central pillar inside the well, up to the summit
     wx0, wy0, wx1, wy1 = L.WELL
@@ -637,7 +643,7 @@ def cave_and_well():
     # the final step reaches the summit height: it IS the floor there
     for i, (kind, (ax, ay, bx, by), zt) in enumerate(seq):
         if zt == 0: continue
-        first_rev = zt <= 256
+        first_rev = zt < 256          # the 256 landing over the doorway landing is a slab, not a block
         bot = 0 if first_rev else zt - 16
         tex = {'top': T('rock_top'), 'side': T('cave'), 'bot': T('cave')}
         A(box((round(ax), round(ay), bot), (round(bx), round(by), zt), tex))
@@ -685,7 +691,7 @@ def pumphouse():
     # player clip along the railed edges (shots pass)
     A(box((x0, y0, Z), (x1, y0 + 12, Z + 48), CLIP))
     A(box((x0, y0 + 12, Z), (x0 + 12, y1, Z + 48), CLIP))
-    A(box((x1 - 12, y0 + 12, Z), (x1, 200 - 8, Z + 48), CLIP)) if False else None
+    A(box((x1 - 12, 1100, Z), (x1, y1, Z + 48), CLIP))                  # east edge north of the stair-bridge landing
     custom('pipes_deck', cx, y0, 0, angle=0)
     # the shed (walls 8 thick inside the MD3 panels), door south, windows east/west
     sx0, sy0, sx1, sy1 = L.SHED
@@ -730,6 +736,16 @@ def pumphouse():
         bot = 0 if solid else zt - 24
         A(box((bx0, round(ya), bot), (bx1, round(yb), zt), {'top': T('grate'), 'side': T('iron'), 'bot': T('iron')}))
     A(box((bx0, by1, Z - 16), (bx1, 1100, Z), {'top': T('grate'), 'side': T('iron'), 'bot': T('iron')}))
+    # player clip along both open sides of the stair-bridge, the landing's east and north edges
+    for k in range(n):
+        ya, yb = round(by0 + run * k), round(by0 + run * (k + 1))
+        zt = 16 * (k + 1)
+        A(box((bx0, ya, zt), (bx0 + 10, yb, zt + 48), CLIP))
+        A(box((bx1 - 10, ya, zt), (bx1, yb, zt + 48), CLIP))
+    A(box((bx1 - 10, by1, Z), (bx1, 1088, Z + 48), CLIP))
+    A(box((bx0, 1088, Z), (bx1, 1100, Z + 48), CLIP))
+    p_, sc_, zo_, o_ = CM.railing('rail_deck_e', [(bx1 - 6, 1094, Z), (bx0 - 6, 1094, Z), (bx0 - 6, y1 - 6, Z)], h=48, sh='iron_dark')
+    custom((p_, sc_, zo_), o_[0], o_[1], o_[2])
     # posts in the river under the treads (carved out of the water)
     for py in (430, 700):
         zt = 16 * math.ceil((py - by0) / run) - 24
@@ -749,8 +765,9 @@ def stairbridge_model():
     for (nm, x, sg) in (('sb_rail_w', bx0 - 2, -1), ('sb_rail_e', bx1 + 2, 1)):
         X = CM.Model()
         iron = CM.S('iron_dark', 'lm', tag='sb')
-        line = [(32.0, 32.0), (by1 - 32.0, float(L.DECK_Z)), (1100.0, float(L.DECK_Z))]
-        ys = np.concatenate([np.linspace(32, by1 - 32, 28), np.linspace(by1 - 32, 1100, 7)[1:]])
+        yend = 1100.0 if sg > 0 else float(by1)
+        line = [(32.0, 32.0), (by1 - 32.0, float(L.DECK_Z)), (yend, float(L.DECK_Z))]
+        ys = np.concatenate([np.linspace(32, by1 - 32, 28), np.linspace(by1 - 32, yend, 7 if sg > 0 else 2)[1:]])
         zl = np.interp(ys, [p[0] for p in line], [p[1] for p in line])
         rows = [8, -6, -16, -24, -36]
         P = np.zeros((len(rows), len(ys), 3)); N = np.zeros_like(P); UV = np.zeros((len(rows), len(ys), 2))
@@ -793,6 +810,15 @@ def balcony():
             xb = xa + 32
             A(box((xa, y0, 0), (xb, y0 + W, zt), {'top': T('path'), 'side': T('wall_stone'), 'bot': CAULK}))
         KEEP_OUT.append((sx * (x1 + 32 * n / 2), y0 + W / 2, 420))
+    # player clip behind the railings (front edge, the strip beside each stair top, each stair's open side)
+    A(box((x0, y1 - 10, Z), (x1, y1, Z + 48), CLIP))
+    A(box((x0, y0 + W, Z), (x0 + 10, y1 - 10, Z + 48), CLIP))
+    A(box((x1 - 10, y0 + W, Z), (x1, y1 - 10, Z + 48), CLIP))
+    for sx in (-1, 1):
+        for k in range(n):
+            zt = 16 * (k + 1)
+            xa = x0 - 32 * (n - k) if sx < 0 else x1 + 32 * (n - k - 1)
+            A(box((xa, y0 + W - 10, zt), (xa + 32, y0 + W, zt + 48), CLIP))
     # ornate railings: along the front edge and down the open side of each stair
     for (nm, pts) in (('rail_balc', [(x0 + 6, y1 - 6, Z), (x1 - 6, y1 - 6, Z)]),
                       ('rail_sw', [(x0 - 32 * n + 10, y0 + W - 6, 16), (x0 - 6, y0 + W - 6, Z)]),
