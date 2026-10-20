@@ -44,6 +44,11 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   cupola), a graveyard with a mausoleum over a crypt (open-coffin secret to the witch's lair), the Great Pumpkin (walk-in carved
   jack-o'-lantern), a hanging tree with a spiral stair to a treehouse, the witch's cottage and a giant cauldron, a corn maze;
   see padhalloween/README.md.
+- `paddollhouse/` - *Padman's Dollhouse* (`wop_paddollhouse`): FFA in a girl's sunny bedroom round a huge Victorian
+  dollhouse cut away at the back (nine furnished rooms on three floors, 16u hall stairs up to a roof terrace between two
+  walkable gables, attics, a tower with a hatch pad to its deck), a front garden with a pond and swing under the window,
+  a giant bed, bookcase and toy chest, a tiny dollhouse in the nursery as the door to a secret ballroom; see
+  paddollhouse/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
