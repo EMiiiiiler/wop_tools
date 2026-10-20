@@ -113,3 +113,8 @@ Tools and standing rules for building World of Padman (WoP) maps.
   dedupe posts (moosefalls `gen_railing`).
 - Run `sightlines.py` with `--md3root <map folder>` when the cover is custom MD3s, and `--hot N` to see where a blocker helps.
 - Catalog `tree_winter` is leafless and reads as a dead tree indoors; moosefalls has a custom `small_pine` MD3 to reuse.
+- `carve()` is CSG subtraction; clamping hull vertices to a plane is NOT an intersection. Clip to a half-space with
+  `padcandy/build_candy.py` clip_half() or carved ground and water overlap by a unit or two.
+- Models floating on water fail the support audit: make them a slow func_rotating model2 (padcandy splash ring).
+- Stair railings pass the support audit when an iron stringer plate touches the tread ends (padcandy stairbridge_model).
+- aas_check `--route` can't start in wadeable (48u) water: those are swim areas; use the main reachability check.
