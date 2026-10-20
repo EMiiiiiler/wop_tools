@@ -460,7 +460,14 @@ def hall_timbers():
 
 # =================================================================================================== activity pool + grotto
 TUN_Z0, TUN_Z1 = -208, -96              # underwater tunnel (top 80u under the surface: invisible from the deck)
-CAVE_POOL_Y1 = 1344                     # pool inside the cave (y MOUTH[3]..CAVE_POOL_Y1): swim up, step out (16u lip)
+CAVE_POOL_Y1 = 1496                     # pool inside the cave (y MOUTH[3]..CAVE_POOL_Y1)
+CAVE_STEP_Y0 = 1232                     # underwater steps (16u rise, 22u run) from the pool floor up to the cave floor:
+                                        # a sheer 16u lip needed a pixel-perfect water jump, players got stuck (Oct 21)
+
+
+def cave_steps():
+    return [box((L.MOUTH[0], CAVE_STEP_Y0 + 22 * (k - 1), TUN_Z0), (L.MOUTH[2], CAVE_STEP_Y0 + 22 * k, TUN_Z0 + 16 * k),
+                {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}) for k in range(1, 13)]
 
 
 def activity_pool():
@@ -482,7 +489,8 @@ def activity_pool():
         pool_faces(b)
         for f in b.faces:                      # tunnel + cave pool: rough rock, not pool tiles
             c = np.mean([np.array(q) for q in f.pts], 0)
-            if f.tex != CAULK and c[1] > L.MOUTH[1] + 1 and L.MOUTH[0] - 1 <= c[0] <= L.MOUTH[2] + 1:
+            in_cave = L.CAVE[0] - 1 <= c[0] <= L.CAVE[2] + 1 and c[1] > L.CAVE[1] - 1
+            if f.tex != CAULK and (in_cave or (c[1] > L.MOUTH[1] + 1 and L.MOUTH[0] - 1 <= c[0] <= L.MOUTH[2] + 1)):
                 f.tex = T('rock'); f.sc = (1, 1)
         A(b)
     # water: same shapes up to the surface (beach part only where deeper than the surface)
@@ -501,8 +509,10 @@ def activity_pool():
     for b in isl: A(b)
     custom(MM.PLACE['boulders_b'], -1735, 815, 88, angle=40, mul=0.6)
     A(cyl(-1730, 820, 56, 88, 120, WCLIP, 8))
+    steps = cave_steps()
+    for b in steps: A(b)
     for b in wat:
-        for pc in carve(b, isl[:1]):
+        for pc in carve(b, isl[:1] + steps):
             A(water_faces(pc))
     # lily-pad crossing (floating discs, top at the deck) under the cargo net
     lx = -1056
@@ -577,11 +587,11 @@ def grotto():
     cx = (L.CAVE[0] + L.CAVE[2]) / 2; cy = (L.CAVE[1] + L.CAVE[3]) / 2
     M.ent('trigger_multiple', brushes=[box((L.CAVE[0] + 8, L.CAVE[1] + 8, 0), (L.CAVE[2] - 8, CAVE_POOL_Y1 + 56, 96), TRIG)], target='secret_snd', wait=8)
     speaker(wx, CAVE_POOL_Y1 + 40, 60, 'misc/secret_found', loop=False, targetname='secret_snd')
-    item('item_padpower', cx - 60, cy + 120, 0)
+    item('item_padpower', (L.MOUTH[0] + L.MOUTH[2]) / 2, 1564, 0)
     item('ammo_imperius', -1664, 1300, 0)
     item('ammo_splasher', -1912, 1300, 0)
-    item('ammo_betty', cx + 100, cy + 160, 0)
-    mdl_c('pad_ducks/pad_duck.md3', -1900, 1560, 0, 0.35, 300)
+    item('ammo_betty', -1664, 1420, 0)
+    mdl_c('pad_ducks/pad_duck.md3', -1906, 1450, 0, 0.35, 300)
     custom(MM.PLACE['boulders_a'], -1680, 1540, 0, angle=200, mul=0.6)
     light(cx, cy, 120, 360, '0.4 0.75 1'); light(wx, (L.MOUTH[3] + CAVE_POOL_Y1) / 2, -60, 200, '0.4 0.85 1')
     speaker(cx, cy, 80, 'ambient/droplets_echoing', volume=0.6)
@@ -1390,6 +1400,7 @@ def main():
     hull_box()
     walls(); hall_timbers()
     activity_pool(); grotto(); river_island(); tower(); slides(); plunge_pool(); snack_bar(); tiny_timbers(); stump(); spa()
+    ZONES.insert(0, ((L.CAVE[0], POOL_TILE_A[3], L.CAVE[2], L.CAVE[3]), T('rock')))
     ZONES.insert(0, ((L.SB[0] + 16, L.SB[1] + 16, L.SB[2] - 16, L.SB[3]), T('kitchen_tile')))
     ZONES.insert(1, ((L.TW[0] + 12, L.TW[1] + 12, L.TW[2] - 12, L.TW[3] - 12), T('planks')))
     slab()

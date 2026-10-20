@@ -15,7 +15,8 @@ Almost everything is detail: a handful of portals, fast compile ~2 min, full bou
     a rock island in the deep end; **Splasher on the bottom of the deep end**.
   - **Grotto** (north-west corner): a sealed rock mass with a waterfall. SECRET: dive under the waterfall - an
     underwater tunnel (top 80u below the surface, invisible from the deck; only a faint glow hints at it) comes up in a
-    pool inside the cave (Pad Power, Imperius/Splasher/Betty ammo, secret sound). Swim back out the same way.
+    pool inside the cave; underwater steps (16u rise) lead up out of it - a sheer pool wall needed a pixel-perfect
+    water jump and players got stuck (Pad Power, Imperius/Splasher/Betty ammo, secret sound). Swim back out the same way.
   - **Timber Peak** (north-east): log-cabin slide tower; 16u stairs wind up the outside to the platform (Pumper), a pad
     to the shingle roof (Floater, Imperius ammo). **Yellow Jacket** (closed tube, MD3) circles the tree island and
     drops you into the river; **Green Gulch** (open flume, MD3) runs down the east wall into the plunge pool. Slide
