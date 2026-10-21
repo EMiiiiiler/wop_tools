@@ -495,6 +495,15 @@ def manor():
     A(box((px0 - 16, py0 - 16, F1 - 16), (px1 + 16, py1, F1), {'top': T('porch_wood'), 'bot': T('wood_dark'), 'side': CAULK}))
     for x in (-376, -176, 176, 376):
         A(box((x - 8, py0, F0), (x + 8, py0 + 16, F1 - 16), WCLIP))
+    # railing clip (players only): porch front either side of the steps, porch sides, balcony front and sides
+    RAIL = 48
+    for (a0, a1) in ((-368, -184), (184, 368)):
+        A(box((a0, py0, F0), (a1, py0 + 16, F0 + RAIL), CLIP))
+    for sx in (-1, 1):
+        A(box((min(sx * 384, sx * 368), py0 + 16, F0), (max(sx * 384, sx * 368), py1, F0 + RAIL), CLIP))
+    A(box((px0 - 16, py0 - 16, F1), (px1 + 16, py0, F1 + RAIL), CLIP))
+    for sx in (-1, 1):
+        A(box((min(sx * (px1 + 16), sx * px1), py0, F1), (max(sx * (px1 + 16), sx * px1), py1, F1 + RAIL), CLIP))
     route('porch_door', (0, 1000, 0), (0, 1400, F0))
     route('hall_parlour', (0, 1400, F0), (-300, 1420, F0))
     route('hall_dining', (0, 1400, F0), (180, 1420, F0))
@@ -523,6 +532,16 @@ def manor():
         A(frustum(ccx, ccy, r0 - 8, z0, r1 - 8, z1, WCLIP, 12))
     custom('manor_shell', HH.MCX, HH.MCY, 0); custom('manor_roof', HH.MCX, HH.MCY, 0); custom('manor_porch', HH.MCX, HH.MCY, 0)
     custom('cupola', ccx, ccy, D)
+    # cupola railing clip (open to the south over the stair) and a low clip round the roof deck edge
+    for (mn, mx) in (((cx0 + 16, cy1 - 16, Z), (cx1 - 16, cy1, Z + 40)), ((cx0, cy0 + 16, Z), (cx0 + 16, cy1 - 16, Z + 40)),
+                     ((cx1 - 16, cy0 + 16, Z), (cx1, cy1 - 16, Z + 40)), ((cx0 + 16, cy0, Z), (-56, cy0 + 16, Z + 40)),
+                     ((56, cy0, Z), (cx1 - 16, cy0 + 16, Z + 40))):
+        A(box(mn, mx, CLIP))
+    ex0, ey0, ex1, ey1 = X0 + inn_, Y0 + inn_, X1 - inn_, Y1 - inn_
+    for (mn, mx) in (((ex0, ey0, D), (-64, ey0 + 12, D + 40)), ((64, ey0, D), (ex1, ey0 + 12, D + 40)),
+                     ((ex0, ey1 - 12, D), (ex1, ey1, D + 40)), ((ex0, ey0 + 12, D), (ex0 + 12, ey1 - 12, D + 40)),
+                     ((ex1 - 12, ey0 + 12, D), (ex1, ey1 - 12, D + 40))):
+        A(box(mn, mx, CLIP))
     route('cupola_stair', (0, 1340, D), (0, 1520, Z))
     weapon('imperius', ccx, ccy + 20, Z, 'purple')
     light(ccx, ccy, TOP - 30, 220, '0.8 0.6 1')
@@ -546,17 +565,16 @@ def manor():
     custom('fireplace', ix0, 1504, F0, angle=90)
     light(ix0 + 90, 1504, F0 + 60, 240, '1 0.5 0.15')
     speaker(ix0 + 60, 1504, F0 + 60, 'sound/world/ambient/fire_crackling.ogg', volume=0.6)
-    for (x, y, a) in ((-360, 1420, 160), (-360, 1600, 200)):
-        custom('armchair', x, y, F0, angle=a + 90)
-        A(box((x - 40, y - 40, F0), (x + 40, y + 40, F0 + 60), WCLIP))
+    custom('armchair', -360, 1420, F0, angle=250)                    # one armchair by the fire
+    A(box((-400, 1380, F0), (-320, 1460, F0 + 60), WCLIP))
     custom('piano', -230, 1640, F0, angle=180)
     A(box((-312, 1530, F0), (-148, 1700, F0 + 66), WCLIP))
     custom('chandelier', -316, 1504, F1 - 16)
     light(-316, 1504, F1 - 120, 200, '1 0.75 0.45')
-    station(-200, 1350, F0, 90)
+    station(70, 1600, F0, 180)                                      # health station in the hall
     item('ammo_betty', -420, 1360, F0)
     custom('dining_table', 268, 1504, F0, angle=90)
-    A(box((214, 1350, F0), (322, 1658, F0 + 60), WCLIP))
+    A(box((214, 1396, F0), (322, 1612, F0 + 60), WCLIP))
     custom('chandelier', 268, 1504, F1 - 16)
     light(268, 1504, F1 - 120, 200, '1 0.75 0.45')
     item('ammo_pumper', 200, 1680, F0)
@@ -977,6 +995,15 @@ def hanging_tree():
     for p in carve(rect, cutters): A(p)
     for (px, py) in HM.TH_POSTS:
         A(cyl(round(tx + px), round(ty + py), 10, 0, Z - 16, WCLIP, 8))
+    # rail clip round the decks (players only), open over the stair and where the decks join
+    for k in range(48):
+        a0, a1 = 360 * k / 48, 360 * (k + 1) / 48
+        am = (a0 + a1) / 2
+        if any(g0 - 6 <= am + off <= g1 + 6 for off in (0, 360)) or -72 <= ((am + 180) % 360 - 180) <= 14: continue
+        A(ring_seg(tx, ty, a0, a1, L.PLAT_R - 12, L.PLAT_R, Z, Z + 48, Z, Z + 48, CLIP))
+    A(box((tx + dx0 + 194, ty + dy0, Z), (tx + dx1 - 12, ty + dy0 + 12, Z + 48), CLIP))
+    A(box((tx + dx1 - 12, ty + dy0, Z), (tx + dx1, ty + dy1, Z + 48), CLIP))
+    A(box((tx + dx0 + 194, ty + dy1 - 12, Z), (tx + dx1 - 12, ty + dy1, Z + 48), CLIP))
     route('spiral', ang_pt(tx, ty, 330, L.SPIRAL_A0 - 20) + (0,), ang_pt(tx, ty, 280, (g1 + 20) % 360) + (Z,))
     # the hut on the east deck
     tex = {'out': CAULK, 'in': T('planks_v'), 'jamb': T('wood_dark'), 'top': T('wood_dark'), 'bot': T('wood_dark'), 'glass': None}
