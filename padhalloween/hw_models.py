@@ -85,7 +85,7 @@ def _grid(rows, n, deform, inward=False, u_tiles=8, vlen=256.0):
     return P, N, UV, angs
 
 
-def carved_shell(Mo, Mi, Mj, rows, n, thick, polys, face_angle, Rr, deform=None, u_tiles=8, vlen=256.0, ju=64.0, close_top=False,
+def carved_shell(Mo, Mi, Mj, rows, n, thick, polys, face_angle, Rr, deform=None, u_tiles=8, vlen=256.0, ju=64.0, close_top=False, close_bottom=True,
                  depth=3, jstep=6.0):
     """a carved shell (pumpkin) with smooth cut-outs: outer surface, inner surface (offset inward by thick along the
     profile normal) and the cut faces (jambs) along every face polygon. polys: polygons in (u, z) where u = arc length at
@@ -154,6 +154,16 @@ def carved_shell(Mo, Mi, Mj, rows, n, thick, polys, face_angle, Rr, deform=None,
                 nrm = bil(Po, *C_) - (oa + ob) / 2
                 L0 = np.linalg.norm(ob - oa)
                 Mj.poly([oa, ob, ib, ia], nrm, [(0, 0), (L0 / ju, 0), (L0 / ju, thick / ju), (0, thick / ju)])
+    if close_bottom:
+        # the inner surface starts above the ground (offset along the bottom's outward-down normal): seal the gap so the
+        # culled back of the outer shell can't be seen through from inside
+        for j in range(n):
+            am = (angs[j] + angs[j + 1]) / 2
+            if inside(am, zs[0] + 1): continue
+            a = math.radians(am)
+            L0 = np.linalg.norm(Po[0, j + 1] - Po[0, j])
+            Mj.poly([Po[0, j], Pi[0, j], Pi[0, j + 1], Po[0, j + 1]], (-math.cos(a), -math.sin(a), 0.6),
+                    [(0, 0), (0, thick / ju), (L0 / ju, thick / ju), (L0 / ju, 0)])
     if close_top:
         for j in range(n):
             a = math.radians((angs[j] + angs[j + 1]) / 2)
@@ -1252,14 +1262,14 @@ def armchair():
 
 
 def dining_table():
-    """long dining table with a candelabra and plates (origin centre, long axis x, 320 x 112, height 60)"""
+    """dining table with a candelabra, a chair at each end (origin centre, long axis x, 220 x 112, height 60)"""
     X = Model()
     wd = S('wood_dark', 'lm', tag='dt'); br = S('brass', 'lms', v=0.25, tag='dt'); cl = S('red_cloth', 'lm', tag='dt')
-    rbox(X.mesh(wd), (-160, -56, 54), (160, 56, 62), r=2, k=2)
-    rbox(X.mesh(cl), (-120, -16, 62), (120, 16, 62.8), r=0.3, k=1, faces='t')
+    rbox(X.mesh(wd), (-110, -56, 54), (110, 56, 62), r=2, k=2)
+    rbox(X.mesh(cl), (-80, -16, 62), (80, 16, 62.8), r=0.3, k=1, faces='t')
     for sx in (-1, 1):
         for sy in (-1, 1):
-            lathe(X.mesh(wd), [(6, 0), (8, 6), (5, 20), (7, 36), (5, 54)], 8, cx=sx * 146, cy=sy * 44)
+            lathe(X.mesh(wd), [(6, 0), (8, 6), (5, 20), (7, 36), (5, 54)], 8, cx=sx * 96, cy=sy * 44)
     # candelabra
     lathe(X.mesh(br), [(14, 62), (12, 66), (3, 70), (3, 104), (5, 106)], 10)
     for sx in (-1, 1):
@@ -1272,14 +1282,13 @@ def dining_table():
         zt = (108 if x else 106) + 23
         X.mesh(fl).poly([np.array(p) for p in ((x - 4, 0, zt), (x + 4, 0, zt), (x + 4, 0, zt + 14), (x - 4, 0, zt + 14))], (0, -1, 0),
                         [(0, 1), (1, 1), (1, 0), (0, 0)])
-    # chairs (high-backed) along both sides
-    for x in (-110, -40, 40, 110):
-        for sy in (-1, 1):
-            y0 = sy * 84
-            rbox(X.mesh(wd), (x - 18, y0 - 18, 34), (x + 18, y0 + 18, 40), r=1, k=1)
-            rbox(X.mesh(wd), (x - 18, y0 + sy * 14 - 3, 40), (x + 18, y0 + sy * 14 + 3, 120), r=1, k=1)
-            for (dx, dy) in ((-14, -14), (14, -14), (14, 14), (-14, 14)):
-                tube(X.mesh(wd), [(x + dx, y0 + dy, 34), (x + dx, y0 + dy, 0.5)], 2, nseg=4)
+    # a chair at each end of the table
+    for sx in (-1, 1):
+        x0 = sx * 140
+        rbox(X.mesh(wd), (x0 - 18, -18, 34), (x0 + 18, 18, 40), r=1, k=1)
+        rbox(X.mesh(wd), (x0 + sx * 14 - 3, -18, 40), (x0 + sx * 14 + 3, 18, 100), r=1, k=1)
+        for (dx, dy) in ((-14, -14), (14, -14), (14, 14), (-14, 14)):
+            tube(X.mesh(wd), [(x0 + dx, dy, 34), (x0 + dx, dy, 0.5)], 2, nseg=4)
     return save('dining_table', X)
 
 
@@ -1710,7 +1719,7 @@ def treehouse():
         if len(pts) > 1: tube(X.mesh(rp), pts, 1.8, nseg=4, caps=(False, False))
     for k in range(97):
         a = 360 * k / 96
-        open_ = any(g0 - 6 <= a + off <= g1 + 6 for off in (0, 360)) or (-40 <= ((a + 180) % 360 - 180) <= 40)
+        open_ = any(g0 - 6 <= a + off <= g1 + 6 for off in (0, 360)) or (-72 <= ((a + 180) % 360 - 180) <= 14)
         if open_:
             flush(); pts = []; continue
         p = np.array([(L.PLAT_R - 6) * math.cos(math.radians(a)), (L.PLAT_R - 6) * math.sin(math.radians(a)), Z + 44])
