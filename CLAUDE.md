@@ -140,3 +140,11 @@ Tools and standing rules for building World of Padman (WoP) maps.
   shader/image and the faces render untextured.
 - A gable roof drawn as one quad per slope has too few vertices touching the roof brush for the audit's support test:
   build roof shingles as a grid.
+- Items drop to the floor at spawn with a MASK_SOLID trace, so a pickup placed on a `common/clip` (playerclip) floor falls
+  through it, while bots still route to the original spot. Give such items `spawnflags 1` (suspended) - padbbq pergola.
+  Items on a sloping roof need +4u on the slope or the server logs "startsolid" and drops them.
+- With `--shaders`, audit_map/pad_check used to class `common/clip` (nonsolid + playerclip) as decoration; it now counts
+  as clip, so clip floors stop jump pads in pad_check.
+- trigger_hurt becomes lava for bspc, grown by the player box: a jump pad landing within hurt radius + 15 lands in a lava
+  area and bots never take it (padbbq grill: hot zone r 48, landing at r 92).
+

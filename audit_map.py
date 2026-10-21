@@ -133,6 +133,7 @@ def parm_kind(tex):
     if p is None: return None
     if 'fog' in p: return 'fog'                 # fog volumes legitimately contain geometry
     if p & {'water', 'slime', 'lava'}: return 'water'
+    if 'playerclip' in p: return 'clip'           # common/clip is nonsolid + playerclip: it still blocks players
     if 'nonsolid' in p: return 'decor'
     return 'solid'
 
@@ -143,6 +144,7 @@ def kind(texs):
         pk = [parm_kind(x) for x in t]
         if 'fog' in pk: return 'fog'
         if all(k == 'decor' or 'caulk' in x or 'nodraw' in x for k, x in zip(pk, t)) and 'decor' in pk: return 'decor'
+        if all(k == 'clip' for k in pk): return 'clip'
         if 'water' in pk and not any(any(s in x for s in TRIGGER) for x in t): return 'water'
     if all(any(s in x for s in SKIP_TEX) for x in t): return 'skip'
     if all('botclip' in x for x in t): return 'decor'          # bots only (nonsolid for players/shots) even without --shaders
