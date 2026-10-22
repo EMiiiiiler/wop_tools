@@ -53,6 +53,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   the ash pan, pad onto the hot grate), a deck with a crawl space and a pergola slat roof, a paddling pool, Dad's shed,
   a kennel, a cubby house, a picnic table under a parasol, a sun lounger, a vege bed (pad up), a rotary clothesline and a sprinkler
   turning, an ant hill as the door to a secret ant colony; see padbbq/README.md.
+- `padmuseum/` - *Midnight Museum* (`wop_padmuseum`): FFA in a natural history museum at night, human scale - a T. rex you walk up
+  to the skull, a whale under the glass roof, an imperial stair to the mezzanine, a step pyramid whose open sarcophagus is the
+  door to a secret treasury, a planetarium dome you can stand on, a mammoth, a walk-in geode, a giant squid tank, a roof
+  terrace with a pad onto the skylight; see padmuseum/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
