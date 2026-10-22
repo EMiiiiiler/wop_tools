@@ -49,6 +49,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   walkable gables, attics, a tower with a hatch pad to its deck), a front garden with a pond and swing under the window,
   a giant bed, bookcase and toy chest, a tiny dollhouse in the nursery as the door to a secret ballroom; see
   paddollhouse/README.md.
+- `padbbq/` - *Backyard BBQ* (`wop_padbbq`): FFA in a Kiwi backyard at Padman scale - a kettle barbecue (briquette steps into
+  the ash pan, pad onto the hot grate), a deck with a crawl space and a pergola slat roof, a paddling pool, Dad's shed,
+  a kennel, a cubby house, a picnic table under a parasol, a sun lounger, a vege bed (pad up), a rotary clothesline and a sprinkler
+  turning, an ant hill as the door to a secret ant colony; see padbbq/README.md.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
