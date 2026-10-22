@@ -574,10 +574,18 @@ def shed():
     custom('workbench', 0, 0, 0)
     A(box((bx0, by0, 16), (bx1, by1, L.SHED_BENCH_Z), WCLIP))
     furn('shelf_unit', x0 + t + 72, -1660, 16, 0, [((-70, -160, 0), (70, 160, 640))])
-    for k, z in enumerate((120, 380, 640)):
-        for j, yy in enumerate((-1770, -1660, -1550)):
-            if (k + j) % 2 == 0:
-                mdl_c(['pad_tins/pad_paint1.md3', 'pad_tins/pad_paint2.md3', 'pad_tins/pad_paint1_tl.md3'][(k + j) % 3], x0 + t + 72, yy, 16 + z, 0.6, (k * 40 + j * 70) % 360)
+    # shelf contents (shelf boards at 120 / 380 / 640 above the floor): paint tins, spray cans, tape, turps, rolls, odds
+    sx, sy = x0 + t + 72, -1660
+    stock = {120: [('pad_tins/pad_paint1', 0, -112, 0.6, 20), ('pad_tins/pad_paint2', -4, -42, 0.6, 80), ('pad_tins/tomatoes_tbl', 6, 30, 0.55, 140),
+                   ('pad_tins/pad_paint1_tl', 0, 104, 0.6, 200)],
+             380: [('pad_bath/deocan1', -28, -128, 0.6, 0), ('pad_bath/deocan1', -28, -94, 0.6, 50), ('pad_bath/deocan1', 14, -112, 0.6, 120),
+                   ('pad_ducktape/ducktape', 0, -32, 1.0, 0), ('pad_ddmix/padship/rumbottle1', 4, 40, 0.6, 30), ('pad_tins/carrots_tbl', 0, 112, 0.55, 260)],
+             640: [('pad_toiletroll/pad_toiletroll', 0, -110, 0.6, 0), ('pad_tins/pad_milk_s', -14, -40, 0.75, 70), ('pad_ddmix/jail/matches_closed', 14, 34, 0.6, 15),
+                   ('pad_ddmix/backyard/screw_nut', -36, 94, 1.3, 10), ('pad_ddmix/backyard/screw_nut', -6, 118, 1.3, 70), ('pad_ddmix/backyard/screw_nut', 26, 96, 1.3, 140),
+                   ('pad_tins/pad_paint2', 20, 140, 0.45, 300)]}
+    for z, things in stock.items():
+        for (m, dx, dy, sc, ang) in things:
+            mdl_c(m + '.md3', sx + dx, sy + dy, 16 + z, sc, ang)
     furn('lawnmower', -1580, -1600, 16, 180, [((-110, -140, 0), (130, 140, 160))])
     custom('garden_tools', x1 - t - 40, -1850, 16, 180)
     lbox(x1 - t - 40, -1850, 16, 180, (-20, -110, 0), (70, 110, 300))
@@ -785,12 +793,8 @@ def vege_bed():
     A(box((x0, y0, 0), (x1, y0 + t, L.VEGE_Z), sl)); A(box((x0, y1 - t, 0), (x1, y1, L.VEGE_Z), sl))
     A(box((x0, y0 + t, 0), (x0 + t, y1 - t, L.VEGE_Z), sl)); A(box((x1 - t, y0 + t, 0), (x1, y1 - t, L.VEGE_Z), sl))
     A(box((x0 + t, y0 + t, 0), (x1 - t, y1 - t, L.VEGE_SOIL), {'top': T('soil'), 'side': CAULK, 'bot': CAULK}))
-    # brick steps up to the south rim
-    for j in range(L.VEGE_STEPS):
-        zt = 16 * (j + 1)
-        ya = y0 - 28 * (L.VEGE_STEPS - j); yb = ya + 28
-        A(box((x0 + 40, ya, 0), (x1 - 40, yb, zt), {'top': T('brick'), 'side': T('brick'), 'bot': CAULK}))
-    route('vege_steps', ((x0 + x1) / 2, y0 - 28 * L.VEGE_STEPS - 160, 0), ((x0 + x1) / 2, y0 + 200, L.VEGE_SOIL))
+    # jump pad on the lawn south of the bed, up over the sleepers into the soil
+    jumppad((x0 + x1) / 2, y0 - 240, 0, ((x0 + x1) / 2, y0 + 220, L.VEGE_SOIL), L.VEGE_SOIL + 170, 'pad_vege')
     zs = L.VEGE_SOIL
     for k, yy in enumerate((-300, -60, 180, 400)):
         custom(f'tomato_{k % 3}', x1 - 90, yy, zs, k * 50)

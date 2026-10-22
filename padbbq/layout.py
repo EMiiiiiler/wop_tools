@@ -89,7 +89,6 @@ TOWEL_RUN = 300                        # towel ramp from the foot end down to th
 VEGE = (1880, -560, 2256, 520)         # x0, y0, x1, y1 (outer)
 VEGE_Z = 160                           # sleeper top
 VEGE_SOIL = 136
-VEGE_STEPS = 9                         # brick steps at the south end, rising north
 
 # ---------------------------------------------------------------- lawn bits
 SPRINKLER = (120.0, -420.0)

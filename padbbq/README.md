@@ -18,14 +18,16 @@ Everything but the sky hull is detail: 0 portals, fast compile ~45 s.
     stand beside it.
   - **Paddling pool** (west): foam play-block steps up over the inflatable rim and down inside, **Pumper** on the
     bottom, a swim ring and a rubber duck drifting round (func_rotating IQM).
-  - **Dad's shed** (south-west): walk in (mower, shelves with paint tins, tools, pot stack), a pad onto the
+  - **Dad's shed** (south-west): walk in (mower, stocked shelves - paint tins, spray cans, duct tape, turps, tins, nuts -
+    tools, pot stack), a pad onto the
     workbench; a pad from the lawn onto the corrugated roof (**Balloony**).
   - **Kennel** (north-east): REX's kennel, walk in (**Boaster**), a pad onto the ridge (Speedy).
   - **Cubby house** (south-centre): the kids' playhouse, walk in (table and stools), a pad onto the ridge.
   - **Picnic table** under the striped parasol (south-east): lunch (plates, sauce bottles, cans), a pad onto the
     table (Pad shield).
   - **Sun lounger** (south): a beach towel hangs down as a ramp, Floater on the seat, walk up the backrest.
-  - **Vege bed** (east fence): brick steps up into the tomatoes, lettuces and carrots (BamBam).
+  - **Vege bed** (east fence): a jump pad on the lawn throws you over the sleepers into the tomatoes, lettuces and carrots
+    (BamBam).
   - **Lawn**: a rotary clothesline turning in the breeze (washing on it), a sprinkler spinning (water jets), the hose
     from the reel, a toddler slide (walk up the chute), a clam-shell sandpit with its lid up, a round garden bed with a
     cabbage tree, a ride-on toy car, firewood stacks, wheelie bins, a compost bin, a bird bath, gnomes, backyard
