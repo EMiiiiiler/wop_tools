@@ -155,6 +155,7 @@ def hull(points, tex, detail=True, sides=None, round_pts=True):
         c = on[np.argmax(np.abs(np.cross(on - a, ab) @ n))]
         pts = [tuple(a), tuple(b), tuple(c)]
         nn = _cross(_sub(pts[0], pts[1]), _sub(pts[2], pts[1]))
+        if _dot(nn, nn) < 1e-6: continue           # sliver face (collinear points, zero area): drop it
         if _dot(nn, n) < 0: pts = [pts[2], pts[1], pts[0]]
         t = _pick_tex(tex, n)
         faces.append(Face(pts, t, default_scale(t)))
@@ -307,6 +308,7 @@ def brush_from_planes(P, tex, detail=True):
         c = on[np.argmax(np.abs(np.cross(on - a, b - a) @ n))]
         pts = [tuple(a), tuple(b), tuple(c)]
         nn = _cross(_sub(pts[0], pts[1]), _sub(pts[2], pts[1]))
+        if _dot(nn, nn) < 1e-6: continue           # sliver face (collinear points, zero area): drop it
         if _dot(nn, n) < 0: pts = [pts[2], pts[1], pts[0]]
         t = _pick_tex(tex, n)
         faces.append(Face(pts, t, default_scale(t)))
