@@ -6,7 +6,8 @@ Padman 56u). x east, y north, plaza z 0, water z -16. Playable area 4608 x 4096 
 the north (southern hemisphere).
 
 Everything but the sky hull and the sealed secret room is detail: 0 portals, BSP + VIS ~20 s, fast light ~20 s,
-full light (-bounce 2 -bouncegrid) see below.
+full light (-fast -samples 3 -filter -bounce 2 -bouncegrid) ~8 min on 2 cores, BSP 8 MB.
+Walk-through: https://claude.ai/artifact/ACg48wmTwX76Qjiej8b4F7
 
 - `build_aztec.py` - the map:
   - **Great Pyramid of Tlaloc** (centre north): four talud-tablero tiers with painted friezes (Tlaloc goggle masks,
