@@ -147,4 +147,10 @@ Tools and standing rules for building World of Padman (WoP) maps.
   as clip, so clip floors stop jump pads in pad_check.
 - trigger_hurt becomes lava for bspc, grown by the player box: a jump pad landing within hurt radius + 15 lands in a lava
   area and bots never take it (padbbq grill: hot zone r 48, landing at r 92).
-
+- bspc puts a pad's landing where the arc first touches ground (the near edge of a small top). A fling pad there makes
+  the landing area the fling pad's own area and pickups beside it unreachable: put the fling pad on the far side
+  (padmuseum dome/geode tops).
+- Pads onto tall objects under a low ceiling: pad_check can pass while bspc's flight clips the edge; start the pad
+  further back so the arc is high before it crosses the edge, apex <= ceiling - 40 (padmuseum squid tank).
+- `skin()`-style wall texturing by face centre needs one wall brush per room (an outer wall spanning three rooms took
+  the middle room's wallpaper everywhere).
