@@ -21,6 +21,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Full explorability: every door or building can be entered, and every building can be climbed. Rooftop access must not have geometry blocking line of fire to other players.
 
 ## Tools (see README.md)
+- Fresh cloud session: run `setup_cloud.sh` in the background (~15 min on 2 cores) for q3map2, wopbspc and wopded.
 - Generate with `wopmap.py`; place models with `md3bounds.json` so they rest on surfaces.
 - In a fresh cloud session, `lfs_fetch.py <wop repo> --map maps/x.map` gets the real md3s/textures/sky the map uses.
 - Before delivering any map run: `audit_map.py` (must say RESULT: OK), `pad_check.py` (every pad lands), `aas_check.py` after bspc with a `--route @routes.txt`
@@ -182,3 +183,13 @@ Tools and standing rules for building World of Padman (WoP) maps.
   used to be skipped beyond +-108 deg of the face.
 - Shell collision openings are whole wedge cells fully inside the polygon: extend window polygons past the layer
   boundaries or pads through the window hit the lintel (padspace nose window).
+- Prop placement by occupied volumes (`padbakery/build_bakery.py` FOOT/free()/prop()): reserve every architecture
+  brush's bounds before placing props, but never a whole cabinet/room volume, or nothing fits inside it.
+- A pad into an opening behind a ledge (oven deck mouth): the arc must peak at the opening (apex <= opening top - 32)
+  and stay above ledge + 24 for its last ~120u (`padbakery` p_deck1).
+- pad_check can pass pads bspc doesn't link (no reachability, items "UNREACHABLE"): raising the apex 60-70u fixed four
+  such pads onto tops in padbakery.
+- Alpha cut-out textures whose alpha is >= 128 everywhere render opaque (alphaFunc GE128); use an additive glass shader
+  for translucent plastic (strip curtains).
+- Open shelving with doorways through the dividers leaks long eye-level sightlines along the tunnel: one prop per bay on
+  the doorway line (walk round it) fixes it.
