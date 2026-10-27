@@ -161,3 +161,16 @@ Tools and standing rules for building World of Padman (WoP) maps.
   collinear (NaN normal, broken brush in the .map); `brush_from_planes` now skips them. Run a build with
   `python3 -W error::RuntimeWarning` to catch new ones.
 - Items on a rock islet 16u above deep water are effectively unreachable (Q3 water jump), even if bspc links them.
+- A ship hull as collision: convex station prisms (keel to deck) with the rooms carved out (`padpirate/pp_shapes.ship_*`);
+  keep the sides vertical above the waterline (CW) and below it use min(visual - 8, CW * plan taper), or the hull pokes
+  past jetties built flush to its side. The smooth MD3 skin sits 6+ outside; a cap strip from the skin's top edge in to
+  the bulwark's inner face hides the gap (`padpirate/pp_ship.rail_cap`).
+- Bots ignored a reward (crow's nest Imperius) reached only by a pad in a cul-de-sac (0 pickups in two runs, one visit in
+  4 min) even though bspc linked it; a second pad from a busy route (the jetty) gave 18 pickups. Count route use with
+  `DEBUG_TRIG=1 build_pirate.py`: trigger_multiple -> target_score probes log `AddScore: <client> <count> target_score`.
+- A 30u corridor between props and stair flights is no corridor for bspc: the crew quarters became a TRAP until the
+  capstan in front of the door went.
+- `picture()` in the padaztec models used the viewer's left as +u, so every sign/poster on a quad read mirrored; fixed in
+  `padpirate/pp_models.picture`.
+- Slides leaving a round ring-seg platform: rotate the segments half a step so a flat chord faces the slide and start the
+  slide floor ~12u beyond it (no overlap, tiny gap).
