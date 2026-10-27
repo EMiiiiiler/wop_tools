@@ -506,15 +506,15 @@ def planet():
     revolve(X.mesh(bs), prof, n=64, u_tiles=4, v_of=lambda r, z: (z - 130) / 470, vlen=256)
     disc(X.mesh(S('ice', 'lm', tag='pl')), L.pl_cap_r(), L.PL_CAP, up=True, n=64, uvscale=180)
     # frosty rim round the cap (low ridge, under head height - no cover)
-    revolve(X.mesh(S('ice', 'lm', tag='plr')), [(L.pl_cap_r() - 2, L.PL_CAP), (L.pl_cap_r() + 4, L.PL_CAP - 4)], n=64, vlen=32)
+    revolve(X.mesh(S('ice', 'lm', tag='plr')), [(L.pl_cap_r() - 2, L.PL_CAP), (L.pl_cap_r() + 4, L.PL_CAP - 4)], n=64, vlen=32, inward=True)
     # ring: top/bottom/edges, bands follow the radius
     rs = S('ring', 'lm', shade=20, tag='pl')
-    revolve(X.mesh(rs), [(L.RING_R0, L.RING_Z), (L.RING_R1, L.RING_Z)], n=64, u_tiles=12, v_of=lambda r, z: (r - L.RING_R0) / (L.RING_R1 - L.RING_R0), inward=False)
-    revolve(X.mesh(rs), [(L.RING_R1, L.RING_Z - 16), (L.RING_R0, L.RING_Z - 16)], n=64, u_tiles=12, v_of=lambda r, z: (r - L.RING_R0) / (L.RING_R1 - L.RING_R0))
+    revolve(X.mesh(rs), [(L.RING_R0, L.RING_Z), (L.RING_R1, L.RING_Z)], n=64, u_tiles=12, v_of=lambda r, z: (r - L.RING_R0) / (L.RING_R1 - L.RING_R0), inward=True)
+    revolve(X.mesh(rs), [(L.RING_R1, L.RING_Z - 16), (L.RING_R0, L.RING_Z - 16)], n=64, u_tiles=12, v_of=lambda r, z: (r - L.RING_R0) / (L.RING_R1 - L.RING_R0), inward=True)
     revolve(X.mesh(S('metal', 'lm', tag='plr')), [(L.RING_R1, L.RING_Z - 16), (L.RING_R1, L.RING_Z)], n=64, u_tiles=12, vlen=32)
     # fine outer rings drawn flat on the deck edge as glowing lines
     gl = S('glow_y', 'glow', wave='sin 0.8 0.2 0 0.3', tag='plg')
-    revolve(X.mesh(gl), [(L.RING_R1 - 6, L.RING_Z + 0.6), (L.RING_R1 - 2, L.RING_Z + 0.6)], n=64, vlen=32)
+    revolve(X.mesh(gl), [(L.RING_R1 - 6, L.RING_Z + 0.6), (L.RING_R1 - 2, L.RING_Z + 0.6)], n=64, vlen=32, inward=True)
     # pedestal: faceted crystal column
     cr = S('crystal', 'lm', shade=10, tag='pl')
     revolve(X.mesh(cr), [(L.PED_R0 + 6, 0), (L.PED_R1 + 6, 130), (0, 150)], n=8, vlen=128)
@@ -686,7 +686,7 @@ def mission_control():
     picture(X.mesh(S('screen', 'glow', tag='mcs')), (x1 - 24.6, yc, 110), 240, 120, (-1, 0, 0))
     # radar dome on the roof (north-east corner)
     dx, dy = x1 - 70, y1 - 70
-    revolve(X.mesh(S('white', 'lm', tag='mcd')), [(0, L.MC_H + 76), (34, L.MC_H + 66), (54, L.MC_H + 40), (56, L.MC_H)], n=24, cx=dx, cy=dy, vlen=64)
+    revolve(X.mesh(S('white', 'lm', tag='mcd')), [(0, L.MC_H + 76), (34, L.MC_H + 66), (54, L.MC_H + 40), (56, L.MC_H)], n=24, cx=dx, cy=dy, vlen=64, inward=True)
     revolve(X.mesh(S('metal_d', 'lm', tag='mcd')), [(62, L.MC_H), (62, L.MC_H + 10), (54, L.MC_H + 10)], n=24, cx=dx, cy=dy, vlen=32)
     X.shift(((x0 + x1) / 2, (y0 + y1) / 2, 0))
     return save('mission_control', X)

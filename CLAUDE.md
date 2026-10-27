@@ -174,3 +174,11 @@ Tools and standing rules for building World of Padman (WoP) maps.
   `padpirate/pp_models.picture`.
 - Slides leaving a round ring-seg platform: rotate the segments half a step so a flat chord faces the slide and start the
   slide floor ~12u beyond it (no overlap, tiny gap).
+- Flat `revolve()` rings/tops drawn with an outward profile face down (black from above): use `inward=True`
+  (padspace planet ring). Re-check every flat revolve on a contact sheet from above.
+- `carve()` round islets out of octagon pools leaves zero-thickness slivers (q3map2 "duplicate plane"); drop them before
+  writing (`padspace/build_space.drop_slivers()`: hull volume < 16 or a face-normal extent < 1).
+- `carved_shell()` (padspace/splib) now cuts openings anywhere round the shell (tests u and u +- 2*pi*R); rear windows
+  used to be skipped beyond +-108 deg of the face.
+- Shell collision openings are whole wedge cells fully inside the polygon: extend window polygons past the layer
+  boundaries or pads through the window hit the lintel (padspace nose window).

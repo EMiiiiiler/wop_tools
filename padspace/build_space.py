@@ -496,7 +496,7 @@ def spires():
         custom('crystal_big', x, y, z, 40 * k, lit=False, mul=m)
         for b in (cyl(x, y, 35 * m, z, z + 17 * m, WCLIP, 10), cyl(x, y, 15 * m, z + 17 * m, z + 200 * m, WCLIP, 8)):
             A(b); WATER_SOLIDS.append(b)
-        light(x, y, 40, 160, '0.7 0.5 1')
+        light(x + 50 * m, y, 40, 160, '0.7 0.5 1')
 
 
 def lander():
@@ -578,7 +578,7 @@ def rocket():
     # ground floor
     item('ammo_balloony', RX - 100, RY + 60, 0); item('item_armor_shard', RX + 80, RY - 120, 0)
     jumppad(RX, RY, 0, (RX, RY - 120, L.COCK_Z), L.COCK_Z + 150, 'pad_cockpit')
-    for (x, y) in ((RX - 100, RY - 100), (RX + 100, RY + 100)):
+    for (x, y) in ((RX - 60, RY - 60), (RX + 60, RY + 60)):
         light(x, y, 240, 200, '0.8 0.9 1')
     # cockpit: consoles round the north wall, seats, Visionless, the pad up to the nose
     for (a, d) in ((25, 168), (155, 168)):
@@ -596,10 +596,7 @@ def rocket():
     lbox(RX - 120, RY - 60, L.NOSE_Z, 0, (-18, -16, 0), (18, 16, 100))
     jumppad(RX - 10, RY - 120, L.NOSE_Z, (-260, 420, 0), L.NOSE_Z + 150, 'pad_window_fling')
     trigger_sound((RX - 40, RY - 40, L.NOSE_Z + 2), (RX + 120, RY + 20, L.NOSE_Z + 70), 'sound/world/human/applause.ogg', 'nose_cheer', 15, volume=0.6)
-    light(RX, RY, L.NOSE_Z + 220, 300, '1 0.9 0.8')
-    for k in range(4):
-        x, y = L.ang_pt(RX, RY, 150, 45 + 90 * k)
-        light(x, y, L.NOSE_Z + 90, 150, '0.7 0.85 1')
+    light(RX, RY, L.NOSE_Z + 220, 170, '1 0.9 0.8')
     # balcony: Jumper, ammo, the pad up into the nose window
     item('item_jumper', RX + 300, RY - 230, L.COCK_Z); item('ammo_bubbleg', RX - 300, RY + 220, L.COCK_Z)
     item('ammo_balloony', RX + 260, RY + 280, L.COCK_Z)
@@ -785,7 +782,7 @@ def planet():
         x, y = L.ang_pt(cx, cy, 340, 60 * k + 30)
         light(x, y, L.RING_Z + 110, 170, '1 0.85 0.7')
     speaker(cx, cy, 0, 'ambient/water_flowing', volume=0.4)
-    speaker(cx, cy, L.RING_Z + 60, 'misc/wind_chimes', volume=0.3)
+    speaker(cx + 330, cy, L.RING_Z + 60, 'misc/wind_chimes', volume=0.3)
     # Padurn's moonlets circling
     zc = L.MOON_Z
     M.ent('func_rotating', brushes=[box((cx - 8, cy - 8, zc - 8), (cx + 8, cy + 8, zc + 8), ORIGIN),

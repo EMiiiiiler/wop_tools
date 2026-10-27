@@ -65,3 +65,18 @@ Unzip `wop_padspace_source.zip` into a folder the game sees (for example `wop/zz
     q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -vis -saveprt maps/wop_padspace.map
     q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -light -fast -samples 3 -filter -bounce 2 -bouncegrid -custinfoparms maps/wop_padspace.map
     bspc -forcesidesvisible -optimize -bsp2aas maps/wop_padspace.bsp
+
+## Checks (Oct 2026)
+audit_map OK, check_entities OK, pad_check OK (14 pads, all under 2.4 s), aas_check OK (every pickup reachable, no traps,
+19 routes: both jetties, both cabin doors, rocket door + inner stair, both balcony doors, tube mouth, both river bridges,
+planet stair, Black Hole steps, satellite stair, pod/cafe/Mission Control doors, cafe stair), sightlines 4.1 % of
+eye-level rays over 1800u. 0 portals, full light (-fast -samples 3 -filter -bounce 2 -bouncegrid) 9 min on 2 cores,
+BSP 12.6 MB. Bots (10, FFA 5 min): 62 kills, every weapon taken (Imperius 39, Pumper 29, Boaster 25, Balloony 15,
+Betty 13, Bubble G 11, Splasher 10), the secret found (Pad Power, Revival, Killer Ducks).
+Walk-through: https://claude.ai/artifact/KD4dn14iydraH41w1qZjLk
+
+## Lessons
+- The planet ring (a flat `revolve()` drawn outward) faced down and rendered black from above until `inward=True`.
+- `carve()` octagons + islet cylinders left ~200 zero-thickness slivers ("duplicate plane"); `drop_slivers()` removes them.
+- Pads in/out of the nose window hit the lintel: collision openings are whole 48u wedge layers fully inside the window
+  polygon, so the polygon must reach past the layer boundaries.
