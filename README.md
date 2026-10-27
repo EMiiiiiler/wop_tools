@@ -49,6 +49,20 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   walkable gables, attics, a tower with a hatch pad to its deck), a front garden with a pond and swing under the window,
   a giant bed, bookcase and toy chest, a tiny dollhouse in the nursery as the door to a secret ballroom; see
   paddollhouse/README.md.
+- `padbbq/` - *Backyard BBQ* (`wop_padbbq`): FFA in a Kiwi backyard at Padman scale - a kettle barbecue (briquette steps into
+  the ash pan, pad onto the hot grate), a deck with a crawl space and a pergola slat roof, a paddling pool, Dad's shed,
+  a kennel, a cubby house, a picnic table under a parasol, a sun lounger, a vege bed (pad up), a rotary clothesline and a sprinkler
+  turning, an ant hill as the door to a secret ant colony; see padbbq/README.md.
+- `padmuseum/` - *Midnight Museum* (`wop_padmuseum`): FFA in a natural history museum at night, human scale - a T. rex you walk up
+  to the skull, a whale under the glass roof, an imperial stair to the mezzanine, a step pyramid whose open sarcophagus is the
+  door to a secret treasury, a planetarium dome you can stand on, a mammoth, a walk-in geode, a giant squid tank, a roof
+  terrace with a pad onto the skylight; see padmuseum/README.md.
+- `padaztec/` - *Tlaloc's Lagoon* (`wop_padaztec`): FFA Aztec temple water park in the jungle - a four-tier talud-tablero
+  pyramid with steep stairs, Tlaloc's shrine on the summit, a feathered-serpent tube slide and an eagle flume off it, a
+  tunnel past the tomb, a lagoon with the Sun Stone on a causeway island, a cenote with a spiral stair (underwater
+  serpent-mouth secret), a jaguar temple, Tlaloc's giant fountain head, an eagle-warrior colonnade, a ball court, a
+  cantina; Quetzalcoatl circling the sky; see padaztec/README.md. `az_shapes.py` + `azlib.solids_mesh()` build big
+  architecture once as convex solids and use them both as weapclip collision and as the visible MD3.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,

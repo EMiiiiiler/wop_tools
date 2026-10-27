@@ -140,3 +140,37 @@ Tools and standing rules for building World of Padman (WoP) maps.
   shader/image and the faces render untextured.
 - A gable roof drawn as one quad per slope has too few vertices touching the roof brush for the audit's support test:
   build roof shingles as a grid.
+- Items drop to the floor at spawn with a MASK_SOLID trace, so a pickup placed on a `common/clip` (playerclip) floor falls
+  through it, while bots still route to the original spot. Give such items `spawnflags 1` (suspended) - padbbq pergola.
+  Items on a sloping roof need +4u on the slope or the server logs "startsolid" and drops them.
+- With `--shaders`, audit_map/pad_check used to class `common/clip` (nonsolid + playerclip) as decoration; it now counts
+  as clip, so clip floors stop jump pads in pad_check.
+- trigger_hurt becomes lava for bspc, grown by the player box: a jump pad landing within hurt radius + 15 lands in a lava
+  area and bots never take it (padbbq grill: hot zone r 48, landing at r 92).
+- bspc puts a pad's landing where the arc first touches ground (the near edge of a small top). A fling pad there makes
+  the landing area the fling pad's own area and pickups beside it unreachable: put the fling pad on the far side
+  (padmuseum dome/geode tops).
+- Pads onto tall objects under a low ceiling: pad_check can pass while bspc's flight clips the edge; start the pad
+  further back so the arc is high before it crosses the edge, apex <= ceiling - 40 (padmuseum squid tank).
+- `skin()`-style wall texturing by face centre needs one wall brush per room (an outer wall spanning three rooms took
+  the middle room's wallpaper everywhere).
+- Big architecture as MD3 with exact collision: describe it once as convex brush solids (`padaztec/az_shapes.py`), add
+  them as `common/weapclip` and turn the same solids into the MD3 with `padaztec/azlib.solids_mesh()` (hidden faces
+  culled, texture/UV per face). Give such shaders `q3map_shadeAngle` 20-30 or neighbouring faces get smoothed together.
+- `carve()` cutting non-axial shapes (octagons, cylinders) could produce a zero-area sliver face whose plane points are
+  collinear (NaN normal, broken brush in the .map); `brush_from_planes` now skips them. Run a build with
+  `python3 -W error::RuntimeWarning` to catch new ones.
+- Items on a rock islet 16u above deep water are effectively unreachable (Q3 water jump), even if bspc links them.
+- A ship hull as collision: convex station prisms (keel to deck) with the rooms carved out (`padpirate/pp_shapes.ship_*`);
+  keep the sides vertical above the waterline (CW) and below it use min(visual - 8, CW * plan taper), or the hull pokes
+  past jetties built flush to its side. The smooth MD3 skin sits 6+ outside; a cap strip from the skin's top edge in to
+  the bulwark's inner face hides the gap (`padpirate/pp_ship.rail_cap`).
+- Bots ignored a reward (crow's nest Imperius) reached only by a pad in a cul-de-sac (0 pickups in two runs, one visit in
+  4 min) even though bspc linked it; a second pad from a busy route (the jetty) gave 18 pickups. Count route use with
+  `DEBUG_TRIG=1 build_pirate.py`: trigger_multiple -> target_score probes log `AddScore: <client> <count> target_score`.
+- A 30u corridor between props and stair flights is no corridor for bspc: the crew quarters became a TRAP until the
+  capstan in front of the door went.
+- `picture()` in the padaztec models used the viewer's left as +u, so every sign/poster on a quad read mirrored; fixed in
+  `padpirate/pp_models.picture`.
+- Slides leaving a round ring-seg platform: rotate the segments half a step so a flat chord faces the slide and start the
+  slide floor ~12u beyond it (no overlap, tiny gap).
