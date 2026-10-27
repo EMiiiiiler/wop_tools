@@ -57,6 +57,12 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   to the skull, a whale under the glass roof, an imperial stair to the mezzanine, a step pyramid whose open sarcophagus is the
   door to a secret treasury, a planetarium dome you can stand on, a mammoth, a walk-in geode, a giant squid tank, a roof
   terrace with a pad onto the skylight; see padmuseum/README.md.
+- `padaztec/` - *Tlaloc's Lagoon* (`wop_padaztec`): FFA Aztec temple water park in the jungle - a four-tier talud-tablero
+  pyramid with steep stairs, Tlaloc's shrine on the summit, a feathered-serpent tube slide and an eagle flume off it, a
+  tunnel past the tomb, a lagoon with the Sun Stone on a causeway island, a cenote with a spiral stair (underwater
+  serpent-mouth secret), a jaguar temple, Tlaloc's giant fountain head, an eagle-warrior colonnade, a ball court, a
+  cantina; Quetzalcoatl circling the sky; see padaztec/README.md. `az_shapes.py` + `azlib.solids_mesh()` build big
+  architecture once as convex solids and use them both as weapclip collision and as the visible MD3.
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,

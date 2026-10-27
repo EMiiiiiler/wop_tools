@@ -154,3 +154,10 @@ Tools and standing rules for building World of Padman (WoP) maps.
   further back so the arc is high before it crosses the edge, apex <= ceiling - 40 (padmuseum squid tank).
 - `skin()`-style wall texturing by face centre needs one wall brush per room (an outer wall spanning three rooms took
   the middle room's wallpaper everywhere).
+- Big architecture as MD3 with exact collision: describe it once as convex brush solids (`padaztec/az_shapes.py`), add
+  them as `common/weapclip` and turn the same solids into the MD3 with `padaztec/azlib.solids_mesh()` (hidden faces
+  culled, texture/UV per face). Give such shaders `q3map_shadeAngle` 20-30 or neighbouring faces get smoothed together.
+- `carve()` cutting non-axial shapes (octagons, cylinders) could produce a zero-area sliver face whose plane points are
+  collinear (NaN normal, broken brush in the .map); `brush_from_planes` now skips them. Run a build with
+  `python3 -W error::RuntimeWarning` to catch new ones.
+- Items on a rock islet 16u above deep water are effectively unreachable (Q3 water jump), even if bspc links them.
