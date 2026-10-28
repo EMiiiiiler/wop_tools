@@ -473,7 +473,7 @@ def counters():
           model2=bklib.PLACE['turncake'][0], speed=18, spawnflags=0, dmg=0)
     occupy_r(tx, ty, 150, tz, tz + 120)
     prop('cctower', 2050, 1250, W, ang=0, search=80)
-    for (nm, x, y, a) in (('pipingbag_b', 1880, 560, 90), ('pipingbag', 1830, 80, 300), ('berrycrate', 2120, 720, 90), ('boxes3', 2150, -680, 0),
+    for (nm, x, y, a) in (('pipingbag_b', 1880, 560, 90), ('pipingbag', 1830, 80, 300), ('boxes3', 2150, -680, 0),
                           ('jar_spr', 1850, 700, 0), ('cup_lemon', 1800, 1200, 0), ('cup_blue', 1860, 1260, 0), ('eclair', 1850, 40, 40),
                           ('donut_pink', 2150, -480, 0), ('donut_choc', 2080, -400, 0)):
         prop(nm, x, y, W, ang=a, search=120)
@@ -805,9 +805,12 @@ def main():
     import bk_models as BM
     import bk_props as BP
     BM.make(); BP.make()
+    import bk_deluxe as DX
+    DX.make()
     room()
     reserve()
     oven(); counters(); cake(); mixer(); display_cabinet(); cool_room(); racks(); flour_bin_and_vault()
+    DX.place(sys.modules[__name__])
     items_misc(); blockers(); floor_cover(); lights_and_sound()
     moved = fix_items()
     for mv in moved: print('moved', mv)

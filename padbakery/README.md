@@ -31,6 +31,13 @@ BSP + VIS ~10 s, fast light ~1 min, full light (-fast -samples 3 -filter -bounce
     Revival, Killer Ducks, ammo; a teleporter back next to the bin.
   - Cover: sack piles, ingredient bins, egg trays, milk crates, cake boxes, cupcakes, donuts, catalog gummy bears,
     muffins, fruit; pendant lamps, a ceiling fan turning over the cake, posters, a wall clock.
+- **Deluxe pass** (`bk_deluxe.py`, same layout and routes): a cupcake conveyor circling over the cake on a ring rail hung
+  from the ceiling (24 hangers of cupcakes, donuts, macarons and cakes on a func_rotating IQM), a chocolate tempering
+  machine on the east counter (chocolate curtain pouring into its tray, the enrober drum turning about Y), a copper pot
+  rack over the east counter with ladles, whisks and pans swinging (func_pendulum), steam rising from the oven top and
+  the mixer bowl, a glass sprinkle tube along a new jump-pad flight from the floor to the wall shelf, a SWEET PADMAN'S
+  neon script over the flour bin, party bunting round the walls, sparkler candles on the cake top, a ginger cat asleep
+  by the oven (meows now and then) and door chimes at both ways into the shop.
 - `bk_shapes.py` - convex solids shared by the builder (invisible `common/weapclip`) and the models (visible
   surfaces via `bk_mesh.solids_parts`): oven, counters, cake + stair, mixer, display cabinet, cool room, racks, bin.
 - `bk_models.py` - architecture MD3s (oven, flue, counters, cake, slice, mixer + paddle, display cabinet, cool room,
@@ -62,6 +69,10 @@ over 1800u, 4 portals, full light 24 min on 2 cores, BSP 22.8 MB. Bots (10, FFA 
 (Imperius 39, Bubble G 29, Boaster 17, Splasher 13, Pumper 9, Betty 9, Balloony 8), the secret found (Pad Power, Revival).
 
 ## Lessons
+- A ring of things circling the room overhead (radius 1150) is one func_rotating with an IQM model2 holding every
+  hanger already placed on the circle; the static ring rail is an MD3 hung from the ceiling on rods so the support audit
+  counts it as ceiling-hung. bsp2scene renders and turns the IQM too.
+- func_rotating `spawnflags 8` turns about Y (a drum whose axis runs along y); 4 is X.
 - Prop placement by occupied volumes (`FOOT` + `free()`): reserve every architecture brush's bounds first
   (`reserve()`), never a whole cabinet volume, or nothing fits inside the cubbies/cool room/display cabinet.
 - A pad into an oven mouth behind a door ledge: the arc must peak right at the mouth (apex <= mouth top - 32) and stay

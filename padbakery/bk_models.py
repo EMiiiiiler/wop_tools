@@ -420,7 +420,7 @@ def wall_deco():
     """framed posters on the kitchen walls and an OPEN neon in the shop window (one model, world coordinates)"""
     X = Model()
     for (img_, c, nrm) in (('poster_a', (L.HX - 0.6, -400, 1450), (-1, 0, 0)), ('poster_b', (L.HX - 0.6, 800, 1450), (-1, 0, 0)),
-                           ('poster_c', (-L.HX + 0.6, 1300, 1450), (1, 0, 0)), ('poster_a', (-L.HX + 0.6, -1400, 1450), (1, 0, 0))):
+                           ('poster_c', (L.HX - 0.6, -1600, 1450), (-1, 0, 0)), ('poster_a', (-L.HX + 0.6, -1400, 1450), (1, 0, 0))):
         picture(X.mesh(SM(img_, 40, tag='pst')), c, 256, 320, nrm)
     nx = (L.WINDOWS[1][0] + L.WINDOWS[1][1]) / 2
     picture(X.mesh(S('neon_open', 'glow', wave='sin 0.9 0.1 0 0.5', tag='neon')), (nx, -L.HY + 30, 900), 300, 110, (0, 1, 0))
