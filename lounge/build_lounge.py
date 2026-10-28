@@ -34,6 +34,8 @@ from wopmap import *
 import wopmap
 import lounge_textures as TX
 import lounge_models as LM
+import balcony_models as BM
+import balcony_build
 
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MD3ROOT = os.environ.get('MD3ROOT', os.path.expanduser('~/Games/wop/wop/models.pk3dir'))
@@ -47,6 +49,9 @@ for k, v in {'floor': (1, 1), 'rug': (1, 1), 'wall': (1, 1), 'ceiling': (1, 1), 
              'tent_out': (1, 1), 'mylar': (1, 1), 'chrome': (1, 1), 'filter': (1, 1), 'pizza_side': (0.5, 0.5), 'fridge': (1, 1),
              'fridge_in': (1, 1), 'window_frame': (1, 1), 'rubber': (1, 1), 'book_top': (1, 1), 'duct': (1, 1), 'cable': (1, 1),
              'lampshade': (1, 1), 'wheel': (0.5, 0.5), 'leather': (1, 1), 'crate': (0.5, 0.5)}.items():
+    wopmap.TEXSCALE[T(k)] = v
+for k, v in {'deck': (1.75, 1.75), 'brick': (2, 2), 'facade': (3, 3), 'concrete': (2, 2), 'bamboo': (0.75, 0.75), 'street': (8, 8),
+             'far_a': (5, 5), 'far_b': (5, 5), 'tub_floor': (1, 1), 'alu_track': (1, 1), 'lantern': (1, 1), 'sky': (1, 1)}.items():
     wopmap.TEXSCALE[T(k)] = v
 
 M = Map({'message': TX.LONGNAME, '_ambient': '16', '_color': '1 0.9 0.8', 'gridsize': '96 96 128', '_blocksize': '0'})
@@ -78,7 +83,6 @@ TDOOR = (-1520, -1232, 960)                        # door y range in the east wa
 FR = (1376, 1312, 1856, YN, 704)
 # side table (NW) + pizza stairs
 SIDE = (-1408, 1472, -1088, YN, 320)
-WIN = (-560, 560, 640, 1440)                        # south wall window x0, x1, z0, z1
 BOUNDS = json.load(open(os.path.join(os.path.dirname(HERE), 'md3bounds.json')))
 SPOTS = {'weapon': [], 'ammo': [], 'item': [], 'spawn': []}
 JUMPPADS = []
@@ -236,31 +240,15 @@ def shell():
     A(box((-XW - W, YN, 0), (XW + W, YN + W, ZC), {'side': CAULK, 's': T('wall')}, detail=False))
     A(box((-XW - W, YS, 0), (-XW, YN, ZC), {'side': CAULK, 'e': T('wall')}, detail=False))
     A(box((XW, YS, 0), (XW + W, YN, ZC), {'side': CAULK, 'w': T('wall')}, detail=False))
-    # south wall with the window opening + sky pocket behind it
-    x0, x1, z0, z1 = WIN
-    sw = {'side': CAULK, 'n': T('wall')}
-    for (xa, xb, za, zb) in ((-XW - W, XW + W, 0, z0), (-XW - W, XW + W, z1, ZC), (-XW - W, x0, z0, z1), (x1, XW + W, z0, z1)):
+    # south wall: the sliding door onto the balcony and a pet flap near the east end (outside face = the brick facade)
+    dx0, dx1, dh = BM.DOOR
+    vx0, vx1, vh = BM.VENT
+    sw = {'n': T('wall'), 's': T('brick'), 'side': T('window_frame'), 'top': T('window_frame'), 'bot': T('window_frame')}
+    for (xa, xb, za, zb) in ((-XW - W, dx0, 0, ZC), (dx0, dx1, dh, ZC), (dx1, vx0, 0, ZC), (vx0, vx1, vh, ZC), (vx1, XW + W, 0, ZC)):
         A(box((xa, YS - W, za), (xb, YS, zb), sw, detail=False))
-    SKY = T('sky')
-    A(box((x0 - 160, YS - 416, z0 - 160), (x1 + 160, YS - 400, z1 + 160), SKY, detail=False))
-    A(box((x0 - 160, YS - 400, z0 - 160), (x0 - 144, YS - W, z1 + 160), SKY, detail=False))
-    A(box((x1 + 144, YS - 400, z0 - 160), (x1 + 160, YS - W, z1 + 160), SKY, detail=False))
-    A(box((x0 - 144, YS - 400, z0 - 160), (x1 + 144, YS - W, z0 - 144), SKY, detail=False))
-    A(box((x0 - 144, YS - 400, z1 + 144), (x1 + 144, YS - W, z1 + 160), SKY, detail=False))
-    # window: frame, mullion, transom, glass, sill sticking into the room
-    fr = T('window_frame')
-    A(box((x0 - 16, YS, z0 - 16), (x1 + 16, YS + 24, z0), fr))
-    A(box((x0, YS - W, z1 - 16), (x1, YS, z1), fr))
-    A(box((x0, YS - W, z0), (x0 + 16, YS, z1 - 16), fr)); A(box((x1 - 16, YS - W, z0), (x1, YS, z1 - 16), fr))
-    xm = (x0 + x1) // 2
-    A(box((xm - 8, YS - W, z0), (xm + 8, YS - 4, z1 - 16), fr))
-    zm = (z0 + z1) // 2
-    for (xa, xb) in ((x0 + 16, xm - 8), (xm + 8, x1 - 16)):
-        A(box((xa, YS - W, zm - 8), (xb, YS - 4, zm + 8), fr))
-        for (za, zb) in ((z0, zm - 8), (zm + 8, z1 - 16)):
-            A(box((xa, YS - 12, za), (xb, YS - 8, zb), T('glass')))
+    x0, x1 = dx0, dx1
     # curtain rod + tie-dye curtains hanging either side of the window (floor length)
-    A(deco((x0 - 320, YS + 24, 1640), (x1 + 320, YS + 40, 1656), T('chrome_ns')))
+    A(deco((x0 - 320, YS + 24, dh + 40), (x1 + 320, YS + 40, dh + 56), T('chrome_ns')))
     for (xa, xb) in ((x0 - 288, x0 - 64), (x1 + 64, x1 + 288)):
         b = box((xa, YS, 0), (xb, YS + 32, 1632), {'n': T('curtain'), 'side': T('curtain'), 'top': T('curtain'), 'bot': CAULK})
         for f in b.faces:
@@ -636,7 +624,7 @@ def props():
                 for z in (cz, cz + 108)], WCLIP))
     custom('crisps', 1000, -1150, 0, angle=10, lit=False)
     # pizza box stacks (cover) + an open box
-    for (cx, cy, n) in ((880, -760, 3), (-400, -1640, 2)):
+    for (cx, cy, n) in ((880, -760, 3),):
         for k in range(n):
             ox = 18 * ((k * 5) % 3 - 1)
             b = box((cx - 144 + ox, cy - 144, 32 * k), (cx + 144 + ox, cy + 144, 32 * k + 32), {'top': T('pizza_top'), 'side': T('pizza_side'), 'bot': CAULK})
@@ -726,7 +714,7 @@ def fairy_lights():
     cols = ['bulb_r', 'bulb_g', 'bulb_b', 'bulb_y', 'bulb_p']
     k = 0
     runs = [((-XW + 64, YN - 8), (XW - 64, YN - 8), 'x'), ((-XW + 8, -1700), (-XW + 8, 1700), 'y'), ((XW - 8, -1700), (XW - 8, 1700), 'y'),
-            ((-XW + 64, YS + 8), (WIN[0] - 360, YS + 8), 'x'), ((WIN[1] + 360, YS + 8), (XW - 64, YS + 8), 'x')]
+            ((-XW + 64, YS + 8), (BM.DOOR[0] - 360, YS + 8), 'x'), ((BM.DOOR[1] + 360, YS + 8), (XW - 64, YS + 8), 'x')]
     for (a, b, ax) in runs:
         L = abs((b[0] - a[0]) if ax == 'x' else (b[1] - a[1]))
         n = int(L // 160)
@@ -741,10 +729,7 @@ def fairy_lights():
 def lights_and_sound():
     for (x, y) in ((-1200, -900), (0, -900), (1200, -900), (-1200, 250), (1200, 250), (0, -150), (-600, 1000), (600, 1000)):
         light(x, y, 950, 1350, '1 0.84 0.62')
-    light(0, -1500, 1100, 500, '0.55 0.65 1')         # moonlight through the window
-    speaker(0, YS + 60, 1100, 'sound/world/animal/cricket_chirp1.ogg', volume=0.4)
-    timer_sound(0, YS + 60, 1000, 'sound/world/ambient/police_pass.ogg', 'police', 75, 40)
-    timer_sound(-1500, YS + 80, 900, 'sound/world/animal/dog_bark2.ogg', 'dog', 50, 30)
+    light(0, -1500, 1100, 500, '0.55 0.65 1')         # moonlight through the door
     timer_sound(1800, YN - 80, 900, 'sound/world/misc/door_buzzer.ogg', 'pizza', 90, 40)
 
 
@@ -764,7 +749,8 @@ def main():
     TX.make_all(OUT)
     shell(); rug(); couch(); secret(); side_table(); coffee_table(); tv_stand(); bookshelf(); grow_tent(); mini_fridge()
     props(); floor_blockers(); posters(); fairy_lights(); lights_and_sound(); spawns(); fog()
-    M.ent('info_player_intermission', (-300, -1600, 1300), angles='20 70 0')
+    balcony_build.build(sys.modules[__name__])
+    M.ent('info_player_intermission', (1900, -4850, 1500), angles='18 140 0')
     os.makedirs(os.path.join(OUT, 'maps'), exist_ok=True)
     open(os.path.join(OUT, 'maps', MAPNAME + '.map'), 'w').write(
         M.text(f"// {TX.LONGNAME} - generated by wop_tools/lounge/build_lounge.py\n"))

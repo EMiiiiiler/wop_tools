@@ -174,3 +174,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
   `padpirate/pp_models.picture`.
 - Slides leaving a round ring-seg platform: rotate the segments half a step so a flat chord faces the slide and start the
   slide floor ~12u beyond it (no overlap, tiny gap).
+- A jump pad onto a top with an overhanging edge (pergola rafters) can pass pad_check and still fail in bspc, whose
+  0.1 s-frame flight ends at the first ground contact; when moving the pad back isn't possible, add a `func_plat` lift
+  through a hatch for bots (lounge balcony: 17 elevator reachabilities) and keep the pad for players.
+- Outdoor areas round an indoor map: put the building round the old room shell as touching blocks and a tight sky box with
+  a painted skyline (`lounge/balcony_textures.make_sky`) instead of real distant geometry; give big facade shaders
+  `q3map_lightmapSampleSize 64`. Full bounce light still took 112 min on 2 cores with ~90 lightmapped MD3s.

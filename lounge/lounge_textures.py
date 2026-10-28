@@ -613,8 +613,6 @@ def make_shader(W, out, model_shaders):
     S += lm('mousehole') + lm('cable', extra='\tsurfaceparm nonsolid\n\tsurfaceparm trans\n')
     for nm in ('chrome', 'wheel'):
         S += lm(nm + '_ns', extra='\tsurfaceparm nonsolid\n', tex=f'textures/{NS}/{nm}')
-    for nm in ('chrome', 'wheel'):
-        S += lm(nm + '_ns', extra='\tsurfaceparm nonsolid\n', tex=f'textures/{NS}/{nm}')
     # black-light poster: lightmapped + a pulsing additive glow of itself
     S += (f'textures/{NS}/poster_420\n{{\n\tqer_editorimage textures/{NS}/poster_420\n\tq3map_surfacelight 40\n\tq3map_lightRGB 0.7 0.3 1\n'
           f'\t{{\n\t\tmap $lightmap\n\t\trgbGen identity\n\t}}\n\t{{\n\t\tmap textures/{NS}/poster_420\n\t\tblendFunc GL_DST_COLOR GL_ZERO\n\t}}\n'
@@ -639,9 +637,9 @@ def make_shader(W, out, model_shaders):
 	surfaceparm nolightmap
 	surfaceparm sky
 	q3map_lightimage textures/{NS}/skylight
-	q3map_sun 0.55 0.62 1 60 210 40
-	q3map_skylight 25 3
-	skyparms env/padcity512 - -
+	q3map_sun 0.62 0.7 1 55 270 35
+	q3map_skylight 30 3
+	skyparms env/padlounge/night - -
 }}
 
 textures/{NS}/glass
@@ -675,6 +673,25 @@ textures/{NS}/smoke
 		alphaGen wave sin 0.7 0.2 0 0.15
 		tcMod scroll 0.02 -0.18
 		tcMod turb 0 0.08 0 0.12
+	}}
+}}
+
+textures/{NS}/steam
+{{
+	qer_editorimage textures/{NS}/smoke
+	surfaceparm trans
+	surfaceparm nonsolid
+	surfaceparm nomarks
+	surfaceparm nolightmap
+	deformVertexes autosprite2
+	cull none
+	{{
+		map textures/{NS}/smoke.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen const ( 0.75 0.85 0.9 )
+		alphaGen wave sin 0.35 0.12 0 0.2
+		tcMod scroll 0.03 -0.25
+		tcMod turb 0 0.1 0 0.15
 	}}
 }}
 
@@ -714,10 +731,17 @@ def make_arena(out):
         '{\n\tmap      "%s"\n\tlongname "%s"\n\ttype     "ffa lps team ft syc_ffa"\n}\n' % (MAP, LONGNAME))
 
 
+BALCONY_SCALES = {}
+
+
 def make_all(out):
+    import balcony_models, balcony_textures
     W = TexWriter(out)
     make_textures(W)
     ms = lounge_models.make(out)
+    bs, sc = balcony_models.make(out)
+    BALCONY_SCALES.clear(); BALCONY_SCALES.update(sc)
+    ms += bs + balcony_textures.make(TexWriter(out), out)
     make_shader(W, out, ms)
     make_arena(out)
     return W
