@@ -39,6 +39,8 @@ import wopmap
 import layout as L
 import moose_textures as TX
 import moose_models as MM
+import wing_models as WM
+import wing
 
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MD3ROOT = os.environ.get('MD3ROOT', os.path.expanduser('~/Games/wop/wop/models.pk3dir'))
@@ -138,16 +140,19 @@ def timer_sound(x, y, z, noise, name, wait, rnd, **kw):
 def item(cls, x, y, floor, **kw):
     M.ent(cls, (round(x), round(y), round(floor) + 16), **kw)
     SPOTS['ammo' if cls.startswith('ammo') else 'item'].append((cls, x, y, floor))
+    if abs(floor) < 1: KEEP_OUT.append((x, y, 32))          # later decoration keeps clear of floor pickups
 
 
 def weapon(w, x, y, floor, marker='blue', **kw):
     M.ent('weapon_' + w, (round(x), round(y), round(floor) + 16), marker=marker, **kw)
     SPOTS['weapon'].append((w, x, y, floor))
+    if abs(floor) < 1: KEEP_OUT.append((x, y, 32))
 
 
 def spawn(x, y, floor, ang):
     M.ent('info_player_deathmatch', (round(x), round(y), round(floor) + 25), angle=ang % 360)
     SPOTS['spawn'].append((x, y, floor))
+    if abs(floor) < 1: KEEP_OUT.append((x, y, 40))
 
 
 def hfit(b, x0, y0, x1, y1, tw, th, tex):
@@ -268,12 +273,13 @@ def hull_box():
     X0, Y0 = L.HX + L.WALL + 64, L.HY + L.WALL + 64
     Z0, Z1 = L.SLAB_BOT - 32, L.RIDGE + L.ROOF_T + 160
     sk = {'side': CAULK, 'top': CAULK, 'bot': CAULK}
-    A(box((-X0 - W, -Y0 - W, Z0 - W), (X0 + W, Y0 + W, Z0), dict(sk, top=T('sky')), detail=False))
-    A(box((-X0 - W, -Y0 - W, Z1), (X0 + W, Y0 + W, Z1 + W), dict(sk, bot=T('sky')), detail=False))
+    YS = -wing.HULL_Y0                              # the hull reaches south over the Frost Deck and Thunder Bay
+    A(box((-X0 - W, -YS - W, Z0 - W), (X0 + W, Y0 + W, Z0), dict(sk, top=T('sky')), detail=False))
+    A(box((-X0 - W, -YS - W, Z1), (X0 + W, Y0 + W, Z1 + W), dict(sk, bot=T('sky')), detail=False))
     A(box((-X0 - W, Y0, Z0), (X0 + W, Y0 + W, Z1), dict(sk, s=T('sky')), detail=False))
-    A(box((-X0 - W, -Y0 - W, Z0), (X0 + W, -Y0, Z1), dict(sk, n=T('sky')), detail=False))
-    A(box((X0, -Y0, Z0), (X0 + W, Y0, Z1), dict(sk, w=T('sky')), detail=False))
-    A(box((-X0 - W, -Y0, Z0), (-X0, Y0, Z1), dict(sk, e=T('sky')), detail=False))
+    A(box((-X0 - W, -YS - W, Z0), (X0 + W, -YS, Z1), dict(sk, n=T('sky')), detail=False))
+    A(box((X0, -YS, Z0), (X0 + W, Y0, Z1), dict(sk, w=T('sky')), detail=False))
+    A(box((-X0 - W, -YS, Z0), (-X0, Y0, Z1), dict(sk, e=T('sky')), detail=False))
 
 
 POOL_TILE_A = (-1984, 224, -800, 1504)
@@ -344,12 +350,27 @@ def walls():
         xs = [-X1 - Wt]
         for (a, b) in opens: xs += [a, b]
         xs.append(X1 + Wt)
-        # lower band, piers
-        A(box((-X1 - Wt, y0, 0), (X1 + Wt, y1, 96), wtex(face, True)))
-        A(box((-X1 - Wt, y0, 96), (X1 + Wt, y1, WIN[0]), wtex(face)))
+        # lower band, piers (the south wall has doorways out to the Frost Deck under three of its windows)
+        doors = [xc for xc in wing.DOOR_X] if sg < 0 else []
+        lows = [(-X1 - Wt, X1 + Wt)]
+        for xc in doors:
+            nl = []
+            for (a, b) in lows:
+                if b <= xc - 128 or a >= xc + 128: nl.append((a, b)); continue
+                if a < xc - 128: nl.append((a, xc - 128))
+                if b > xc + 128: nl.append((xc + 128, b))
+            lows = nl
+        for (a, b) in lows:
+            A(box((a, y0, 0), (b, y1, 96), dict(wtex(face, True), s=T('logwall'))))
+            A(box((a, y0, 96), (b, y1, WIN[0]), dict(wtex(face), s=T('logwall'))))
+        for xc in doors:
+            A(box((xc - 128, y0, wing.DOOR_H), (xc + 128, y1, wing.DOOR_H + 16), {'side': T('glulam'), 'top': CAULK, 'bot': T('glulam')}))
+            A(box((xc - 128, (y0 + y1) / 2 - 2, wing.DOOR_H + 16), (xc + 128, (y0 + y1) / 2 + 2, WIN[1]), T('glass')))
+            NOGO.append((xc - 200, -L.HY, xc + 200, -L.HY + 220)); KEEP_OUT.append((xc, -L.HY + 60, 140))
         for i in range(0, len(xs), 2):
-            A(box((xs[i], y0, WIN[0]), (xs[i + 1], y1, WIN[1]), wtex(face)))
+            A(box((xs[i], y0, WIN[0]), (xs[i + 1], y1, WIN[1]), dict(wtex(face), s=T('logwall')) if sg < 0 else wtex(face)))
         for (a, b) in opens:
+            if (a + b) / 2 in doors: continue
             gl = box((a, (y0 + y1) / 2 - 2, WIN[0]), (b, (y0 + y1) / 2 + 2, WIN[1]), T('glass'))
             A(gl)
             M.ent('light', (round((a + b) / 2), round(sg * (Y1 - 40)), 300), light=160, _color='0.6 0.75 1')
@@ -357,7 +378,7 @@ def walls():
         zin = L.EAVE; zout = L.EAVE - Wt * s
         yi, yo = (y0, y1) if sg > 0 else (y1, y0)
         A(hull([(x, yi, z) for x in (-X1 - Wt, X1 + Wt) for z in (WIN[1], zin)] + [(x, yo, z) for x in (-X1 - Wt, X1 + Wt) for z in (WIN[1], zout)],
-               wtex(face)))
+               dict(wtex(face), s=T('logwall')) if sg < 0 else wtex(face)))
     # gable walls
     for sx in (-1, 1):
         x0, x1 = (X1, X1 + Wt) if sx > 0 else (-X1 - Wt, -X1)
@@ -1260,7 +1281,7 @@ def blockers():
     for (x, y, s) in ((-1650, -520, 0.7), (-1000, -500, 0.65), (1000, -580, 0.65), (-200, -760 - 260, 0.6), (240, -1060, 0.6),
                       (-560, 520, 0.6), (620, 860, 0.6), (-1650, 100, 0.6), (1600, 600, 0.6), (-1100, -1420, 0.65), (420, -1440, 0.6),
                       (-1450, -1510, 0.6), (-750, -1510, 0.6), (-60, -1510, 0.6), (1000, 220, 0.6), (-1000, 100, 0.6), (1900, -1450, 0.6)):
-        q = near_free(x, y, 90)
+        q = near_free(x, y, 140)
         if q is None:
             print('NOTE blocker not free', x, y); continue
         x, y = q
@@ -1370,7 +1391,7 @@ def items_misc():
 
 
 def spawns():
-    sp = [(-1700, -1300, 45), (-600, -1500, 90), (300, -1500, 90), (1800, -1300, 135), (1950, -200, 180), (1950, 1300, 225),
+    sp = [(-1700, -1300, 45), (-600, -1350, 90), (300, -1500, 90), (1800, -1300, 135), (1950, -200, 180), (1950, 1300, 225),
           (900, 1500, 270), (-700, 1500, 270), (-1400, 1580, 300), (-1950, -100, 0), (-1950, -1000, 0), (600, -400, 135),
           (-600, -200, 30), (-300, 920, 300), (900, 600, 225), (1050, -200, 160)]
     for (x, y, a) in sp:
@@ -1397,6 +1418,8 @@ def main():
     TX.make_textures(W)
     TX.extra_textures(W)
     MM.make(OUT)
+    WM.make(OUT)
+    TX.wing_textures(W)
     hull_box()
     walls(); hall_timbers()
     activity_pool(); grotto(); river_island(); tower(); slides(); plunge_pool(); snack_bar(); tiny_timbers(); stump(); spa()
@@ -1405,6 +1428,7 @@ def main():
     ZONES.insert(1, ((L.TW[0] + 12, L.TW[1] + 12, L.TW[2] - 12, L.TW[3] - 12), T('planks')))
     slab()
     blockers(); decor(); items_misc(); spawns(); lights_and_sound()
+    wing.build(sys.modules[__name__])
     M.ent('info_player_intermission', (-1500, -1300, 420), angles='18 40 0')
     TX.make_shader(W, OUT, MM.shaders())
     TX.make_arena(OUT)

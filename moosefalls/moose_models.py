@@ -556,7 +556,7 @@ def duct(hang):
         ring = [(x, (R + 2) * math.cos(t), (R + 2) * math.sin(t)) for t in np.linspace(0, 2 * math.pi, 17)]
         tube(X.mesh(mt), ring, 3, nseg=5, caps=(False, False))
         box_mesh(X.mesh(mt), (x - 3, -3, R), (x + 3, 3, R + hang))
-    return _save('duct', X)
+    return _save(f'duct{int(round(hang))}', X)
 
 
 def lamp(name, rod):
@@ -959,6 +959,11 @@ def shaders():
             s += (f'{name}\n{{\n\tqer_editorimage {MD}/env\n\tq3map_nonplanar\n\tq3map_shadeAngle 70\n'
                   f'\t{{\n\t\tmap {MD}/env\n\t\ttcGen environment\n\t\trgbGen identity\n\t}}\n'
                   f'\t{{\n\t\tmap $lightmap\n\t\tblendFunc GL_DST_COLOR GL_ZERO\n\t\trgbGen identity\n\t}}\n}}\n\n')
+        elif kind == 'flame':
+            s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\tsurfaceparm nonsolid\n\tsurfaceparm trans\n\tcull none\n'
+                  f'\t{{\n\t\tmap {t}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen wave sin 0.85 0.15 0 3\n\t\ttcMod scroll 0.07 -0.9\n\t\ttcMod turb 0 0.05 0 0.6\n\t}}\n}}\n\n')
+        elif kind == 'glow' and not opt.get('light', 1200):
+            s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\t{{\n\t\tmap {t}\n\t\trgbGen identity\n\t}}\n}}\n\n')
         elif kind == 'glow':
             s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\tq3map_surfacelight {opt.get("light", 1200)}\n\tq3map_lightRGB {opt.get("rgb", "1 0.86 0.62")}\n'
                   f'\t{{\n\t\tmap {t}\n\t\trgbGen identity\n\t}}\n}}\n\n')
