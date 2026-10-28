@@ -58,8 +58,8 @@ Unzip `wop_padbakery_source.zip` into a folder the game sees (for example `wop/z
 audit_map OK, check_entities OK, pad_check OK (24 pads, all under 2.5 s), aas_check OK (every pickup reachable, 12
 routes: proofer, both counter tunnels at floor and mid-shelf level, the east tunnel, cake stair, cake cave, both
 display step stools, both ways round the shop, the cool room door, the bin stair), sightlines 3.1 % of eye-level rays
-over 1800u, 4 portals. Bots (10, FFA 3 min): every weapon taken (Imperius 17, Boaster 15, Bubble G 14, Splasher 6,
-Pumper 6, Balloony 5, Betty 2), the secret found (Pad Power, Killer Ducks).
+over 1800u, 4 portals, full light 24 min on 2 cores, BSP 22.8 MB. Bots (10, FFA 5 min): 50 kills, every weapon taken
+(Imperius 39, Bubble G 29, Boaster 17, Splasher 13, Pumper 9, Betty 9, Balloony 8), the secret found (Pad Power, Revival).
 
 ## Lessons
 - Prop placement by occupied volumes (`FOOT` + `free()`): reserve every architecture brush's bounds first
