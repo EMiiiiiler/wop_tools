@@ -43,6 +43,8 @@ open balcony and ~90 lightmapped MD3s; `-fast -samples 3 -filter` without bounce
   - **pergola** (west, rafters walkable at 1600): a `func_plat` lift up through a hatch (bots use it) and a jump pad from
     the house wall (players); Betty on top. Under it a rattan L sofa, table with a lantern and crisps, hanging baskets,
     a wind chime, festoon lights.
+  - jump pads round the balcony: deck -> spa platform, deck -> AC unit top (armor shard), spa platform <-> pergola top.
+    The loungers collide as seat slab + legs + back only, so you can walk under them.
   - kettle BBQ (Splasher), AC unit with a spinning fan (func_rotating), patio heater (Bubble G), hammock on a stand,
     herb planter (Balloony), cooler, deck box, potted plants.
 - `balcony_models.py` - the balcony MD3s and the layout constants they share with the collision: hot tub, pergola, sofa,
@@ -87,3 +89,5 @@ Unzip `wop_padlounge_source.zip` into a folder the game sees (for example `wop/z
 ### v2 with the balcony (10 bots, FFA 4 min)
 - 37 kills; every weapon taken: Bubble G 31, Pumper 27, Imperius 26 (bookshelf + tub bottom), Splasher 21, Balloony 16,
   Boaster 14, Betty 6 (tent roof + pergola via the lift). The tub-drain secret works for bots: Revival taken twice.
+- v2.1 (more pads, walk under the loungers): 40 kills in 4 min; Betty pickups (tent roof + pergola) went 6 -> 17 once the
+  platform <-> pergola pads were in.

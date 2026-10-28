@@ -125,9 +125,8 @@ def build(L):
     # platform dressing: loungers, telescope, potted plants, corner light posts
     for k in range(len(BM.LOUNGERS)):
         custom_b(f'b_lounger{k}')
-    for (pa, pb) in BM.LOUNGER_BOXES:
-        xa, xb = sorted((pa[0], pb[0])); ya, yb = sorted((pa[1], pb[1]))
-        A(box((round(xa), round(ya), pz), (round(xb), round(yb), pz + 262), WCLIP))
+    for pts in BM.LOUNGER_BOXES:                     # seat slab, legs, back: walk under the seat
+        A(hull([tuple(p) for p in pts], WCLIP))
     L.mdl_c('pad_ddmix/cabin/telescope.md3', 1900, -4780, pz, 1.4, 120)
     L.custom('plant_small', 450, -3080, pz + L.LM.PLANT_SMALL_OFS, angle=40)
     A(cyl(450, -3080, round(0.16 * 620), pz, round(pz + 0.25 * 620), WCLIP, 16))
@@ -169,6 +168,12 @@ def build(L):
     L.item('ammo_betty', -800, -4500, BM.PERG_TOP)
     L.item('item_armor_shard', -1700, -2900, BM.PERG_TOP)
     L.jumppad(-1240, -1920, 0, (-1240, -3420, BM.PERG_TOP), BM.PERG_TOP + 200, 'pergola')
+    # more pads round the balcony (navigation): deck -> spa platform, deck -> AC top, platform <-> pergola top
+    L.jumppad(100, -4450, 0, (820, -4480, BM.PLAT[4]), BM.PLAT[4] + 260, 'deck_spa')
+    L.jumppad(1550, -2600, 0, (1760, -2114, BM.AC[4]), BM.AC[4] + 220, 'ac_top')
+    L.item('item_armor_shard', 1320, -2114, BM.AC[4])
+    L.jumppad(600, -4620, BM.PLAT[4], (-900, -4450, BM.PERG_TOP), BM.PERG_TOP + 200, 'spa_pergola')
+    L.jumppad(-700, -3700, BM.PERG_TOP, (900, -3380, BM.PLAT[4]), BM.PERG_TOP + 150, 'pergola_spa')
     L.item('ammo_bubbleg', -1100, -3200, 0)                    # under the pergola, in front of the sofa
     L.item('item_armor_padshield', -1150, -4250, 0)
     L.speaker((gx0 + gx1) / 2, gy0 - 50, BM.PERG_BEAM_Z - 200, 'sound/world/misc/wind_chimes.ogg', loop=False, targetname='chimes')

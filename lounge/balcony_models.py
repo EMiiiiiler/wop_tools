@@ -421,7 +421,15 @@ def lounger(x, y, yaw, z0):
     Rb = R @ rot_axis((0, 1, 0), -math.atan2(380, 340))
     X('cushion_stripe').add(seat, R, (x, y, z0))
     X('cushion_stripe').add(back, Rb, P((L / 2 - 340, 0, 240)))
-    return X, [(P((-L / 2, -Wd / 2, 0)), P((L / 2 - 330, Wd / 2, 0)))]
+    # collision (world-space convex point sets): the seat slab, four legs and the raised back - you can walk under it
+    def corners(mn, mx, M_=R, t=np.array([x, y, z0])):
+        return [M_ @ np.array([a, b, c]) + t for a in (mn[0], mx[0]) for b in (mn[1], mx[1]) for c in (mn[2], mx[2])]
+    col = [corners((-L / 2, -Wd / 2, 210), (L / 2 - 340, Wd / 2, 262))]
+    for px in (-L / 2 + 30, L / 2 - 360):
+        for sx in (-Wd / 2, Wd / 2):
+            col.append(corners((px - 12, sx - 12, 0), (px + 12, sx + 12, 210)))
+    col.append(corners((60, -Wd / 2, 0), (390, Wd / 2, 40), Rb, P((L / 2 - 340, 0, 240))))
+    return X, col
 
 
 # ================================================================================================ planters
@@ -800,7 +808,7 @@ def make(out):
     save('b_heater', heater()); save('b_deckbox', deckbox()); save('b_cooler', cooler()); save('b_hammock', hammock()); save('b_slider', slider()); save('b_gnome', gnome())
     LOUNGER_BOXES.clear()
     for k, (x, y, yaw) in enumerate(LOUNGERS):
-        X, boxes = lounger(x, y, yaw, PLAT[4]); LOUNGER_BOXES.extend(boxes)
+        X, col = lounger(x, y, yaw, PLAT[4]); LOUNGER_BOXES.extend(col)
         save(f'b_lounger{k}', X, (x, y, PLAT[4]))
     for k, (x0, y0, x1, y1) in enumerate(PLANTERS):
         save(f'b_planter{k}', planter(x0, y0, x1, y1), ((x0 + x1) / 2, (y0 + y1) / 2, 0))
