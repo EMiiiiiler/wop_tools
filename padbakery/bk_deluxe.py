@@ -54,10 +54,10 @@ def tex_neon(w=1024, h=256, text="Sweet Padman's", col=(255, 80, 170)):
         sz -= 6
     g = Image.new('RGB', (w, h), (0, 0, 0)); dg = ImageDraw.Draw(g)
     dg.text((w / 2, h / 2), text, font=f, fill=col, anchor='mm')
-    g = g.filter(ImageFilter.GaussianBlur(10))
-    d.text((w / 2, h / 2), text, font=f, fill=col, anchor='mm', stroke_width=3, stroke_fill=col)
+    g = g.filter(ImageFilter.GaussianBlur(5))
+    d.text((w / 2, h / 2), text, font=f, fill=col, anchor='mm', stroke_width=2, stroke_fill=col)
     d.text((w / 2, h / 2), text, font=f, fill=(255, 235, 245), anchor='mm')
-    a = np.asarray(im, np.float32) + np.asarray(g, np.float32) * 1.6
+    a = np.asarray(im, np.float32) * 0.9 + np.asarray(g, np.float32) * 0.55
     return a
 
 
@@ -279,9 +279,10 @@ def neon_sign():
     """neon script on the west wall over the flour bin (world coordinates)"""
     X = Model()
     sh = S('neon_script', 'add', wave='sin 0.92 0.08 0 0.6', tag='ns')
-    picture(X.mesh(sh), (-L.HX + 1.0, 1350, 1430), 900, 225, (1, 0, 0))
+    boxm(X.mesh(SM('black', 40, tag='nsb')), (-L.HX, 1350 - 480, 1430 - 135), (-L.HX + 8, 1350 + 480, 1430 + 135), r=2, tile=128)
+    picture(X.mesh(sh), (-L.HX + 9.0, 1350, 1430), 900, 225, (1, 0, 0))
     ch = S('steel', 'lms', v=0.3, shade=50, tag='ns')
-    for y in (950, 1750):
+    for y in (840, 1860):
         tube(X.mesh(ch), [(-L.HX, y, 1430), (-L.HX + 14, y, 1430)], 4, nseg=6)
     return save('neon_sign', X)
 

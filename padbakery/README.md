@@ -61,12 +61,12 @@ Unzip `wop_padbakery_source.zip` into a folder the game sees (for example `wop/z
     q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -light -fast -samples 3 -filter -bounce 2 -bouncegrid -custinfoparms maps/wop_padbakery.map
     bspc -forcesidesvisible -optimize -bsp2aas maps/wop_padbakery.bsp
 
-## Checks (Oct 2026)
-audit_map OK, check_entities OK, pad_check OK (24 pads, all under 2.5 s), aas_check OK (every pickup reachable, 12
-routes: proofer, both counter tunnels at floor and mid-shelf level, the east tunnel, cake stair, cake cave, both
-display step stools, both ways round the shop, the cool room door, the bin stair), sightlines 3.1 % of eye-level rays
-over 1800u, 4 portals, full light 24 min on 2 cores, BSP 22.8 MB. Bots (10, FFA 5 min): 50 kills, every weapon taken
-(Imperius 39, Bubble G 29, Boaster 17, Splasher 13, Pumper 9, Betty 9, Balloony 8), the secret found (Pad Power, Revival).
+## Checks (Oct 2026, Deluxe pass)
+audit_map OK, check_entities OK, pad_check OK (25 pads incl. the sprinkle tube, all under 2.5 s), aas_check OK (every
+pickup reachable, 12 routes: proofer, both counter tunnels at floor and mid-shelf level, the east tunnel, cake stair,
+cake cave, both display step stools, both ways round the shop, the cool room door, the bin stair), sightlines 3.1 % of
+eye-level rays over 1800u, 4 portals, full light ~18 min on 2 cores, BSP ~23 MB. Bots (10, FFA 5 min): 53 kills, every
+weapon taken (Imperius 44, Bubble G 27, Boaster 26, Betty 17, Balloony 15, Pumper 7, Splasher 2), the secret found.
 
 ## Lessons
 - A ring of things circling the room overhead (radius 1150) is one func_rotating with an IQM model2 holding every
