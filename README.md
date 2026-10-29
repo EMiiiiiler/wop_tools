@@ -2,6 +2,18 @@
 
 Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc.
 
+## Start here
+- `newmap.py wop_x "Name"` - scaffold a map folder (mapinfo.json, a working woplib generator, design sheet).
+- `wopbuild.py <folder> <steps>` - the pipeline (gen lint compile aas sight bots render levelshots package; `check`,
+  `all`), driven by `mapinfo.json`, writes `<out>/report.md` (definition of done). Env: Q3MAP2 BSPC GAME WOPDED THREE.
+- `woplib/` - shared generator library: `kit.MapKit` (occupancy placement, catalog/custom models with collision,
+  items, pads, teleports, secrets, movers, stairs, routes, spots.json), `models` (MD3/IQM + textures + model shader
+  kinds), `shaders` (brush shaders, validated .shader/.arena writers), `padmath`, `wopdata` (WoP facts).
+- `templates/sample/` - reference map that passes every step (`wopbuild.py templates/sample all`).
+- `docs/SKILL.md` - the wop-mapping skill: process, definition of done, symptom -> fix table, all rules.
+- `tests/run.sh` - regression tests for woplib and the checkers.
+- `data/custinfoparms.txt` - WoP footstep surfaceparms for `-custinfoparms`.
+
 ## Map building
 - `wopmap.py` - brush/entity library. Brushes are convex hulls of points (boxes, wedges, ramps, n-gon prisms,
   slanted slide segments...), `stairs()` (16u rise, optional thin slabs), `sub_rects()` for cutting holes, `carve()` (CSG: subtract brushes from a brush, e.g. water around everything in it),
@@ -82,7 +94,17 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `lfs_fetch.py` - replace LFS stubs in a shallow WoP checkout with the real files; `--map maps/x.map` pulls every md3,
   the images its shaders use (resolved through WoP's shader scripts) and the map's skybox.
 
-## Checks (run on every map)
+## Checks (run on every map; wopbuild runs them all)
+- `lint_map.py map [--shaders] [--md3root] [--spots]` - the play-test complaints audit_map doesn't catch: names
+  (textures/ prefix, case, non-existent common shaders, nonsolid nodraw), entities (forbidden/unknown classes, dangling
+  targets, rotating movers with origin key + brush, decorative func_bobbing, origins outside the world), pads (flight
+  > 2.9 s, landings in hurt zones), items (falling through clip floors, near hurt zones, weapon height table), water
+  exits, crouch-only headroom (FAIL on stairs), visible caulk (voxel flood from spawns/items), rotor sweeps, arena,
+  sounds.
+- `pk3_check.py <build dir or pk3> --map X --game <dir> [--source zip]` - every texture, shader image, model, MD3/IQM
+  surface shader and sound resolves; bsp/aas/arena/levelshots present, aas newer than bsp, lower-case names.
+- `botreport.py games.log --map X.map [--spots]` - pickups per item (placed vs taken), kills by means of death,
+  FAIL for weapons never taken / secret never found, WARN for environmental deaths and odd kill rates.
 - `audit_map.py map --md3root <dir holding models/>` - brush overlaps, entities/items/spawns in solids or
   triggers, models resting on a surface (no floating/overhang) and not sunk into brushes, 3-6 ammo per weapon.
 - `aas_check.py map.aas map.map` - every pickup reachable by bots from the spawns and not a trap (reads the

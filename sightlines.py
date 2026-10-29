@@ -93,7 +93,7 @@ def main():
     ap.add_argument('--dirs', type=int, default=16)
     ap.add_argument('--shaders', action='append', default=[], help='dir(s) with scripts/*.shader (classify fog/nonsolid by surfaceparm)')
     a = ap.parse_args()
-    if a.shaders: A.load_shaders(a.shaders)
+    if a.shaders: A.load_shaders(a.shaders); A.add_common_parms()
     x0, y0, x1, y1 = [float(v) for v in a.bounds.split(',')]
     planes, nb = load_blockers(a.map, a.md3bounds, md3roots=a.md3root)
     print(f'{nb} brushes + {len(planes) - nb} model boxes as blockers')

@@ -20,6 +20,14 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Any water needs a way out (portal, ladder or ramp). Note bots do not climb ladders; use stairs or jump pads.
 - Full explorability: every door or building can be entered, and every building can be climbed. Rooftop access must not have geometry blocking line of fire to other players.
 
+## Start here (new map or big change)
+- Read `docs/SKILL.md` (the process, definition of done, symptom -> fix table). It is the source of the wop-mapping skill.
+- `python3 newmap.py wop_x "Name"` scaffolds a folder on `woplib` (MapKit, models, shaders, padmath, wopdata);
+  `templates/sample/build.py` is the reference generator. Don't copy a map's `*lib.py` any more.
+- `python3 wopbuild.py <folder> check` (gen lint compile aas sight), then `bots render levelshots package`; every run
+  writes `<out>/report.md`. A map is done when every step is PASS (or a WARN you looked at).
+- `tests/run.sh` must pass after any change to woplib or a checker.
+
 ## Tools (see README.md)
 - Fresh cloud session: run `setup_cloud.sh` in the background (~15 min on 2 cores) for q3map2, wopbspc and wopded.
 - Generate with `wopmap.py`; place models with `md3bounds.json` so they rest on surfaces.
@@ -31,6 +39,11 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - `waterpark/` is the reference generator (zones, holes for pools, slides, facades, decoration).
 
 ## Known pitfalls
+- WoP's `common/nodraw` is NONSOLID (unlike Quake 3). Invisible collision = `common/weapclip` (blocks shots too) or
+  `common/caulk`; `common/clip` is the player clip. lint_map warns about all-nodraw brushes on movers/world.
+- `item_floater` does not exist (it is `holdable_floater`); `woplib.wopdata.KNOWN_CLASSES` lists what the generators use.
+- Every model shader must be registered before the .shader file is written: railings added after (padcandy) got
+  `iron_dark_lmrl` with no shader. `pk3_check.py` resolves every MD3/IQM surface shader.
 - Texture preview: Q3 texture t runs downward; three.js textures need flipY=false or signs look upside down.
 - misc_model is static; animated models need `misc_externalmodel` (no modelscale) with animationStart/End/FPS.
 - Moving decoration: nodraw_ns brush + model2 on func_pendulum/func_rotating, not func_bobbing (bots try to ride bobbers).

@@ -1,0 +1,47 @@
+{
+ "map": "wop_padsample",
+ "ns": "padsample",
+ "longname": "Padman's Sample Yard",
+ "generator": "build.py",
+ "bounds": [
+  -1536,
+  -1280,
+  1536,
+  1280
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Sample Yard",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1336,-1080,900,135,-30",
+   "centre:0,-880,120,90,0",
+   "north:0,980,300,270,-10"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "centre",
+   "north",
+   "overview"
+  ]
+ }
+}

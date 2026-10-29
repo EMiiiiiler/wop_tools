@@ -924,7 +924,7 @@ def pumpkin_patch():
     for (x, y) in ((1150, 980), (1900, 1500)):
         p = near_free(x, y, 60, 200)
         if p: lamppost(p[0], p[1])
-    item('item_floater', 1820, 1400, 0)
+    item('holdable_floater', 1820, 1400, 0)
     item('ammo_betty', 2150, 1000, 0)
     item('ammo_pumper', 1000, 1650, 0)
     item('ammo_nipper', 1600, 560, 0)

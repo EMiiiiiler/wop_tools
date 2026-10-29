@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build the map toolchain in a fresh cloud session (no apt): libjpeg-turbo + libxml2 into ~/local,
 # NetRadiant Custom 20260114 q3map2, and the WoP repo's wopbspc + wopded (+ qagame).
-# usage: setup_cloud.sh [srcdir=/root/src]   (~15 min on 2 cores; run it in the background)
+# usage: setup_cloud.sh [srcdir=/root/src]   (~15 min on 2 cores; run it in the background). Writes <srcdir>/env.sh.
 # Result: $S/nrc/install/q3map2.x86_64, $S/wopsrc/wopbspc.x86_64, $S/wopsrc/wopded.x86_64, $S/wopsrc/wop/*.pk3dir
 set -x
 S=${1:-/root/src}; L=$HOME/local; mkdir -p $S $L; cd $S
@@ -30,3 +30,15 @@ J=$(nproc)
   cmake -S wopsrc -B wopbuild -DBUILD_CLIENT=OFF -DCMAKE_BUILD_TYPE=Release && cmake --build wopbuild -j$J
   find wopsrc wopbuild -maxdepth 3 \( -name 'wopded*' -o -name 'wopbspc*' -o -name 'qagame*' \) -type f | head; }
 ls -la $S/nrc/install/q3map2* $S/wopsrc/wop*.x86_64
+# preview + checker dependencies: python libs, three.js r158 (the shell can't reach cdnjs/npm), headless Chromium
+python3 -c "import scipy, numpy, PIL" 2>/dev/null || pip install --break-system-packages -q scipy numpy pillow
+python3 -c "import playwright" 2>/dev/null || pip install --break-system-packages -q playwright
+[ -f $S/three/t/build/three.min.js ] || {
+  mkdir -p $S/three && git clone --depth 1 --filter=blob:none --sparse -b r158 https://github.com/mrdoob/three.js.git $S/three/t \
+    && git -C $S/three/t sparse-checkout set build; }
+cat > $S/env.sh <<EOT
+# source this before wopbuild.py
+export Q3MAP2=$S/nrc/install/q3map2.x86_64 BSPC=$S/wopsrc/wopbspc.x86_64 GAME=$S/wopsrc WOPDED=$S/wopsrc/wopded.x86_64
+export THREE=$S/three/t/build/three.min.js PLAYWRIGHT_BROWSERS_PATH=\${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}
+EOT
+echo "toolchain ready: . $S/env.sh; then python3 wopbuild.py <map folder> all (lfs_fetch.py $S/wopsrc --map <map> for real models)"
