@@ -128,6 +128,14 @@ def load_shaders(dirs):
                         parms.add(t.split()[1].lower())
 
 
+def add_common_parms():
+    """WoP's common.shader surfaceparms when the game's scripts were not passed (so caulk/clip/weapclip classify right)"""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from woplib import wopdata
+    for k, v in wopdata.COMMON_PARMS.items():
+        SHADER_PARMS.setdefault('textures/' + k, set(v))
+
+
 def parm_kind(tex):
     p = SHADER_PARMS.get('textures/' + tex.lower())
     if p is None: return None
@@ -171,8 +179,12 @@ def model_points(md3root, model, scale, ang, cache={}):
             if q: p = q; break
         if not p: cache[key] = None
         else:
-            m = md3tool.load(p)
-            cache[key] = np.concatenate([s['verts'] for s in m['surfaces']])
+            try:
+                m = md3tool.load(p)
+                cache[key] = np.concatenate([s['verts'] for s in m['surfaces']])
+            except ValueError:            # a Git LFS pointer stub: run lfs_fetch.py <wop repo> --map <map>
+                print(f'   note: {p} is not a real MD3 (LFS stub? run lfs_fetch.py --map)')
+                cache[key] = None
     v = cache[key]
     if v is None: return None
     v = v * scale
@@ -196,7 +208,7 @@ def main():
     ap.add_argument('--maxlist', type=int, default=40)
     ap.add_argument('--shaders', action='append', default=[], help='dir(s) holding scripts/*.shader')
     a = ap.parse_args()
-    if a.shaders: load_shaders(a.shaders)
+    if a.shaders: load_shaders(a.shaders); add_common_parms()
     ents = parse(a.map)
     B = []      # (planes, kind, ent index, brush index, mn, mx, texs)
     for ei, e in enumerate(ents):

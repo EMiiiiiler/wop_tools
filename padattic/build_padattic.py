@@ -412,7 +412,7 @@ def train():
             for ly in (-56, 56):
                 px = cx + t[0] * (lx - xc) + rad[0] * ly; py = cy + t[1] * (lx - xc) + rad[1] * ly
                 pts += [(px, py, RAIL + 2), (px, py, RAIL + top)]
-        brushes.append(hull(pts, NODRAW))
+        brushes.append(hull(pts, WCLIP))       # WoP common/nodraw is NONSOLID: the cars had no collision
     M.ent('func_rotating', brushes=brushes, model2=path, speed=9, spawnflags=0, dmg=0)
     # the train's sounds: chuffing near both stations and in the tunnel, a whistle-ish bell on a timer
     for (x, y) in ((-1000, 0), (1000, 0), (0, 1000), (0, -1000)):

@@ -21,7 +21,7 @@ def main():
     ap.add_argument('map'); ap.add_argument('--shaders', action='append', default=[]); ap.add_argument('-v', action='store_true')
     a = ap.parse_args()
     if a.shaders and hasattr(AM, 'load_shaders'):
-        AM.load_shaders(a.shaders)
+        AM.load_shaders(a.shaders); AM.add_common_parms()
     ents = AM.parse(a.map)
     solids = []
     for e in ents:

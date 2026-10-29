@@ -13,7 +13,7 @@ import audit_map as AM
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('map'); ap.add_argument('--shaders', action='append', default=[])
     a = ap.parse_args()
-    if a.shaders: AM.load_shaders(a.shaders)
+    if a.shaders: AM.load_shaders(a.shaders); AM.add_common_parms()
     ents = AM.parse(a.map)
     statics, movers = [], []
     for e in ents:
