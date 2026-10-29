@@ -196,3 +196,5 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Under a wide overhang (a cone that widens upward) long eye-level sightlines run under it: put props round the base
   (padgelato carton stacks took sightlines 4.1 -> 3.5 %).
 - Sphere/ellipsoid UVs default to one tile over the whole sphere: pass u1/v1 repeats on big scoops/domes.
+- A beam across a round vat blocks any pad that lands along it: turn the beam perpendicular to the pad's approach
+  (padgelato vat). A 44u gap in front of a stair foot gives bspc no area there: keep 48u+ (padgelato chest freezer).
