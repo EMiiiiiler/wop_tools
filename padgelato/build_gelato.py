@@ -466,7 +466,7 @@ def gelato_counter():
             prop(['ct_mint', 'ct_choc', 'ct_straw', 'jar_spr'][(x // 300 + zz // 300) % 4], x, 1962, zz, ang=0, search=80)
     for (nm, x) in (('ct_straw', -1150), ('ct_choc', -300), ('ct_mint', 450), ('ct_straw', 1150)):
         prop(nm, x, 1962, 0, ang=0, search=80)
-    item('item_visionless', 0, 1830, 0); item('ammo_balloony', -900, 1830, 0); item('ammo_boaster', 900, 1830, 0)
+    item('item_visionless', 0, 1830, 0); item('ammo_balloony', -900, 1830, 0); item('ammo_pumper', 900, 1830, 0)
     route('aisle', (-1500, 1840, 0), (1500, 1840, 0))
     for x in (-1100, 0, 1100):
         light(x, 1880, 400, 260, '1 0.92 0.8')
@@ -482,7 +482,7 @@ def softserve():
         M.ent('func_rotating', brushes=[box((-1798, y - 8, dz - 8), (-1782, y + 8, dz + 8), ORIGIN),
                                         box((-1794, y - 4, dz + 30), (-1786, y + 4, dz + 38), NODRAW_NS)],
               model2=bklib.PLACE[nm][0], speed=36, spawnflags=0, dmg=0)
-    weapon('boaster', -2000, 0, 0, 'orange')
+    item('item_jumper', -2000, 0, 0); item('ammo_balloony', -1900, 300, 0)
     item('ammo_pumper', -2150, -300, 0); item('item_armor_shard', -2150, 300, 0)
     light(-2000, -250, 200, 450, '1 0.85 0.75'); light(-2000, 250, 200, 450, '1 0.85 0.75')
     for (nm, x, y) in (('ct_mint', -2180, -400), ('ct_choc', -2180, 400), ('ct_straw', -1880, -380), ('ct_straw', -2180, 120)):
@@ -493,7 +493,7 @@ def softserve():
     jumppad(-1350, -220, 0, (-1640, -220, L.SS_DECK), 540, 'p_ss_deck')
     jumppad(-1632, 0, L.SS_DECK, (-2100, 0, L.SS_TOP), 1420, 'p_ss_top')
     jumppad(-1250, 260, 0, (-2100, 260, L.SS_TOP), 1430, 'p_ss_top2')
-    item('item_jumper', -1640, 230, L.SS_DECK); item('ammo_balloony', -1650, -380, L.SS_DECK)
+    weapon('boaster', -1650, -400, L.SS_DECK, 'orange'); item('ammo_boaster', -1640, 230, L.SS_DECK)
     weapon('balloony', -2150, -300, L.SS_TOP, 'orange')
     item('ammo_imperius', -2150, 380, L.SS_TOP)
     speaker(-1800, 0, 700, 'machine/mechanics', volume=0.3)

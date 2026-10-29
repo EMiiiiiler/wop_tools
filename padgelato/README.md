@@ -14,8 +14,9 @@ light ~40 s.
   - **Gelato counter** (north): eight tubs of gelato behind a glass front with flavour tags; walk on the deck and drop
     into the tubs (ammo inside, 32u barrier jump out). Sugar-cone stairs at both ends, the server aisle behind with
     stock shelves (Visionless), pads from the deck ends up to the high **wall shelf** (**Betty**).
-  - **Soft-serve machine** (west wall): walk into the cabinet (**Boaster**), stairs up to the drip-tray deck where two
-    swirls turn into giant cones (func_rotating), pads onto the top (**Balloony**) from the deck and from the floor.
+  - **Soft-serve machine** (west wall): walk into the cabinet (Jumper, ammo), stairs and a pad up to the drip-tray deck
+    where two swirls turn into giant cones (func_rotating; **Boaster**), pads onto the top (**Balloony**) from the deck
+    and from the floor.
   - **Milkshake bar** (east wall): bar stools, a blender spinning, syrups, sundaes, catalog diner glasses; pads up.
     The **giant milkshake glass** stands in front: a pad onto its whipped cream (**Pumper**).
   - **Walk-in freezer** (south-east): through the strip curtain; ice, cartons, Pad shield inside; pads onto the roof
@@ -49,11 +50,14 @@ Unzip `wop_padgelato_source.zip` into a folder the game sees (for example `wop/z
 ## Checks (Oct 2026)
 audit_map OK, check_entities OK, pad_check OK (14 pads, all under 2.7 s), aas_check OK (every pickup reachable; the
 scoop lift links as a bot elevator; 10 routes: lift base, both counter stairs, the aisle, the soft-serve cabinet and
-stair, the freezer door, the chest freezer in and out), sightlines 3.5 % of eye-level rays over 1800u, 5 portals.
-Bots (10, FFA 5 min, fast light): 62 kills, every weapon taken (Imperius 41, Balloony 27, Bubble G 21, Splasher 14,
-Pumper 13, Betty 11, Boaster 1), the secret found (Pad Power 5, Revival 2).
+stair, the freezer door, the chest freezer in and out), sightlines 3.5 % of eye-level rays over 1800u, 5 portals, full
+light (-fast -samples 3 -filter -bounce 2 -bouncegrid) ~4.5 min on 2 cores, BSP 8.7 MB. Bots (10, FFA 5 min): 77 kills,
+every weapon taken (Splasher 36, Imperius 33, Bubble G 18, Balloony 18, Betty 15, Pumper 13, Boaster 12), the secret
+found (Pad Power 5, Revival 4).
 
 ## Lessons
+- The Boaster in the soft-serve cabinet (a dead end at the wall) got 1 bot pickup in 5 min although reachable; on the
+  drip-tray deck (stairs + pad, on the way to the top pads) it got 12.
 - Under a wide overhang (the cone widens upward to r 470 but the stand is r 290 at eye level) long eye-level
   sightlines run straight under it: props round the stand, under the overhang, took sightlines from 4.1 to 3.5 %.
 - A pad standing on a deck end blocks a route endpoint there (aas_check "back blocked"); keep route endpoints and pads
