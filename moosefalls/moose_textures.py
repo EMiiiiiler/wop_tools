@@ -340,8 +340,9 @@ def water_tex(n=256, seed=101):
 def waterfall(w=128, h=512, seed=103):
     x, y = tile_xy(w, h)
     st = noise(w, 1.2, seed, h) * 0.5 + np.sin(x * 2 * math.pi * 9) * 0.2
-    col = np.zeros((h, w, 3), np.float32) + C((220, 240, 250)) * np.clip(0.75 + 0.25 * st, 0, 1)[..., None]
-    al = np.clip(0.5 + 0.45 * st, 0, 1) * 255 * np.clip(np.sin(x * math.pi) * 3, 0, 1)
+    streak = np.clip(np.sin(x * 2 * math.pi * 13 + noise(w, 6, seed + 1, h) * 2.0), 0, 1) ** 2
+    col = np.zeros((h, w, 3), np.float32) + C((176, 214, 232)) * np.clip(0.7 + 0.3 * st, 0, 1)[..., None]
+    al = np.clip(0.12 + 0.45 * streak + 0.15 * st, 0, 0.75) * 255 * np.clip(np.sin(x * math.pi) * 3, 0, 1)
     return col, al
 
 
@@ -521,13 +522,215 @@ def lily(n=256, seed=251):
     return arr(im)
 
 
+def snow_tex(n=512, seed=301):
+    a = fill(n, (232, 238, 246), 4, seed) + N3(n, 24, seed + 1, 6) * C((0.9, 0.95, 1.0))
+    r = np.random.default_rng(seed); im = img(a); d = ImageDraw.Draw(im)
+    for _ in range(500):
+        x, y = r.integers(0, n, 2); d.point((x, y), fill=(255, 255, 255))
+    return arr(im)
+
+
+def path_tex(n=512, seed=303):
+    """plowed path: wet flagstone with snow in the grout"""
+    a = flagstone(n, seed) * 0.8
+    m = (noise(n, 6, seed + 1) > 0.9)[..., None]
+    return a * (1 - m) + snow_tex(n, seed + 2) * m
+
+
+def sand_tex(n=256, seed=305):
+    return fill(n, (226, 200, 150), 8, seed) + N3(n, 0.8, seed + 1, 10)
+
+
+def rink_board(w=256, h=64, seed=307):
+    a = fill(w, (240, 242, 244), 2, seed, h)
+    a[h // 2 - 3:h // 2 + 3] = (40, 80, 180); a[:6] = (220, 60, 50)
+    return a
+
+
+def snowfall_tex(w=128, h=512, seed=309):
+    r = np.random.default_rng(seed)
+    col = np.zeros((h, w, 3), np.float32) + C((255, 255, 255))
+    al = Image.new('L', (w, h), 0); d = ImageDraw.Draw(al)
+    for _ in range(140):
+        x, y = r.integers(0, w), r.integers(0, h); s = r.uniform(1, 3)
+        for oy in (-h, 0, h):
+            d.ellipse((x - s, y + oy - s, x + s, y + oy + s), fill=int(r.uniform(140, 255)))
+    return col, np.asarray(al.filter(ImageFilter.GaussianBlur(0.7)), np.float32)
+
+
+def ice_wall(n=256, seed=311):
+    x, y = tile_xy(n)
+    a = fill(n, (150, 200, 230), 6, seed) + (np.sin((x * 3 + noise(n, 20, seed) * 0.4) * 2 * math.pi) * 18)[..., None] * C((0.7, 0.9, 1))
+    return a
+
+
+def fishhole(n=128):
+    x, y = tile_xy(n)
+    rr = np.hypot(x - 0.5, y - 0.5) * 2
+    a = np.zeros((n, n, 3), np.float32) + C((10, 30, 50))
+    a = np.where((rr > 0.86)[..., None], C((200, 230, 250)), a)
+    return a + N3(n, 2, 313, 6)
+
+
+def trail_map(w=256, h=128):
+    """park map board: the two halls, the deck between them, little icons"""
+    a = fill(w, (238, 228, 200), 3, 321, h)
+    im = img(a); d = ImageDraw.Draw(im)
+    d.rectangle((4, 4, w - 5, h - 5), outline=(90, 56, 28), width=5)
+    d.text((w / 2, 16), 'YOU ARE HERE', font=font(13), fill=(180, 40, 30), anchor='mm')
+    d.rectangle((20, 28, 120, 118), outline=(60, 60, 60), width=2); d.text((70, 40), 'THUNDER BAY', font=font(10), fill=(40, 60, 110), anchor='mm')
+    d.rectangle((30, 50, 80, 110), fill=(80, 170, 210)); d.ellipse((90, 60, 112, 82), fill=(250, 200, 40))
+    d.rectangle((130, 28, 236, 70), outline=(60, 60, 60), width=2); d.text((183, 40), 'FROST DECK', font=font(10), fill=(40, 60, 110), anchor='mm')
+    d.rectangle((140, 50, 180, 66), fill=(150, 210, 230)); d.ellipse((200, 50, 214, 64), fill=(240, 240, 250))
+    d.rectangle((130, 76, 236, 118), outline=(60, 60, 60), width=2); d.text((183, 88), 'MOOSE LODGE', font=font(10), fill=(40, 60, 110), anchor='mm')
+    d.ellipse((170, 96, 196, 116), fill=(60, 140, 70))
+    d.ellipse((92, 104, 104, 116), fill=(220, 40, 30))
+    return arr(im)
+
+
+def wing_textures(W):
+    W.save('snow', snow_tex()); W.save('path', path_tex()); W.save('sand', sand_tex()); W.save('rink_board', rink_board())
+    W.save('snowbank', snow_tex(256, 315)); W.save('ice_wall', ice_wall()); W.save('fishhole', fishhole())
+    W.save('ice_floor', fill(256, (210, 232, 246), 4, 317))
+    s, sa = snowfall_tex(); W.save('snowfall', s, sa)
+    s, sa = spray(128, 256, 319); W.save('steam', s, sa * 0.6)
+    W.save('sign_thunder', sign_board('THUNDER BAY', 512, 128, (40, 70, 110), (255, 230, 160), sub='WAVE POOL  -  AVALANCHE PEAK  -  TORNADO BOWL'))
+    W.save('sign_avalanche', sign_board('AVALANCHE PEAK', 512, 128, (90, 56, 28)))
+    W.save('sign_cocoa', sign_board('COCOA CABIN', 512, 128, (100, 50, 30)))
+    W.save('sign_trailmap', trail_map())
+
+
+WING_SHADERS = """textures/{NS}/ice
+{{
+	qer_editorimage textures/{NS}/ice_floor
+	surfaceparm slick
+	surfaceparm splashsteps
+	{{
+		map $lightmap
+		rgbGen identity
+	}}
+	{{
+		map textures/{NS}/ice_floor
+		blendFunc GL_DST_COLOR GL_ZERO
+		rgbGen identity
+	}}
+	{{
+		map models/{NS}/env
+		blendFunc GL_ONE GL_ONE
+		rgbGen const ( 0.25 0.28 0.32 )
+		tcGen environment
+	}}
+}}
+
+textures/{NS}/fishhole
+{{
+	qer_editorimage textures/{NS}/fishhole
+	surfaceparm nonsolid
+	surfaceparm trans
+	surfaceparm nolightmap
+	polygonOffset
+	{{
+		map textures/{NS}/fishhole
+		rgbGen identity
+	}}
+	{{
+		map textures/{NS}/caustics
+		blendFunc GL_ONE GL_ONE
+		rgbGen const ( 0.1 0.15 0.2 )
+		tcMod turb 0 0.05 0 0.2
+	}}
+}}
+
+textures/{NS}/snowfall
+{{
+	qer_editorimage textures/{NS}/snowfall
+	surfaceparm trans
+	surfaceparm nonsolid
+	surfaceparm nomarks
+	surfaceparm nolightmap
+	deformVertexes autosprite2
+	cull none
+	{{
+		map textures/{NS}/snowfall.tga
+		blendFunc GL_SRC_ALPHA GL_ONE
+		rgbGen const ( 0.7 0.7 0.75 )
+		tcMod scroll 0.03 0.18
+	}}
+	{{
+		map textures/{NS}/snowfall.tga
+		blendFunc GL_SRC_ALPHA GL_ONE
+		rgbGen const ( 0.5 0.5 0.55 )
+		tcMod scale 1.4 1.3
+		tcMod scroll -0.02 0.12
+	}}
+}}
+
+textures/{NS}/steam
+{{
+	qer_editorimage textures/{NS}/steam
+	surfaceparm trans
+	surfaceparm nonsolid
+	surfaceparm nomarks
+	surfaceparm nolightmap
+	deformVertexes autosprite2
+	cull none
+	{{
+		map textures/{NS}/steam.tga
+		blendFunc GL_SRC_ALPHA GL_ONE
+		rgbGen wave sin 0.35 0.15 0 0.2
+		tcMod scroll 0.01 0.2
+		tcMod turb 0 0.06 0 0.15
+	}}
+}}
+
+textures/{NS}/water_wave
+{{
+	qer_editorimage textures/{NS}/water_ed
+	qer_trans 0.5
+	surfaceparm trans
+	surfaceparm nonsolid
+	surfaceparm water
+	surfaceparm nolightmap
+	surfaceparm splashsteps
+	q3map_globaltexture
+	tessSize 64
+	deformVertexes wave 512 sin 0 7 0 0.25
+	deformVertexes wave 160 sin 0 2 0.5 0.6
+	cull none
+	{{
+		map textures/{NS}/water
+		blendFunc GL_DST_COLOR GL_ONE
+		rgbGen identity
+		tcMod scale 0.5 0.5
+		tcMod turb 0 0.06 0 0.09
+		tcMod scroll 0.04 0.0
+	}}
+	{{
+		map textures/{NS}/caustics
+		blendFunc GL_ONE GL_ONE
+		rgbGen const ( 0.2 0.24 0.26 )
+		tcMod scale 0.3 0.3
+		tcMod scroll 0.05 0.01
+	}}
+	{{
+		map models/{NS}/env
+		blendFunc GL_ONE GL_ONE
+		rgbGen const ( 0.24 0.26 0.28 )
+		tcGen environment
+	}}
+}}
+
+"""
+
+
 def extra_textures(W):
     W.save('lily', lily()); W.save('lily_side', fill(64, (50, 120, 50), 4, 253))
+    W.save('sign_summit', sign_board('SUMMIT DECK', 512, 128, (90, 56, 28), sub='ROOFTOP PATIO  -  MOOSE LODGE GRILL'))
 
 
 # ------------------------------------------------------------------------------------------- shader
 SH = f"// {NS}.shader - {LONGNAME} (generated by wop_tools/moosefalls/moose_textures.py)\n\n"
-STEPS = {'deck': None, 'planks': 'woodsteps', 'planks_dark': 'woodsteps', 'glulam': 'woodsteps', 'logwall': 'woodsteps',
+STEPS = {'snow': 'snowsteps', 'snowbank': 'snowsteps', 'sand': 'sandsteps', 'ice_wall': None, 'deck': None, 'planks': 'woodsteps', 'planks_dark': 'woodsteps', 'glulam': 'woodsteps', 'logwall': 'woodsteps',
          'rotten': 'woodsteps', 'bark': 'woodsteps', 'splashpad': 'softsteps', 'pool_tile': 'splashsteps', 'lane': 'splashsteps',
          'pool_band': 'splashsteps', 'rock': None, 'kitchen_tile': None}
 CAUSTIC = {'pool_tile', 'pool_band', 'lane'}
@@ -555,7 +758,7 @@ def glow(name, light, rgb, extra=''):
 def make_shader(W, out, model_shaders):
     S = SH
     special = {'jumppad', 'caustics', 'water', 'waterfall', 'spray', 'nodraw_ns', 'water_ed', 'clip_ed', 'glass', 'lamp_panel',
-               'rope'} | {n for n in W.sizes if n.startswith('bulb_')}
+               'rope', 'fishhole', 'snowfall', 'steam', 'ice_floor'} | {n for n in W.sizes if n.startswith('bulb_')}
     for nm in sorted(W.sizes):
         if nm in special: continue
         S += lm(nm, STEPS.get(nm), caustic=nm in CAUSTIC)
@@ -657,14 +860,14 @@ textures/{NS}/waterfall
 	cull none
 	{{
 		map textures/{NS}/waterfall.tga
-		blendFunc GL_SRC_ALPHA GL_ONE
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen identity
 		tcMod scroll 0.02 -1.3
 	}}
 	{{
 		map textures/{NS}/waterfall.tga
 		blendFunc GL_SRC_ALPHA GL_ONE
-		rgbGen const ( 0.5 0.5 0.5 )
+		rgbGen const ( 0.25 0.25 0.28 )
 		tcMod scale 1.3 1
 		tcMod scroll -0.03 -1.9
 	}}
@@ -744,6 +947,7 @@ textures/{NS}/nodraw_ns
 }}
 
 '''
+    S += WING_SHADERS.format(NS=NS)
     S += model_shaders
     S += (f'levelshots/{MAP}B\n{{\n\tnomipmaps\n\t{{\n\t\tanimmap 0.5 levelshots/{MAP}B1 levelshots/{MAP}B2 levelshots/{MAP}B3\n\t}}\n}}\n')
     os.makedirs(os.path.join(out, 'scripts'), exist_ok=True)

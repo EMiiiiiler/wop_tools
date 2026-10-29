@@ -556,7 +556,7 @@ def duct(hang):
         ring = [(x, (R + 2) * math.cos(t), (R + 2) * math.sin(t)) for t in np.linspace(0, 2 * math.pi, 17)]
         tube(X.mesh(mt), ring, 3, nseg=5, caps=(False, False))
         box_mesh(X.mesh(mt), (x - 3, -3, R), (x + 3, 3, R + hang))
-    return _save('duct', X)
+    return _save(f'duct{int(round(hang))}', X)
 
 
 def lamp(name, rod):
@@ -959,8 +959,13 @@ def shaders():
             s += (f'{name}\n{{\n\tqer_editorimage {MD}/env\n\tq3map_nonplanar\n\tq3map_shadeAngle 70\n'
                   f'\t{{\n\t\tmap {MD}/env\n\t\ttcGen environment\n\t\trgbGen identity\n\t}}\n'
                   f'\t{{\n\t\tmap $lightmap\n\t\tblendFunc GL_DST_COLOR GL_ZERO\n\t\trgbGen identity\n\t}}\n}}\n\n')
+        elif kind == 'flame':
+            s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\tsurfaceparm nonsolid\n\tsurfaceparm trans\n\tcull none\n'
+                  f'\t{{\n\t\tmap {t}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen wave sin 0.85 0.15 0 3\n\t\ttcMod scroll 0.07 -0.9\n\t\ttcMod turb 0 0.05 0 0.6\n\t}}\n}}\n\n')
+        elif kind == 'glow' and not opt.get('light', 1200):
+            s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\t{{\n\t\tmap {t}\n\t\trgbGen identity\n\t}}\n}}\n\n')
         elif kind == 'glow':
-            s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\tq3map_surfacelight 1200\n\tq3map_lightRGB 1 0.86 0.62\n'
+            s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\tq3map_surfacelight {opt.get("light", 1200)}\n\tq3map_lightRGB {opt.get("rgb", "1 0.86 0.62")}\n'
                   f'\t{{\n\t\tmap {t}\n\t\trgbGen identity\n\t}}\n}}\n\n')
         elif kind == 'leaf':
             s += (f'{name}\n{{\n\tqer_editorimage {t}.tga\n\tsurfaceparm nolightmap\n\tsurfaceparm trans\n\tsurfaceparm nonsolid\n'
@@ -977,6 +982,337 @@ def shaders():
             s += (f'{name}\n{{\n\tqer_editorimage {t}\n\tsurfaceparm nolightmap\n\tsurfaceparm trans\n\tsurfaceparm nonsolid\n\tsurfaceparm nomarks\n'
                   f'\t{{\n\t\tmap {t}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen identity\n\t\ttcMod scroll 0 1.6\n\t}}\n}}\n\n')
     return s
+
+
+# ================================================================================================= Moose Lodge Grill props
+def tex_bun(n=128, seed=61):
+    TX = _tx()
+    a = TX.fill(n, (214, 140, 60), 6, seed)
+    r = np.random.default_rng(seed); im = TX.img(a); d = ImageDraw.Draw(im)
+    for _ in range(40):
+        x, y = r.integers(0, n, 2)
+        d.ellipse((x - 2, y - 1, x + 2, y + 1), fill=(250, 236, 200))
+    return TX.arr(im)
+
+
+def tex_stripes(c1, c2, n=128, k=8):
+    """vertical stripes (u) for awnings / umbrella canopies"""
+    TX = _tx()
+    x, y = TX.tile_xy(n)
+    m = (np.floor(x * k) % 2 == 0)[..., None]
+    return np.where(m, TX.C(c1), TX.C(c2)) + TX.N3(n, 1, 7, 4)
+
+
+def tex_cooler(w=256, h=256, seed=63):
+    """drinks cooler front: lit shelves of cans and bottles behind glass"""
+    TX = _tx()
+    a = TX.fill(w, (200, 220, 230), 3, seed, h)
+    im = TX.img(a); d = ImageDraw.Draw(im)
+    r = np.random.default_rng(seed)
+    cols = [(220, 40, 40), (40, 90, 200), (250, 200, 40), (60, 170, 80), (240, 120, 30), (150, 60, 170)]
+    for row in range(4):
+        y0 = 12 + row * 60
+        d.rectangle((0, y0 + 48, w, y0 + 52), fill=(150, 160, 170))
+        x = 6
+        while x < w - 20:
+            cw = int(r.integers(14, 22)); c = cols[int(r.integers(0, len(cols)))]
+            hh = int(r.integers(30, 46))
+            d.rounded_rectangle((x, y0 + 48 - hh, x + cw, y0 + 48), radius=4, fill=c)
+            d.rectangle((x + 2, y0 + 48 - hh + 10, x + cw - 2, y0 + 48 - hh + 18), fill=(245, 245, 240))
+            x += cw + 4
+    d.rectangle((0, 0, w - 1, h - 1), outline=(60, 64, 70), width=6)
+    d.rectangle((w // 2 - 3, 0, w // 2 + 3, h), fill=(60, 64, 70))
+    return TX.arr(im)
+
+
+def tex_chalk(w=128, h=192, seed=65):
+    TX = _tx()
+    a = TX.fill(w, (36, 44, 40), 4, seed, h)
+    im = TX.img(a); d = ImageDraw.Draw(im)
+    d.rectangle((3, 3, w - 4, h - 4), outline=(150, 100, 50), width=6)
+    f1 = TX.font(20, True); f2 = TX.font(15)
+    d.text((w / 2, 26), 'TODAY', font=f1, fill=(255, 220, 120), anchor='mm')
+    for k, line in enumerate(('MOOSE', 'MELT', '- 8.95 -', '', 'S\'MORES', 'SHAKE')):
+        d.text((w / 2, 60 + k * 22), line, font=f2, fill=(240, 240, 230) if k != 2 else (140, 220, 160), anchor='mm')
+    return TX.arr(im)
+
+
+def tex_screen(n=64):
+    TX = _tx()
+    a = TX.fill(n, (40, 160, 90), 2, 67)
+    a[::8] *= 0.6
+    return a
+
+
+def tex_pizza(n=128, seed=69):
+    TX = _tx()
+    a = TX.fill(n, (230, 170, 70), 6, seed)
+    r = np.random.default_rng(seed); im = TX.img(a); d = ImageDraw.Draw(im)
+    for _ in range(18):
+        x, y = r.integers(0, n, 2); d.ellipse((x - 7, y - 7, x + 7, y + 7), fill=(180, 40, 30))
+    return TX.arr(im)
+
+
+def griddle():
+    """flat-top griddle with burger patties + buns, on the back counter (origin = counter top, front edge +y... faces -y)"""
+    X = Model()
+    st = S('steel', 'lms', v=0.15, tag='kit'); dk = S('metal_dark', 'lm', tag='kit'); pt = S('patty', 'lm'); bn = S('bun', 'lm')
+    ch = S('cheese', 'lm')
+    box_mesh(X.mesh(st), (-90, -28, 0), (90, 28, 30))
+    box_mesh(X.mesh(dk), (-86, -24, 30), (86, 24, 33))
+    box_mesh(X.mesh(st), (-90, 24, 33), (90, 28, 46))                 # splash guard at the back
+    for k in range(4):
+        box_mesh(X.mesh(dk), (-80 + k * 44, -31, 12), (-70 + k * 44, -28, 22))  # knobs
+    for k, x in enumerate((-60, -20, 20)):
+        revolve(X.mesh(pt), [(0, 33), (12, 33), (13, 35), (12, 38), (0, 38)], n=12, cx=x, cy=-4)
+        if k == 1:
+            revolve(X.mesh(ch), [(0, 38.5), (13, 38.5), (13, 39.5), (0, 39.5)], n=4, cx=x, cy=-4)
+    for x in (55, 72):
+        revolve(X.mesh(bn), [(0, 33), (13, 33), (13, 36), (8, 40), (0, 41)], n=12, cx=x, cy=0)
+    return _save('griddle', X)
+
+
+def fryer():
+    X = Model()
+    st = S('steel', 'lms', v=0.15, tag='kit'); dk = S('metal_dark', 'lm', tag='kit'); oil = S('oil', 'lms', v=0.3)
+    box_mesh(X.mesh(st), (-36, -26, 0), (36, 26, 40), faces='nsewb')
+    for x0 in (-32, 2):
+        box_mesh(X.mesh(st), (x0, -22, 36), (x0 + 30, 22, 40), faces='nsew')
+        box_mesh(X.mesh(oil), (x0 + 2, -20, 30), (x0 + 28, 20, 31), faces='t')
+        box_mesh(X.mesh(dk), (x0 + 4, -18, 30), (x0 + 26, 18, 44), faces='nsew')       # basket
+        beam(X.mesh(dk), (x0 + 15, -18, 44), (x0 + 15, -40, 52), 3, 3)                  # handle
+    box_mesh(X.mesh(st), (-36, -26, 40), (36, -22, 40.5))
+    return _save('fryer', X)
+
+
+def soda():
+    X = Model()
+    st = S('steel', 'lms', v=0.15, tag='kit'); dk = S('metal_dark', 'lm', tag='kit'); pn = S('screen', 'glow', light=60, rgb='0.6 1 0.7')
+    box_mesh(X.mesh(st), (-44, -22, 0), (44, 22, 12))
+    box_mesh(X.mesh(dk), (-44, 0, 12), (44, 22, 96))
+    box_mesh(X.mesh(dk), (-44, -14, 70), (44, 0, 96))
+    X.mesh(pn).quad((-40, -14.5, 74), (40, -14.5, 74), (40, -14.5, 92), (-40, -14.5, 92), tile=80, n=(0, -1, 0))
+    for k in range(4):
+        x = -30 + k * 20
+        tube(X.mesh(st), [(x, -8, 70), (x, -8, 58)], 3, nseg=6)
+    cups = [S('cup_red', 'lm'), S('cup_blue', 'lm')]
+    for k in range(3):
+        revolve(X.mesh(cups[k % 2]), [(0, 12), (6, 12), (8, 34), (0, 34)], n=10, cx=-30 + k * 20, cy=-12)
+    return _save('soda', X)
+
+
+def register():
+    X = Model()
+    dk = S('metal_dark', 'lm', tag='kit'); sc = S('screen', 'glow', light=40, rgb='0.6 1 0.7')
+    box_mesh(X.mesh(dk), (-18, -16, 0), (18, 16, 10))
+    beam(X.mesh(dk), (0, 4, 10), (0, 8, 30), 6, 6)
+    box_mesh(X.mesh(dk), (-16, 6, 26), (16, 10, 46))
+    X.mesh(sc).quad((-14, 5.5, 28), (14, 5.5, 28), (14, 5.5, 44), (-14, 5.5, 44), tile=28, n=(0, -1, 0))
+    return _save('register', X)
+
+
+def pizza_warmer():
+    X = Model()
+    st = S('steel', 'lms', v=0.15, tag='kit'); gl = S('glass_case', 'lm2s'); pz = S('pizza', 'lm')
+    box_mesh(X.mesh(st), (-34, -24, 0), (34, 24, 6))
+    box_mesh(X.mesh(st), (-34, -24, 50), (34, 24, 54))
+    for (x, y) in ((-34, -24), (34, -24), (-34, 24), (34, 24)):
+        box_mesh(X.mesh(st), (x - 2, y - 2, 6), (x + 2, y + 2, 50))
+    box_mesh(X.mesh(gl), (-33, -23, 6), (33, 23, 50), faces='new')
+    box_mesh(X.mesh(st), (-30, -20, 26), (30, 20, 27))
+    for (x, z) in ((-14, 7), (14, 7), (-14, 27), (14, 27)):
+        revolve(X.mesh(pz), [(0, z), (13, z), (13, z + 2), (0, z + 2)], n=12, cx=x, cy=0)
+    return _save('pizza_warmer', X)
+
+
+def hood():
+    """stainless extractor hood, hangs from the ceiling (origin = top centre, back against +y)"""
+    X = Model()
+    st = S('steel', 'lms', v=0.15, tag='hood')
+    pts_top = [(-110, -10, 0), (110, -10, 0), (110, 56, 0), (-110, 56, 0)]
+    # trapezoid body: wide bottom at z -50, narrow top
+    b = [(-120, -50, -50), (120, -50, -50), (120, 56, -50), (-120, 56, -50)]
+    t = [(-90, -6, -6), (90, -6, -6), (90, 56, -6), (-90, 56, -6)]
+    for k in range(4):
+        q = [b[k], b[(k + 1) % 4], t[(k + 1) % 4], t[k]]
+        n = np.cross(np.array(q[1]) - q[0], np.array(q[3]) - q[0]); n = n / np.linalg.norm(n)
+        if n @ (np.mean(q, 0) - [0, 3, -28]) < 0: n = -n
+        X.mesh(st).poly(q, n, [(0, 0), (2, 0), (2, 0.5), (0, 0.5)])
+    box_mesh(X.mesh(st), (-26, 10, -6), (26, 56, 0))                 # duct stub to the ceiling
+    X.mesh(st).quad(*b[::-1], tile=64, n=(0, 0, -1))
+    return _save('hood', X)
+
+
+def cooler():
+    """glass-door drinks cooler (252 wide, 64 deep, 152 tall), front -y"""
+    X = Model()
+    st = S('steel', 'lms', v=0.15, tag='cool'); fr = S('cooler_front', 'glow', light=90, rgb='0.85 0.95 1')
+    box_mesh(X.mesh(st), (-126, -32, 0), (126, 32, 152), faces='nsewt')
+    X.mesh(fr).quad((-120, -32.5, 8), (120, -32.5, 8), (120, -32.5, 144), (-120, -32.5, 144), tile=240, n=(0, -1, 0))
+    for x in (-8, 8):
+        beam(X.mesh(st), (x, -36, 50), (x, -36, 100), 3, 3)
+    return _save('cooler', X)
+
+
+def stool():
+    X = Model()
+    ch = S('chrome', 'chrome', tag='st'); rd = S('rescue_red', 'lm', tag='st')
+    revolve(X.mesh(ch), [(16, 0), (14, 2), (3, 4), (3, 54)], n=12)
+    ring = [(11 * math.cos(t), 11 * math.sin(t), 22) for t in np.linspace(0, 2 * math.pi, 13)]
+    tube(X.mesh(ch), ring, 1.5, nseg=5, caps=(False, False))
+    revolve(X.mesh(rd), [(0, 54), (15, 54), (16, 58), (14, 62), (0, 63)], n=14)
+    return _save('stool', X)
+
+
+def aframe():
+    X = Model()
+    wd = S('wood_post', 'lm', tag='af'); ck = S('chalk', 'lm')
+    for sg in (-1, 1):
+        a = (0, sg * 22, 0); b = (0, sg * 2, 96)
+        for x in (-34, 34):
+            beam(X.mesh(wd), (x, a[1], 0), (x, b[1], 96), 4, 4)
+        n = np.array([0, sg * 96, 20.0]); n /= np.linalg.norm(n)
+        q = [(-30, sg * 21, 6), (30, sg * 21, 6), (30, sg * 3.5, 90), (-30, sg * 3.5, 90)]
+        q = [(x, y + sg * 2.5, z) for (x, y, z) in q]
+        X.mesh(ck).poly(q, n, [(0, 1), (1, 1), (1, 0), (0, 0)] if sg < 0 else [(1, 1), (0, 1), (0, 0), (1, 0)])
+    return _save('aframe', X)
+
+
+def lantern(drop):
+    """hanging lantern (origin = hook at the top), chain `drop` long"""
+    X = Model()
+    dk = S('metal_dark', 'lm', tag='lan'); gp = S('lantern_glow', 'glow', light=300, rgb='1 0.75 0.45')
+    box_mesh(X.mesh(dk), (-1, -1, -drop), (1, 1, 0))
+    z = -drop
+    revolve(X.mesh(dk), [(0, z), (10, z - 6), (12, z - 8), (0, z - 8)], n=8)
+    box_mesh(X.mesh(gp), (-8, -8, z - 30), (8, 8, z - 8), faces='nsew')
+    box_mesh(X.mesh(dk), (-10, -10, z - 34), (10, 10, z - 30))
+    for (x, y) in ((-9, -9), (9, -9), (-9, 9), (9, 9)):
+        box_mesh(X.mesh(dk), (x - 1, y - 1, z - 30), (x + 1, y + 1, z - 8))
+    return _save(f'lantern{drop}', X)
+
+
+def trophy():
+    """moose-head trophy on a shield plaque; origin = plaque back centre on the wall, head faces +x"""
+    X = Model()
+    wd = S('wood_post', 'lm', tag='tr'); mw = S('moose_wood', 'lm', tag='tr'); an = S('antler', 'lm', tag='tr'); dk = S('metal_dark', 'lm', tag='tr')
+    sub = Mesh()
+    prism(sub, [(-30, -40), (30, -40), (36, 10), (0, 44), (-36, 10)], 0, 6, tile=64)
+    X.mesh(wd).add(sub, R=rot_axis((0, 1, 0), math.pi / 2), t=(0, 0, 0))
+    ellipsoid(X.mesh(mw), (22, 0, 4), 22, 22, 26, nu=12, nv=8)
+    Rh = rot_axis((0, 1, 0), math.radians(35))
+    ellipsoid(X.mesh(mw), (50, 0, -8), 32, 16, 16, nu=12, nv=8, R=Rh)
+    ellipsoid(X.mesh(mw), (72, 0, -24), 18, 13, 12, nu=10, nv=6, R=Rh)
+    for sg in (-1, 1):
+        sphere(X.mesh(dk), (52, 12 * sg, 0), 2.5, nu=6, nv=4)
+        ellipsoid(X.mesh(mw), (26, 20 * sg, 24), 4, 9, 4, nu=6, nv=4)
+        tube(X.mesh(an), [(26, 10 * sg, 26), (24, 26 * sg, 34), (18, 40 * sg, 40)], [4, 4, 5], nseg=6)
+        poly = [(0, 0), (30, -4), (52, 4), (60, 18), (54, 22), (48, 18), (46, 28), (40, 24), (36, 34), (30, 28), (22, 32), (16, 22), (6, 18)]
+        p2 = Mesh(); prism(p2, poly, -2, 2, tile=64)
+        Rm = rot_z(math.radians(90 * sg)) @ rot_axis((1, 0, 0), math.radians(-75 * sg))
+        X.mesh(an).add(p2, R=Rm, t=(18, 38 * sg, 40))
+    return _save('trophy', X)
+
+
+def burger():
+    """giant fibreglass burger sculpture (~200 across, 150 tall) for the grill's roof"""
+    X = Model()
+    bn = S('bun', 'lms', v=0.12, tag='big'); pt = S('patty', 'lm', tag='big'); ch = S('cheese', 'lms', v=0.1, tag='big')
+    le = S('lettuce', 'lm2s'); tm = S('tomato', 'lms', v=0.15)
+    R = 100
+    revolve(X.mesh(bn), [(0, 0), (R - 10, 0), (R, 8), (R, 22), (R - 6, 30), (0, 30)], n=32, u_tiles=4)
+    revolve(X.mesh(pt), [(0, 30), (R + 2, 30), (R + 6, 36), (R + 4, 52), (R - 2, 56), (0, 56)], n=32, u_tiles=4)
+    # cheese: square slice with drooping corners
+    P = np.zeros((9, 9, 3)); UV = np.zeros((9, 9, 2))
+    for i in range(9):
+        for j in range(9):
+            u, v = -1 + 2 * i / 8, -1 + 2 * j / 8
+            x, y = u * 92, v * 92
+            rr = math.hypot(x, y)
+            z = 58 - max(0, rr - 80) * 0.9
+            P[i, j] = (x, y, z); UV[i, j] = (i / 8, j / 8)
+    X.mesh(ch).grid(P, grid_normals(P) * (1 if grid_normals(P)[..., 2].mean() > 0 else -1), UV)
+    # lettuce frill
+    rows = []
+    for k in range(64):
+        a = 2 * math.pi * k / 64
+        rr = R + 8 + 6 * math.sin(a * 12)
+        rows.append((rr * math.cos(a), rr * math.sin(a), 60 + 4 * math.sin(a * 9)))
+    rows.append(rows[0])
+    P = np.zeros((2, len(rows), 3)); UV = np.zeros((2, len(rows), 2))
+    for j, (x, y, z) in enumerate(rows):
+        P[0, j] = (x * 0.75, y * 0.75, 62); P[1, j] = (x, y, z); UV[0, j] = (j / 8, 0); UV[1, j] = (j / 8, 1)
+    N = np.zeros_like(P); N[..., 2] = 1
+    X.mesh(le).grid(P, N, UV)
+    for k in range(3):
+        a = k * 2.1 + 0.4
+        revolve(X.mesh(tm), [(0, 62), (40, 62), (42, 66), (40, 70), (0, 70)], n=16, cx=40 * math.cos(a), cy=40 * math.sin(a))
+    # top bun dome with sesame seeds (texture)
+    revolve(X.mesh(bn), [(R + 2, 70), (R + 4, 84), (R - 6, 110), (R - 30, 132), (R - 60, 146), (0, 152)], n=32, u_tiles=4, inward=True)
+    return _save('burger', X)
+
+
+def umbrella():
+    """patio table with a striped umbrella (canopy r 66 at ~76..100)"""
+    X = Model()
+    wh = S('white', 'lm', tag='um'); cn = S('canopy', 'lm2s'); ch = S('chrome', 'chrome', tag='um')
+    revolve(X.mesh(wh), [(16, 0), (14, 2), (3, 4), (3, 28), (40, 28), (41, 30), (40, 31), (0, 31)], n=24)
+    tube(X.mesh(ch), [(0, 0, 31), (0, 0, 98)], 1.5, nseg=6)
+    prof = [(0, 100), (34, 92), (64, 80), (66, 76)]
+    revolve(X.mesh(cn), prof, n=16, u_tiles=8, inward=True, v_of=lambda r, z: r / 66)
+    for k in range(3):
+        a = math.radians(45 + k * 120)
+        cx, cy = 58 * math.cos(a), 58 * math.sin(a)
+        Rm = rot_z(a + math.pi)
+        sub = Mesh()
+        for (lx, ly) in ((-8, -8), (8, -8), (-8, 8), (8, 8)):
+            box_mesh(sub, (lx - 1.5, ly - 1.5, 0), (lx + 1.5, ly + 1.5, 17))
+        box_mesh(sub, (-10, -10, 15), (10, 10, 18))
+        for zz in (24, 30, 36):
+            box_mesh(sub, (-10.5, -10, zz - 1.5), (-9, 10, zz + 1.5))
+        X.mesh(wh).add(sub, R=Rm, t=(cx, cy, 0))
+    return _save('umbrella', X)
+
+
+def hvac():
+    X = Model()
+    mt = S('metal_white', 'lms', v=0.1, tag='hv'); dk = S('metal_dark', 'lm', tag='hv')
+    box_mesh(X.mesh(mt), (-48, -36, 0), (48, 36, 56))
+    revolve(X.mesh(dk), [(0, 56.5), (26, 56.5), (28, 60), (0, 60)], n=16, cx=-14, cy=0)
+    for k in range(6):
+        box_mesh(X.mesh(dk), (-46, -37, 8 + k * 7), (46, -36, 11 + k * 7))
+    box_mesh(X.mesh(dk), (40, -10, 56), (46, 10, 64))
+    return _save('hvac', X)
+
+
+def string_lights(name, a, b, sag=40, h=150):
+    """two wooden posts (bases at a and b, world coords) with a festoon of bulbs between their tops"""
+    X = Model()
+    wd = S('wood_post', 'lm', tag='sl'); rp = S('rope', 'rope', tag='sl'); bl = S('bulb', 'glow', light=150, rgb='1 0.8 0.5')
+    o = np.asarray(a, float); A_ = np.zeros(3); B_ = np.asarray(b, float) - o
+    for p in (A_, B_):
+        box_mesh(X.mesh(wd), (p[0] - 4, p[1] - 4, p[2]), (p[0] + 4, p[1] + 4, p[2] + h))
+    cat = [A_ + (B_ - A_) * t + np.array([0, 0, h - 6 - sag * math.sin(math.pi * t)]) for t in np.linspace(0, 1, 24)]
+    tube(X.mesh(rp), cat, 1.2, nseg=4, caps=(False, False))
+    for t in np.linspace(0.06, 0.94, 12):
+        c = A_ + (B_ - A_) * t + np.array([0, 0, h - 6 - sag * math.sin(math.pi * t) - 7])
+        sphere(X.mesh(bl), c, 4, nu=6, nv=4)
+    path, sc, zo = _save(name, X)
+    return path, sc, zo, tuple(o)
+
+
+def grill_models():
+    TX = _tx()
+    d = os.path.join(OUT, MD)
+    def sv(nm, a): TX.img(a).convert('RGB').save(os.path.join(d, nm + '.jpg'), quality=92)
+    sv('steel', TX.steel()); sv('patty', TX.fill(64, (96, 52, 30), 8, 71)); sv('bun', tex_bun()); sv('cheese', TX.fill(64, (250, 190, 40), 4, 73))
+    sv('lettuce', TX.fill(64, (90, 180, 60), 8, 75)); sv('tomato', TX.fill(64, (220, 50, 40), 6, 77)); sv('oil', TX.fill(64, (200, 150, 40), 3, 79))
+    sv('cup_red', TX.fill(32, (220, 50, 40), 2, 81)); sv('cup_blue', TX.fill(32, (40, 90, 200), 2, 83)); sv('screen', tex_screen())
+    sv('glass_case', TX.fill(32, (200, 220, 230), 2, 85)); sv('pizza', tex_pizza()); sv('cooler_front', tex_cooler()); sv('chalk', tex_chalk())
+    sv('lantern_glow', TX.fill(32, (255, 200, 120), 2, 87)); sv('canopy', tex_stripes((200, 40, 36), (245, 236, 214)))
+    sv('bulb', TX.fill(16, (255, 230, 170), 1, 89))
+    for f in (griddle, fryer, soda, register, pizza_warmer, hood, cooler, stool, aframe, trophy, burger, umbrella, hvac):
+        f()
 
 
 def make(out):
@@ -1018,6 +1354,7 @@ def make(out):
     boulders('boulders_a', [((0, 0), 60, 50, 50), ((70, 30), 44, 40, 36), ((-50, 40), 40, 36, 30)], 3)
     boulders('boulders_b', [((0, 0), 90, 70, 70), ((100, -30), 60, 54, 50), ((-80, 50), 64, 50, 46), ((30, 90), 50, 46, 40), ((-60, -70), 44, 40, 30)], 5)
     stump()
+    grill_models()
     return None
 
 

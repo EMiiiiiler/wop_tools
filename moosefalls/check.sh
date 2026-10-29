@@ -11,4 +11,4 @@ python3 $H/../pad_check.py $O/maps/wop_moosefalls.map $S | tail -n 1
 GAME=$G $H/compile.sh $O ${*:-"-fast -samples 2 -filter"}
 grep -i leak $O/bspc.log
 python3 $H/../aas_check.py $O/maps/wop_moosefalls.aas $O/maps/wop_moosefalls.map --route @$H/routes.txt | grep -v " OK$"
-python3 $H/../sightlines.py $O/maps/wop_moosefalls.map $O/sightlines.png --bounds=-2048,-1664,2048,1664 --md3root $O $S | sed -n 2p
+python3 $H/../sightlines.py $O/maps/wop_moosefalls.map $O/sightlines.png --bounds=-2048,-5056,2048,1664 --md3root $O $S | sed -n 2p
