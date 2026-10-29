@@ -853,7 +853,7 @@ def black_hole():
     M.ent('func_rotating', brushes=[box((rx - 8, ry - 8, top + 36), (rx + 8, ry + 8, top + 52), ORIGIN),
                                     box((rx - 4, ry - 4, top + 70), (rx + 4, ry + 4, top + 78), NODRAW_NS)],
           model2=splib.IQM['radar'], speed=20, spawnflags=0, dmg=0)
-    trigger_sound((sx - h - 220, sy + h + 140, top + 2), (sx - h - 140, sy + h + 220, top + 60), 'sound/world/items/jumper/boing.wav', 'arm_boing', 6, volume=0.5)
+    trigger_sound((sx - h - 220, sy + h + 140, top + 2), (sx - h - 140, sy + h + 220, top + 60), 'sound/items/jumper/boing.wav', 'arm_boing', 6, volume=0.5)
     light(sx, sy, top + 120, 180, '1 0.9 0.8')
     spawn(sx + 160, sy - 100, 0, 135)
 

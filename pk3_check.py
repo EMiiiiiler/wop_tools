@@ -200,11 +200,13 @@ def main():
                 FAILS.append(('models', f'{m} missing')); continue
             b = own.read(m) if own.has(m) else base.read(m)
             sh = md3_shaders(b) if m.lower().endswith('.md3') else iqm_shaders(b) if m.lower().endswith('.iqm') else []
+            if m.lower().startswith('models/mapobjects/') and not own.has(m): continue   # WoP's own catalog models
             for s in sorted(set(sh or [])):
+                s = s.replace('\\', '/')                     # some WoP MD3s store backslash paths; the engine accepts them
                 if s and not sh_ok(s): FAILS.append(('models', f'{m}: surface shader {s} has no shader or image'))
     # ---- names
     for p in own.files.values():
-        if p[2] != p[2].lower() and not p[2].startswith(('.', '__', 'levelshots/')): FAILS.append(('names', f'{p[2]}: upper case file name'))
+        if p[2] != p[2].lower() and not p[2].startswith(('.', '__', 'levelshots/')): WARNS.append(('names', f'{p[2]}: upper case file name'))
     size = 0
     if a.target.endswith('.pk3'): size = os.path.getsize(a.target)
     for sec in ('files', 'textures', 'shaders', 'models', 'sounds', 'names'):

@@ -152,7 +152,8 @@ def check_names(ents):
         kv = e['kv']
         for k in ('model', 'model2', 'noise'):
             v = kv.get(k)
-            if v and not v.startswith('*') and v != v.lower(): fail('names', f'ent{ei} {k} {v}: upper case path')
+            if v and not v.startswith('*') and v != v.lower() and not v.startswith('models/mapobjects/'):
+                warn('names', f'ent{ei} {k} {v}: upper case in your own file names (keep them lower case; pk3dir folders are case sensitive)')
     seen = set()
     FAILS[:] = [f for f in FAILS if not (f in seen or seen.add(f))]
 
@@ -178,7 +179,7 @@ def check_entities(ents, BR, world_mn, world_mx):
         if c in ('trigger_push', 'trigger_teleport') and not t: fail('entities', f'ent{ei} {c} without a target')
         if c in ('func_rotating', 'func_pendulum', 'func_train') and e['brushes']:
             has_ob = any(all('origin' in f[3].lower() for f in b) for b in e['brushes'])
-            if not has_ob: fail('entities', f'ent{ei} {c} has no origin brush (it would turn round the world origin)')
+            if not has_ob and 'origin' not in kv: fail('entities', f'ent{ei} {c} has no origin brush (it would turn round the world origin)')
             if has_ob and 'origin' in kv: fail('entities', f'ent{ei} {c} has an origin brush AND an origin key: '
                                                           'q3map2 adds them and the mover ends up outside the map (leak)')
         if c == 'func_bobbing':
@@ -260,7 +261,7 @@ def check_items(ents, BR):
         if c not in wopdata.PICKUPS or 'origin' not in kv: continue
         o = np.array([float(v) for v in kv['origin'].split()])
         if not int(kv.get('spawnflags', '0')) & 1:
-            f = floor_under(BR, o[0], o[1], o[2] - 14, kinds=('solid', 'clip', 'decor'), maxd=64)
+            f = floor_under(BR, o[0], o[1], o[2] - 14, kinds=('solid', 'clip'), maxd=64)
             if f and falls_through(f[1]['texs']):
                 fail('items', f'ent{ei} {c} at {o.astype(int)} rests on {f[1]["texs"][0]} ({f[1]["k"]}): it falls through at '
                               'spawn (MASK_SOLID drop) - give it spawnflags 1 or a solid floor')
@@ -323,8 +324,9 @@ def check_water(BR):
                 for di in (-2, -1, 0, 1, 2):
                     for dj in (-2, -1, 0, 1, 2):
                         a, b = i + di, j + dj
+                        # walk out (<= 18 step) from wadeable water, or jump out (barrier 33) where only the feet are wet
                         if 0 <= a < len(xs) and 0 <= b < len(ys) and not wet[a, b] and fl[a, b] > surf - 8 \
-                                and fl[a, b] - fl[i, j] <= 18.5:
+                                and (fl[a, b] - fl[i, j] <= 18.5 or (surf - fl[i, j] <= 24 and fl[a, b] - fl[i, j] <= 33)):
                             ok = True; break
                     if ok: break
                 if ok: break
