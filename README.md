@@ -67,6 +67,10 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   with a walk-in missing slice, a deck oven with walk-in proofer and baking decks, a planetary floor mixer with a turning
   paddle, counters with tunnels through the shelving and a wall shelf, a cool room, the shop's display cabinet, cooling
   racks, and a flour bin that drops you into the secret Sugar Vault; see padbakery/README.md.
+- `padgelato/` - *Padman's Gelato Parlour* (`wop_padgelato`): FFA in a retro ice cream parlour - a giant triple-scoop cone with a
+  scoop lift (func_plat) to its rim, a gelato counter with tubs to drop into and a high wall shelf, a soft-serve machine
+  with a walk-in cabinet and swirls turning, a milkshake bar and a giant milkshake glass, a walk-in freezer whose
+  Mystery Flavour tub drops you into the secret Frozen Vault, a chest freezer, an ice cream cart; see padgelato/README.md.
 - `setup_cloud.sh` - builds the toolchain in a fresh cloud session (libjpeg/libxml2, NRC q3map2, wopbspc, wopded).
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.

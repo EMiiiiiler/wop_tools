@@ -193,3 +193,6 @@ Tools and standing rules for building World of Padman (WoP) maps.
   for translucent plastic (strip curtains).
 - Open shelving with doorways through the dividers leaks long eye-level sightlines along the tunnel: one prop per bay on
   the doorway line (walk round it) fixes it.
+- Under a wide overhang (a cone that widens upward) long eye-level sightlines run under it: put props round the base
+  (padgelato carton stacks took sightlines 4.1 -> 3.5 %).
+- Sphere/ellipsoid UVs default to one tile over the whole sphere: pass u1/v1 repeats on big scoops/domes.
