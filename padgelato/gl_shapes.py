@@ -124,10 +124,12 @@ def gelato_counter():
         b = tbox((xa, L.GC_TUB_Y[0], L.GC_PAN_Z), (xb, L.GC_TUB_Y[1], L.GC_TUB), 'gc_tub')
         b.tub = k
         out.append(b)
-    sx0, sy0, sx1, sy1 = L.GC_STAIR_W
-    out += stair_run(sx0, sy0, sx1, sy1, 0, L.GC_DECK, 'e', part='gc_stair')
-    sx0, sy0, sx1, sy1 = L.GC_STAIR_E
-    out += stair_run(sx0, sy0, sx1, sy1, 0, L.GC_DECK, 'w', part='gc_stair')
+    if L.GC_STAIR_W:
+        sx0, sy0, sx1, sy1 = L.GC_STAIR_W
+        out += stair_run(sx0, sy0, sx1, sy1, 0, L.GC_DECK, 'e', part='gc_stair')
+    if L.GC_STAIR_E:
+        sx0, sy0, sx1, sy1 = L.GC_STAIR_E
+        out += stair_run(sx0, sy0, sx1, sy1, 0, L.GC_DECK, 'w', part='gc_stair')
     hx0, hx1, hy, hz = L.SHELF
     out.append(tbox((hx0, hy, hz - L.SHELF_T), (hx1, L.HY, hz), 'shelf'))
     for zz in (300, 600):
@@ -154,7 +156,7 @@ def softserve():
         out.append(tbox((L.SS_BODY_X, y - 60, 700), (L.SS_BODY_X + 90, y + 60, 800), 'ss_nozzle'))
     for y in (L.SS_NOZZLES[0], L.SS_NOZZLES[2]):
         out.append(prism_n(-1790, y, 96, L.SS_DECK, L.SS_DECK + 260, 12, 15, 'ss_cone'))
-    out.append(prism_n(-1790, 0, 76, L.SS_DECK, L.SS_DECK + 150, 12, 15, 'ss_cup'))
+    out.append(prism_n(-1790, L.SS_NOZZLES[1], 76, L.SS_DECK, L.SS_DECK + 150, 12, 15, 'ss_cup'))
     sx0, sy0, sx1, sy1 = L.SS_STAIR
     out += stair_run(sx0, sy0, sx1, sy1, 0, L.SS_DECK, 's', part='ss_stair')
     return out
@@ -180,9 +182,9 @@ def freezer():
     x0, y0, x1, y1 = L.FZ
     t = L.FZ_T
     dx, dhw, dh = L.FZ_DOOR
-    out = walls_rect(x0, y0, x1, y1, 0, L.FZ_H - 32, t, [('n', dx, dhw, 0, dh)], part='fz_wall')
+    out = walls_rect(x0, y0, x1, y1, 0, L.FZ_H - 32, t, [('w', dx, dhw, 0, dh)], part='fz_wall')
     out.append(tbox((x0, y0, L.FZ_H - 32), (x1, y1, L.FZ_H), 'fz_roof'))
-    out.append(tbox((dx + dhw + 8, y1, 0), (dx + 3 * dhw + 8, y1 + 12, dh + 16), 'fz_door'))
+    out.append(tbox((x0 - 12, dx + dhw + 8, 0), (x0, dx + 3 * dhw + 8, dh + 16), 'fz_door'))
     sx0, sx1 = x1 - t - 176, x1 - t - 16
     sy0, sy1 = y0 + t + 400, y1 - t - 120
     for zz in (240, 480):
@@ -202,11 +204,12 @@ def chest():
     x0, y0, x1, y1 = L.CF
     out = walls_rect(x0, y0, x1, y1, 0, L.CF_RIM, L.CF_T, part='cf_wall')
     out.append(tbox((x0 + L.CF_T, y0 + L.CF_T, 0), (x1 - L.CF_T, y1 - L.CF_T, L.CF_FLOOR), 'cf_floor'))
-    sx0, sy0, sx1, sy1 = L.CF_STAIR_OUT
-    out += stair_run(sx0, sy0, sx1, sy1, 0, L.CF_RIM, "s", part="cf_stair")
-    sx0, sy0, sx1, sy1 = L.CF_STAIR_IN
-    out += stair_run(sx0, sy0, sx1, sy1, L.CF_FLOOR, L.CF_RIM, 'n', part='cf_stair_in')
-    out.append(tbox((x0, y0, L.CF_RIM), (x1, y0 + L.CF_T, L.CF_RIM + 400), 'cf_lid'))
+    sx0, sy0, sx1, sy1, d = L.CF_STAIR_OUT
+    out += stair_run(sx0, sy0, sx1, sy1, 0, L.CF_RIM, d, part="cf_stair")
+    sx0, sy0, sx1, sy1, d = L.CF_STAIR_IN
+    out += stair_run(sx0, sy0, sx1, sy1, L.CF_FLOOR, L.CF_RIM, d, part='cf_stair_in')
+    if L.CF_LID == 'n': out.append(tbox((x0, y1 - L.CF_T, L.CF_RIM), (x1, y1, L.CF_RIM + 400), 'cf_lid'))
+    else: out.append(tbox((x0, y0, L.CF_RIM), (x1, y0 + L.CF_T, L.CF_RIM + 400), 'cf_lid'))
     return out
 
 
@@ -220,3 +223,45 @@ def cart():
 
 def jars():
     return [prism_n(x, y, L.JAR_R, 0, L.JAR_H, 16, 0, 'jar') for (x, y) in L.JARS]
+
+
+
+# ================================================================================================= the display counter
+def display_counter():
+    """mint cabinet with a curved glass case on top: straight run + half-round ends; the case top is flat glass (walkable)
+    from DC_Y0 + DC_GLASS_D back; the front glass slants from the cabinet top up to it"""
+    x0, x1, y0, y1, r = L.DC_X0, L.DC_X1, L.DC_Y0, L.DC_Y1, L.DC_R
+    yc = (y0 + y1) / 2
+    out = [tbox((x0, y0, 0), (x1, y1, L.DC_BODY), 'dc_body'),
+           tbox((x0, y0 + L.DC_GLASS_D, L.DC_BODY), (x1, y1, L.DC_TOP), 'dc_case'),
+           tag(hull([(x, y0, L.DC_BODY) for x in (x0, x1)] + [(x, y0 + L.DC_GLASS_D, L.DC_BODY) for x in (x0, x1)] +
+                    [(x, y0 + L.DC_GLASS_D, L.DC_TOP) for x in (x0, x1)], X, round_pts=False), 'dc_glass')]
+    for (cx, a0) in ((x0, 90.0), (x1, -90.0)):
+        for k in range(6):
+            a = a0 + 30 * k
+            out.append(ring_seg(cx, yc, a, a + 30, 0, r, 0, L.DC_BODY, part='dc_end'))
+            out.append(ring_seg(cx, yc, a, a + 30, 0, r - L.DC_GLASS_D, L.DC_BODY, L.DC_TOP, part='dc_endcase'))
+    return out
+
+
+# ================================================================================================= batch freezer
+def batch_freezer():
+    x0, y0, x1, y1 = L.BF
+    dx, dz, dr = L.BF_DRUM
+    return [tbox((x0, y0, 0), (x1, y1, L.BF_H), 'bf_body'),
+            tbox((dx - dr + 20, y0 - L.BF_DRUM_D, dz - dr + 20), (dx + dr - 20, y0, dz + dr - 20), 'bf_drum'),
+            tbox((x1 - 130, y0 - 160, 0), (x1, y0, 110), 'bf_ledge')]
+
+
+# ================================================================================================= pasteuriser vat
+def vat():
+    cx, cy = L.VAT
+    out = []
+    for k in range(16):
+        out.append(ring_seg(cx, cy, 22.5 * k, 22.5 * (k + 1), L.VAT_R0, L.VAT_R1, 0, L.VAT_RIM, part='vat_wall'))
+    out.append(prism_n(cx, cy, L.VAT_R0, 0, L.VAT_MILK, 16, 0, 'vat_floor'))
+    z0, z1 = L.VAT_BEAM_Z
+    out.append(tbox((cx - 30, cy - L.VAT_R1 - 40, z0), (cx + 30, cy + L.VAT_R1 + 40, z1), 'vat_beam'))
+    for s in (-1, 1):
+        out.append(tbox((cx - 30, cy + s * (L.VAT_R1 + 20) - 20, 0), (cx + 30, cy + s * (L.VAT_R1 + 20) + 20, z0), 'vat_leg'))
+    return out

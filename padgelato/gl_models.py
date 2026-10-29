@@ -180,9 +180,9 @@ def softserve():
         revolve(X.mesh(st), [(0, 700), (34, 700), (26, 660), (12, 640), (0, 640)], n=16, cx=bx + 50, cy=y)
         tube(X.mesh(SM('black', tag='ss')), [(bx + 2, y, 860), (bx + 60, y, 880), (bx + 90, y, 960)], 9, nseg=8)
         sphere(X.mesh(SM('red', 70, tag='ss')), (bx + 92, y, 970), 18, nu=10, nv=6)
-    picture(X.mesh(S('screen', 'glow', tag='ss')), (bx + 0.6, 180, 1000), 140, 60, (1, 0, 0))
-    picture(X.mesh(SM('badge_ss', 40, tag='ss')), (bx + 0.6, -40, 1080), 360, 110, (1, 0, 0))
-    for y in (-300, 0, 300):
+    picture(X.mesh(S('screen', 'glow', tag='ss')), (bx + 0.6, 180 + L.SS_DY, 1000), 140, 60, (1, 0, 0))
+    picture(X.mesh(SM('badge_ss', 40, tag='ss')), (bx + 0.6, -40 + L.SS_DY, 1080), 360, 110, (1, 0, 0))
+    for y in (-300 + L.SS_DY, L.SS_DY, 300 + L.SS_DY):
         cylm(X.mesh(st), (-2100, y, L.SS_TOP), 120, 10, n=24)
         sphere(X.mesh(SM('black', tag='ss')), (-2100, y, L.SS_TOP + 18), 12, nu=8, nv=5)
     for yy in np.linspace(y0 + 40, y1 - 40, 20):
@@ -194,9 +194,9 @@ def softserve():
         revolve(X.mesh(SM('waffle', 50, tag='ssc')), [(30, L.SS_DECK + 96), (100, L.SS_DECK + 260)], n=24, cx=-1790, cy=y, u_tiles=4)
         torus(X.mesh(SM('waffle', 50, tag='ssc')), (-1790, y, L.SS_DECK + 262), 96, 8, n=24, m=6)
         ellipsoid(X.mesh(SM('cream', 60, tag='ssc')), (-1790, y, L.SS_DECK + 262), 92, 92, 30, nu=20, nv=6, flat_bottom=0)
-    revolve(X.mesh(SM('sleeve', 50, tag='ssc')), [(0, L.SS_DECK), (60, L.SS_DECK), (80, L.SS_DECK + 150), (0, L.SS_DECK + 150)], n=20, cx=-1790, cy=0, u_tiles=1, vlen=150)
-    swirl_static(X, (-1790, 0, L.SS_DECK + 150), 70, 130)
-    return place_save('softserve', X, (x0 + x1) / 2, 0)
+    revolve(X.mesh(SM('sleeve', 50, tag='ssc')), [(0, L.SS_DECK), (60, L.SS_DECK), (80, L.SS_DECK + 150), (0, L.SS_DECK + 150)], n=20, cx=-1790, cy=L.SS_DY, u_tiles=1, vlen=150)
+    swirl_static(X, (-1790, L.SS_DY, L.SS_DECK + 150), 70, 130)
+    return place_save('softserve', X, (x0 + x1) / 2, L.SS_DY)
 
 
 def swirl_static(X, c, r, h, sh=None):
@@ -297,18 +297,18 @@ def freezer():
     dx, dhw, dh = L.FZ_DOOR
     cu = S('curtain', 'glass', c='0.10 0.13 0.15', tag='fzc')
     for k in range(8):
-        xa = dx - dhw + k * 2 * dhw / 8 + 2
-        quad_uv(X.mesh(cu), (xa, y1 - t / 2, 6), (xa + 2 * dhw / 8 - 3, y1 - t / 2, 6), (xa + 2 * dhw / 8 - 3, y1 - t / 2, dh),
-                (xa, y1 - t / 2, dh), [(0, 1), (1, 1), (1, 0), (0, 0)], (0, 1, 0))
-    tube(X.mesh(SC('steel', 0.3, tag='fzs')), [(dx - dhw - 20, y1 + 10, dh + 30), (dx + 3 * dhw + 40, y1 + 10, dh + 30)], 5, nseg=8)
-    picture(X.mesh(SB('sign_freezer', tag='fz')), (dx - dhw - 190, y1 + 0.6, 260), 240, 90, (0, 1, 0))
+        ya = dx - dhw + k * 2 * dhw / 8 + 2
+        quad_uv(X.mesh(cu), (x0 + t / 2, ya, 6), (x0 + t / 2, ya + 2 * dhw / 8 - 3, 6), (x0 + t / 2, ya + 2 * dhw / 8 - 3, dh),
+                (x0 + t / 2, ya, dh), [(0, 1), (1, 1), (1, 0), (0, 0)], (-1, 0, 0))
+    tube(X.mesh(SC('steel', 0.3, tag='fzs')), [(x0 - 10, dx - dhw - 20, dh + 30), (x0 - 10, dx + 3 * dhw + 40, dh + 30)], 5, nseg=8)
+    picture(X.mesh(SB('sign_freezer', tag='fz')), (x0 - 0.6, dx - dhw - 190, 260), 240, 90, (-1, 0, 0))
     # frost along the roof edge and icicles over the door
     fr = SM('frost', 60, tag='fzf')
     rng = np.random.default_rng(7)
-    for xx in np.linspace(x0 + 30, x1 - 30, 24):
-        if dx - dhw - 10 < xx < dx + dhw + 10:
-            ellipsoid(X.mesh(fr), (xx, y1 + 4, dh - 6 - rng.uniform(0, 20)), 6, 6, rng.uniform(14, 34), nu=6, nv=5)
-        ellipsoid(X.mesh(fr), (xx, y1 + 2, L.FZ_H - 20), 26, 6, 12, nu=8, nv=4)
+    for yy in np.linspace(y0 + 30, y1 - 30, 24):
+        if dx - dhw - 10 < yy < dx + dhw + 10:
+            ellipsoid(X.mesh(fr), (x0 - 4, yy, dh - 6 - rng.uniform(0, 20)), 6, 6, rng.uniform(14, 34), nu=6, nv=5)
+        ellipsoid(X.mesh(fr), (x0 - 2, yy, L.FZ_H - 20), 6, 26, 12, nu=8, nv=4)
     # the Mystery Flavour tub
     mx, my, mr, mh = L.MYSTERY
     revolve(X.mesh(SM('carton_vanilla', 40, tag='mys')), [(mr + 2, 0), (mr + 2, mh)], n=32, cx=mx, cy=my, u_tiles=2, vlen=mh)
@@ -332,11 +332,10 @@ def chest():
         if part == 'cf_floor': return fr, planar_uv(n, 128)
         q = c + n * 3
         inside = x0 + L.CF_T < q[0] < x1 - L.CF_T and y0 + L.CF_T < q[1] < y1 - L.CF_T
-        if part == 'cf_lid': return (fr if n[1] > 0.9 else wh), planar_uv(n, 256)
+        if part == 'cf_lid': return (fr if (n[1] < -0.9 if L.CF_LID == 'n' else n[1] > 0.9) else wh), planar_uv(n, 256)
         return (fr if inside else wh), planar_uv(n, 256)
     solids_parts(X, SH.chest(), fn)
-    picture(X.mesh(SM('badge_cf', 40, tag='cf')), ((x0 + x1) / 2 + 120, y1 + 0.6, 70), 300, 70, (0, 1, 0))
-    tube(X.mesh(SC('steel', 0.3, tag='cfh')), [(x0 + 200, y0 - 6, L.CF_RIM + 360), (x1 - 200, y0 - 6, L.CF_RIM + 360)], 6, nseg=8)
+    picture(X.mesh(SM('badge_cf', 40, tag='cf')), ((x0 + x1) / 2 + 60, y0 - 0.6, 70), 300, 70, (0, -1, 0))
     return place_save('chest', X, (x0 + x1) / 2, (y0 + y1) / 2)
 
 
@@ -387,15 +386,205 @@ def topping_jar(name, contents):
     return save(name, X)
 
 
+# ================================================================================================= the display counter
+def stadium(x0, x1, yc, r, n_arc=12, inset=0.0):
+    """closed outline (counter-clockwise from the front-left) of a stadium shape: [(x, y, nx, ny, part)] where part is
+    'front', 'end' or 'back'; inset moves the outline inward"""
+    rr = r - inset
+    out = []
+    for x in np.linspace(x0, x1, 12):
+        out.append((x, yc - rr, 0.0, -1.0, 'front'))
+    for k in range(1, n_arc):
+        a = -math.pi / 2 + math.pi * k / n_arc
+        out.append((x1 + rr * math.cos(a), yc + rr * math.sin(a), math.cos(a), math.sin(a), 'end'))
+    for x in np.linspace(x1, x0, 12):
+        out.append((x, yc + rr, 0.0, 1.0, 'back'))
+    for k in range(1, n_arc):
+        a = math.pi / 2 + math.pi * k / n_arc
+        out.append((x0 + rr * math.cos(a), yc + rr * math.sin(a), math.cos(a), math.sin(a), 'end'))
+    return out
+
+
+def outline_wall(M, pts, prof, closed=True, vlen=128.0, flip=False):
+    """surface swept round an outline: prof [(d, z)] with d = inward offset; normals outward"""
+    P = []; UV = []
+    seg = pts + ([pts[0]] if closed else [])
+    Lc = 0.0
+    for i, (x, y, nx, ny, _) in enumerate(seg):
+        if i: Lc += math.hypot(x - seg[i - 1][0], y - seg[i - 1][1])
+        P.append([(x - nx * d, y - ny * d, z) for (d, z) in prof]); UV.append([(Lc / vlen, k / max(1, len(prof) - 1)) for k in range(len(prof))])
+    P = np.array(P).transpose(1, 0, 2); UV = np.array(UV).transpose(1, 0, 2)
+    N = grid_normals(P)
+    c = P.mean(axis=(0, 1))
+    if ((N * (P - c)).sum(-1) < 0).mean() > 0.5: N = -N
+    if flip: N = -N
+    M.grid(P, N, UV)
+
+
+def display_counter():
+    X = Model()
+    x0, x1, y0, y1, r = L.DC_X0, L.DC_X1, L.DC_Y0, L.DC_Y1, L.DC_R
+    yc = (y0 + y1) / 2
+    B, TOP, G = L.DC_BODY, L.DC_TOP, L.DC_GLASS_D
+    mint, pink, ch, blk = SM('enamel_mint', 40, tag='dc'), SM('enamel_pink', 40, tag='dc'), SC('steel', 0.3, tag='dc'), SM('black', tag='dc')
+    gl = S('glass_g', 'glass', c='0.08 0.1 0.11', tag='dcg', two=True)
+    full = stadium(x0, x1, yc, r, 12)
+    # cabinet: black kick plate, mint panels, pink rounded edge, chrome rail
+    outline_wall(X.mesh(blk), stadium(x0, x1, yc, r, 12, 10), [(0, 0), (0, 40)])
+    outline_wall(X.mesh(mint), full, [(0, 40), (0, B - 24)], vlen=300)
+    outline_wall(X.mesh(pink), full, [(0, B - 24), (-6, B - 16), (-8, B - 6), (-2, B), (8, B + 2)], vlen=300)
+    tubs_x = np.linspace(x0 + 135, x1 - 135, 11)
+    for t in (tubs_x[:-1] + tubs_x[1:]) / 2:
+        boxm(X.mesh(ch), (t - 5, y0 - 3, 60), (t + 5, y0 + 1, B - 30), r=1, tile=32)
+    tube(X.mesh(ch), [(x0 + 20, y0 - 30, 90), (x1 - 20, y0 - 30, 90)], 6, nseg=8)
+    for t in np.linspace(x0 + 60, x1 - 60, 9):
+        tube(X.mesh(ch), [(t, y0 - 30, 90), (t, y0, 90)], 4, nseg=6)
+    # the curved glass: front + both ends bulge out a little and lean back to the flat top; vertical at the back
+    front = [p for p in full if p[4] != 'back']
+    prof = [(2, B + 2), (-12, B + 70), (-8, B + 150), (10, B + 210), (G - 12, TOP - 6), (G, TOP)]
+    outline_wall(X.mesh(gl), front, prof, closed=False, vlen=600)
+    back = [p for p in full if p[4] == 'back']
+    outline_wall(X.mesh(gl), back, [(4, B), (4, TOP)], closed=False, vlen=600)
+    # the flat glass top (walkable), chrome frame round it
+    inner = stadium(x0, x1, yc, r - G, 12)
+    X.mesh(gl).poly([np.array([x0, y0 + G, TOP]), np.array([x1, y0 + G, TOP]), np.array([x1, y1, TOP]), np.array([x0, y1, TOP])], (0, 0, 1),
+                    [(0, 0), (6, 0), (6, 1), (0, 1)])
+    for (cxe, a0) in ((x0, 90.0), (x1, -90.0)):
+        annulus(X.mesh(gl), cxe, yc, 0, r - G, TOP, a0, a0 + 180, n=12)
+    outline_wall(X.mesh(ch), inner, [(-3, TOP - 6), (-3, TOP + 2), (3, TOP + 2)], vlen=128)
+    # inside: steel shelf, eleven tubs of gelato in a row with tags, a light strip under the glass top
+    annulus(X.mesh(ch), x0, yc, 0, r - 4, B + 1, 90, 270, n=12); annulus(X.mesh(ch), x1, yc, 0, r - 4, B + 1, -90, 90, n=12)
+    quad_uv(X.mesh(ch), (x0, y0 + 4, B + 1), (x1, y0 + 4, B + 1), (x1, y1 - 4, B + 1), (x0, y1 - 4, B + 1), [(0, 0), (12, 0), (12, 1), (0, 1)], (0, 0, 1))
+    tubs = np.linspace(x0 + 135, x1 - 135, 11)
+    flv = TUB_FLAVOURS + ['fl_vanilla', 'fl_mystery', 'fl_straw']
+    for k, tx in enumerate(tubs):
+        f = flv[k % len(flv)]
+        boxm(X.mesh(ch), (tx - 110, yc - 95, B + 1), (tx + 110, yc + 95, B + 60), r=4, tile=64)
+        nx_, ny_ = 8, 6
+        P = np.zeros((ny_ + 1, nx_ + 1, 3)); UV = np.zeros((ny_ + 1, nx_ + 1, 2))
+        for j in range(ny_ + 1):
+            for i in range(nx_ + 1):
+                u, v = i / nx_, j / ny_
+                x, y = tx - 104 + 208 * u, yc - 89 + 178 * v
+                h = 36 * math.sin(math.pi * u) * math.sin(math.pi * v) + 6 * math.sin(u * 13 + k) * math.cos(v * 11)
+                P[j, i] = (x, y, B + 58 + max(0, h)); UV[j, i] = (x / 120, -y / 120)
+        Nn = grid_normals(P)
+        if Nn[ny_ // 2, nx_ // 2, 2] < 0: Nn = -Nn
+        X.mesh(SM(f, 60, tag='dct' + f)).grid(P, Nn, UV)
+        tube(X.mesh(ch), [(tx + 40, yc + 40, B + 80), (tx + 60, yc + 80, B + 150)], 4, nseg=6)
+        nm = f'tag_{k % 8}'
+        picture(X.mesh(SM(nm, 40, tag='gctag')), (tx, y0 - 0.8, B - 60), 190, 48, (0, -1, 0))
+    quad_uv(X.mesh(S('glow_w', 'glow', tag='dcl')), (x0, y1 - 30, TOP - 2), (x1, y1 - 30, TOP - 2), (x1, y1 - 10, TOP - 2), (x0, y1 - 10, TOP - 2),
+            [(0, 0), (1, 0), (1, 1), (0, 1)], (0, 0, -1))
+    # kitchen side: steel cabinet doors with chrome handles
+    for t in np.linspace(x0 + 150, x1 - 150, 10):
+        boxm(X.mesh(ch), (t - 60, y1 - 1, 120), (t + 60, y1 + 3, 126), r=1, tile=32)
+    return place_save('display', X, 0, yc)
+
+
+def batch_freezer():
+    X = Model()
+    x0, y0, x1, y1 = L.BF
+    dx, dz, dr = L.BF_DRUM
+    st, sd, ch = SC('steel', 0.2, tag='bf'), SM('steel_d', tag='bf'), SC('steel', 0.35, tag='bfc')
+
+    def fn(part, c, n, poly):
+        if n[2] < -0.9 and c[2] < 1: return None
+        if part == 'bf_drum': return None
+        if part == 'bf_ledge': return st, planar_uv(n, 64)
+        return st, planar_uv(n, 256)
+    solids_parts(X, SH.batch_freezer(), fn)
+    # porthole: chrome ring, dark drum behind, glass dome in front (the dasher turns inside: a mover)
+    m = Mesh(); torus(m, (0, 0, 0), dr, 14, axis=(0, 1, 0), n=40, m=8)
+    X.mesh(ch).add(m, np.eye(3), (dx, y0 - 4, dz))
+    m = Mesh(); disc(m, dr, 0, up=True, n=40)
+    X.mesh(SM('fl_straw', 60, tag='bfd')).add(m, rot_axis((1, 0, 0), math.pi / 2), (dx, y0 - 1, dz))
+    m = Mesh(); ellipsoid(m, (0, 0, 0), dr, L.BF_DRUM_D, dr, nu=24, nv=12, v1=1.0)
+    X.mesh(S('glass_g', 'glass', c='0.10 0.12 0.13', tag='bfg')).add(m, np.eye(3), (dx, y0 - 2, dz))
+    # chute with gelato ribbon pouring into the tub on the ledge, control panel, name plate, top vents
+    boxm(X.mesh(ch), (x1 - 90, y0 - 80, 230), (x1 - 40, y0, 270), r=6, tile=32)
+    revolve(X.mesh(ch), [(0, 230), (22, 230), (16, 200), (0, 196)], n=12, cx=x1 - 65, cy=y0 - 60)
+    fl = S('ribbon', 'flow', speed=-1.4, tag='bff')
+    quad_uv(X.mesh(fl), (x1 - 80, y0 - 60, 200), (x1 - 50, y0 - 60, 200), (x1 - 50, y0 - 60, 120), (x1 - 80, y0 - 60, 120), [(0, 0), (1, 0), (1, 2), (0, 2)], (0, -1, 0))
+    quad_uv(X.mesh(fl), (x1 - 65, y0 - 75, 200), (x1 - 65, y0 - 45, 200), (x1 - 65, y0 - 45, 120), (x1 - 65, y0 - 75, 120), [(0, 0), (1, 0), (1, 2), (0, 2)], (1, 0, 0))
+    picture(X.mesh(S('screen', 'glow', tag='bf')), (x0 + 110, y0 - 0.6, 520), 140, 60, (0, -1, 0))
+    for k in range(3):
+        m = Mesh(); cylm(m, (0, 0, 0), 16, 10, n=12)
+        X.mesh(SM(['red', 'black', 'enamel_mint'][k], 50, tag='bfk')).add(m, rot_axis((1, 0, 0), math.pi / 2), (x0 + 70 + k * 40, y0, 440))
+    picture(X.mesh(SM('plate_bf', 40, tag='bf')), (dx, y0 - 0.6, 590), 300, 56, (0, -1, 0))
+    for k in range(5):
+        boxm(X.mesh(sd), (x0 + 60 + k * 80, y0 + 100, L.BF_H), (x0 + 100 + k * 80, y1 - 100, L.BF_H + 3), r=1, tile=32)
+    for (px, py) in ((x0 + 20, y0 + 20), (x1 - 20, y0 + 20), (x0 + 20, y1 - 20), (x1 - 20, y1 - 20)):
+        cylm(X.mesh(SM('rubber_b', tag='bf')), (px, py, -2), 18, 4, n=10)
+    return place_save('batchfreezer', X, (x0 + x1) / 2, (y0 + y1) / 2)
+
+
+def dasher():
+    """the churning dasher inside the porthole (func_rotating about y; origin at the drum centre)"""
+    X = Model()
+    ch, ge = S('steel', 'dyn', tag='ds'), S('fl_straw', 'dyn', tag='ds')
+    for k in range(3):
+        a = 2 * math.pi * k / 3
+        d = np.array([math.cos(a), 0, math.sin(a)])
+        tube(X.mesh(ch), [d * 10, d * 128], 5, nseg=6)
+        m = Mesh(); rbox(m, (-6, -20, 40), (6, 20, 126), r=2, k=1, tile=64)
+        X.mesh(ch).add(m, rot_axis((0, 1, 0), -a + math.pi / 2))
+        ellipsoid(X.mesh(ge), d * 90, 26, 16, 18, nu=8, nv=5)
+    m = Mesh(); cylm(m, (0, 0, -20), 18, 40, n=12)
+    X.mesh(ch).add(m, rot_axis((1, 0, 0), math.pi / 2))
+    return save('dasher', X)
+
+
+def vat():
+    X = Model()
+    cx, cy = L.VAT
+    st, ch = SC('steel', 0.25, tag='vt'), SC('steel', 0.35, tag='vtc')
+    r0, r1, R = L.VAT_R0, L.VAT_R1, L.VAT_RIM
+    revolve(X.mesh(st), [(r1 + 6, 0), (r1 + 6, R - 14)], n=48, u_tiles=8, vlen=256)
+    annulus(X.mesh(SM('steel_d', tag='vt')), 0, 0, r0 - 4, r1 + 6, R, 0, 360, n=48)
+    torus(X.mesh(ch), (0, 0, R - 6), r1 + 4, 8, n=48, m=8)
+    revolve(X.mesh(st), [(r0 - 2, R), (r0 - 2, L.VAT_MILK)], n=48, inward=True)
+    disc(X.mesh(SM('cream', 70, tag='vtm')), r0 - 1, L.VAT_MILK + 0.5, n=48)
+    for k in range(4):
+        a = 2 * math.pi * k / 4 + 0.4
+        tube(X.mesh(ch), [((r1 + 6) * math.cos(a), (r1 + 6) * math.sin(a), 80), ((r1 + 20) * math.cos(a), (r1 + 20) * math.sin(a), 80),
+                          ((r1 + 20) * math.cos(a), (r1 + 20) * math.sin(a), 300), ((r1 + 6) * math.cos(a), (r1 + 6) * math.sin(a), 300)], 5, nseg=6)
+    picture(X.mesh(SM('plate_vat', 40, tag='vt')), (r1 + 6.6, 0, 200), 260, 80, (1, 0, 0))
+    # the motor bridge and its legs (collision in gl_shapes), the motor housing on top
+    z0, z1 = L.VAT_BEAM_Z
+    boxm(X.mesh(SM('enamel_mint', 40, tag='vt')), (-30, -r1 - 40, z0), (30, r1 + 40, z1), r=6, tile=128)
+    for s_ in (-1, 1):
+        boxm(X.mesh(ch), (-30, s_ * (r1 + 20) - 20, 0), (30, s_ * (r1 + 20) + 20, z0), r=4, tile=64)
+    revolve(X.mesh(SM('enamel_mint', 40, tag='vt')), [(0, z1), (70, z1), (70, z1 + 110), (50, z1 + 140), (0, z1 + 140)], n=20)
+    return place_save('vat', X, cx, cy, local=True)
+
+
+def vat_paddle():
+    """the vat paddle (func_rotating about z; origin at the beam underside over the vat centre)"""
+    X = Model()
+    ch = S('steel', 'dyn', tag='vp')
+    zb = L.VAT_BEAM_Z[0]
+    h = zb - (L.VAT_MILK + 20)
+    tube(X.mesh(ch), [(0, 0, 0), (0, 0, -h)], 10, nseg=8)
+    for s_ in (-1, 1):
+        m = Mesh(); rbox(m, (30, -6, -h), (230, 6, -h + 70), r=3, k=1, tile=64)
+        X.mesh(ch).add(m, rot_z(0 if s_ > 0 else math.pi))
+        tube(X.mesh(ch), [(s_ * 30, 0, -h + 60), (s_ * 230, 0, -h + 60)], 4, nseg=6)
+    return save('vat_paddle', X)
+
+
 def make_badges():
     T('badge_ss', tex_label(512, 160, 'SOFT SERVE', (214, 36, 56), (252, 244, 226), 'TWIST - VANILLA - STRAWBERRY'))
     T('badge_cf', tex_label(512, 128, 'ICE CREAM', (252, 244, 226), (214, 36, 56)))
     T('tag_mys', tex_tag('MYSTERY ???', (50, 40, 70)))
+    T('plate_bf', tex_label(512, 96, 'PADMAN BATCH 120', (40, 44, 48), (240, 240, 236)))
+    T('plate_vat', tex_label(512, 160, 'PASTEURISER', (176, 226, 206), (60, 60, 64), 'MILK + CREAM - 85 C'))
 
 
 def make():
     make_textures(); make_gelato_textures(); make_badges()
     tower(); gelato_counter(); softserve(); bar(); milkshake(); freezer(); chest(); cart()
+    display_counter(); batch_freezer(); dasher(); vat(); vat_paddle()
     for nm, c in (('jar_spr', 'sprinkles'), ('jar_choc', 'choc_d'), ('jar_nuts', 'nuts'), ('jar_marsh', 'marsh'), ('jar_gummy', 'gummy')):
         topping_jar(nm, c)
     swirl_mover('swirl_v', 'cream'); swirl_mover('swirl_s', 'fl_straw')

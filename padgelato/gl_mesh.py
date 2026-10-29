@@ -523,10 +523,19 @@ def tex_lift(n=256):
     return np.asarray(im, np.float32)
 
 
+def tex_ribbon(w=64, h=256, seed=103, col=(248, 160, 184)):
+    x, y = xy(w, h)
+    s = np.clip(np.sin(x * 30 + noise(w, 3, seed, h) * 2) * 0.4 + 0.7, 0, 1)
+    c = np.zeros((h, w, 3), np.float32) + C(col) * (0.85 + 0.15 * s)[..., None]
+    a = np.where(np.abs(x - 0.5) < 0.42, 255, 0) * np.ones_like(y)
+    return c, a
+
+
 def make_gelato_textures():
     for nm in FLAVOURS: T(nm, tex_flavour(nm))
+    c, a = tex_ribbon(); T('ribbon', c, a)
     T('waffle', tex_waffle()); T('sleeve', tex_sleeve()); T('enamel_red', tex_enamel()); T('enamel_teal', tex_enamel(256, 74, (90, 200, 196)))
-    T('enamel_cream', tex_enamel(256, 76, (250, 242, 222))); T('cart_side', tex_cart_side()); T('umbrella', tex_umbrella())
+    T('enamel_cream', tex_enamel(256, 76, (250, 242, 222))); T('enamel_mint', tex_enamel(256, 77, (168, 222, 200))); T('enamel_pink', tex_enamel(256, 78, (246, 176, 196))); T('cart_side', tex_cart_side()); T('umbrella', tex_umbrella())
     T('frost', tex_frost()); T('icecube', tex_icecube()); T('lift', tex_lift()); T('cushion_red', fill(128, (214, 36, 56), 4, 83))
     T('cream', buttercream(256, 85, (255, 252, 246), 10)); T('choc_sauce', fill(128, (80, 44, 26), 3, 87) + N3(128, 6, 88, 10))
     T('cherry', fill(64, (200, 20, 40), 3, 89)); T('banana', fill(128, (250, 236, 170), 6, 91)); T('wafer', tex_waffle(128, 93) * 1.05)

@@ -9,6 +9,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from gl_mesh import *
+from PIL import Image, ImageDraw
 import layout as L
 
 BOX = {}            # name -> [((x0,y0,z0),(x1,y1,z1)), ...] local collision
@@ -863,6 +864,140 @@ def gold_sundae(name='goldsundae'):
     return save(name, X)
 
 
+
+# ================================================================================================= seating
+def booth(name='booth'):
+    """diner booth against a wall (wall at local -x): two benches facing each other along y with a table between.
+    Pink cushions on mint frames, a marble table on a chrome pedestal."""
+    X = Model()
+    W, Ln = L.BOOTH_W, L.BOOTH_L
+    mint, pink, ch, mb = SM('enamel_mint', 40, tag='bo'), SM('cushion_red', 50, tag='bo'), SC('steel', 0.3, tag='bo'), SM('marble', 40, tag='bo')
+    pk = SM('enamel_pink', 50, tag='bop')
+    BOX[name] = []
+    for s in (-1, 1):
+        ya, yb = (s * Ln / 2, s * (Ln / 2 - 280))
+        y0, y1 = min(ya, yb), max(ya, yb)
+        rbox(X.mesh(mint), (-W / 2, y0, 0), (W / 2, y1, 300), r=10, k=2, tile=256)
+        rbox(X.mesh(pk), (-W / 2 + 10, y0 + (0 if s < 0 else 10), 300), (W / 2 - 10, y1 - (10 if s < 0 else 0), 344), r=14, k=3, tile=128)
+        yb0, yb1 = (y0, y0 + 70) if s < 0 else (y1 - 70, y1)
+        yb0 = s * Ln / 2 - (70 if s > 0 else 0); yb1 = yb0 + 70
+        rbox(X.mesh(mint), (-W / 2, yb0, 300), (W / 2, yb1, 700), r=14, k=2, tile=256)
+        rbox(X.mesh(pk), (-W / 2 + 14, yb0 + (70 if s < 0 else -24), 340), (W / 2 - 14, yb0 + (94 if s < 0 else 0), 680), r=10, k=2, tile=128)
+        BOX[name] += [((-W / 2 + 4, y0 + 4, 0), (W / 2 - 4, y1 - 4, 340)), ((-W / 2 + 4, yb0 + 4, 340), (W / 2 - 4, yb1 - 4, 690))]
+    tw = 380.0
+    revolve(X.mesh(ch), [(0, 0), (90, 0), (80, 12), (18, 24), (16, 560), (40, 580), (0, 580)], n=20, cx=-W / 2 + 40 + tw / 2 - 40)
+    rbox(X.mesh(mb), (-W / 2 + 20, -165, 580), (-W / 2 + 20 + tw, 165, 610), r=8, k=2, tile=256)
+    tube(X.mesh(ch), [(-W / 2 + 20, -165, 596), (-W / 2 + 20 + tw, -165, 596), (-W / 2 + 20 + tw, 165, 596), (-W / 2 + 20, 165, 596)], 6, nseg=6)
+    BOX[name] += [((-W / 2 + 24, -156, 0), (-W / 2 + 16 + tw, 156, 608))]
+    # the wall above the booth: a little lamp
+    tube(X.mesh(ch), [(-W / 2, 0, 900), (-W / 2 + 60, 0, 920), (-W / 2 + 80, 0, 880)], 4, nseg=6)
+    revolve(X.mesh(pk), [(10, 880), (40, 860), (52, 830)], n=16, cx=-W / 2 + 80, cy=0)
+    sphere(X.mesh(S('glow_w', 'glow', tag='bo')), (-W / 2 + 80, 0, 848), 14, nu=8, nv=5)
+    return save(name, X)
+
+
+def tex_jukebox(w=256, h=256):
+    im = Image.new('RGB', (w, h), (40, 30, 50)); d = ImageDraw.Draw(im)
+    for k in range(6):
+        d.rounded_rectangle((20 + k * 37, 40, 46 + k * 37, 200), 10, fill=[(250, 90, 140), (120, 220, 200), (250, 220, 90), (150, 120, 240), (250, 150, 80), (90, 180, 250)][k])
+    d.rectangle((10, 210, w - 10, h - 10), fill=(200, 204, 214))
+    for x in range(20, w - 20, 14): d.line([(x, 214), (x, h - 14)], fill=(120, 124, 134), width=3)
+    d.text((w / 2, 20), 'PAD-O-MATIC', font=font(24, True), fill=(255, 230, 160), anchor='mm')
+    return np.asarray(im, np.float32)
+
+
+def jukebox(name='jukebox'):
+    """a glowing jukebox (front faces local -y)"""
+    X = Model()
+    T('jukebox', tex_jukebox())
+    wd, ch = SM('wood_d', 40, tag='jb'), SC('steel', 0.35, tag='jb')
+    rbox(X.mesh(wd), (-120, -80, 0), (120, 80, 420), r=12, k=2, tile=256)
+    m = Mesh(); revolve(m, [(0, -80), (120, -80), (120, 80), (0, 80)], n=20, a0=0, a1=180)
+    X.mesh(wd).add(m, rot_axis((1, 0, 0), math.pi / 2), (0, 0, 420))
+    picture(X.mesh(S('jukebox', 'glow', wave='sin 0.85 0.15 0 0.5', tag='jb')), (0, -80.8, 250), 200, 240, (0, -1, 0))
+    m = Mesh(); torus(m, (0, 0, 0), 112, 9, axis=(0, 1, 0), n=24, m=6, a0=0, a1=math.pi)
+    X.mesh(S('glow_p', 'glow', wave='sin 0.7 0.3 0 0.8', tag='jb')).add(m, np.eye(3), (0, -84, 420))
+    for s in (-1, 1):
+        tube(X.mesh(S('glow_y', 'glow', wave='sin 0.7 0.3 0.5 0.8', tag='jb')), [(s * 112, -84, 40), (s * 112, -84, 420)], 9, nseg=6)
+    boxm(X.mesh(ch), (-120, -82, 0), (120, -78, 30), r=2, tile=64)
+    BOX[name] = [((-116, -76, 0), (116, 76, 520))]
+    return save(name, X)
+
+
+def gumball(name='gumball'):
+    X = Model()
+    rd, ch = SM('enamel_pink', 40, tag='gb'), SC('steel', 0.35, tag='gb')
+    revolve(X.mesh(rd), [(0, 0), (90, 0), (80, 20), (34, 40), (30, 240), (70, 250), (70, 290), (0, 290)], n=20)
+    revolve(X.mesh(S('glass_g', 'glass', tag='gb')), [(60, 290), (110, 360), (120, 420), (100, 490), (40, 520), (0, 524)], n=24)
+    revolve(X.mesh(rd), [(0, 516), (46, 516), (46, 540), (0, 552)], n=16)
+    rng = np.random.default_rng(5)
+    cols = ['red', 'enamel_mint', 'fl_lemon', 'fl_blue', 'white', 'cherry', 'enamel_pink']
+    for k in range(70):
+        th = rng.uniform(0, 2 * math.pi); r = rng.uniform(0, 1) ** 0.5 * 96; z = rng.uniform(310, 440)
+        if z > 400: r = min(r, 96 - (z - 400) * 0.8)
+        sphere(X.mesh(SM(cols[k % len(cols)], 70, tag='gbb')), (r * math.cos(th), r * math.sin(th), z), 13, nu=8, nv=5)
+    boxm(X.mesh(ch), (-24, -74, 180), (24, -66, 230), r=3, tile=32)
+    CYL[name] = [(0, 0, 80, 0, 290), (0, 0, 112, 290, 520)]
+    return save(name, X)
+
+
+def balloons(name='balloons', n=5, seed=3):
+    """a bunch of balloons on strings tied to a small weight (bobbing in the air)"""
+    X = Model()
+    rng = np.random.default_rng(seed)
+    cols = ['enamel_pink', 'enamel_mint', 'fl_lemon', 'fl_blue', 'white']
+    revolve(X.mesh(SM('red', 50, tag='bl')), [(0, 0), (34, 0), (30, 40), (0, 46)], n=12)
+    for k in range(n):
+        a = 2 * math.pi * k / n + rng.uniform(-0.3, 0.3)
+        top = np.array([110 * math.cos(a) * rng.uniform(0.5, 1), 110 * math.sin(a) * rng.uniform(0.5, 1), rng.uniform(820, 1020)])
+        tube(X.mesh(SM('white', tag='bls')), [(0, 0, 46), top * [0.4, 0.4, 0.5], top - [0, 0, 70]], 1.5, nseg=4)
+        sh = S(cols[k % len(cols)], 'lms', v=0.3, shade=60, tag='blb' + str(k % 3), deform='wave 200 sin 0 6 %.2f 0.4' % (k * 0.2))
+        ellipsoid(X.mesh(sh), top, 56, 56, 70, nu=14, nv=10)
+        revolve(X.mesh(sh), [(0, top[2] - 84), (10, top[2] - 78), (0, top[2] - 66)], n=8, cx=top[0], cy=top[1])
+    CYL[name] = [(0, 0, 30, 0, 44)]
+    return save(name, X)
+
+
+def dog(name='dog'):
+    """a fluffy cream dog asleep, curled up (origin floor centre)"""
+    X = Model()
+    fu = SM('marsh', 60, tag='dog')
+    ellipsoid(X.mesh(fu), (0, 0, 52), 130, 90, 60, nu=20, nv=10, flat_bottom=-48)
+    ellipsoid(X.mesh(fu), (100, 50, 64), 54, 50, 44, nu=16, nv=10)
+    ellipsoid(X.mesh(fu), (150, 54, 58), 26, 20, 18, nu=10, nv=6)
+    sphere(X.mesh(SM('black', tag='dog')), (174, 54, 62), 8, nu=8, nv=5)
+    for s in (-1, 1):
+        ellipsoid(X.mesh(SM('wood', 60, tag='dog')), (96, 50 + s * 40, 90), 30, 12, 22, nu=10, nv=6, R=rot_axis((1, 0, 0), s * 0.6))
+    tube(X.mesh(fu), [(-120, -40, 30), (-80, -100, 26), (20, -110, 24), (90, -70, 22)], [22, 20, 16, 12], nseg=8)
+    for s in (-1, 1):
+        ellipsoid(X.mesh(fu), (60, s * 70, 18), 50, 20, 18, nu=10, nv=6)
+    tube(X.mesh(SM('red', 50, tag='dog')), [(70, 10, 80), (70, 90, 80)], 8, nseg=6)
+    CYL[name] = [(0, 0, 130, 0, 100)]
+    return save(name, X)
+
+
+def neon_hanging(name='neonsign'):
+    """'GELATO' neon on a dark board hung from the ceiling on chains (origin at the ceiling)"""
+    X = Model()
+    T('neon_gelato', tex_label(1024, 256, 'GELATO', (22, 14, 22), (255, 120, 190)))
+    w, h, z = 1000.0, 230.0, -700.0
+    boxm(X.mesh(SM('black', tag='nh')), (-w / 2, -10, z - h / 2), (w / 2, 10, z + h / 2), r=6, tile=256)
+    for s in (-1, 1):
+        picture(X.mesh(S('neon_gelato', 'glow', wave='sin 0.9 0.1 0 0.6', tag='nh')), (0, s * 10.8, z), w - 30, h - 20, (0, s, 0))
+        tube(X.mesh(SC('steel', 0.35, tag='nh')), [(s * (w / 2 - 60), 0, z + h / 2), (s * (w / 2 - 60), 0, 0)], 3, nseg=5)
+    return save(name, X)
+
+
+def menu_hanging(name='menuboard'):
+    X = Model()
+    w, h, z = 520.0, 520.0, -760.0
+    boxm(X.mesh(SM('wood_d', 40, tag='mh')), (-w / 2 - 10, -10, z - h / 2 - 10), (w / 2 + 10, 10, z + h / 2 + 10), r=4, tile=256)
+    for s in (-1, 1):
+        picture(X.mesh(S(BT('menu'), 'lm', shade=30, tag='mh')), (0, s * 10.8, z), w, h, (0, s, 0))
+        tube(X.mesh(SC('steel', 0.35, tag='mh')), [(s * (w / 2 - 40), 0, z + h / 2 + 10), (s * (w / 2 - 40), 0, 0)], 3, nseg=5)
+    return save(name, X)
+
+
 def make():
     cafe_table(); cafe_chair(); register(); pendant(); fan_rod(); fan_blades(); wall_clock()
     for i, (x0, x1, z0, z1) in enumerate(L.WINDOWS):
@@ -882,4 +1017,5 @@ def make():
     ice_block(); ice_pile(); bar_stool(); blender_base(); blender_blade()
     syrup_pump('syrup_choc', 'lab_choc', 'choc_sauce'); syrup_pump('syrup_berry', 'lab_berry', 'cherry')
     cone_stack(); spoon_prop(); ice_sculpture(); gold_sundae()
+    booth(); jukebox(); gumball(); balloons(); balloons('balloons_b', 4, 9); dog(); neon_hanging(); menu_hanging()
     cone_prop('bigcone_a', ('fl_mint', 'fl_choc', 'fl_straw'), r=64, h=210); cone_prop('bigcone_b', ('fl_lemon', 'fl_bubble'), r=64, h=210)

@@ -395,7 +395,7 @@ def street():
 
 
 
-# =================================================================================================== the giant cone
+# =================================================================================================== SEATING: the giant cone
 def tower():
     clipped(SH.tower())
     cx, cy = L.TOWER
@@ -409,8 +409,7 @@ def tower():
     M.ent('func_plat', brushes=[disc], height=int(L.RIM_Z), speed=260, lip=8)
     light(lx, ly, 120, 160, '0.6 1 0.9')
     occupy_r(lx, ly, 120, 0, L.RIM_Z + 80)
-    route('scoop_lift_base', (lx + 230, ly, 0), (lx, ly - 220, 0))
-    # bot clip ring round the deck edge (gap at the lift)
+    route('scoop_lift_base', (lx - 260, ly, 0), (lx, ly - 260, 0))
     for k in range(24):
         a0 = 7.5 + 15 * k; a1 = a0 + 15
         am = (a0 + a1) / 2
@@ -418,114 +417,74 @@ def tower():
         b = SH.ring_seg(cx, cy, a0, a1, L.RIM_R - 26, L.RIM_R - 2, L.RIM_Z, L.RIM_Z + 64)
         for f in b.faces: f.tex = 'common/botclip'; f.sc = (0.5, 0.5)
         A(b)
-    # pad from the floor (north) onto the deck; Imperius on the deck; applause up there
-    jumppad(cx, cy + 840, 0, (cx, cy + 395, L.RIM_Z), 1240, 'p_deck')
-    weapon('imperius', cx + 385 * math.cos(math.radians(40)), cy + 385 * math.sin(math.radians(40)), L.RIM_Z, 'purple')
-    item('item_armor_shard', cx + 385 * math.cos(math.radians(150)), cy + 385 * math.sin(math.radians(150)), L.RIM_Z)
-    item('ammo_boaster', cx + 385 * math.cos(math.radians(320)), cy + 385 * math.sin(math.radians(320)), L.RIM_Z)
-    trigger_sound((cx - 120, cy - 440, L.RIM_Z + 4), (cx + 120, cy - 330, L.RIM_Z + 80), 'human/applause', 'deck_cheer', wait=15, volume=0.5)
+    jumppad(cx + 760, cy, 0, (cx + 395, cy, L.RIM_Z), 1240, 'p_deck')
+    weapon('imperius', cx + 385 * math.cos(math.radians(130)), cy + 385 * math.sin(math.radians(130)), L.RIM_Z, 'purple')
+    item('item_armor_shard', cx + 385 * math.cos(math.radians(230)), cy + 385 * math.sin(math.radians(230)), L.RIM_Z)
+    item('ammo_boaster', cx + 385 * math.cos(math.radians(50)), cy + 385 * math.sin(math.radians(50)), L.RIM_Z)
+    trigger_sound((cx - 440, cy - 120, L.RIM_Z + 4), (cx - 330, cy + 120, L.RIM_Z + 80), 'human/applause', 'deck_cheer', wait=15, volume=0.5)
     for a in (45, 135, 225, 315):
-        light(cx + 520 * math.cos(math.radians(a)), cy + 520 * math.sin(math.radians(a)), 1300, 900, '1 0.95 0.9')
-    light(cx, cy, 2000, 1600, '1 0.95 0.9')
-    light(cx + 600, cy - 250, 260, 300, '1 0.9 0.8')
-    # carton stacks round the stand, under the cone's overhang (cover at eye level)
+        light(cx + 560 * math.cos(math.radians(a)), cy + 560 * math.sin(math.radians(a)), 1300, 900, '1 0.92 0.92')
+    light(cx, cy, 2000, 1600, '1 0.95 0.95')
+    light(cx + 600, cy - 250, 260, 300, '1 0.9 0.9')
     for k, a in enumerate((45, 135, 225, 315)):
         prop(['cartons', 'cartons2'][k % 2], cx + 370 * math.cos(math.radians(a)), cy + 370 * math.sin(math.radians(a)), 0, ang=a, force=True)
 
 
-# =================================================================================================== gelato counter, aisle, wall shelf
-def gelato_counter():
-    clipped(SH.gelato_counter())
-    custom('counter', 0, (L.GC[1] + L.HY) / 2, 0, 0)
-    x0, y0, x1, y1 = L.GC
-    D = L.GC_DECK
-    for x in (-1000, 0, 1000):
-        light(x, 1600, 200, 160, '0.8 0.95 1')
-    # pads onto the deck ends and from the deck ends up to the wall shelf
-    jumppad(-1270, 1130, 0, (-1250, 1530, D), 580, 'p_gc_w')
-    jumppad(1270, 1130, 0, (1250, 1530, D), 580, 'p_gc_e')
-    hx0, hx1, hy, hz = L.SHELF
-    jumppad(-1300, 1670, D, (-1000, 1960, hz), 1330, 'p_shelf_w')
-    jumppad(1300, 1670, D, (1000, 1960, hz), 1330, 'p_shelf_e')
-    occupy(hx0, hy, hx1, L.HY, hz - 24, hz)
-    weapon('betty', 0, 1955, hz, 'purple')
-    item('ammo_imperius', -700, 1955, hz); item('ammo_balloony', 700, 1955, hz)
-    for (nm, x) in (('ct_choc', -1140), ('conestack', -400), ('cartons2', 400), ('conestack', 1140), ('jar_spr', -200), ('ct_mint', 220)):
-        prop(nm, x, 1970, hz, ang=0, search=60)
-    # in the tubs: ammo to dig out
-    tubs = L.GC_TUBS
-    item('ammo_pumper', (tubs[1][0] + tubs[1][1]) / 2, 1600, L.GC_TUB)
-    item('ammo_splasher', (tubs[4][0] + tubs[4][1]) / 2, 1600, L.GC_TUB)
-    item('ammo_bubbleg', (tubs[6][0] + tubs[6][1]) / 2, 1600, L.GC_TUB)
-    # the stairs
-    route('gc_stair_w', (L.GC_STAIR_W[0] - 50, 1600, 0), (-1250, 1510, D))
-    route('gc_stair_e', (L.GC_STAIR_E[2] + 50, 1600, 0), (1250, 1510, D))
-    # the server aisle behind the counter: stock on the shelves, Visionless, ammo
-    for zz in (300, 600):
-        for x in (-1100, -500, 300, 900):
-            prop(['ct_mint', 'ct_choc', 'ct_straw', 'jar_spr'][(x // 300 + zz // 300) % 4], x, 1962, zz, ang=0, search=80)
-    for (nm, x) in (('ct_straw', -1150), ('ct_choc', -300), ('ct_mint', 450), ('ct_straw', 1150)):
-        prop(nm, x, 1962, 0, ang=0, search=80)
-    item('item_visionless', 0, 1830, 0); item('ammo_balloony', -900, 1830, 0); item('ammo_pumper', 900, 1830, 0)
-    route('aisle', (-1500, 1840, 0), (1500, 1840, 0))
-    for x in (-1100, 0, 1100):
-        light(x, 1880, 400, 260, '1 0.92 0.8')
-
-
-# =================================================================================================== soft-serve machine
-def softserve():
-    clipped(SH.softserve())
-    x0, y0, x1, y1 = L.SS
-    custom('softserve', (x0 + x1) / 2, 0, 0, 0)
-    dz = L.SS_DECK + 262
-    for (y, nm) in ((L.SS_NOZZLES[0], 'swirl_s'), (L.SS_NOZZLES[2], 'swirl_v')):
-        M.ent('func_rotating', brushes=[box((-1798, y - 8, dz - 8), (-1782, y + 8, dz + 8), ORIGIN),
-                                        box((-1794, y - 4, dz + 30), (-1786, y + 4, dz + 38), NODRAW_NS)],
-              model2=bklib.PLACE[nm][0], speed=36, spawnflags=0, dmg=0)
-    item('item_jumper', -2000, 0, 0); item('ammo_balloony', -1900, 300, 0)
-    item('ammo_pumper', -2150, -300, 0); item('item_armor_shard', -2150, 300, 0)
-    light(-2000, -250, 200, 450, '1 0.85 0.75'); light(-2000, 250, 200, 450, '1 0.85 0.75')
-    for (nm, x, y) in (('ct_mint', -2180, -400), ('ct_choc', -2180, 400), ('ct_straw', -1880, -380), ('ct_straw', -2180, 120)):
-        prop(nm, x, y, 0, search=60)
-    route('ss_cabinet', (-1550, 0, 0), (-1880, -160, 0))
-    sx0, sy0, sx1, sy1 = L.SS_STAIR
-    route('ss_stair', ((sx0 + sx1) / 2, sy1 + 80, 0), (-1640, 250, L.SS_DECK))
-    jumppad(-1350, -220, 0, (-1640, -220, L.SS_DECK), 540, 'p_ss_deck')
-    jumppad(-1632, 0, L.SS_DECK, (-2100, 0, L.SS_TOP), 1420, 'p_ss_top')
-    jumppad(-1250, 260, 0, (-2100, 260, L.SS_TOP), 1430, 'p_ss_top2')
-    weapon('boaster', -1650, -400, L.SS_DECK, 'orange'); item('ammo_boaster', -1640, 230, L.SS_DECK)
-    weapon('balloony', -2150, -300, L.SS_TOP, 'orange')
-    item('ammo_imperius', -2150, 380, L.SS_TOP)
-    speaker(-1800, 0, 700, 'machine/mechanics', volume=0.3)
-    light(-1700, 0, 900, 500, '1 0.9 0.85')
-
-
-# =================================================================================================== milkshake bar + the giant glass
-def bar():
+# =================================================================================================== SEATING: booths, tables, jukebox, bar
+def seating():
+    W = L.BOOTH_W
+    for (bx, by) in L.BOOTHS:
+        prop('booth', bx, by, 0, ang=0, force=True, r=1, h=1)
+        occupy(bx - W / 2, by - L.BOOTH_L / 2, bx + W / 2, by + L.BOOTH_L / 2, 0, 700)
+        tx = -L.HX + 20 + 190
+        prop(['sundae', 'sundae_b'][int(by) % 2], tx, by - 80, 608, ang=0, force=True, clip=False)
+        prop('cone2', tx + 40, by + 110, 608, ang=0, force=True, clip=False)
+        light(-L.HX + W + 60, by, 860, 260, '1 0.85 0.9')
+    item('ammo_bubbleg', -1650, -1500, 0); item('ammo_betty', -1650, -540, 0)
+    prop('balloons', -1700, -1030, 0, ang=0, search=80)
+    prop('balloons_b', 1500, -260, 0, ang=60, search=80)
+    for (x, y, a) in ((-1200, -1000, 0), (1000, -1350, 30), (300, -1680, 15)):
+        p = prop('cafetable', x, y, 0, ang=a, search=120)
+        if p:
+            for s_ in (-1, 1):
+                prop('cafechair', p[0] + s_ * 300, p[1] + 20, 0, ang=90 if s_ < 0 else 270, search=120)
+            prop(['sundae', 'sundae_b', 'cone4'][int(abs(x)) % 3], p[0], p[1], 604, ang=0, force=True, clip=False)
+    prop('jukebox', 0, -1960, 0, ang=180, force=True)
+    speaker(0, -1880, 300, 'machine/tv_upstairs', volume=0.35)
+    prop('dog', 950, -1750, 0, ang=200, search=120)
+    prop('gumball', -1560, -330, 0, ang=0, search=80)
+    cat('pad_actionfigures/fig_girl.md3', -380, -270, 0, 1.0, 90)
+    cat('pad_actionfigures/fig_lilly.md3', 460, -300, 0, 1.0, 95)
+    # the ice cream cart by the windows
+    clipped(SH.cart())
+    cx, cy = L.CART
+    custom('cart', cx, cy, 0, 0)
+    occupy(cx - L.CART_W / 2 - 130, cy - L.CART_D / 2 - 30, cx + L.CART_W / 2 + 130, cy + L.CART_D / 2 + 30, 0, 1100)
+    jumppad(cx + 500, cy - 40, 0, (cx + 120, cy, L.CART_H), 660, 'p_cart')
+    item('ammo_boaster', cx + 140, cy, L.CART_H); item('item_armor_shard', cx - 180, cy + 60, L.CART_H)
+    # the milkshake bar on the east wall and the giant glass in front of it
     clipped(SH.bar())
     x0, y0, x1, y1 = L.BAR
     custom('bar', (x0 + x1) / 2, (y0 + y1) / 2, 0, 0)
     Z = L.BAR_Z
-    for y in np.linspace(y0 + 160, y1 - 160, 6):
-        prop('barstool', 1690, y, 0, ang=0, force=True)
-    bx, by = 2120, 640
+    for k, y in enumerate(np.linspace(y0 + 160, y1 - 160, 6)):
+        if k not in (1, 4): prop('barstool', 1690, y, 0, ang=0, force=True)
+    bx, by = 2120, -560
     prop('blender', bx, by, Z, ang=0, force=True)
     bz = Z + 160
     M.ent('func_rotating', brushes=[box((bx - 8, by - 8, bz - 8), (bx + 8, by + 8, bz + 8), ORIGIN),
                                     box((bx - 4, by - 4, bz + 30), (bx + 4, by + 4, bz + 38), NODRAW_NS)],
           model2=bklib.PLACE['blade'][0], speed=600, spawnflags=0, dmg=0)
     speaker(bx, by - 150, Z + 120, 'machine/fan_pc', volume=0.3)
-    for (nm, x, y, a) in (('syrup_choc', 2180, 900, 0), ('syrup_berry', 2180, 380, 0), ('sundae', 2200, 20, 0), ('cone3', 2160, -100, 0),
-                          ('cone2', 2160, -260, 0), ('sundae_b', 2140, -480, 0)):
-        prop(nm, x, y, Z, ang=a, search=80)
-    cat('pad_ddmix/diner/glass_betty.md3', 1960, 800, Z, 1.0); cat('pad_ddmix/diner/glass_sunrise.md3', 1960, 240, Z, 1.0)
-    cat('pad_ddmix/diner/glass_rings.md3', 1960, -20, Z, 1.0)
-    item('holdable_floater', 2000, 20, Z); item('ammo_betty', 2000, 470, Z); item('ammo_pumper', 2000, -600, Z)
-    jumppad(1440, 160, 0, (2060, 160, Z), 620, 'p_bar_s')
-    jumppad(1440, 860, 0, (2060, 860, Z), 620, 'p_bar_n')
-    for y in (0, 700):
-        light(2050, y, 800, 360, '1 0.9 0.85')
-    # the giant milkshake glass: pad from the floor onto the cream (Pumper)
+    for (nm, x, y) in (('syrup_choc', 2180, -760), ('syrup_berry', 2180, -1000), ('sundae', 2200, -1250), ('cone3', 2160, -1480), ('cone2', 2160, -1640)):
+        prop(nm, x, y, Z, ang=0, search=80)
+    cat('pad_ddmix/diner/glass_betty.md3', 1960, -700, Z, 1.0); cat('pad_ddmix/diner/glass_sunrise.md3', 1960, -1150, Z, 1.0)
+    cat('pad_ddmix/diner/glass_rings.md3', 1960, -1550, Z, 1.0)
+    item('holdable_floater', 2000, -1150, Z); item('ammo_pumper', 2000, -950, Z)
+    jumppad(1540, -1374, 0, (2060, -1374, Z), 620, 'p_bar_s')
+    jumppad(1540, -726, 0, (2060, -726, Z), 620, 'p_bar_n')
+    for y in (-1400, -700):
+        light(2050, y, 800, 360, '1 0.88 0.9')
     clipped(SH.glass())
     gx, gy = L.GLASS
     custom('milkshake', gx, gy, 0, 0)
@@ -534,10 +493,125 @@ def bar():
     occupy_r(gx, gy, L.GLASS_R + 30, 0, L.GLASS_H + 400)
     jumppad(gx - 460, gy, 0, (gx - 60, gy, L.GLASS_H + 48), 1080, 'p_glass')
     weapon('pumper', gx + 20, gy - 100, L.GLASS_H + 48, 'blue')
-    light(gx, gy - 330, 300, 260, '1 0.8 0.9'); light(gx, gy, 1300, 500, '1 0.95 0.9')
+    light(gx, gy - 330, 300, 260, '1 0.8 0.9'); light(gx, gy, 1300, 500, '1 0.95 0.95')
+    # shop front: sign over the windows, the flavour board
+    A(sign_box((-760, -L.HY, 1380), (760, -L.HY + 6, 1760), T('sign_main'), 1024, 256, facing='n'))
+    A(sign_box((-1900, -L.HY, 900), (-1300, -L.HY + 6, 1500), T('menu'), 512, 512, facing='n'))
+    timer_sound(0, -1700, 700, 'misc/wind_chimes', 'shop_bell', 50, 30, volume=0.4)
+    item('ammo_nipper', -900, -1500, 0); item('ammo_nipper', 1100, -1900, 0)
 
 
-# =================================================================================================== walk-in freezer + the Frozen Vault
+# =================================================================================================== THE COUNTER
+def display_counter():
+    clipped(SH.display_counter())
+    custom('display', 0, (L.DC_Y0 + L.DC_Y1) / 2, 0, 0)
+    T_ = L.DC_TOP
+    jumppad(-850, -330, 0, (-850, 200, T_), 760, 'p_dc_w')
+    jumppad(850, -330, 0, (850, 200, T_), 760, 'p_dc_e')
+    jumppad(0, 560, 0, (0, 180, T_), 760, 'p_dc_k')
+    item('item_speedy', -250, 180, T_); item('ammo_imperius', 300, 180, T_); item('item_armor_shard', 1100, 180, T_)
+    for x in (-900, 0, 900):
+        light(x, -90, 420, 200, '0.9 1 0.95')
+    custom('neonsign', 0, 150, L.CEIL, 0, lit=False)
+    light(0, 0, L.CEIL - 700, 320, '1 0.5 0.75'); light(0, 300, L.CEIL - 700, 320, '1 0.5 0.75')
+    for x in (-1050, 1050):
+        custom('menuboard', x, 150, L.CEIL, 0, lit=False)
+
+
+# =================================================================================================== KITCHEN: soft-serve, prep line, batch freezer, vat
+def softserve():
+    clipped(SH.softserve())
+    x0, y0, x1, y1 = L.SS
+    dy = L.SS_DY
+    custom('softserve', (x0 + x1) / 2, dy, 0, 0)
+    dz = L.SS_DECK + 262
+    for (y, nm) in ((L.SS_NOZZLES[0], 'swirl_s'), (L.SS_NOZZLES[2], 'swirl_v')):
+        M.ent('func_rotating', brushes=[box((-1798, y - 8, dz - 8), (-1782, y + 8, dz + 8), ORIGIN),
+                                        box((-1794, y - 4, dz + 30), (-1786, y + 4, dz + 38), NODRAW_NS)],
+              model2=bklib.PLACE[nm][0], speed=36, spawnflags=0, dmg=0)
+    item('item_jumper', -2000, dy, 0); item('ammo_balloony', -1900, dy + 300, 0); item('item_armor_shard', -2150, dy + 300, 0)
+    for (nm, x, y) in (('ct_mint', -2180, dy - 400), ('ct_choc', -2180, dy + 400), ('ct_straw', -1880, dy - 380), ('ct_straw', -2180, dy + 120)):
+        prop(nm, x, y, 0, search=60)
+    light(-2000, dy - 250, 200, 450, '1 0.85 0.85'); light(-2000, dy + 250, 200, 450, '1 0.85 0.85')
+    route('ss_cabinet', (-1550, dy, 0), (-1880, dy - 160, 0))
+    sx0, sy0, sx1, sy1 = L.SS_STAIR
+    route('ss_stair', ((sx0 + sx1) / 2, sy1 + 40, 0), (-1640, dy + 250, L.SS_DECK))
+    jumppad(-1350, dy - 220, 0, (-1640, dy - 220, L.SS_DECK), 540, 'p_ss_deck')
+    jumppad(-1632, dy, L.SS_DECK, (-2100, dy, L.SS_TOP), 1420, 'p_ss_top')
+    jumppad(-1300, dy + 140, 0, (-2100, dy + 140, L.SS_TOP), 1430, 'p_ss_top2')
+    weapon('boaster', -1650, dy - 400, L.SS_DECK, 'orange'); item('ammo_boaster', -1640, dy + 230, L.SS_DECK)
+    weapon('balloony', -2150, dy - 300, L.SS_TOP, 'orange')
+    item('ammo_imperius', -2150, dy + 380, L.SS_TOP)
+    speaker(-1800, dy, 700, 'machine/mechanics', volume=0.3)
+    light(-1700, dy, 900, 500, '1 0.9 0.9')
+
+
+def prep_line():
+    clipped(SH.gelato_counter())
+    custom('counter', 0, (L.GC[1] + L.HY) / 2, 0, 0)
+    D = L.GC_DECK
+    for x in (-1000, 0, 1000):
+        light(x, 1600, 200, 160, '0.8 0.95 1')
+    jumppad(-1180, 1130, 0, (-1180, 1520, D), 580, 'p_gc_w')
+    jumppad(1180, 1130, 0, (1180, 1520, D), 580, 'p_gc_e')
+    hx0, hx1, hy, hz = L.SHELF
+    jumppad(-1200, 1640, D, (-1000, 1960, hz), 1330, 'p_shelf_w')
+    jumppad(1200, 1640, D, (1000, 1960, hz), 1330, 'p_shelf_e')
+    occupy(hx0, hy, hx1, L.HY, hz - 24, hz)
+    weapon('betty', 0, 1955, hz, 'purple')
+    item('ammo_imperius', -700, 1955, hz); item('ammo_balloony', 700, 1955, hz)
+    for (nm, x) in (('ct_choc', -1140), ('conestack', -400), ('cartons2', 400), ('conestack', 1140), ('jar_spr', -200), ('ct_mint', 220)):
+        prop(nm, x, 1970, hz, ang=0, search=60)
+    tubs = L.GC_TUBS
+    item('ammo_pumper', (tubs[1][0] + tubs[1][1]) / 2, 1600, L.GC_TUB)
+    item('ammo_splasher', (tubs[4][0] + tubs[4][1]) / 2, 1600, L.GC_TUB)
+    item('ammo_bubbleg', (tubs[6][0] + tubs[6][1]) / 2, 1600, L.GC_TUB)
+    for zz in (300, 600):
+        for x in (-1100, -500, 300, 900):
+            prop(['ct_mint', 'ct_choc', 'ct_straw', 'jar_spr'][(x // 300 + zz // 300) % 4], x, 1962, zz, ang=0, search=80)
+    for (nm, x) in (('ct_straw', -1150), ('ct_choc', -300), ('ct_mint', 450), ('ct_straw', 1150)):
+        prop(nm, x, 1962, 0, ang=0, search=80)
+    item('ammo_balloony', -900, 1830, 0); item('ammo_pumper', 900, 1830, 0); item('item_armor_shard', 0, 1830, 0)
+    route('aisle', (-1380, 1810, 0), (1380, 1810, 0))
+    for x in (-1100, 0, 1100):
+        light(x, 1880, 400, 260, '1 0.92 0.85')
+    clipped(SH.jars())
+    for (x, y), nm in zip(L.JARS, ('jar_spr', 'jar_choc', 'jar_nuts', 'jar_marsh', 'jar_gummy')):
+        custom(nm, x, y, 0, 0)
+
+
+def batch_freezer():
+    clipped(SH.batch_freezer())
+    x0, y0, x1, y1 = L.BF
+    custom('batchfreezer', (x0 + x1) / 2, (y0 + y1) / 2, 0, 0)
+    dx, dz, dr = L.BF_DRUM
+    oy = y0 - 35
+    M.ent('func_rotating', brushes=[box((dx - 8, oy - 8, dz - 8), (dx + 8, oy + 8, dz + 8), ORIGIN),
+                                    box((dx - 4, oy - 4, dz + 40), (dx + 4, oy + 4, dz + 48), NODRAW_NS)],
+          model2=bklib.PLACE['dasher'][0], speed=60, spawnflags=8, dmg=0)
+    prop('ct_straw', x1 - 65, y0 - 80, 110, ang=0, force=True, clip=False)
+    jumppad(1180, 900, 0, (720, 900, L.BF_H), 860, 'p_bf_top')
+    item('item_visionless', 600, 1000, L.BF_H); item('ammo_pumper', 820, 820, L.BF_H)
+    light(dx, y0 - 220, 380, 320, '1 0.8 0.9')
+    speaker(dx, y0 - 100, 300, 'machine/mechanics', volume=0.3)
+
+
+def vat():
+    clipped(SH.vat())
+    cx, cy = L.VAT
+    custom('vat', cx, cy, 0, 0)
+    oz = L.VAT_BEAM_Z[0] - 20
+    M.ent('func_rotating', brushes=[box((cx - 8, cy - 8, oz - 8), (cx + 8, cy + 8, oz + 8), ORIGIN),
+                                    box((cx + 100, cy - 4, oz - 40), (cx + 108, cy + 4, oz - 32), NODRAW_NS)],
+          model2=bklib.PLACE['vat_paddle'][0], speed=30, spawnflags=0, dmg=0)
+    occupy_r(cx, cy, L.VAT_R1 + 60, 0, L.VAT_BEAM_Z[1] + 160)
+    jumppad(cx + L.VAT_R1 + 300, cy, 0, (cx + (L.VAT_R0 + L.VAT_R1) / 2, cy, L.VAT_RIM), 640, 'p_vat')
+    item('ammo_imperius', cx - 110, cy + 60, L.VAT_MILK); item('item_armor_shard', cx, cy + (L.VAT_R0 + L.VAT_R1) / 2, L.VAT_RIM)
+    light(cx, cy - 500, 500, 300, '1 0.95 0.95')
+    speaker(cx, cy, 700, 'ambient/water_bubbling', volume=0.3)
+
+
+# =================================================================================================== KITCHEN: walk-in freezer + the Frozen Vault
 def freezer_and_vault():
     clipped(SH.freezer())
     x0, y0, x1, y1 = L.FZ
@@ -545,22 +619,21 @@ def freezer_and_vault():
     t = L.FZ_T
     sx0, sx1 = x1 - t - 176, x1 - t - 16
     for zz in (240, 480):
-        for y in (-1540, -1380):
+        for y in (840, 1040):
             prop('ct_mint' if zz == 240 else 'ct_straw', (sx0 + sx1) / 2, y, zz, ang=0, search=30)
-    for (nm, x, y) in (('icepile', 1500, -1300), ('iceblock', 1980, -1900), ('cartons', 1960, -1250), ('ct_choc', 1420, -1950), ('ct_straw', 1950, -1700)):
+    for (nm, x, y) in (('icepile', 1900, 1150), ('iceblock', 2190, 400), ('ct_choc', 1820, 380), ('ct_straw', 2180, 1220)):
         prop(nm, x, y, 0, search=200)
-    item('ammo_splasher', 1900, -1500, 0); item('item_armor_padshield', 2000, -1800, 0)
-    for (x, y) in ((1550, -1350), (1950, -1350), (1550, -1800), (1950, -1800)):
+    item('ammo_splasher', 1900, 900, 0); item('item_armor_padshield', 2000, 760, 0)
+    for (x, y) in ((1850, 450), (2150, 450), (1850, 1150), (2150, 1150)):
         light(x, y, 820, 900, '0.75 0.9 1')
-    light(1640, -1760, 220, 300, '0.6 1 0.85')
-    speaker(1800, -1600, 400, 'machine/freezer', volume=0.5)
+    speaker(2000, 900, 400, 'machine/freezer', volume=0.5)
     dx, dhw, dh = L.FZ_DOOR
-    route('freezer', (dx, -880, 0), (1650, -1400, 0))
+    route('freezer', (1450, dx, 0), (1900, dx, 0))
     # roof: Splasher; pads from the floor and from the bar top
-    weapon('splasher', 2050, -1700, L.FZ_H, 'green')
-    item('ammo_imperius', 1450, -1950, L.FZ_H); item('holdable_boomies', 1500, -1300, L.FZ_H)
-    jumppad(1090, -1250, 0, (1520, -1350, L.FZ_H), 1230, 'p_fz_roof')
-    jumppad(2070, -560, L.BAR_Z, (2000, -1300, L.FZ_H), 1230, 'p_fz_roof2')
+    weapon('splasher', 2050, 1100, L.FZ_H, 'green')
+    item('ammo_splasher', 1850, 400, L.FZ_H); item('holdable_boomies', 2150, 450, L.FZ_H)
+    jumppad(1350, 640, 0, (1860, 700, L.FZ_H), 1230, 'p_fz_roof')
+    jumppad(2000, 120, 0, (2000, 560, L.FZ_H), 1260, 'p_fz_roof2')
     # the Mystery Flavour tub -> the Frozen Vault
     mx, my, mr, mh = L.MYSTERY
     occupy_r(mx, my, mr + 20, 0, mh + 60)
@@ -589,94 +662,66 @@ def freezer_and_vault():
     mdl_c('pad_teleporter/padtp_blue.md3', 0, vy0 + 50, z0, 1.0, 90)
     M.ent('trigger_teleport', brushes=[box((-36, vy0 + 14, z0 + 2), (36, vy0 + 86, z0 + 90), TRIG)], target='vault_out')
     occupy(-60, vy0, 60, vy0 + 110, z0, z0 + 120)
-    M.ent('misc_teleporter_dest', (dx, -940, 24), targetname='vault_out', angle=90)
+    M.ent('misc_teleporter_dest', (1560, dx, 24), targetname='vault_out', angle=180)
     for (x, y, c) in ((0, 0, '0.8 0.9 1'), (-420, 300, '0.6 0.85 1'), (420, 300, '0.6 0.85 1'), (0, 300, '1 0.9 0.6'), (-400, -300, '1 0.7 0.9')):
         light(x, y, z0 + 760, 520, c)
     speaker(0, -380, z0 + 200, 'ambient/wind_icy', volume=0.4)
     timer_sound(0, 0, z0 + 150, 'human/applause', 'vault_cheer', 40, 10, volume=0.4)
 
 
-# =================================================================================================== chest freezer, cart, jars, shop
+
 def chest():
     clipped(SH.chest())
     x0, y0, x1, y1 = L.CF
     custom('chest', (x0 + x1) / 2, (y0 + y1) / 2, 0, 0)
-    weapon('bubbleg', -1880, -1430, L.CF_FLOOR, 'green')
-    item('ammo_betty', -1500, -1500, L.CF_FLOOR)
-    prop('cartons2', -1450, -1300, L.CF_FLOOR, ang=0, search=60); prop('ct_mint', -1900, -1300, L.CF_FLOOR, ang=0, search=60)
-    sx0, sy0, sx1, sy1 = L.CF_STAIR_OUT
-    route('chest', ((sx0 + sx1) / 2, sy1 + 80, 0), (-1880, -1500, L.CF_FLOOR))
-    light(-1680, -1400, 300, 220, '0.8 0.95 1')
-
-
-def cart_jars_shop():
-    clipped(SH.cart())
-    cx, cy = L.CART
-    custom('cart', cx, cy, 0, 0)
-    occupy(cx - L.CART_W / 2 - 130, cy - L.CART_D / 2 - 30, cx + L.CART_W / 2 + 130, cy + L.CART_D / 2 + 30, 0, 1100)
-    jumppad(cx, cy + 470, 0, (cx - 120, cy, L.CART_H), 660, 'p_cart')
-    item('item_speedy', cx + 140, cy, L.CART_H); item('ammo_boaster', cx - 180, cy + 60, L.CART_H)
-    clipped(SH.jars())
-    for (x, y), nm in zip(L.JARS, ('jar_spr', 'jar_choc', 'jar_nuts', 'jar_marsh', 'jar_gummy')):
-        custom(nm, x, y, 0, 0)
-    # tables + chairs by the windows, cones on stands, a register-free counter top for take-away
-    for (x, y, a) in ((-620, -1820, 0), (620, -1820, 30), (-1350, -900, 15)):
-        p = prop('cafetable', x, y, 0, ang=a, search=80)
-        if p:
-            for s in (-1, 1):
-                prop('cafechair', p[0] + s * 300, p[1] + 20, 0, ang=90 if s < 0 else 270, search=100)
-            prop(['sundae', 'sundae_b', 'cone4'][int(abs(x)) % 3], p[0], p[1], 604, ang=0, force=True, clip=False)
-    cat('pad_ddmix/padshop/cardboard_standup.md3', 1150, -1950, 0, 1.6, 90)
-    cat('pad_ddmix/plants/flower_pink.md3', -2080, -1950, 0, 1.4, 0)
-    item('ammo_bubbleg', 0, -1880, 0); item('ammo_nipper', -1100, -1650, 0)
-    timer_sound(0, -1900, 400, 'misc/wind_chimes', 'shop_bell', 50, 30, volume=0.4)
-    A(sign_box((-760, -L.HY, 1380), (760, -L.HY + 6, 1760), T('sign_main'), 1024, 256, facing='n'))
-    A(sign_box((-1900, -L.HY, 900), (-1300, -L.HY + 6, 1500), T('menu'), 512, 512, facing='n'))
+    weapon('bubbleg', 2100, 1680, L.CF_FLOOR, 'green')
+    item('ammo_betty', 2160, 1560, L.CF_FLOOR)
+    prop('ct_mint', 2180, 1780, L.CF_FLOOR, ang=0, search=60)
+    sx0, sy0, sx1, sy1, _ = L.CF_STAIR_OUT
+    route('chest', (sx0 - 60, (sy0 + sy1) / 2, 0), (2100, 1600, L.CF_FLOOR))
+    light(2000, 1680, 300, 220, '0.8 0.95 1')
 
 
 # =================================================================================================== cover, spawns, lights, sound
 def floor_cover():
-    pieces = [('cone3', -700, 600), ('cone5', 700, 600), ('cone1', -600, -200), ('cone2', 650, -150), ('cone4', 300, -950),
-              ('pop_straw', -1100, 250), ('pop_lemon', 1000, 1050), ('pop_choc', -300, -700), ('sundae', 900, 200), ('sundae_b', -950, 1100),
-              ('cartons', -1450, 600), ('cartons2', 1500, -650), ('cone1', -520, 1120), ('icepile', 500, -1150), ('spoon', -950, 760),
-              ('pop_vanilla', -900, -1500), ('boxes3', 1300, 1250), ('boxes2', -1350, -100), ('conestack', 1550, 1350), ('milkcrate', -2100, 1000)]
+    pieces = [('pop_straw', -950, -650), ('cone3', 620, -1120), ('cone1', -1450, -900),
+              ('cone5', 1250, -250), ('cartons', 1200, 440), ('cone4', 1250, 1250), ('sundae', 300, 420), ('conestack', 1100, 1340)]
     for (nm, x, y) in pieces:
         prop(nm, x, y, 0, search=300)
-    for (path, x, y, sc) in (('gummybears/redbear.md3', -1250, 1350, 1.0), ('gummybears/greenbear.md3', 1150, -150, 1.0),
-                             ('gummybears/ldyellowbear.md3', 350, 1150, 1.0), ('gummybears/orangebear.md3', -350, -1100, 1.0),
-                             ('pad_ddmix/diner/muffin_choco.md3', 1050, 600, 1.0), ('pad_ddmix/diner/glass_midnight.md3', -1150, -250, 1.0),
-                             ('pad_ducks/pad_duck.md3', -2050, 1350, 0.4), ('pad_ddmix/gallery/fire_extinguisher.md3', -1580, -700, 4.0),
-                             ('pad_ddmix/diner/coffe_pot.md3', 1500, 1100, 1.0)):
+    for (path, x, y, sc) in (('gummybears/redbear.md3', -900, -1850, 1.0), ('gummybears/greenbear.md3', 1150, -1550, 1.0),
+                             ('gummybears/ldyellowbear.md3', -150, 1100, 1.0), ('pad_ddmix/diner/muffin_choco.md3', 1450, 1700, 1.0),
+                             ('pad_ducks/pad_duck.md3', -2080, -40, 0.35), ('pad_ddmix/gallery/fire_extinguisher.md3', -1600, 1850, 4.0),
+                             ('pad_ddmix/diner/coffe_pot.md3', 300, 1250, 1.0), ('pad_ddmix/padshop/cardboard_standup.md3', 1500, -1980, 1.6),
+                             ('pad_ddmix/plants/flower_pink.md3', -2080, -1960, 1.4)):
         cat(path, x, y, 0, sc)
 
 
 def blockers():
-    """cover where long eye-level lines run (sightlines.py --hot): big display cones, carton stacks, ice piles"""
-    for (nm, x, y) in (('cartons', -640, 840), ('bigcone_a', -360, 980), ('bigcone_b', 380, 980), ('icepile', 700, 860),
-                       ('cartons2', -330, -440), ('bigcone_a', 460, -470), ('bigcone_b', -900, -150), ('icepile', -1100, -1650),
-                       ('cartons', 820, -1300), ('bigcone_a', 1450, -150), ('bigcone_b', -1500, 900), ('cartons2', 150, -1700)):
+    """cover where long eye-level lines run (sightlines.py --hot)"""
+    for (nm, x, y) in (('bigcone_a', -1000, -350), ('bigcone_b', 1050, -380), ('cartons2', 1300, 700), ('bigcone_a', -1250, 800),
+                       ('cartons', 200, 1200), ('bigcone_b', 1500, -1150)):
         prop(nm, x, y, 0, search=260)
 
 
 def items_misc():
-    item('ammo_nipper', -400, -300, 0); item('ammo_nipper', 1300, 1300, 0)
-    item('item_armor_shard', -1600, 300, 0); item('item_armor_shard', 800, -700, 0); item('item_armor_shard', -800, -1100, 0)
-    item('ammo_splasher', 1300, -1000, 0); item('ammo_betty', -500, 900, 0); item('ammo_bubbleg', 1500, 500, 0)
-    station(-1300, -1100, 0, 90); station(1450, 1050, 0, 180)
-    for (x, y, a) in ((-600, -300, 90), (600, 0, 180), (-1350, 700, 0), (1300, -400, 180), (-200, 1300, 270), (1000, 1000, 225),
-                      (-1450, -400, 0), (1100, -1700, 135), (-700, -1700, 45), (300, -1750, 90), (-1500, 1250, 300), (-1100, -1450, 60), (1000, -1000, 135)):
+    item('ammo_nipper', 1300, 1000, 0)
+    item('item_armor_shard', -1610, 150, 0); item('item_armor_shard', 600, -650, 0); item('item_armor_shard', -750, -1450, 0)
+    item('ammo_splasher', 1300, -1050, 0); item('ammo_betty', -300, 1100, 0); item('ammo_bubbleg', 1600, 150, 0)
+    station(-1620, -1600, 0, 0); station(1250, 430, 0, 180)
+    for (x, y, a) in ((-650, -450, 270), (650, -420, 270), (-1500, -800, 0), (1550, -300, 180), (-400, -1750, 90), (1150, -1800, 135),
+                      (-1100, 500, 0), (300, 520, 90), (1300, 1150, 225), (-1200, 1300, 300), (-200, 1350, 270), (1050, 380, 180), (-1450, -1450, 45)):
         spawn(x, y, 0, a)
 
 
 def lights_and_sound():
-    for (x, y) in ((-1250, -300), (-1250, 1000), (-300, 1100), (900, 1100), (900, -400), (-300, -600), (1400, 300), (-550, -1780),
-                   (550, -1780), (-1700, -1400), (1600, -800)):
+    for (x, y) in ((-1200, -1180), (1000, -1350), (300, -1700), (-1250, -420), (1250, -420), (-600, -1800), (-700, 920), (700, 900),
+                   (-1250, 1150), (1250, 1150), (0, 600), (-1550, 1700)):
         custom('pendant', x, y, L.CEIL, 0, lit=False)
-        light(x, y, L.CEIL - 370, 7000, '1 0.92 0.82')
+        light(x, y, L.CEIL - 370, 7000, '1 0.9 0.88')
     for x in (-1700, -570, 570, 1700):
         for y in (-1500, -500, 500, 1500):
-            light(x, y, 1250, 2600, '1 0.96 0.9')
-    for (fx, fy) in ((-1100, -500), (1000, 700)):
+            light(x, y, 1250, 2600, '1 0.95 0.95')
+    for (fx, fy) in ((-1100, -1550), (1100, -1650)):
         fz = L.CEIL - 200
         custom('fanrod', fx, fy, L.CEIL, 0, lit=False)
         M.ent('func_rotating', brushes=[box((fx - 8, fy - 8, fz - 8), (fx + 8, fy + 8, fz + 8), ORIGIN),
@@ -688,7 +733,8 @@ def lights_and_sound():
 
 
 def reserve():
-    for f in (SH.tower, SH.gelato_counter, SH.softserve, SH.bar, SH.glass, SH.freezer, SH.chest, SH.cart, SH.jars):
+    for f in (SH.tower, SH.gelato_counter, SH.softserve, SH.bar, SH.glass, SH.freezer, SH.chest, SH.cart, SH.jars, SH.display_counter,
+              SH.batch_freezer, SH.vat):
         for b in f():
             mn, mx = b.bounds()
             occupy(mn[0], mn[1], mx[0], mx[1], mn[2], mx[2])
@@ -703,7 +749,7 @@ def main():
     GM.make(); BP.make()
     room()
     reserve()
-    tower(); gelato_counter(); softserve(); bar(); freezer_and_vault(); chest(); cart_jars_shop()
+    tower(); seating(); display_counter(); softserve(); prep_line(); batch_freezer(); vat(); freezer_and_vault(); chest()
     items_misc(); blockers(); floor_cover(); lights_and_sound()
     moved = fix_items()
     for mv in moved: print('moved', mv)

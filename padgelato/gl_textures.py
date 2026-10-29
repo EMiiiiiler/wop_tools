@@ -339,6 +339,65 @@ def sprinkle_pad(n=256):
     return np.asarray(im, np.float32)
 
 
+
+def artdeco(n=512, seed=51):
+    """art-deco floor: white tiles with black and grey quatrefoil/diamond inlays (after the reference photo)"""
+    x, y = xy(n)
+    k = 4
+    u, v = (x * k) % 1 - 0.5, (y * k) % 1 - 0.5
+    c = np.zeros((n, n, 3), np.float32) + C((238, 236, 232)) + N3(n, 1, seed, 3) + N3(n, 30, seed + 1, 4)
+    dia = (np.abs(u) + np.abs(v)) < 0.28
+    c = np.where(dia[..., None], C((34, 34, 38)), c)
+    ring = np.abs(np.abs(u) + np.abs(v) - 0.36) < 0.035
+    c = np.where(ring[..., None], C((120, 122, 128)), c)
+    corner = np.hypot(np.abs(u) - 0.5, np.abs(v) - 0.5) < 0.16
+    c = np.where(corner[..., None], C((60, 62, 68)), c)
+    g = (np.abs(u) > 0.495) | (np.abs(v) > 0.495)
+    c = c + (np.clip(noise(n, 14, seed + 2) - 0.6, 0, 2) * 14)[..., None]
+    return np.where(g[..., None], C((170, 168, 164)), c)
+
+
+def wainscot(w=512, h=512, seed=53):
+    """pastel pink beadboard wainscot with a cream rail at the top"""
+    x, y = xy(w, h)
+    c = np.zeros((h, w, 3), np.float32) + C((244, 184, 198)) + N3(w, 1, seed, 3, h)
+    bead = np.abs(((x * 16) % 1) - 0.5) > 0.46
+    c = np.where(bead[..., None], c * 0.86, c)
+    c = c + (np.clip(((x * 16) % 1) - 0.8, 0, 1) * 40)[..., None]
+    c = np.where((y < 0.06)[..., None], C((252, 240, 236)), c)
+    c = np.where(((y > 0.06) & (y < 0.08))[..., None], C((200, 150, 160)), c)
+    return c
+
+
+def pink_wall(n=256, seed=55):
+    """pastel pink wall paint, a soft cream polka dot"""
+    x, y = xy(n)
+    c = np.zeros((n, n, 3), np.float32) + C((246, 196, 206)) + N3(n, 2, seed, 3) + N3(n, 20, seed + 1, 3)
+    for ox, oy in ((0.25, 0.25), (0.75, 0.75)):
+        d = np.hypot(((x - ox + 0.5) % 1) - 0.5, ((y - oy + 0.5) % 1) - 0.5)
+        c = np.where((d < 0.03)[..., None], C((252, 236, 236)), c)
+    return c
+
+
+def mint_frieze(w=1024, h=128, seed=57):
+    a = cone_frieze(w, h, seed)
+    im = img(a).convert('RGB'); px = np.asarray(im, np.float32).copy()
+    cream = (np.abs(px - C(CREAM2)).sum(-1) < 30)
+    px[cream] = C((178, 226, 206))
+    red = (np.abs(px - C(RED)).sum(-1) < 40)
+    px[red] = C((240, 150, 176))
+    return px
+
+
+def pink_tin(n=256, seed=59):
+    return tin_ceiling(n, seed) * C((1.0, 0.86, 0.9))
+
+
+def mint_trim(w=256, h=64, seed=61):
+    x, y = xy(w, h)
+    return np.zeros((h, w, 3), np.float32) + C((150, 210, 188)) + (np.cos((y - 0.3) * 5) * 18)[..., None] + N3(w, 0.6, seed, 3, h)
+
+
 SIGNS = {
     'sign_main': ("PADMAN'S GELATO PARLOUR", 'HANDMADE DAILY - 32 FLAVOURS', 1024, 256, (252, 244, 226), (196, 30, 56)),
     'sign_vault': ('THE FROZEN VAULT', 'THE MYSTERY FLAVOUR IS... YOU!', 1024, 192, (20, 60, 100), (220, 245, 255)),
@@ -374,8 +433,8 @@ def menu_board(w=512, h=512, seed=25):
 
 
 def make_textures():
-    W('floor', checker()); W('subway', teal_tile()); W('wall_paint', stripes()); W('frieze', cone_frieze())
-    W('ceiling', tin_ceiling()); W('skirting', chrome_trim()); W('wood_white', wood_white())
+    W('floor', artdeco()); W('subway', wainscot()); W('wall_paint', pink_wall()); W('frieze', mint_frieze())
+    W('ceiling', pink_tin()); W('skirting', mint_trim()); W('wood_white', wood_white())
     W('street', street()); W('pavement', pavement()); W('cool_floor', cool_floor()); W('shop_floor', shop_floor())
     W('jumppad', sprinkle_pad()); W('rubber', chrome_trim(64, 64, 59))
     W('choc_wall', ice_wall()); W('gold_tile', frost_floor())
