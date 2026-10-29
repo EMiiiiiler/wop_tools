@@ -23,8 +23,9 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `padpinball/` - *Tilt!* (`wop_padpinball`): Padman inside a giant pinball machine (flippers, pop bumpers and a chrome
   steel ball as MD3 centrepieces, plunger lanes, ramps to corner booths, backbox jackpot room, underworld with the coin box);
   CTL/1LC/FFA, see padpinball/README.md.
-- `lounge/` - *Couch Lock* (`wop_padlounge`): FFA in a stoner's living room at night (giant glass bong, lava lamps, hookah,
-  cannabis plants as MD3s, grow tent, crawl space under the couch, secret stash shelf); see lounge/README.md.
+- `lounge/` - *Couch Lock* (`wop_padlounge`): FFA in a stoner's flat at night: living room (giant glass bong, lava lamps, hookah,
+  cannabis plants as MD3s, grow tent, crawl space under the couch, secret stash shelf) and a night balcony (hot tub, pergola
+  with a lift, BBQ, skyline sky box, secret upstairs neighbour); see lounge/README.md.
 - `padshroom/` - *Shroom Trip* (`wop_padshroom`): FFA forest floor on a magic-mushroom trip - a hollow golden Mother
   Mushroom with a func_plat elevator to the gill chamber in its cap, fly-agaric cottages, hollow stump, walk-through log,
   rainbow pond, a secret kaleidoscope Void, spores circling on an IQM func_rotating, custom sky cube; see padshroom/README.md.
