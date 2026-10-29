@@ -21,6 +21,7 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Full explorability: every door or building can be entered, and every building can be climbed. Rooftop access must not have geometry blocking line of fire to other players.
 
 ## Tools (see README.md)
+- Fresh cloud session: run `setup_cloud.sh` in the background (~15 min on 2 cores) for q3map2, wopbspc and wopded.
 - Generate with `wopmap.py`; place models with `md3bounds.json` so they rest on surfaces.
 - In a fresh cloud session, `lfs_fetch.py <wop repo> --map maps/x.map` gets the real md3s/textures/sky the map uses.
 - Before delivering any map run: `audit_map.py` (must say RESULT: OK), `pad_check.py` (every pad lands), `aas_check.py` after bspc with a `--route @routes.txt`
@@ -174,9 +175,21 @@ Tools and standing rules for building World of Padman (WoP) maps.
   `padpirate/pp_models.picture`.
 - Slides leaving a round ring-seg platform: rotate the segments half a step so a flat chord faces the slide and start the
   slide floor ~12u beyond it (no overlap, tiny gap).
-- A jump pad onto a top with an overhanging edge (pergola rafters) can pass pad_check and still fail in bspc, whose
-  0.1 s-frame flight ends at the first ground contact; when moving the pad back isn't possible, add a `func_plat` lift
-  through a hatch for bots (lounge balcony: 17 elevator reachabilities) and keep the pad for players.
-- Outdoor areas round an indoor map: put the building round the old room shell as touching blocks and a tight sky box with
-  a painted skyline (`lounge/balcony_textures.make_sky`) instead of real distant geometry; give big facade shaders
-  `q3map_lightmapSampleSize 64`. Full bounce light still took 112 min on 2 cores with ~90 lightmapped MD3s.
+- Flat `revolve()` rings/tops drawn with an outward profile face down (black from above): use `inward=True`
+  (padspace planet ring). Re-check every flat revolve on a contact sheet from above.
+- `carve()` round islets out of octagon pools leaves zero-thickness slivers (q3map2 "duplicate plane"); drop them before
+  writing (`padspace/build_space.drop_slivers()`: hull volume < 16 or a face-normal extent < 1).
+- `carved_shell()` (padspace/splib) now cuts openings anywhere round the shell (tests u and u +- 2*pi*R); rear windows
+  used to be skipped beyond +-108 deg of the face.
+- Shell collision openings are whole wedge cells fully inside the polygon: extend window polygons past the layer
+  boundaries or pads through the window hit the lintel (padspace nose window).
+- Prop placement by occupied volumes (`padbakery/build_bakery.py` FOOT/free()/prop()): reserve every architecture
+  brush's bounds before placing props, but never a whole cabinet/room volume, or nothing fits inside it.
+- A pad into an opening behind a ledge (oven deck mouth): the arc must peak at the opening (apex <= opening top - 32)
+  and stay above ledge + 24 for its last ~120u (`padbakery` p_deck1).
+- pad_check can pass pads bspc doesn't link (no reachability, items "UNREACHABLE"): raising the apex 60-70u fixed four
+  such pads onto tops in padbakery.
+- Alpha cut-out textures whose alpha is >= 128 everywhere render opaque (alphaFunc GE128); use an additive glass shader
+  for translucent plastic (strip curtains).
+- Open shelving with doorways through the dividers leaks long eye-level sightlines along the tunnel: one prop per bay on
+  the doorway line (walk round it) fixes it.

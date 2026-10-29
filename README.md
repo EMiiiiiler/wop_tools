@@ -64,6 +64,11 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   serpent-mouth secret), a jaguar temple, Tlaloc's giant fountain head, an eagle-warrior colonnade, a ball court, a
   cantina; Quetzalcoatl circling the sky; see padaztec/README.md. `az_shapes.py` + `azlib.solids_mesh()` build big
   architecture once as convex solids and use them both as weapclip collision and as the visible MD3.
+- `padbakery/` - *Sweet Padman's Bakery* (`wop_padbakery`): FFA in a bakery kitchen at Padman scale - a three-tier show cake
+  with a walk-in missing slice, a deck oven with walk-in proofer and baking decks, a planetary floor mixer with a turning
+  paddle, counters with tunnels through the shelving and a wall shelf, a cool room, the shop's display cabinet, cooling
+  racks, and a flour bin that drops you into the secret Sugar Vault; see padbakery/README.md.
+- `setup_cloud.sh` - builds the toolchain in a fresh cloud session (libjpeg/libxml2, NRC q3map2, wopbspc, wopded).
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
 - `xmas/` - *Padman's Christmas* (`wop_padxmas`): living room on Christmas Eve, climbable tree, fireplace -> roof secret,
