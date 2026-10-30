@@ -325,7 +325,10 @@ def check_water(BR):
                     for dj in (-2, -1, 0, 1, 2):
                         a, b = i + di, j + dj
                         # walk out (<= 18 step) from wadeable water, or jump out (barrier 33) where only the feet are wet
-                        if 0 <= a < len(xs) and 0 <= b < len(ys) and not wet[a, b] and fl[a, b] > surf - 8 \
+                        # the dry cell is above the water, or (a puddle standing on a flat floor) at least as high
+                        # as the wet floor beside it
+                        if 0 <= a < len(xs) and 0 <= b < len(ys) and not wet[a, b] \
+                                and (fl[a, b] > surf - 8 or fl[a, b] >= fl[i, j] - 0.5) \
                                 and (fl[a, b] - fl[i, j] <= 18.5 or (surf - fl[i, j] <= 24 and fl[a, b] - fl[i, j] <= 33)):
                             ok = True; break
                     if ok: break

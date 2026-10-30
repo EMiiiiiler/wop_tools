@@ -314,6 +314,7 @@ class MapKit:
                                        land=list(land), t=P['t']))
         if glow: self.light(x, y, z + 48, 120, light_rgb)
         self.occupy_r(x, y, 60, z, z + 90)
+        self.occupy_r(land[0], land[1], 64, land[2], land[2] + 96)      # props scattered later must not fill the landing
         return P
 
     def teleporter(self, mn, mx, dest, angle, name, visible_tex=None):
@@ -381,6 +382,94 @@ class MapKit:
             b = (cx + d[0] * (half + 48), cy + d[1] * (half + 48), ztop)
             self.route(route, a, b)
         return steps
+
+    MAX_RAMP_DEG = 40.0          # Q3 MIN_WALK_NORMAL 0.7 = 45.6 deg; bots and players slide near the limit
+
+    def ramp(self, x0, y0, x1, y1, z_low, z_high, rise, tex, base=None, route=None):
+        """plain walkable ramp (solid wedge from `base`, default z_low, up to a top sloping z_low -> z_high toward
+        `rise` 'n'/'s'/'e'/'w'). Keep it plain: bevelled brushes touching a ramp face left it ungrounded in bspc.
+        Refuses slopes over MAX_RAMP_DEG; route=name adds an aas_check route from the foot to the top landing."""
+        L = (y1 - y0) if rise in 'ns' else (x1 - x0)
+        deg = math.degrees(math.atan2(z_high - z_low, L))
+        if deg > self.MAX_RAMP_DEG:
+            raise ValueError(f'ramp {route or (x0, y0)}: {deg:.1f} deg is too steep to walk (max {self.MAX_RAMP_DEG:g}; '
+                             f'lengthen it to >= {(z_high - z_low) / math.tan(math.radians(self.MAX_RAMP_DEG)):.0f}u)')
+        b = wopmap.ramp(x0, y0, x1, y1, z_low if base is None else base, z_low, z_high, rise, tex)
+        self.add(b)
+        self.spots.setdefault('ramps', []).append(dict(rect=[x0, y0, x1, y1], z_low=z_low, z_high=z_high, dir=rise,
+                                                       deg=round(deg, 1), name=route))
+        if route:
+            cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+            d = {'n': (0, 1), 's': (0, -1), 'e': (1, 0), 'w': (-1, 0)}[rise]
+            half = L / 2
+            self.route(route, (cx - d[0] * (half + 64), cy - d[1] * (half + 64), z_low),
+                       (cx + d[0] * (half + 64), cy + d[1] * (half + 64), z_high))
+        return b
+
+    def botclip_rect(self, x0, y0, x1, y1, z, sides='nsew', gaps=(), width=24, height=64):
+        """botclip strips along the exposed edges of a raised deck/shelf (x0, y0, x1, y1) with walk surface z, inset so
+        they sit ON the deck. gaps = [(side, a, b)]: leave the stretch a..b (x for n/s, y for e/w) open where a bridge,
+        ramp or pad landing meets the edge. Bot falls on the kitchen went from 52 to 5 per match with these."""
+        out = []
+        h = width / 2
+        for s in sides:
+            horiz = s in 'ns'
+            lo, hi = (x0, x1) if horiz else (y0, y1)
+            cut = sorted((max(lo, a), min(hi, b)) for (gs, a, b) in gaps if gs == s and b > lo and a < hi)
+            segs, p = [], lo
+            for a, b in cut:
+                if a > p: segs.append((p, a))
+                p = max(p, b)
+            if p < hi: segs.append((p, hi))
+            edge = {'n': y1 - h, 's': y0 + h, 'e': x1 - h, 'w': x0 + h}[s]
+            for a, b in segs:
+                if b - a < 8: continue
+                out.append(self.botclip_edge(a, edge, b, edge, z, width, height) if horiz
+                           else self.botclip_edge(edge, a, edge, b, z, width, height))
+        return out
+
+    def water_box(self, mn, mx, tex, nodraw_tex=None, cutters=()):
+        """the water recipe: ONE water box, CSG-carved by everything inside it (water must not overlap solids), only the
+        top surface drawn, every internal face nodraw water (q3map2 only culls exactly coincident faces). Depth <= 48
+        does not drown; deeper water needs 16u steps or a ramp out (lint_map 'water'). Returns the pieces."""
+        nd = nodraw_tex or tex + '_nd'
+        wb = box(mn, mx, tex)
+        pieces = wopmap.carve(wb, list(cutters)) if cutters else [wb]
+        for p in pieces:
+            for f in p.faces: f.tex = tex if f.n[2] > 0.9 and abs(f.d - mx[2]) < 0.5 else nd
+            self.add(p)
+        self.spots.setdefault('water', []).append(dict(mn=list(mn), mx=list(mx), depth=mx[2] - mn[2]))
+        return pieces
+
+    def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None):
+        """big architecture built ONCE as convex brushes and used twice: the visible faces become a custom MD3
+        (woplib.models.solids_mesh) and the same brushes become invisible collision, so bot routes never drift from
+        what players see (az_shapes/padaztec recipe). texfn(centre, normal, poly) -> (shader, uvfn) in WORLD space.
+        The model is stored centred on the pieces' footprint (MD3 +-512 limit) and placed back there. Returns the
+        misc_model entity."""
+        from . import models as ML
+        mn = np.min([b.bounds()[0] for b in brushes], 0); mx = np.max([b.bounds()[1] for b in brushes], 0)
+        o = np.array([(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, mn[2]])
+        X = ML.Model()
+
+        def tf(c, n, poly):
+            r = texfn(c, n, poly)
+            if r is None: return None
+            sh, uvf = r
+            return sh, (lambda p, uvf=uvf: uvf(p))
+        ML.solids_mesh(X, brushes, tf, hidden=hidden)
+        X.shift(o)
+        place = ML.save(name, X)
+        e = self.custom(place, float(o[0]), float(o[1]), float(o[2]), lit=lit, occupy=False)
+        if clip:
+            col = []
+            for b in brushes:
+                c = wopmap.Brush([wopmap.Face(f.pts, clip, (0.5, 0.5)) for f in b.faces], True)
+                col.append(c)
+            self.clipped(col, clip)
+        else:
+            self.reserve(*brushes)
+        return e
 
     def crawl(self, mn, mx):
         """declare an intended crouch-only space (lint_map's headroom check skips it)"""

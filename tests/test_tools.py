@@ -237,3 +237,110 @@ def test_nodraw_collision_warns(tmp_path):
     mp, _ = room(tmp_path, extra=extra)
     rc, o = lint(mp, 'names')
     assert 'NONSOLID in WoP' in o
+
+
+# ------------------------------------------------------------------------------------------------ kit helpers added for padfridge
+def test_ramp_too_steep_refused():
+    """MIN_WALK_NORMAL 0.7 (45.6 deg): a steeper 'ramp' is a wall to players and bots"""
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    with pytest.raises(ValueError):
+        K.ramp(0, 0, 200, 128, 0, 300, 'e', 't/floor')
+
+
+def test_ramp_adds_route_and_spot():
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    b = K.ramp(0, 0, 800, 224, 0, 400, 'e', 't/floor', route='r1')
+    mn, mx = b.bounds()
+    assert mx[2] == 400 and mn[2] == 0
+    (name, a, z), = K.routes
+    assert name == 'r1' and a[0] < 0 and z[0] > 800 and a[2] == 0 and z[2] == 400
+    assert K.spots['ramps'][0]['deg'] < 30
+
+
+def test_botclip_rect_leaves_gaps():
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    strips = K.botclip_rect(-500, -300, 500, 300, 128, sides='s', gaps=[('s', -100, 100)])
+    xs = sorted((round(s.bounds()[0][0]), round(s.bounds()[1][0])) for s in strips)
+    assert xs == [(-500, -100), (100, 500)]
+    y0, y1 = strips[0].bounds()[0][1], strips[0].bounds()[1][1]
+    assert y0 >= -300 and y1 <= -300 + 24                   # inset onto the deck, not hanging past its edge
+    assert all(t == 'common/botclip' for s in strips for t in s.textures())
+
+
+def test_water_box_draws_only_the_top(tmp_path):
+    """a puddle on a flat floor: carved by a block standing in it, only the top faces visible, and lint's water check
+    passes (you can walk out of 24u-deep water)"""
+    def extra(K):
+        blk = box((-64, -64, 0), (64, 64, 96), 't/wall')
+        K.add(blk)
+        pieces = K.water_box((-300, -300, 0), (300, 300, 24), 't/water', cutters=[blk])
+        assert len(pieces) > 1
+        for p in pieces:
+            for f in p.faces:
+                assert (f.tex == 't/water') == (f.n[2] > 0.9 and abs(f.d - 24) < 0.5)
+    mp, K = room(tmp_path, extra=extra)
+    assert K.spots['water'][0]['depth'] == 24
+    rc, o = lint(mp, 'water')
+    assert rc == 0, o
+
+
+def test_solid_piece_writes_md3_and_matching_collision(tmp_path):
+    """solids used twice: visible MD3 (hidden faces culled) + the same brushes as weapclip"""
+    import md3tool
+    out = str(tmp_path)
+    ML.configure('t', out)
+    ML.T('cheese', ML.fill(32, (240, 200, 80)))
+    sh = ML.S('cheese', 'lm')
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    a = box((100, 100, 0), (300, 200, 64), 't/x'); b = box((100, 200, 0), (300, 300, 64), 't/x')
+    e = K.solid_piece('slab', [a, b], lambda c, n, poly: (sh, ML.planar_uv(n)))
+    assert e['origin'].split() == ['200', '200', '0']
+    clips = [w for w in K.M.world if w.textures() == {'common/weapclip'}]
+    assert len(clips) == 2
+    m = md3tool.load(os.path.join(out, 'models', 't', 'slab.md3'))
+    V = np.concatenate([np.asarray(sf['verts']) for sf in m['surfaces']])
+    assert V[:, 0].min() >= -100.5 and V[:, 0].max() <= 100.5 and V[:, 2].min() >= -0.5   # stored centred, base at 0
+    ntri = sum(len(sf['tris']) for sf in m['surfaces'])
+    assert ntri == 20, ntri                                 # 12 faces - 2 hidden shared faces = 10 quads
+    assert not K.free(200, 200, 10, 0, 64)                  # collision reserved the footprint
+
+
+def test_slick_and_shadowless_glass_shaders():
+    SH.configure('t', 'wop_t', 'T')
+    s = SH.slick('ice')
+    assert 'surfaceparm slick' in s and '$lightmap' in s and s.startswith('textures/t/ice\n')
+    assert 'alphashadow' in SH.glass('g1') and 'alphashadow' not in SH.glass('g2', shadow=False)
+
+
+# ------------------------------------------------------------------------------------------------ walk-through page (needs the compiler)
+@pytest.mark.skipif(not os.environ.get('Q3MAP2') or not os.path.exists(os.environ.get('Q3MAP2', '')),
+                    reason='needs Q3MAP2 (source setup_cloud.sh env.sh)')
+def test_walkthrough_page_renders(tmp_path):
+    """bsp2scene turns the compiled sample map into one self-contained page (geometry, lightmaps, item markers)"""
+    out = str(tmp_path)
+    p = subprocess.run([PY, os.path.join(ROOT, 'templates', 'sample', 'build.py')], env=dict(os.environ, OUT=out),
+                       capture_output=True, text=True)
+    assert p.returncode == 0, p.stderr
+    mp = os.path.join(out, 'maps', 'wop_padsample.map')
+    q = os.environ['Q3MAP2']
+    game = os.environ.get('GAME', '')
+    base = [q, '-game', 'quake3'] + (['-fs_basepath', game + '/', '-fs_game', 'wop'] if game else [])
+    for args in (['-meta'], ['-vis'], ['-light', '-fast', '-samples', '1']):
+        r = subprocess.run(base + args + [mp], capture_output=True, text=True, timeout=900)
+        assert r.returncode == 0, r.stdout[-2000:]
+    page = os.path.join(out, 'preview.html')
+    rc, o = run('preview/bsp2scene.py', os.path.join(out, 'maps', 'wop_padsample.bsp'), page, '--vfs', out, '--compact')
+    assert rc == 0, o[-2000:]
+    html = open(page, encoding='utf-8', errors='replace').read()
+    assert os.path.getsize(page) > 50_000 and 'three' in html.lower()
+
+
+def test_sightlines_skips_eye_points_inside_solids(tmp_path):
+    """padfridge: grid points on the back wall face / inside a tall block found a 'floor' at zmax and cast long bogus
+    rays; such points must not count as eye points"""
+    def extra(K):
+        K.add(box((-1024, 0, 0), (1024, 1024, 1000), 't/wall'))      # the north half is one tall solid block
+    mp, _ = room(tmp_path, extra=extra)
+    rc, o = run('sightlines.py', mp, os.path.join(str(tmp_path), 's.png'), '--bounds=-1024,-1024,1024,1024', '--zmax', '512')
+    n = int(o.split('eye points ')[1].split(',')[0])
+    assert n == 128, o[-800:]                                      # 16 x 8 grid on the open south half only

@@ -101,8 +101,14 @@ def main():
     G = np.array([(x, y) for y in ys for x in xs])
     O = np.column_stack([G, np.full(len(G), a.zmax)])
     floor = a.zmax - cast(planes, O, np.tile([0, 0, -1.0], (len(G), 1)), 4000)
-    ok = floor > -12           # dry floors only (river/pool bottoms are excluded)
-    E = np.column_stack([G[ok], floor[ok] + 48])
+    # dry floors only (river/pool bottoms are excluded), and not points that start inside a solid: a grid point on a
+    # wall face or inside a tall block 'finds' a floor at zmax and casts bogus rays along the wall (padfridge back wall)
+    ok = (floor > -12) & (floor < a.zmax - 0.5)
+    E0 = np.column_stack([G, floor + 48])
+    for P in planes[:nb]:                       # brushes only (model boxes are shrunken stand-ins)
+        ins = np.all(E0 @ P[:, :3].T - P[:, 3] < -0.5, axis=1)
+        ok &= ~ins
+    E = E0[ok]
     angs = np.arange(a.dirs) * 2 * math.pi / a.dirs
     D = np.array([(math.cos(t), math.sin(t), 0) for t in angs])
     RO = np.repeat(E, a.dirs, 0); RD = np.tile(D, (len(E), 1))
