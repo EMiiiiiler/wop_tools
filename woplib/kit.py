@@ -215,8 +215,11 @@ class MapKit:
         return self.M.ent('light', (round(x), round(y), round(z)), light=val, _color=color, **kw)
 
     def light_grid(self, x0, y0, x1, y1, z, spacing, val, color='1 0.92 0.8', skip=None):
-        """point lights on a grid. Q3 point lights fall off with distance squared: with lights ~170u under a 768u
-        ceiling, ~1800-2400 on a 450u grid (or ~1250-1600 on 370u) gives floor lightmaps ~80-110 of 255."""
+        """point lights on a grid. Measured floor brightness (light_check raw lightmap median; 128 = neutral, 200+ washes
+        out; fast light, _ambient 20, no bounce - bounce light adds ~10-30 indoors):
+            600u over the floor, 512 grid:  600 -> 58   900 -> 79   1500 -> 124   2200 -> 173
+            300u over the floor, 384 grid:  300 -> 64   600 -> 113  900 -> 162    1500 -> 238 (saturated)
+        Aim for a median of 90-150 and run wopbuild `lights` (light_check) to confirm."""
         nx = max(1, round((x1 - x0) / spacing)); ny = max(1, round((y1 - y0) / spacing))
         for i in range(nx):
             for j in range(ny):

@@ -10,6 +10,13 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   items, pads, teleports, secrets, movers, stairs, walkable ramps, botclip edges with gaps, carved water boxes,
   `solid_piece` = convex solids as both MD3 and collision, `sky_window`, routes, spots.json), `models` (MD3/IQM + textures + model shader
   kinds), `shaders` (brush shaders, validated .shader/.arena writers), `padmath`, `wopdata` (WoP facts).
+- `woplib/texlib.py` - texture generators (checker, tiles, bricks, planks, stone, metal, fabric, stripes, dots, frost,
+  grime, neon, label) and the `Textures` registry (image + shader + footsteps + scale in one call, lathe label flip,
+  `texfn()` for solid_piece).
+- `light_check.py bsp --map X.map [--aas X.aas] [--png]` - floor brightness from the BSP lightmaps over reachable
+  floor: median, dark / blown-out share and the clusters with coordinates (wopbuild `lights` step).
+- `preview/autoviews.py map` - review cameras generated from spots.json (weapons, secrets, pad landings, overviews),
+  each in clear air with a clear line to its subject; `preview/montage.py` - many screenshots -> one labelled sheet.
 - `templates/sample/` - reference map that passes every step (`wopbuild.py templates/sample all`).
 - `docs/SKILL.md` - the wop-mapping skill: process, definition of done, symptom -> fix table, all rules.
 - `tests/run.sh` - regression tests for woplib and the checkers.
