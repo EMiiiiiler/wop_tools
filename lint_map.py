@@ -21,6 +21,8 @@ Every check exists because a shipped map had the bug. Sections (FAIL = must fix,
             on a stair it is a FAIL (the step before a ceiling edge needs step top + 56), elsewhere a WARN
   caulk     caulk faces that face open space inside the map (see-through holes in game); faces covered by an
             opaque brush or a model's bounds are fine. WARN with coordinates: look at them in the walk-through.
+  boxes     plain brush boxes in reachable space that no model dresses ('looks boring' complaint): WARN with size,
+            centre and textures - dress them (MD3 skin + weapclip, trim, props) or confirm they are architecture
   rotors    func_rotating solid parts whose swept cylinder hits static brushes
   arena     arena types are valid WoP tokens; ctl/1lc have their lollies; the map name matches
   sounds    target_speaker noises not in woplib.wopdata.KNOWN_SOUNDS (pk3_check.py --game proves they exist)
@@ -398,6 +400,15 @@ def check_headroom(BR, bounds, spots, step=16.0):
         elif len(grp) >= 2: warn('headroom', msg + ' - intended crawl space? declare it with MapKit.crawl()')
 
 
+_AIR = {}
+
+
+def air_grid(BR, ents):
+    """one voxel flood per map (caulk and boxes both use it)"""
+    if id(BR) not in _AIR: _AIR[id(BR)] = AirGrid(BR, ents)
+    return _AIR[id(BR)]
+
+
 class AirGrid:
     """voxel grid of the space a player's eye can reach: flood fill from every spawn/pickup through cells not blocked by
     opaque brushes (solid, sky). Clip, botclip, water, triggers and movers count as open (you can see through them).
@@ -447,7 +458,7 @@ class AirGrid:
 def check_caulk(BR, ents, models_boxes, step=48.0):
     """caulk faces seen from reachable space. Probe 1.2 cells out along the face normal: the cell must be in the flooded
     air and nothing opaque between (an opaque brush, another water body's surface or a model's bounds)."""
-    G = AirGrid(BR, ents)
+    G = air_grid(BR, ents)
     if not G.air.any():
         warn('caulk', 'no spawn or pickup inside the map: caulk check skipped'); return
     opaque = [b for b in BR.of_kind('solid') if not b['mover']]
@@ -489,6 +500,68 @@ def model_boxes(ents, md3roots):
         v = v + o
         out.append((v.min(0) - 4, v.max(0) + 4))
     return out
+
+
+def check_boxes(BR, ents, mboxes, top=15):
+    """plain brush boxes in reachable space that no model dresses: the 'looks boring / plain box' play-test complaint.
+    Candidates are visible axis-aligned box brushes (one or two visible textures) that are not walls, floor/shelf slabs
+    or the hull; touching boxes are grouped (a table of five boxes is one find). Groups mostly inside a misc_model's
+    bounds are dressed and skipped. WARN only: architecture can be a plain box on purpose - dress the rest
+    (custom MD3 skin + weapclip, trim, props on it) or leave it and say why."""
+    allb = BR.of_kind('solid', 'clip')
+    if not allb: return
+    wmn = np.min([b['mn'] for b in allb], 0); wmx = np.max([b['mx'] for b in allb], 0)
+    sp = [float(e['kv']['origin'].split()[2]) - 25 for e in ents if e['kv'].get('classname') in wopdata.SPAWNS and 'origin' in e['kv']]
+    ground = min(sp) if sp else wmn[2]
+    cand = []
+    for b in BR.of_kind('solid'):
+        if b['mover'] or len(b['P']) != 6: continue
+        if not all(max(abs(n[0]), abs(n[1]), abs(n[2])) > 0.999 for n, d in b['P']): continue
+        vis = {t.lower() for t in b['texs'] if not t.lower().startswith('common/')}
+        if not vis or len(vis) > 2: continue
+        if any(k in t for t in vis for k in ('jumppad', 'rubber', 'glass', 'water', 'sky', 'neon', 'sign', 'grate')): continue
+        d = b['mx'] - b['mn']; h = d[2]; lo, hi = sorted(d[:2])
+        if h < 24 or lo < 24 or hi > 1536: continue
+        if lo < 40 and (hi > 256 or hi > 3 * lo): continue     # wall / railing / beam / pier between windows
+        if b['mx'][2] <= ground + 2: continue                   # ground / deck slab under the main floor
+        if h < 48 and hi > 256: continue                        # floor / shelf / roof slab
+        if np.any(b['mn'][:2] <= wmn[:2] + 64) or np.any(b['mx'][:2] >= wmx[:2] - 64): continue   # hull walls
+        cand.append(b)
+    parent = list(range(len(cand)))
+
+    def find(i):
+        while parent[i] != i: parent[i] = parent[parent[i]]; i = parent[i]
+        return i
+    for i in range(len(cand)):
+        for j in range(i + 1, len(cand)):
+            if np.all(cand[i]['mn'] <= cand[j]['mx'] + 1) and np.all(cand[j]['mn'] <= cand[i]['mx'] + 1):
+                parent[find(i)] = find(j)
+    groups = {}
+    for i, b in enumerate(cand): groups.setdefault(find(i), []).append(b)
+    G = None
+    finds = []
+    for g in groups.values():
+        mn = np.min([b['mn'] for b in g], 0); mx = np.max([b['mx'] for b in g], 0)
+        vol = np.prod(mx - mn)
+        if vol < 64 * 64 * 64 or max(mx[:2] - mn[:2]) > 1536: continue
+        dressed = 0.0
+        for a, c in mboxes:
+            ov = np.clip(np.minimum(mx, c) - np.maximum(mn, a), 0, None)
+            dressed = max(dressed, np.prod(ov) / vol)
+        if dressed > 0.3: continue
+        if G is None: G = air_grid(BR, ents)
+        ctr = (mn + mx) / 2
+        probes = [np.array([ctr[0], ctr[1], mx[2] + 40])] + [np.array([x, y, mn[2] + 40]) for x, y in
+                  ((mn[0] - 40, ctr[1]), (mx[0] + 40, ctr[1]), (ctr[0], mn[1] - 40), (ctr[0], mx[1] + 40))]
+        if not any(G.open_at(p) for p in probes): continue
+        tex = sorted({t for b in g for t in b['texs'] if not t.lower().startswith('common/')})
+        finds.append((vol, mn, mx, len(g), tex))
+    finds.sort(key=lambda f: -f[0])
+    for vol, mn, mx, n, tex in finds[:top]:
+        sz = (mx - mn).astype(int)
+        warn('boxes', f'plain brush box {sz[0]}x{sz[1]}x{sz[2]} at {((mn + mx) / 2).astype(int)} ({n} brush{"es" if n > 1 else ""}, '
+                      f'{", ".join(tex[:2])}) - no model dresses it: MD3 skin + weapclip, trim or props, or confirm it is architecture')
+    if len(finds) > top: warn('boxes', f'... {len(finds) - top} smaller plain boxes')
 
 
 def check_rotors(ents, BR):
@@ -577,10 +650,11 @@ def main():
     if run('water'): check_water(BR)
     if run('headroom'): check_headroom(BR, bounds, spots)
     if run('caulk'): check_caulk(BR, ents, model_boxes(ents, a.md3root))
+    if run('boxes'): check_boxes(BR, ents, model_boxes(ents, a.md3root))
     if run('rotors'): check_rotors(ents, BR)
     if run('arena'): check_arena(ents, mapname, arena)
     if run('sounds'): check_sounds(ents)
-    secs = ['names', 'entities', 'pads', 'items', 'water', 'headroom', 'caulk', 'rotors', 'arena', 'sounds']
+    secs = ['names', 'entities', 'pads', 'items', 'water', 'headroom', 'caulk', 'boxes', 'rotors', 'arena', 'sounds']
     for s in secs:
         if not run(s): continue
         f = [m for k, m in FAILS if k == s]; w = [m for k, m in WARNS if k == s]
