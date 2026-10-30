@@ -53,6 +53,16 @@ def sky(skyparms='env/fort-pad512', sun=(270, 50), sun_rgb=(1, 0.96, 0.88), sun_
     return s + '}\n\n'
 
 
+def slick(name, steps=None, glint=True, editor=None):
+    """lightmapped slippery floor (ice, frost, spilled oil): surfaceparm slick removes ground friction, so players
+    slide. Keep slick patches away from deadly edges and pad landings (bots slide off), and give the edge botclip.
+    glint adds a slow additive sparkle stage."""
+    t = f'{td()}/{name}'
+    stage = (f'\t{{\n\t\tmap {t}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen wave sin 0.08 0.06 0 0.3\n'
+             f'\t\ttcMod scroll 0.01 0.006\n\t}}\n') if glint else ''
+    return lm(name, steps=steps, extra='\tsurfaceparm slick\n', stage=stage, editor=editor)
+
+
 def nodraw_ns(name='nodraw_ns'):
     """invisible nonsolid brush (movers' tiny brush for model2, decal backs). WoP's common/nodrawnonsolid also works."""
     t = f'{td()}/{name}'
@@ -60,12 +70,13 @@ def nodraw_ns(name='nodraw_ns'):
             f'\tsurfaceparm trans\n\tsurfaceparm nomarks\n\tsurfaceparm noimpact\n\tsurfaceparm nolightmap\n}}\n\n')
 
 
-def glass(name='glass', rgb='0.10 0.12 0.13', env=None, solid=True):
+def glass(name='glass', rgb='0.10 0.12 0.13', env=None, solid=True, shadow=True):
     """glass that reads clear (GL_ONE GL_ONE + dim const; GL_DST_COLOR GL_ONE renders white). alphashadow gives
-    grid shadows from glazing. env: image for a reflection stage (models/<ns>/env from woplib.models)."""
+    grid shadows from glazing; shadow=False lets light straight through (glass shelves: with alphashadow an image
+    without an alpha channel shadows like a solid slab). env: image for a reflection stage (models/<ns>/env)."""
     t = f'{td()}/{name}'
     s = (f'{t}\n{{\n\tqer_editorimage {t}\n\tqer_trans 0.4\n\tsurfaceparm trans\n\tsurfaceparm nolightmap\n'
-         f'\tsurfaceparm nomarks\n\tsurfaceparm alphashadow\n' + ('' if solid else '\tsurfaceparm nonsolid\n') +
+         f'\tsurfaceparm nomarks\n' + ('\tsurfaceparm alphashadow\n' if shadow else '') + ('' if solid else '\tsurfaceparm nonsolid\n') +
          f'\tcull none\n\t{{\n\t\tmap {t}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen const ( {rgb} )\n\t}}\n')
     if env:
         s += f'\t{{\n\t\tmap {env}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen const ( 0.12 0.12 0.13 )\n\t\ttcGen environment\n\t}}\n'

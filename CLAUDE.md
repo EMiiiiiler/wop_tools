@@ -211,3 +211,20 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Sphere/ellipsoid UVs default to one tile over the whole sphere: pass u1/v1 repeats on big scoops/domes.
 - A beam across a round vat blocks any pad that lands along it: turn the beam perpendicular to the pad's approach
   (padgelato vat). A 44u gap in front of a stair foot gives bspc no area there: keep 48u+ (padgelato chest freezer).
+- bspc traces walk-off ledges only 1000u down (botlib be_aas_reach.c): a top shelf with only a 1344u drop out was a bot
+  TRAP. Give such levels an exit over a lower drop or a pad (padfridge freezer: botclip gap over the cracker ramp).
+- Labels on `revolve()`d models come out upside down (v runs up the profile, image rows run down): flip the image
+  vertically before `ML.T` (padfridge `reg(lathe=True)`), then check on a contact sheet.
+- New MapKit helpers (padfridge): `ramp()` (plain wedge, refuses > 40 deg, adds a route), `botclip_rect()` (strips along a
+  deck's exposed edges with gaps for bridges/pads), `water_box()` (one carved water box, top face only), `solid_piece()`
+  (convex brushes -> visible MD3 + the same brushes as weapclip). `jumppad()` now reserves its landing so props never
+  fill it. `SH.slick()` (ice) and `SH.glass(shadow=False)` (glass shelves that let light through).
+- A ramp running alongside a shelf slab is crouch-only where its top passes under the slab edge: keep ramps 64u off it.
+- sightlines: eye points inside solids are skipped (grid points on a wall face cast long bogus rays). Vertical maps with
+  an open atrium can set mapinfo `sightlines.level_target_pct` per level; keep the floor at 4 %.
+- `preview/bsp2scene.py` falls back to the jsdelivr three.js URL when no `--three` file is given.
+- `MapKit.sky_window()`: a window through a structural hull wall with a sealed sky box behind (padfridge sink window);
+  `secret()` now reserves its trigger volumes so scattered props never cover an entry.
+- Bots holding a holdable (Killer Ducks, Floater) never pick up a second one: holdables in a secret room after a busy
+  holdable elsewhere show 0 pickups in botreport (padfridge Root Cellar Boomies/Bambam) - that is not a routing bug.
+

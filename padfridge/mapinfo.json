@@ -1,0 +1,61 @@
+{
+ "map": "wop_padfridge",
+ "ns": "padfridge",
+ "longname": "Midnight Snack",
+ "generator": "build_padfridge.py",
+ "bounds": [
+  -1728,
+  -3584,
+  1728,
+  1088
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   512,
+   960,
+   1408
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "512": 6.5,
+   "960": 6.5,
+   "1408": 9.5
+  }
+ },
+ "preview": {
+  "title": "Midnight Snack",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1250,-3300,1350,108,-22",
+   "kitchen:-1450,-2250,180,40,-2",
+   "counter:-1250,-2990,1080,340,-14",
+   "crisper:-200,-1150,110,80,0",
+   "shelf1:-1350,-700,520,20,-6",
+   "shelf2:1350,-650,970,165,-6",
+   "freezer:1300,-700,1420,155,-6",
+   "deepfreeze:0,-250,-1530,90,-5",
+   "rootcellar:0,-250,-3130,90,-5"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "counter",
+   "shelf1",
+   "freezer"
+  ]
+ }
+}

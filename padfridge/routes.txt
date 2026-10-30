@@ -1,0 +1,16 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padfridge
+ramp_choc:          -1472,928,0 > -480,928,448
+ramp_cracker:       -224,928,448 > 832,928,896
+bin0_w:             -1470,-968,448 > -1440,-608,448
+bin1_w:             -1470,-968,896 > -1440,-608,896
+bin0_e:             1470,-968,448 > 1440,-608,448
+bin1_e:             1470,-968,896 > 1440,-608,896
+cupboard:           692,-2824,0 > 692,-3300,0
+bridge_w:           -1472,-3084,896 > -1472,-2020,896
+bridge_e:           1472,-3084,896 > 1472,-2020,896
+drawer_w:           -800,-824,0 > -800,-504,16
+drawer_e:           800,-1464,0 > 800,-1144,16
+carton_tunnel:      -1300,-1792,0 > -268,-1792,0
+cheese_tunnel:      300,-112,448 > 1140,-112,448
+cheese_slope:       720,-500,448 > 720,-16,768

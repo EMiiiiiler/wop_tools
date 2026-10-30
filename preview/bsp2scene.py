@@ -429,6 +429,9 @@ def main():
             if kind: marks.append([kind, c, x, z, -y])
 
     data_b64 = base64.b64encode(blob.getvalue()).decode()
+    if not a.threeurl and not (a.three and os.path.exists(a.three)):
+        a.threeurl = 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js'     # same default as wopbuild
+        print(f'no --three file: referencing {a.threeurl}')
     three_tag = (f'<script src="{a.threeurl}"></script>' if a.threeurl else
                  '<script>' + open(a.three).read() + '</script>')
     title = a.title or os.path.splitext(os.path.basename(a.bsp))[0]

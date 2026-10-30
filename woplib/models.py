@@ -477,6 +477,7 @@ def model_shaders():
         if kind in ('lm', 'lms'):
             s += f'{name}\n{{\n\tqer_editorimage {t}\n\tq3map_nonplanar\n\tq3map_shadeAngle {opt.get("shade", 75)}\n{two}'
             if opt.get('steps'): s += f'\tsurfaceparm {opt["steps"]}\n'
+            if opt.get('deform'): s += f'\tdeformVertexes {opt["deform"]}\n'
             s += f'\t{{\n\t\tmap $lightmap\n\t\trgbGen identity\n\t}}\n\t{{\n\t\tmap {t}\n\t\tblendFunc GL_DST_COLOR GL_ZERO\n\t\trgbGen identity\n\t}}\n'
             if kind == 'lms':
                 v = opt.get('v', 0.2)

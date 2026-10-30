@@ -314,6 +314,7 @@ class MapKit:
                                        land=list(land), t=P['t']))
         if glow: self.light(x, y, z + 48, 120, light_rgb)
         self.occupy_r(x, y, 60, z, z + 90)
+        self.occupy_r(land[0], land[1], 64, land[2], land[2] + 96)      # props scattered later must not fill the landing
         return P
 
     def teleporter(self, mn, mx, dest, angle, name, visible_tex=None):
@@ -343,6 +344,7 @@ class MapKit:
             else: smn[ax], smx[ax] = mn[ax] - 48, mn[ax]
         self.trigger_sound(smn, smx, sound, name + '_snd', wait=2)
         self.teleporter(mn, mx, dest, angle, name)
+        self.occupy(min(mn[0], smn[0]), min(mn[1], smn[1]), max(mx[0], smx[0]), max(mx[1], smx[1]), mn[2], max(mx[2], smx[2]))
         self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=list(dest)))
 
     def hurt(self, mn, mx, dmg=5, **kw):
@@ -381,6 +383,131 @@ class MapKit:
             b = (cx + d[0] * (half + 48), cy + d[1] * (half + 48), ztop)
             self.route(route, a, b)
         return steps
+
+    MAX_RAMP_DEG = 40.0          # Q3 MIN_WALK_NORMAL 0.7 = 45.6 deg; bots and players slide near the limit
+
+    def ramp(self, x0, y0, x1, y1, z_low, z_high, rise, tex, base=None, route=None):
+        """plain walkable ramp (solid wedge from `base`, default z_low, up to a top sloping z_low -> z_high toward
+        `rise` 'n'/'s'/'e'/'w'). Keep it plain: bevelled brushes touching a ramp face left it ungrounded in bspc.
+        Refuses slopes over MAX_RAMP_DEG; route=name adds an aas_check route from the foot to the top landing."""
+        L = (y1 - y0) if rise in 'ns' else (x1 - x0)
+        deg = math.degrees(math.atan2(z_high - z_low, L))
+        if deg > self.MAX_RAMP_DEG:
+            raise ValueError(f'ramp {route or (x0, y0)}: {deg:.1f} deg is too steep to walk (max {self.MAX_RAMP_DEG:g}; '
+                             f'lengthen it to >= {(z_high - z_low) / math.tan(math.radians(self.MAX_RAMP_DEG)):.0f}u)')
+        b = wopmap.ramp(x0, y0, x1, y1, z_low if base is None else base, z_low, z_high, rise, tex)
+        self.add(b)
+        self.spots.setdefault('ramps', []).append(dict(rect=[x0, y0, x1, y1], z_low=z_low, z_high=z_high, dir=rise,
+                                                       deg=round(deg, 1), name=route))
+        if route:
+            cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+            d = {'n': (0, 1), 's': (0, -1), 'e': (1, 0), 'w': (-1, 0)}[rise]
+            half = L / 2
+            self.route(route, (cx - d[0] * (half + 64), cy - d[1] * (half + 64), z_low),
+                       (cx + d[0] * (half + 64), cy + d[1] * (half + 64), z_high))
+        return b
+
+    def botclip_rect(self, x0, y0, x1, y1, z, sides='nsew', gaps=(), width=24, height=64):
+        """botclip strips along the exposed edges of a raised deck/shelf (x0, y0, x1, y1) with walk surface z, inset so
+        they sit ON the deck. gaps = [(side, a, b)]: leave the stretch a..b (x for n/s, y for e/w) open where a bridge,
+        ramp or pad landing meets the edge. Bot falls on the kitchen went from 52 to 5 per match with these."""
+        out = []
+        h = width / 2
+        for s in sides:
+            horiz = s in 'ns'
+            lo, hi = (x0, x1) if horiz else (y0, y1)
+            cut = sorted((max(lo, a), min(hi, b)) for (gs, a, b) in gaps if gs == s and b > lo and a < hi)
+            segs, p = [], lo
+            for a, b in cut:
+                if a > p: segs.append((p, a))
+                p = max(p, b)
+            if p < hi: segs.append((p, hi))
+            edge = {'n': y1 - h, 's': y0 + h, 'e': x1 - h, 'w': x0 + h}[s]
+            for a, b in segs:
+                if b - a < 8: continue
+                out.append(self.botclip_edge(a, edge, b, edge, z, width, height) if horiz
+                           else self.botclip_edge(edge, a, edge, b, z, width, height))
+        return out
+
+    def water_box(self, mn, mx, tex, nodraw_tex=None, cutters=()):
+        """the water recipe: ONE water box, CSG-carved by everything inside it (water must not overlap solids), only the
+        top surface drawn, every internal face nodraw water (q3map2 only culls exactly coincident faces). Depth <= 48
+        does not drown; deeper water needs 16u steps or a ramp out (lint_map 'water'). Returns the pieces."""
+        nd = nodraw_tex or tex + '_nd'
+        wb = box(mn, mx, tex)
+        pieces = wopmap.carve(wb, list(cutters)) if cutters else [wb]
+        for p in pieces:
+            for f in p.faces: f.tex = tex if f.n[2] > 0.9 and abs(f.d - mx[2]) < 0.5 else nd
+            self.add(p)
+        self.spots.setdefault('water', []).append(dict(mn=list(mn), mx=list(mx), depth=mx[2] - mn[2]))
+        return pieces
+
+    def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None):
+        """big architecture built ONCE as convex brushes and used twice: the visible faces become a custom MD3
+        (woplib.models.solids_mesh) and the same brushes become invisible collision, so bot routes never drift from
+        what players see (az_shapes/padaztec recipe). texfn(centre, normal, poly) -> (shader, uvfn) in WORLD space.
+        The model is stored centred on the pieces' footprint (MD3 +-512 limit) and placed back there. Returns the
+        misc_model entity."""
+        from . import models as ML
+        mn = np.min([b.bounds()[0] for b in brushes], 0); mx = np.max([b.bounds()[1] for b in brushes], 0)
+        o = np.array([(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, mn[2]])
+        X = ML.Model()
+
+        def tf(c, n, poly):
+            r = texfn(c, n, poly)
+            if r is None: return None
+            sh, uvf = r
+            return sh, (lambda p, uvf=uvf: uvf(p))
+        ML.solids_mesh(X, brushes, tf, hidden=hidden)
+        X.shift(o)
+        place = ML.save(name, X)
+        e = self.custom(place, float(o[0]), float(o[1]), float(o[2]), lit=lit, occupy=False)
+        if clip:
+            col = []
+            for b in brushes:
+                c = wopmap.Brush([wopmap.Face(f.pts, clip, (0.5, 0.5)) for f in b.faces], True)
+                col.append(c)
+            self.clipped(col, clip)
+        else:
+            self.reserve(*brushes)
+        return e
+
+    def sky_window(self, wall_mn, wall_mx, hole, inner_tex, sky_tex, jamb_tex=None, glass_tex=None, depth=256, face='n'):
+        """a window through a STRUCTURAL hull wall with a sealed sky box behind it, so an indoor map shows the night sky
+        (and gets q3map_sun/skylight through it) without opening the hull. wall_mn/wall_mx: the wall box (thin along y);
+        hole = (x0, x1, z0, z1); face = the side the room is on ('n' for a south wall). Builds the wall pieces round the
+        hole, the sky box behind (its inner faces sky_tex), and a detail glass pane in the hole when glass_tex is given.
+        Returns the brushes."""
+        (wx0, wy0, wz0), (wx1, wy1, wz1) = wall_mn, wall_mx
+        hx0, hx1, hz0, hz1 = hole
+        assert wx0 < hx0 < hx1 < wx1 and wz0 < hz0 < hz1 < wz1, 'hole must sit inside the wall'
+        jt = jamb_tex or inner_tex
+        out = []
+
+        def wall_piece(mn, mx, jamb_side):
+            t = {k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}
+            t[face] = inner_tex
+            for js in jamb_side: t[js] = jt
+            b = box(mn, mx, t, detail=False); self.add(b); out.append(b)
+        wall_piece((wx0, wy0, wz0), (hx0, wy1, wz1), 'e')
+        wall_piece((hx1, wy0, wz0), (wx1, wy1, wz1), 'w')
+        wall_piece((hx0, wy0, wz0), (hx1, wy1, hz0), ['top'])
+        wall_piece((hx0, wy0, hz1), (hx1, wy1, wz1), ['bot'])
+        # sealed sky box behind the hole (on the side away from the room)
+        if face == 'n': y0, y1 = wy0 - depth, wy0
+        else: y0, y1 = wy1, wy1 + depth
+        bx0, bx1, bz0, bz1 = hx0 - 32, hx1 + 32, hz0 - 32, hz1 + 32
+        sk = lambda inner: dict({k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}, **{inner: sky_tex})
+        far = (y0 - 32, y0) if face == 'n' else (y1, y1 + 32)
+        for mn, mx, inner in (((bx0, far[0], bz0), (bx1, far[1], bz1), 'n' if face == 'n' else 's'),
+                              ((bx0, y0, bz0), (hx0, y1, bz1), 'e'), ((hx1, y0, bz0), (bx1, y1, bz1), 'w'),
+                              ((hx0, y0, bz0), (hx1, y1, hz0), 'top'), ((hx0, y0, hz1), (hx1, y1, bz1), 'bot')):
+            b = box(mn, mx, sk(inner), detail=False); self.add(b); out.append(b)
+        if glass_tex:
+            gy = (wy0 + wy1) / 2
+            b = box((hx0, gy - 2, hz0), (hx1, gy + 2, hz1), glass_tex); self.add(b); out.append(b)
+        self.reserve(((hx0, wy0, hz0), (hx1, wy1, hz1)))
+        return out
 
     def crawl(self, mn, mx):
         """declare an intended crouch-only space (lint_map's headroom check skips it)"""

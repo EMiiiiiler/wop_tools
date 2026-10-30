@@ -178,7 +178,9 @@ class Build:
     def s_sight(self):
         si = self.info.get('sightlines', {})
         b = ','.join(str(v) for v in self.info['bounds'])
-        target = si.get('target_pct', 4.0); worst = 0.0; det = ''
+        # level_target_pct {"<zmax>": pct} relaxes the target for upper levels that look across an open atrium (padfridge
+        # door bins); the floor level keeps target_pct. status compares each level with its own target.
+        target = si.get('target_pct', 4.0); lt = si.get('level_target_pct', {}); worst = 0.0; over = -99.0; det = ''
         for z in si.get('zmax', [64]):
             png = os.path.join(self.out, f'sightlines_{z}.png')
             rc, o, t = self.run([PY, os.path.join(HERE, 'sightlines.py'), self.mapfile, png, f'--bounds={b}', '--zmax', str(z),
@@ -186,10 +188,11 @@ class Build:
                                 log=f'sight_{z}.log')
             m = re.search(r'\(([\d.]+)%\)', o)
             pct = float(m.group(1)) if m else 100.0
-            worst = max(worst, pct)
-            det += f'--- zmax {z}: {pct}%\n' + '\n'.join(o.splitlines()[-10:]) + '\n'
-        return self.set('sight', 'PASS' if worst <= target else ('WARN' if worst <= target + 1.5 else 'FAIL'),
-                        long_ray_pct=worst, target=target, details=det)
+            worst = max(worst, pct); over = max(over, pct - float(lt.get(str(z), target)))
+            det += f'--- zmax {z}: {pct}% (target {lt.get(str(z), target)})\n' + '\n'.join(o.splitlines()[-10:]) + '\n'
+        kw = dict(long_ray_pct=worst, target=target)
+        if lt: kw['level_targets'] = ' '.join(f'{k}:{v}' for k, v in lt.items())
+        return self.set('sight', 'PASS' if over <= 0 else ('WARN' if over <= 1.5 else 'FAIL'), details=det, **kw)
 
     def s_bots(self):
         bi = self.info.get('bots', {}); gt, mins, nb = bi.get('gametype', 0), bi.get('minutes', 3), bi.get('bots', 10)

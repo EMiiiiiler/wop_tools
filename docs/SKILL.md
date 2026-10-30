@@ -98,6 +98,10 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | "Duplicate or Flipped triangle" | thin rounded parts (r 1), coincident parts, shared railing posts | sharp boxes, dedupe |
 | user: "looks boring" / "plain box" | brush blocks for buildings/furniture | custom MD3 + props + lights; the most frequent play-test complaint |
 | user: "secret too obvious" | visible entrance | hide it (underwater tunnel, fireplace, coffin, flour bin, drain) |
+| aas TRAP on a high shelf/tray whose only drop is > 1000u | bspc traces walk-offs only 1000u down | an exit over a lower drop (botclip gap) or a pad (padfridge freezer) |
+| lathe label upside down / mirrored on the contact sheet | revolve() v runs up, image rows run down | flip the image vertically before ML.T (padfridge `reg(lathe=True)`) |
+| lint headroom: crouch-only strip along a ramp | the ramp top passes under the edge of the slab beside it | keep the ramp 64u off the slab edge |
+| sight FAIL only on upper levels of a vertical map | levels look across an open atrium | cover on shelf fronts + tall props in the atrium; then `level_target_pct` in mapinfo |
 
 ## 3. The user's standing rules
 - Fill the map with catalog objects (https://worldofpadman.net/en/tutorials/catalog-map-objects/); main pieces
@@ -190,6 +194,9 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 - Currents: trigger_multiple (wait 0.25-0.5) -> target_push `angles "pitch yaw 0"`; keep zones short, off exits.
 
 ## 9. Water, fog, sky, light (woplib.shaders)
+- `K.water_box(mn, mx, tex, cutters=[...])`: the whole water recipe (one box, carved, top face drawn, the rest nodraw).
+  A shallow puddle standing on a flat floor (<= 24u) passes lint's water check. `SH.slick(name)` = ice (keep it off
+  pad landings and deadly edges); `SH.glass(name, shadow=False)` for glass shelves the lights shine through.
 - Water: ONE box per body carved by everything inside it (`wopmap.carve`); only top faces get the water shader, the
   rest `<name>_nd` (SH.water writes both). **MUST** have 16u steps or a ramp into <= 44u deep water at an exit.
 - Fog "underwater" maps: fog shader on all 6 faces of one brush (`SH.fog`), `q3map_fogDir ( 0 0 -1 )` for a visible top;
@@ -222,7 +229,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 ## 11. Custom MD3s (woplib.models)
 1. `ML.configure(ns, out)`; textures with `ML.T(name, array[, alpha])`; shaders with `ML.S(img, kind, **opt)`.
 2. Meshes with meshlib (revolve/lathe, tube, ellipsoid, rbox, prism, disc) or `solids_mesh()` from convex brush solids
-   (same solids = the weapclip collision; give those shaders `shade=20-30`).
+   (same solids = the weapclip collision; give those shaders `shade=20-30`). `K.solid_piece(name, brushes, texfn)` does
+   both in one call (MD3 stored centred on the footprint, brushes added as weapclip).
 3. `ML.save(name, X)` handles MD3 limits (+-512u: tall models stored round mid-height; < 4000 verts per surface;
    collapsed triangles dropped) and records `PLACE[name]` for `K.custom`/`K.prop`. `ML.save_iqm` for movers.
 4. Lightmapped by default (`spawnflags 4`, `_castshadows 1`); vertex lit (`lit=False`) for alpha foliage.
