@@ -16,7 +16,7 @@ Full pipeline: `wopbuild.py padfridge all --light final`.
   - *Crisper drawers* (floor): walk in through the handle cut-outs; the east drawer is pulled out into the kitchen.
     Lettuce, carrots, tomatoes, celery. Splasher inside the closed west drawer.
   - *Shelf 1* (glass): the cheese wedge (tunnel with the Pad shield, walkable 34-degree slope), jelly, yogurt pots.
-  - *Shelf 2* (glass): egg box, pickle jars, cake stand. Pumper west, Betty east.
+  - *Shelf 2* (glass): egg box, pickle jars, cake stand, pancakes, pizza. Pumper west.
   - *Freezer tray*: frost floor with a slick ice patch, ice cubes, ice cream tub, frozen peas. Imperius (pad only).
   - *Door bins*: three per door. The lower two join shelves 1 and 2 at the fridge front; the top ones are pad-only
     (Balloony east; the butter compartment west).
@@ -29,8 +29,8 @@ Full pipeline: `wopbuild.py padfridge all --light final`.
     stack, floor to shelf 2 on foot; a lift pad from the cheese stack up through the gap into the freezer.
 - **Routes**: ramps (floor <-> shelf 1 <-> shelf 2), door bins <-> shelves, jelly pad (kitchen -> shelf 1), shelf-2 pad,
   lift (shelf 2 -> freezer), two pads to the top bins, carton pad. All in `routes.txt` (aas_check).
-- **Loot ladder**: Imperius freezer (pad) > Balloony east top bin (pad) / Betty shelf 2 > Pumper shelf 2 > Splasher in
-  the drawer > Boaster on the carton roof > Bubble G on the kitchen floor. 3 ammo spots each.
+- **Loot ladder**: Imperius freezer (pad) > Balloony east top bin (pad) / Betty at the bottom of the sink > Pumper shelf 2 > Splasher in
+  the drawer > Boaster on the carton roof > Bubble G on the kitchen floor. 3-4 ammo spots each.
 - **Water**: a 12u spilled-milk puddle standing on the tiles (walk straight out).
 - **Secrets**: walk into the butter compartment in the west door's top bin -> the Deep Freeze (sealed ice cave: Pad
   Power, Revival, Killer Ducks, teleporter back to the kitchen). Squeeze behind the onion sack into the back corner of
