@@ -223,3 +223,8 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - sightlines: eye points inside solids are skipped (grid points on a wall face cast long bogus rays). Vertical maps with
   an open atrium can set mapinfo `sightlines.level_target_pct` per level; keep the floor at 4 %.
 - `preview/bsp2scene.py` falls back to the jsdelivr three.js URL when no `--three` file is given.
+- `MapKit.sky_window()`: a window through a structural hull wall with a sealed sky box behind (padfridge sink window);
+  `secret()` now reserves its trigger volumes so scattered props never cover an entry.
+- Bots holding a holdable (Killer Ducks, Floater) never pick up a second one: holdables in a secret room after a busy
+  holdable elsewhere show 0 pickups in botreport (padfridge Root Cellar Boomies/Bambam) - that is not a routing bug.
+

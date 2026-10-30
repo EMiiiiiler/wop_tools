@@ -344,6 +344,7 @@ class MapKit:
             else: smn[ax], smx[ax] = mn[ax] - 48, mn[ax]
         self.trigger_sound(smn, smx, sound, name + '_snd', wait=2)
         self.teleporter(mn, mx, dest, angle, name)
+        self.occupy(min(mn[0], smn[0]), min(mn[1], smn[1]), max(mx[0], smx[0]), max(mx[1], smx[1]), mn[2], max(mx[2], smx[2]))
         self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=list(dest)))
 
     def hurt(self, mn, mx, dmg=5, **kw):
@@ -470,6 +471,43 @@ class MapKit:
         else:
             self.reserve(*brushes)
         return e
+
+    def sky_window(self, wall_mn, wall_mx, hole, inner_tex, sky_tex, jamb_tex=None, glass_tex=None, depth=256, face='n'):
+        """a window through a STRUCTURAL hull wall with a sealed sky box behind it, so an indoor map shows the night sky
+        (and gets q3map_sun/skylight through it) without opening the hull. wall_mn/wall_mx: the wall box (thin along y);
+        hole = (x0, x1, z0, z1); face = the side the room is on ('n' for a south wall). Builds the wall pieces round the
+        hole, the sky box behind (its inner faces sky_tex), and a detail glass pane in the hole when glass_tex is given.
+        Returns the brushes."""
+        (wx0, wy0, wz0), (wx1, wy1, wz1) = wall_mn, wall_mx
+        hx0, hx1, hz0, hz1 = hole
+        assert wx0 < hx0 < hx1 < wx1 and wz0 < hz0 < hz1 < wz1, 'hole must sit inside the wall'
+        jt = jamb_tex or inner_tex
+        out = []
+
+        def wall_piece(mn, mx, jamb_side):
+            t = {k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}
+            t[face] = inner_tex
+            for js in jamb_side: t[js] = jt
+            b = box(mn, mx, t, detail=False); self.add(b); out.append(b)
+        wall_piece((wx0, wy0, wz0), (hx0, wy1, wz1), 'e')
+        wall_piece((hx1, wy0, wz0), (wx1, wy1, wz1), 'w')
+        wall_piece((hx0, wy0, wz0), (hx1, wy1, hz0), ['top'])
+        wall_piece((hx0, wy0, hz1), (hx1, wy1, wz1), ['bot'])
+        # sealed sky box behind the hole (on the side away from the room)
+        if face == 'n': y0, y1 = wy0 - depth, wy0
+        else: y0, y1 = wy1, wy1 + depth
+        bx0, bx1, bz0, bz1 = hx0 - 32, hx1 + 32, hz0 - 32, hz1 + 32
+        sk = lambda inner: dict({k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}, **{inner: sky_tex})
+        far = (y0 - 32, y0) if face == 'n' else (y1, y1 + 32)
+        for mn, mx, inner in (((bx0, far[0], bz0), (bx1, far[1], bz1), 'n' if face == 'n' else 's'),
+                              ((bx0, y0, bz0), (hx0, y1, bz1), 'e'), ((hx1, y0, bz0), (bx1, y1, bz1), 'w'),
+                              ((hx0, y0, bz0), (hx1, y1, hz0), 'top'), ((hx0, y0, hz1), (hx1, y1, bz1), 'bot')):
+            b = box(mn, mx, sk(inner), detail=False); self.add(b); out.append(b)
+        if glass_tex:
+            gy = (wy0 + wy1) / 2
+            b = box((hx0, gy - 2, hz0), (hx1, gy + 2, hz1), glass_tex); self.add(b); out.append(b)
+        self.reserve(((hx0, wy0, hz0), (hx1, wy1, hz1)))
+        return out
 
     def crawl(self, mn, mx):
         """declare an intended crouch-only space (lint_map's headroom check skips it)"""

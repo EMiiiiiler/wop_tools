@@ -344,3 +344,30 @@ def test_sightlines_skips_eye_points_inside_solids(tmp_path):
     rc, o = run('sightlines.py', mp, os.path.join(str(tmp_path), 's.png'), '--bounds=-1024,-1024,1024,1024', '--zmax', '512')
     n = int(o.split('eye points ')[1].split(',')[0])
     assert n == 128, o[-800:]                                      # 16 x 8 grid on the open south half only
+
+
+def test_sky_window_is_sealed_and_lint_clean(tmp_path):
+    """padfridge window over the sink: a hole through the structural wall with a sealed sky box behind it; the wall
+    pieces, sky box and pane never overlap (audit) and the room still has no leak path in the brush set"""
+    def extra(K):
+        # replace the north wall of the test room with a windowed one
+        K.M.world[:] = [b for b in K.M.world if not (b.bounds()[0][1] >= 1023 and b.bounds()[1][2] >= 1000)]
+        out = K.sky_window((-1024, 1024, 0), (1024, 1056, 1024), (-300, 300, 300, 700), 't/wall', 't/sky',
+                           glass_tex='t/glass', face='s')
+        sky = [b for b in out if 't/sky' in b.textures()]
+        assert len(sky) == 5 and all(not b.detail for b in sky)
+        panes = [b for b in out if 't/glass' in b.textures()]
+        (mn, mx), = [p.bounds() for p in panes]
+        assert mn[0] == -300 and mx[0] == 300 and 1024 < mn[1] < mx[1] < 1056
+    mp, K = room(tmp_path, extra=extra)
+    rc, o = run('audit_map.py', mp, '--shaders', str(tmp_path))
+    assert '[overlaps] 0 brush pairs intersect' in o, o[-1500:]
+
+
+def test_secret_entry_is_reserved():
+    """padfridge root cellar: props were nudged onto the secret's trigger; the entry (and its sound trigger) must be
+    occupied so nothing is scattered there"""
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    K.secret((0, 0, 0), (150, 160, 100), dest=(500, 500, 0), angle=0, name='s', approach='e')
+    assert not K.free(100, 80, 10, 0, 50) and not K.free(170, 80, 10, 0, 50)        # entry and sound slab
+    assert K.free(-200, 80, 10, 0, 50)

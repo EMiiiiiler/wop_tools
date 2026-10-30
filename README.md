@@ -8,7 +8,7 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
   `all`), driven by `mapinfo.json`, writes `<out>/report.md` (definition of done). Env: Q3MAP2 BSPC GAME WOPDED THREE.
 - `woplib/` - shared generator library: `kit.MapKit` (occupancy placement, catalog/custom models with collision,
   items, pads, teleports, secrets, movers, stairs, walkable ramps, botclip edges with gaps, carved water boxes,
-  `solid_piece` = convex solids as both MD3 and collision, routes, spots.json), `models` (MD3/IQM + textures + model shader
+  `solid_piece` = convex solids as both MD3 and collision, `sky_window`, routes, spots.json), `models` (MD3/IQM + textures + model shader
   kinds), `shaders` (brush shaders, validated .shader/.arena writers), `padmath`, `wopdata` (WoP facts).
 - `templates/sample/` - reference map that passes every step (`wopbuild.py templates/sample all`).
 - `docs/SKILL.md` - the wop-mapping skill: process, definition of done, symptom -> fix table, all rules.
@@ -88,7 +88,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `padfridge/` - *Midnight Snack* (`wop_padfridge`): FFA inside a giant open French-door fridge at midnight - glass shelves
   and a frosted freezer tray stacked over the crisper drawers, door bins joining the shelves, a back-lane climb of
   chocolate/butter/cracker/cheese ramps with a lift into the freezer, a walk-through Swiss cheese wedge and milk carton,
-  a butter compartment as the door to the secret Deep Freeze; the first map built only on `woplib`, see padfridge/README.md.
+  a kitchen counter with a sink, cupboard, lift and window onto the night sky, two secrets (Deep Freeze, Root Cellar)
+  and neon signs; the first map built only on `woplib`, see padfridge/README.md.
 - `setup_cloud.sh` - builds the toolchain in a fresh cloud session (libjpeg/libxml2, NRC q3map2, wopbspc, wopded).
 - `padbath/` - *Battle in the Bathtub* (`wop_padbath`): CTL map, two toy battleships, func_bobbing ferries bots ride; see padbath/README.md.
 - `playroom/` - *Padman's Playroom* (`wop_padplayroom`): kid's bedroom at Padman scale, see playroom/README.md.
