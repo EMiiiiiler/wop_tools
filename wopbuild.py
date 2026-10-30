@@ -3,14 +3,17 @@
 
     python3 wopbuild.py <map folder> <step> [step ...] [--out DIR] [--light fast|final|"<q3map2 -light options>"]
 
-Steps (in pipeline order; aliases: `check` = gen lint compile aas sight, `all` = check bots render levelshots package):
+Steps (in pipeline order; aliases: `check` = gen lint compile aas lights sight, `all` = check bots render levelshots package):
   gen        run the folder's generator (mapinfo.json "generator") with OUT=<out>
   lint       audit_map + lint_map + pad_check (+ mover_sweep when the map has func_bobbing)      [no compiler needed]
   compile    q3map2 BSP -> VIS -> LIGHT, then bspc (always after -light); fails on a leak; reports portals and warnings
   aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways)
+  lights     light_check: floor brightness from the BSP lightmaps (dark / blown-out walkable areas, lights.png)
   sight      sightlines at each mapinfo "sightlines.zmax" level; fails above "target_pct" (default 4 %)
   bots       wopded with bots (mapinfo "bots"), then botreport (every weapon picked up, secret found)
-  render     bsp2scene walk-through page (<out>/preview.html, --compact when > 16 MB) + screenshots (<out>/shots/)
+  render     bsp2scene walk-through page + screenshots from mapinfo "shots" AND automatic views (preview/autoviews.py:
+             every weapon, secret, pad landing, two overviews); review.png = all of them on one labelled sheet,
+             models.png = contact sheet of the map's custom MD3s
   levelshots WoP levelshots from the screenshots (cover + A + animated B1-B3)
   package    <out>/dist/<map>.pk3 + <map>_source.zip, then pk3_check on both
 Every run updates <out>/report.json and <out>/report.md (a definition-of-done table: what passed, the key numbers).
@@ -22,8 +25,8 @@ PLAYWRIGHT_BROWSERS_PATH for screenshots. The build folder is linked into $GAME/
 import os, sys, re, json, time, shutil, subprocess, argparse, zipfile, glob
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
-ORDER = ['gen', 'lint', 'compile', 'aas', 'sight', 'bots', 'render', 'levelshots', 'package']
-ALIASES = {'check': ['gen', 'lint', 'compile', 'aas', 'sight'], 'all': ORDER}
+ORDER = ['gen', 'lint', 'compile', 'aas', 'lights', 'sight', 'bots', 'render', 'levelshots', 'package']
+ALIASES = {'check': ['gen', 'lint', 'compile', 'aas', 'lights', 'sight'], 'all': ORDER}
 
 
 class Build:
@@ -63,9 +66,19 @@ class Build:
         return r
 
     def set(self, step, status, **kw):
+        old = self.report.get(step, {})
+        change = {}
+        for k, v in kw.items():                      # numbers that moved since the last run of this step
+            o = old.get(k)
+            if isinstance(v, (int, float)) and isinstance(o, (int, float)) and not isinstance(v, bool) and o != v:
+                change[k] = o
+        if old.get('status') and old['status'] != status: change['status'] = old['status']
         self.report[step] = dict(status=status, time=time.strftime('%Y-%m-%d %H:%M'), **kw)
+        if change: self.report[step]['was'] = change
         icon = {'PASS': 'ok', 'FAIL': 'FAIL', 'WARN': 'warn', 'SKIP': 'skip'}[status]
-        print(f'[{step}] {icon} ' + ', '.join(f'{k} {v}' for k, v in kw.items() if k != 'details'))
+        print(f'[{step}] {icon} ' + ', '.join(f'{k} {v}' + (f' (was {change[k]})' if k in change else '')
+                                             for k, v in kw.items() if k != 'details')
+              + (f' (was {change["status"]})' if 'status' in change else ''))
         self.write_report()
         return status != 'FAIL'
 
@@ -75,7 +88,8 @@ class Build:
         for s in ORDER:
             r = self.report.get(s)
             if not r: rows.append(f'| {s} | not run | |'); continue
-            info = '; '.join(f'{k}: {v}' for k, v in r.items() if k not in ('status', 'time', 'details'))
+            info = '; '.join(f'{k}: {v}' + (f' (was {r["was"][k]})' if k in r.get('was', {}) else '')
+                             for k, v in r.items() if k not in ('status', 'time', 'details', 'was'))
             rows.append(f'| {s} | {r["status"]} | {info} |')
         done = all(self.report.get(s, {}).get('status') in ('PASS', 'WARN') for s in ORDER)
         md = (f'# {self.info["longname"]} ({self.map}) - build report\n\n'
@@ -165,6 +179,20 @@ class Build:
         return self.set('compile', status, portals=portals, bsp_mb=round(size, 1), light=self.light, seconds=times,
                         reach_areas=reach[-1] if reach else '?', details='\n'.join(notes + bad_models[:20]))
 
+    def s_lights(self):
+        li = self.info.get('lights', {})
+        bsp = os.path.join(self.out, 'maps', self.map + '.bsp')
+        cmd = [PY, os.path.join(HERE, 'light_check.py'), bsp, '--map', self.mapfile, '--png', os.path.join(self.out, 'lights.png')]
+        aas = os.path.join(self.out, 'maps', self.map + '.aas')
+        if os.path.exists(aas) and os.path.getmtime(aas) >= os.path.getmtime(bsp): cmd += ['--aas', aas]
+        for k in ('dark', 'bright', 'max_dark_pct', 'max_bright_pct'):
+            if k in li: cmd += ['--' + k.replace('_', '-'), str(li[k])]
+        rc, o, t = self.run(cmd, log='lights.log')
+        m = re.search(r'median (\d+), p10 (\d+), p90 (\d+)', o); d = re.search(r'dark \(< [\d.]+\): ([\d.]+) %\s+blown out \(> [\d.]+\): ([\d.]+) %', o)
+        if not m or not d: return self.set('lights', 'FAIL', details=o[-3000:])
+        return self.set('lights', 'PASS' if rc == 0 else 'WARN', median=int(m.group(1)), dark_pct=float(d.group(1)),
+                        bright_pct=float(d.group(2)), details=o[-3000:] + '\nlights.png: top-down floor brightness (red = dark)')
+
     def s_aas(self):
         routes = os.path.join(self.folder, 'routes.txt')
         cmd = [PY, os.path.join(HERE, 'aas_check.py'), os.path.join(self.out, 'maps', self.map + '.aas'), self.mapfile]
@@ -228,7 +256,13 @@ class Build:
         for d in ('textures.pk3dir', 'scripts.pk3dir', 'gfx.pk3dir', 'models.pk3dir', 'env.pk3dir'):
             if os.path.isdir(os.path.join(G, d)): vfs += ['--vfs', os.path.join(G, d)]
         vfs += ['--vfs', self.out]
-        views = ';'.join(pv.get('shots', []))
+        shots = list(pv.get('shots', []))
+        if pv.get('auto_views', True):
+            rc, ov, _ = self.run([PY, os.path.join(HERE, 'preview', 'autoviews.py'), self.mapfile, '--max', str(pv.get('auto_max', 24))],
+                                 log='autoviews.log')
+            have = {v.split(':')[0] for v in shots}
+            shots += [l for l in ov.splitlines() if l and not l.startswith('#') and l.split(':')[0] not in have]
+        views = ';'.join(shots)
         pub = os.path.join(self.out, 'walkthrough.html')
 
         def base(out):
@@ -244,15 +278,27 @@ class Build:
         rc, o2, t2 = self.run(base(pub) + ['--threeurl', os.environ.get('THREEURL', 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js'),
                                       '--compact'], log='render_pub.log')
         mb = os.path.getsize(pub) / 1e6 if os.path.exists(pub) else 0
-        shots = pv.get('shots', [])
         sdir = os.path.join(self.out, 'shots')
         if three and shots:
+            shutil.rmtree(sdir, ignore_errors=True)
             rc, o3, t3 = self.run([PY, os.path.join(HERE, 'preview', 'shoot.py'), page, sdir] + shots, log='shoot.log', timeout=3600)
-        n = len(glob.glob(os.path.join(sdir, '*.png')))
+        pngs = sorted(glob.glob(os.path.join(sdir, '*.png')))
+        n = len(pngs)
+        review = os.path.join(self.out, 'review.png')
+        if pngs:
+            self.run([PY, os.path.join(HERE, 'preview', 'montage.py'), review] + pngs + ['--title', f'{self.info["longname"]} - review'],
+                     log='montage.log')
+        # contact sheet of every custom model of the map (look for black faces, upside-down labels, floating parts)
+        md3s = sorted(glob.glob(os.path.join(self.out, 'models', self.ns, '*.md3')))
+        msheet = os.path.join(self.out, 'models.png')
+        if three and md3s:
+            self.run([PY, os.path.join(HERE, 'preview', 'md3sheet.py'), msheet, '--vfs', self.out, '--three', three] +
+                     md3s[:pv.get("models_max", 48)], log="md3sheet.log", timeout=1800)
         status = 'PASS' if mb and mb <= 16 else 'FAIL'
         return self.set('render', status, walkthrough_mb=round(mb, 1), screenshots=n,
-                        details='walkthrough.html is the page to publish (Artifact); look at every screenshot: stairs, '
-                                'ceilings, caulk holes, floating models, plain boxes' + ('' if mb <= 16 else
+                        details='walkthrough.html is the page to publish (Artifact). READ review.png (every screenshot, '
+                                'labelled) and models.png (every custom MD3): stairs, ceilings, caulk holes, floating models, '
+                                'plain boxes, dark corners, upside-down or mirrored labels' + ('' if mb <= 16 else
                                 '\nover 16 MB: lower preview.texsize / bigtex'))
 
     def s_levelshots(self):
