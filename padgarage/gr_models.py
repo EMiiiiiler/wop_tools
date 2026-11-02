@@ -290,8 +290,10 @@ def car():
         pts = rounded_rect(0, W * (0.86 + 0.14 * k), bot, top, 70 + 40 * (1 - k))
         secs.append([(px, y, pz) for (px, pz) in pts])
 
-    def skip(c, n):          # door opening on the +x side (cut where the door was), sill to belt
-        return n[0] > 0.6 and d0 < c[1] < d1 and CAR['sill'] < c[2] < belt + 5
+    def skip(c, n):          # door opening on the +x side (cut where the door was), sill to belt; and the body
+        if n[0] > 0.6 and d0 < c[1] < d1 and CAR['sill'] < c[2] < belt + 5:   # section's flat top over the cabin
+            return True        # (it closed the cabin like a lid at the belt line: dark lightmaps, no interior)
+        return n[2] > 0.8 and CAR['ws'] + 60 < c[1] < CAR['rear'] - 30 and abs(c[0]) < W * 0.86 - 60
 
     loft(X, secs, lambda n, c: M_['paintside'] if abs(n[2]) < 0.55 else M_['paint'],
          lambda p, n: (p[1] / 600.0, 1 - (p[2] - zb) / (belt - zb)) if abs(n[2]) < 0.55 else (p[1] / 600.0, p[0] / 600.0),
@@ -340,7 +342,8 @@ def car():
     X.add_model(D, rot_z(-ang), (W, d0, 0))
     # interior: carpet floor, trim panels, dash with glovebox, two bucket seats, folded rear bench, steering wheel
     fl = CAR['floor']
-    quad(X.mesh(M_['carpet']), (-W + 50, yb0, fl), (W - 50, yb0, fl), (W - 50, y1, fl), (-W + 50, y1, fl), n=(0, 0, 1),
+    cf = fl + 2                                    # carpet 2u above the collision floor pan's top
+    quad(X.mesh(M_['carpet']), (-W + 50, yb0, cf), (W - 50, yb0, cf), (W - 50, y1, cf), (-W + 50, y1, cf), n=(0, 0, 1),
          uv=((0, 0), (2, 0), (2, 3), (0, 3)))
     rbox(X.mesh(M_['dash']), (-W + 60, yb0, fl), (W - 60, yb0 + 140, belt - 60), r=20, k=2, tile=300)
     quad(X.mesh(M_['glovebox']), (-330, yb0 + 141, belt - 200), (-130, yb0 + 141, belt - 200), (-130, yb0 + 141, belt - 110),
@@ -817,9 +820,12 @@ def solids_tex(key, side_key=None, tile=256.0):
     return f
 
 
+DOOR_W = 1280                     # each of the two roller doors (build_padgarage DOOR / PIER)
+
+
 def build_all():
     car(); engine_hoist(); mower(); tyre_stack(); toolbox(); freezer(); washer(); mop_bucket()
     plank('plank_a', 520); plank('plank_b', 780); plank('plank_c', 960); ladder('ladder', 1520)
     xmas_box('xmas1', 420, 300, 300); xmas_box('xmas2', 300, 300, 240, 'boxlabel'); xmas_box('xmas3', 360, 260, 200)
-    tent_bag(); chilly_bin(); fishing_rods(); roller_door(2880, 700); dinghy(); wheelie_bin(); bike(); hose_reel()
+    tent_bag(); chilly_bin(); fishing_rods(); roller_door(DOOR_W, 700); dinghy(); wheelie_bin(); bike(); hose_reel()
     firewood(); wheelbarrow(); water_tank(); compost(); drum(); outboard(); street_lamp(); hoop(); strip_light(); bulb(); sewer_props(); pegboard_tools(); vice()

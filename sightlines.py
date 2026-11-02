@@ -166,6 +166,14 @@ def main():
         print('hot cells (centre x, y: long rays through it):')
         for c, n in sorted(cnt.items(), key=lambda kv: -kv[1])[:a.hot]:
             print(f'   {c[0] * 128 + 64:6d} {c[1] * 128 + 64:6d}: {n}')
+        # where the long rays START (512u cells): which part of the map needs cover, as a share of all long rays
+        org = {}
+        for i in long_:
+            c = (int(RO[i][0] // 512), int(RO[i][1] // 512)); org[c] = org.get(c, 0) + 1
+        print('long rays by origin (512u cell x0..x1, y0..y1: share of long rays):')
+        for c, n in sorted(org.items(), key=lambda kv: -kv[1])[:a.hot]:
+            print(f'   x {c[0] * 512:6d}..{c[0] * 512 + 512:6d}  y {c[1] * 512:6d}..{c[1] * 512 + 512:6d}: '
+                  f'{100 * n / max(1, len(long_)):4.1f}%')
 
 
 if __name__ == '__main__':

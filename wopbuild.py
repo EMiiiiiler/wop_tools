@@ -7,7 +7,8 @@ Steps (in pipeline order; aliases: `check` = gen lint compile aas lights sight, 
   gen        run the folder's generator (mapinfo.json "generator") with OUT=<out>
   lint       audit_map + lint_map + pad_check (+ mover_sweep when the map has func_bobbing)      [no compiler needed]
   compile    q3map2 BSP -> VIS -> LIGHT, then bspc (always after -light); fails on a leak; reports portals and warnings
-  aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways)
+  aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways) and
+             pad_aas (bspc's own flight for every jump pad lands where intended, not in mid-air)
   lights     light_check: floor brightness from the BSP lightmaps (dark / blown-out walkable areas, lights.png)
   sight      sightlines at each mapinfo "sightlines.zmax" level; fails above "target_pct" (default 4 %)
   bots       wopded with bots (mapinfo "bots"), then botreport (every weapon picked up, secret found)
@@ -200,8 +201,12 @@ class Build:
         rc, o, t = self.run(cmd, log='aas.log')
         bad = [l for l in o.splitlines() if re.search(r'NO AREA|UNREACHABLE|TRAP|blocked|NO PATH', l)]
         nr = len([l for l in o.splitlines() if l.strip().startswith('route ')])
-        return self.set('aas', 'PASS' if rc == 0 else 'FAIL', routes=nr, problems=len(bad),
-                        details='\n'.join(bad[:60]) or '\n'.join(o.splitlines()[-6:]))
+        # bspc's own jump-pad flights (lower and shorter than the game's): every pad must land where intended
+        rc2, o2, _ = self.run([PY, os.path.join(HERE, 'pad_aas.py'), os.path.join(self.out, 'maps', self.map + '.aas'),
+                               self.mapfile], log='pad_aas.log')
+        pbad = [l.strip() for l in o2.splitlines() if l.strip().startswith('FAIL')]
+        return self.set('aas', 'PASS' if rc == 0 and rc2 == 0 else 'FAIL', routes=nr, problems=len(bad), pads_unlinked=len(pbad),
+                        details='\n'.join(bad[:60] + pbad) or '\n'.join(o.splitlines()[-6:]))
 
     def s_sight(self):
         si = self.info.get('sightlines', {})
@@ -346,8 +351,13 @@ def main():
     B = Build(a.folder, a.out, a.light)
     print(f'{B.map}: out {B.out}')
     ok = True
+    stale = None              # a failed build step makes every later check read stale files
     for s in steps:
+        if stale:
+            B.set(s, 'SKIP', details=f'skipped: {stale} failed, its outputs are stale')
+            continue
         if not getattr(B, 's_' + s)():
+            if s in ('gen', 'compile'): stale = s
             ok = False
             print(f'see {os.path.join(B.out, "report.md")} and {s}*.log')
             if not a.keep_going: break

@@ -26,7 +26,12 @@
    1500
   ],
   "min": 1800,
-  "target_pct": 4.0
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "960": 10.0,
+   "1500": 12.0
+  },
+  "_note": "960/1500 levels: the car roof (Pumper) and loft look across the open garage atrium and out of the doors on purpose; the floor stays at 4 %"
  },
  "preview": {
   "title": "Padman's Garage",

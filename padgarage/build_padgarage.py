@@ -44,6 +44,7 @@ def roof_top(x): return roof_under(x) + 32
 
 
 DOOR = (-1440, 1440, 1260)                            # roller door opening x0 x1 top
+PIER = 160                                            # half-width of the pier splitting it into two doors
 DOOR_BOTTOM = 560                                     # curtain hangs down to here (walk under)
 SIDE_DOOR = (1010, 1250, 420)                         # east wall doorway y0 y1 top
 DRIVE_Y0 = -2400                                      # driveway / front lawn edge (hedge beyond)
@@ -159,6 +160,7 @@ def garage_walls():
             ox0, ox1, oz = opening
             piece(GX0 - WT, ox0, 0, top); piece(ox1, GX1 + WT, 0, top)
             piece(ox0, ox1, oz, top)
+            piece(-PIER, PIER, 0, lambda x: oz)           # double garage: brick pier between the two doors
         else:
             piece(GX0 - WT, GX1 + WT, 0, top)
     gable(GY0 - WT, GY0, +1, DOOR)
@@ -193,8 +195,11 @@ def hull_(pts, tf):
 
 
 def roller_door():
-    K.custom(ML.PLACE['rollerdoor'], 0, GY0 + 10, DOOR_BOTTOM, lit=True, occupy=False)
-    as_clip([cbox((DOOR[0], GY0 + 4, DOOR_BOTTOM), (DOOR[1], GY0 + 24, DOOR[2])),
+    for s_ in (-1, 1):
+        K.custom(ML.PLACE['rollerdoor'], s_ * (PIER + DOOR[1]) / 2, GY0 + 10, DOOR_BOTTOM, lit=True, occupy=False)
+    K.reserve(((-PIER, GY0 - WT, 0), (PIER, GY0, DOOR[2])))
+    as_clip([cbox((DOOR[0], GY0 + 4, DOOR_BOTTOM), (-PIER, GY0 + 24, DOOR[2])),
+             cbox((PIER, GY0 + 4, DOOR_BOTTOM), (DOOR[1], GY0 + 24, DOOR[2])),
              cbox((DOOR[0] - 30, GY0 + 24, DOOR[2]), (DOOR[1] + 30, GY0 + 200, EAVE - 41))])
 
 
@@ -257,6 +262,10 @@ def car():
     K.reserve(((hx - 40, hy - 40, 0), (hx + 600, hy + 330, 900)))
     K.route('car_inside', (-360, 1700, FLOOR_C), (cx, CABIN_Y0 + 240, FLOOR_C))
     K.route('under_car', (CAR_X1 + 150, 1200, 0), (cx, 1300, 0))
+    # spare-parts boxes stored under the car (200 tall, flush with the floor pan): the 200u gap under the body was
+    # one long open view at eye height (sightlines)
+    for (x, y, a) in ((-1020, 1000, 0), (-1300, 1550, 90), (-750, 2050, 0), (-1150, 2850, 0)):
+        K.custom(ML.PLACE['xmas3'], x, y, 0, angle=a, boxes=GM.COLL['xmas3']['boxes'])
 
 
 def work_stairs():
@@ -346,8 +355,7 @@ def aisle_props():
 def loft_props():
     """boxes only where the sloping roof leaves headroom (roof_under(|x| + half-width) >= top + 16)"""
     lz = LOFT_Z
-    for (nm, x, y, a) in (('tentbag', -600, 3430, 0), ('xmas1', 350, 3420, 90), ('chilly', -650, 2800, 200),
-                          ('xmas3', -950, 2600, 80)):
+    for (nm, x, y, a) in (('tentbag', -600, 3430, 0), ('xmas1', 350, 3420, 90), ('chilly', -150, 2700, 200)):
         bx = GM.COLL[nm]['boxes']
         hw = max(math.hypot(max(abs(m[0]), abs(M[0])), max(abs(m[1]), abs(M[1]))) for m, M in bx)
         top = lz + max(M[2] for m, M in bx)
@@ -364,12 +372,14 @@ def driveway():
     K.ramp(bx + 320, by - 550, 2150, by - 350, 0, 520, 'w', WCLIP, route='boat_ramp')
     K.custom(ML.PLACE['plank_b'], 2150, by - 450, 2, angle=180, lit=True, occupy=False,
              angles=(round(-math.degrees(math.atan2(520, 2150 - bx - 310)), 1), 180, 0))
+    for y in (by + 450, by - 500):                     # boxes stored under the boat (hull bottom 240): eye-level cover
+        K.custom(ML.PLACE['xmas2'], bx, y, 0, angle=0, boxes=GM.COLL['xmas2']['boxes'])   # 240 tall: no crouch slot
     K.reserve(((bx - 420, by - 900, 0), (bx + 420, by + 900, 560)), ((bx + 300, by - 620, 0), (2200, by - 280, 560)))
+    trailer(-480, -1100)
     K.prop(ML.PLACE['bin'], -1550, -350, 0, boxes=GM.COLL['bin']['boxes'], angle=15)
     K.prop(ML.PLACE['bin'], -1550, -820, 0, boxes=GM.COLL['bin']['boxes'], angle=-10)
-    K.prop(ML.PLACE['bike'], -200, -1300, 0, boxes=GM.COLL['bike']['boxes'], angle=35)
     K.prop(ML.PLACE['reel'], -2040, -700, 0, boxes=GM.COLL['reel']['boxes'], angle=0)
-    K.prop(ML.PLACE['barrow'], -1300, -1400, 0, boxes=GM.COLL['barrow']['boxes'], angle=0)
+    K.prop(ML.PLACE['barrow'], -900, -1950, 0, boxes=GM.COLL['barrow']['boxes'], angle=0)
     K.prop(ML.PLACE['tyres'], 0, -1900, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
     K.custom(ML.PLACE['streetlamp'], 2120, -2250, 0, angle=270, cyls=GM.COLL['lamp']['cyls'])
     K.custom(ML.PLACE['hoop'], 0, GY0 - WT + 10, 1460, angle=0, lit=True, occupy=False)
@@ -383,6 +393,30 @@ def driveway():
     K.catalog('pad_ddmix/trashcan/garbage_bag_group.md3', 2100, 3880, 0, 1.8)
     K.catalog('pad_ddmix/trashcan/bush.md3', -2068, 1000, 0, 0.9)
     K.catalog('pad_ddmix/trashcan/bush.md3', 2068, 2600, 0, 0.9)
+
+
+def trailer(cx, cy):
+    """box trailer parked on the drive (long axis x, drawbar to -x), a load of garden-waste bags; one solid_piece
+    (visible MD3 + the same brushes as weapclip). Driveway cover: the apron is one big open space otherwise."""
+    L, W, DZ, SZ, T_ = 500, 280, 110, 380, 24        # low deck: nobody stands or crawls under it
+    def B(a, b): return cbox((cx + a[0], cy + a[1], a[2]), (cx + b[0], cy + b[1], b[2]))
+    br = [B((-L, -W, 30), (L, W, DZ)),
+          B((-L, -W, DZ), (L, -W + T_, SZ)), B((-L, W - T_, DZ), (L, W, SZ)), B((-L, -W + T_, DZ), (-L + T_, W - T_, SZ)),
+          B((L - T_, -W + T_, DZ), (L, W - T_, DZ + 120)),                       # tailgate (low: you see the load)
+          B((-L - 330, -24, 60), (-L, 24, 90)), B((-L - 300, -14, 0), (-L - 270, 14, 60))]
+    K.solid_piece('trailer', br, GM.solids_tex('trailer'))
+    wh = []                                                                  # wheels: octagon prisms, drawn only;
+    for sy in (-1, 1):                                                       # collision = one box per wheel (no
+        pts = []                                                             # crouch slots under the round)
+        for k in range(8):
+            t = (k + 0.5) * math.pi / 4
+            for y in (sy * (W + 8), sy * (W + 88)):
+                pts.append((cx + 115 * math.cos(t), cy + y, 115 + 115 * math.sin(t)))
+        wh.append(hull_(pts, lambda n: WCLIP))
+        as_clip([B((-115, min(sy * (W + 8), sy * (W + 88)), 0), (115, max(sy * (W + 8), sy * (W + 88)), 221))])
+    K.solid_piece('trailer_wheels', wh, GM.solids_tex('tyre'), clip=None)
+    K.reserve(((cx - L - 330, cy - W - 90, 0), (cx + L, cy + W + 90, SZ)))
+    K.catalog('pad_ddmix/trashcan/garbage_bag_group.md3', cx - 120, cy, DZ, 1.6, clip=False, nudge=False)
 
 
 def den():
@@ -414,17 +448,36 @@ def secret():
 
 
 # ------------------------------------------------------------------------------------------------ gameplay
+def woodshed():
+    """open lean-to woodshed in the west alley: posts along the fence, a flat corrugated roof at 800 over the alley
+    (walk under it), firewood stacked beneath. Its roof is the bots' stepping stone onto the garage roof: no pad from
+    the floor clears the eave inside bspc's 3 s flight (pad_aas.py)."""
+    sx0, sx1, sy0, sy1 = X0 + 24, GX0 - WT - 4, 2480, 3320
+    br = [cbox((sx0, sy0, 760), (sx1, sy1, SHED_Z))]
+    for y in (sy0 + 20, (sy0 + sy1) / 2 - 20, sy1 - 60):
+        br.append(cbox((sx0 + 4, y, 0), (sx0 + 44, y + 40, 760)))
+    K.solid_piece('woodshed', br, GM.solids_tex('alu', 'wood'))
+    K.route('shed_roof', (sx0 + 120, sy0 + 120, SHED_Z), (sx1 - 60, sy1 - 120, SHED_Z))
+
+
+SHED_Z = 800
+
+
 def pads():
+    """every pad checked against bspc's own flight (pad_aas.py), not just pad_check: floor pads top out around the car
+    roof; the loft and the garage roof are reached from the car roof and the woodshed roof"""
     ru = roof_under
-    K.jumppad(-100, 2800, 0, land=(-1000, 2250, ROOF_C), apex=1260, name='pad_carroof', ceiling=EAVE - 40,
-              edges=[(CAR_X1, 2500, ROOF_C)])
-    K.jumppad(300, 1950, 0, land=(300, 2850, LOFT_Z), apex=1740, name='pad_loft', ceiling=ru(300), edges=[(300, LOFT[1], LOFT_Z + 64)])
+    K.jumppad(-100, 2800, 0, land=(-1000, 2500, ROOF_C), apex=1260, name='pad_carroof', ceiling=EAVE - 40,
+              edges=[(CAR_X1, 2600, ROOF_C)])
+    K.jumppad(-1000, 1900, ROOF_C, land=(-1000, 2800, LOFT_Z), apex=1720, name='pad_loft', ceiling=ru(1000),
+              edges=[(-1000, LOFT[1], LOFT_Z)])
     K.jumppad(1150, 1650, 0, land=(1640, 1750, BENCH_Z), apex=780, name='pad_bench')
     K.jumppad(1150, 3050, 0, land=(1665, 3050, SHELF_Z[2]), apex=1440, name='pad_shelf3', ceiling=ru(1665),
               edges=[(SHELF[0], 3050, SHELF_Z[2])])
     K.jumppad(-1650, 3110, 0, land=(-1600, 3460, 510), apex=900, name='pad_washer', ceiling=EAVE - 40)
-    K.jumppad(-1250, -950, 0, land=(-1250, 300, roof_top(1250)), apex=1860, name='pad_roof',
-              edges=[(-1250, GY0 - 100, roof_top(1250))])
+    K.jumppad(-2050, 2270, 0, land=(-2050, 2860, SHED_Z), apex=1260, name='pad_shed', edges=[(-2050, 2480, SHED_Z)])
+    K.jumppad(-2150, 3000, SHED_Z, land=(-1550, 3000, roof_top(1550)), apex=1900, name='pad_roof',
+              edges=[(GX0 - 100, 3000, roof_top(GX1 + 100))])
     rz = roof_top(RIDGE_W) + 4
     K.jumppad(0, 60, rz, land=(0, -800, 0), apex=rz + 100, name='pad_ridge', edges=[(0, GY0 - 100, rz)])
 
@@ -453,7 +506,7 @@ def items():
     K.item('item_armor_shard', 1620, 1550, BENCH_Z)
     K.item('item_speedy', -900, -1600, 0); K.item('holdable_floater', -700, 2700, LOFT_Z)
     K.station(-1600, -2250, 0, ang=45); K.station(700, 3350, 0, ang=270)
-    for (x, y, z, a) in ((-1100, -900, 0, 90), (350, -1450, 0, 90), (500, -2200, 0, 90), (-1900, -1500, 0, 45),
+    for (x, y, z, a) in ((-200, -800, 0, 90), (200, -2150, 0, 90), (500, -2250, 0, 90), (-1900, -1500, 0, 45),
                          (-300, 400, 0, 90), (800, 600, 0, 90), (900, 1900, 0, 180), (0, 2600, 0, 270), (-200, 1150, 0, 0),
                          (2050, 1800, 0, 270), (-2050, 2500, 0, 270), (-1000, 3880, 0, 0), (1200, 3880, 0, 180),
                          (-500, 3100, LOFT_Z, 270), (1640, 2100, BENCH_Z, 270)):
@@ -463,14 +516,14 @@ def items():
 def lights():
     """measured against light_check (raw 128 = neutral): a dense grid under the chords (cold fluorescent), the car,
     cabin and shelves lit on their own, warm loft bulbs; outside blue moonlight (sky) + a warm street lamp and porch
-    lights. The space under the car stays dim on purpose (Pad shield)."""
+    lights. Trouble lights under the car and the boat."""
     over_car = lambda x, y: CAR_X0 - 150 < x < CAR_X1 + 150 and CAR_Y0 - 100 < y < CAR_Y1 + 100
     K.light_grid(GX0 + 100, GY0 + 100, GX1 - 100, LOFT[1] - 50, 1150, 600, 5200, '0.9 0.96 1', skip=over_car)
     K.light_grid(GX0 + 100, LOFT[1] + 50, GX1 - 100, GY1 - 100, 1260, 600, 4000, '0.92 0.96 1', skip=over_car)
     for y in (800, 1500, 2200):
         K.light(CAR[0], y, ROOF_C + 420, 1400, '0.9 0.96 1')
     for y in (CABIN_Y0 + 350, CABIN_Y0 + 1000):
-        K.light(CAR[0], y, 760, 380, '1 0.92 0.8')                      # dome lights in the cabin
+        K.light(CAR[0], y, 720, 1000, '1 0.92 0.8')                      # dome lights in the cabin
     for x in (-1300, -650, 0, 450):
         for y in (2700, 3300):
             z = min(roof_under(abs(x) + 100) - 60, LOFT_Z + 340)
@@ -487,11 +540,17 @@ def lights():
     K.light(1740, -2250, 1900, 2800, '1 0.75 0.45')                        # street lamp head (model turned 270)
     K.light(0, GY0 - 200, 1300, 1600, '1 0.9 0.7')                         # over the roller door
     K.light(2050, (SIDE_DOOR[0] + SIDE_DOOR[1]) / 2, 600, 900, '1 0.9 0.7')
-    for (x, y) in ((-2050, 1000), (-2050, 2800), (2050, 2900), (-900, 3860), (900, 3860)):
-        K.light(x, y, 700, 700, '1 0.88 0.7')                              # porch / garden lights
-    K.light_grid(X0 + 300, DRIVE_Y0 + 200, X1 - 300, GY0 - 200, 900, 1000, 1800, '0.6 0.7 1')
-    for (x, y) in ((-1020, 1760),):
-        K.light(x, y, 120, 140, '0.9 0.95 1')                              # faint light under the car
+    for (x, y) in ((-2050, 1000), (-2050, 2800), (2050, 2900), (2050, 2100), (2050, -400), (-2050, -1350),
+                   (-1100, 3860), (100, 3860), (1300, 3860), (2050, 3800), (-2050, 3700), (-2050, 150), (2050, 1300), (1950, 0)):
+        K.light(x, y, 520, 1100, '1 0.88 0.7')                             # porch / garden lights
+    for (x, y) in ((-2050, 2000), (-1400, -850)):
+        K.light(x, y, 900, 1300, '1 0.88 0.7')                             # above the water tank / wheelie bin
+    for y in (1000, 1700, 2400):
+        K.light(GX0 + 90, y, 1000, 1100, '0.9 0.96 1')                     # the strip between the car and the west wall
+    K.light_grid(X0 + 300, DRIVE_Y0 + 200, X1 - 300, GY0 - 200, 900, 1000, 2300, '0.6 0.7 1')
+    for (x, y) in ((-1250, 1300), (-800, 1750), (-1250, 2250), (-800, 2650), (-1250, 750), (BOAT[0], BOAT[1] - 150),
+                   (BOAT[0] - 200, BOAT[1] - 300), (BOAT[0] + 200, BOAT[1] + 300)):
+        K.light(x, y, 150, 1000, '1 0.85 0.6')                              # trouble lights under the car / boat
     for (x, y) in ((-1000, 1200), (1000, 1200)):
         K.speaker(x, y, 1250, 'machine/transformer')
     K.timer_sound(0, -1800, 800, 'animal/cricket_chirp1', 'crickets', 20, 12)
@@ -509,6 +568,14 @@ def blockers():
     K.prop(ML.PLACE['drum'], 0, 2200, 0, cyls=GM.COLL['drum']['cyls'], angle=0)
     K.prop(ML.PLACE['xmas2'], -450, -450, 0, boxes=GM.COLL['xmas2']['boxes'], angle=-12)
     K.prop(ML.PLACE['outboard'], 2020, -1150, 0, boxes=GM.COLL['outboard']['boxes'], angle=90)
+    # the door axis: rolling toolbox mid-aisle, tyre stack on the threshold, bin and boxes on the apron
+    K.prop(ML.PLACE['toolbox'], 170, 860, 0, boxes=GM.COLL['toolbox']['boxes'], angle=20)
+    K.prop(ML.PLACE['toolbox'], 850, 1450, 0, boxes=GM.COLL['toolbox']['boxes'], angle=-15)
+    K.custom(ML.PLACE['drum'], 0, -214, 0, cyls=GM.COLL['drum']['cyls'])      # rain barrel at the pier: facade cover
+    K.prop(ML.PLACE['bin'], 1640, -300, 0, boxes=GM.COLL['bin']['boxes'], angle=0)
+    K.prop(ML.PLACE['tyres'], 380, -1450, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
+    K.custom(ML.PLACE['xmas3'], -760, 335, 0, angle=0, boxes=GM.COLL['xmas3']['boxes'])   # in front of the bonnet
+    K.prop(ML.PLACE['xmas1'], 2060, 250, 0, boxes=GM.COLL['xmas1']['boxes'], angle=90)  # east alley mouth
     for (x, y, nm, a) in ((2030, 700, 'bin', 0), (2030, 2250, 'tank', 0), (2030, 3350, 'bin', 0),
                           (-2030, 2000, 'tank', 0), (-2000, 3300, 'firewood', 90), (2068, -350, 'reel', 0),
                           (-200, 3855, 'compost', 0), (1700, 3880, 'tank', 0)):
@@ -530,7 +597,7 @@ def ladder_stanza():
 if __name__ == '__main__':
     GM.textures(K)
     GM.build_all()                     # every MD3 (and its shaders) BEFORE the shader file is written
-    hull(); fences(); garage_walls(); roller_door(); loft(); car(); work_stairs(); workshop(); laundry()
+    hull(); fences(); garage_walls(); roller_door(); loft(); car(); work_stairs(); workshop(); laundry(); woodshed()
     aisle_props(); loft_props(); driveway(); den(); secret(); blockers()
     pads(); items(); lights()
     K.fix_items()
