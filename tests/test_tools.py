@@ -480,3 +480,26 @@ def test_light_check_dark_room_fails_lit_room_passes(tmp_path):
     mp = compile_room(d2, lights=True)
     rc, o = run('light_check.py', mp[:-4] + '.bsp', '--map', mp)
     assert rc == 0, o
+
+
+# ------------------------------------------------------------------------------------------------ padgarage: placement by real footprint
+def test_prop_uses_rotated_box_footprint_and_names_blocker():
+    """padgarage: a long thin model (hoist) used to reserve one big circle; the footprint is now its rotated boxes, so
+    a prop fits beside the long side, and a failed placement names the reservation (and the function) in the way"""
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    K.reserve(((-400, -40, 0), (400, 40, 300)))                     # a long thin thing along x
+    boxes = [((-60, -60, 0), (60, 60, 100))]
+    assert K.prop(('models/t/b.md3', 1.0, 0), 0, 150, 0, boxes=boxes, angle=0, search=0) == (0, 150)
+    fp = K.footprint(0, 0, 90, [((-200, -10, 0), (200, 10, 50))])[0]
+    assert abs(fp[0] + 10) < 1e-6 and abs(fp[3] - 200) < 1e-6     # rotated 90: 20 wide in x, 400 long in y
+    n = len(K.notes)
+    assert K.prop(('models/t/b.md3', 1.0, 0), 0, 0, 0, boxes=boxes, angle=0, search=0) is None
+    assert 'test_prop_uses_rotated_box_footprint' in ' '.join(K.notes[n:])
+
+
+def test_sightlines_reports_long_ray_origins(tmp_path):
+    """padgarage: --hot also prints where the long rays START (512u cells), the part of the map that needs cover"""
+    mp, _ = room(tmp_path)
+    rc, o = run('sightlines.py', mp, os.path.join(str(tmp_path), 's.png'), '--bounds=-1024,-1024,1024,1024', '--min', '1200',
+                '--hot', '3')
+    assert 'long rays by origin' in o and '%' in o.split('long rays by origin')[1], o[-800:]

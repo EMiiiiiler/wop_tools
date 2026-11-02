@@ -116,6 +116,10 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | lathe label upside down / mirrored on the contact sheet | revolve() v runs up, image rows run down | flip the image vertically before ML.T (padfridge `reg(lathe=True)`) |
 | lint headroom: crouch-only strip along a ramp | the ramp top passes under the edge of the slab beside it | keep the ramp 64u off the slab edge |
 | sight FAIL only on upper levels of a vertical map | levels look across an open atrium | cover on shelf fronts + tall props in the atrium; then `level_target_pct` in mapinfo |
+| sight stuck high, rays cross props in the picture | eye-level gaps UNDER raised things (car on stands, boat/trailer decks, tables) | fill the gap (boxes stored under, a low deck from z 30); read `long rays by origin` in sight_*.log for where the rays start |
+| sight: one huge doorway | a 3000u door joins two open spaces | split it (a pier: padgarage double door), then props either side |
+| aas pad_aas FAIL "MID-AIR" / far from landing | bspc's own flight (10 % faster, 0.1 s steps, <= 3 s) hit an edge or fell short | more apex / start further back; two-stage access (shed roof, then roof) when one floor pad can't reach in 3 s |
+| a light changes nothing in light_check | light inside a weapclip prop (culled), or a hidden closed surface between light and floor (a lofted body's flat top lid over a car cabin) | lights above props; skip lid faces in `loft(skip=)`; q3map2 log "culled lights" |
 
 ## 3. The user's standing rules
 - Fill the map with catalog objects (https://worldofpadman.net/en/tutorials/catalog-map-objects/); main pieces
@@ -184,6 +188,10 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   their horizontal speed after the apex, so the target sits at t_up/(t_up+t_down) of the way (kit does it).
 - **MUST** keep flight < 2.9 s (bspc predicts ~3 s); >= 20u clearance over edges (pass `edges=`); apex <= ceiling - 40
   under ceilings (pass `ceiling=`). pad_check can pass pads bspc doesn't link: +60-70u apex fixes it.
+- **MUST** read `pad_aas.log` (wopbuild `aas` runs `pad_aas.py`): bspc's own end point for every pad, grounded or not,
+  distance to the intended landing. bspc gives the pad 10 % more horizontal speed, steps 0.1 s, stops at 3 s: floor
+  pads can't reach ~1450u up in time (padgarage roof: a woodshed roof at 800 as the first stage).
+- `K.jumppad` warns when the launch spot is already occupied (a prop placed first); a pad inside a prop has no area.
 - bspc lands a pad where the arc first touches ground: fling pads on small tops go on the far side.
 - Pad up through a hole = lift (target past the hole edge, high apex). Pad onto a cut-away upper level: stay outside
   the front plane until above slab + 24. Pad into an opening behind a ledge: apex at the opening, <= top - 32.

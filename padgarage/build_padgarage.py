@@ -521,7 +521,7 @@ def lights():
     K.light_grid(GX0 + 100, GY0 + 100, GX1 - 100, LOFT[1] - 50, 1150, 600, 5200, '0.9 0.96 1', skip=over_car)
     K.light_grid(GX0 + 100, LOFT[1] + 50, GX1 - 100, GY1 - 100, 1260, 600, 4000, '0.92 0.96 1', skip=over_car)
     for y in (800, 1500, 2200):
-        K.light(CAR[0], y, ROOF_C + 420, 1400, '0.9 0.96 1')
+        K.light(CAR[0], y, ROOF_C + 420, 850, '0.9 0.96 1')
     for y in (CABIN_Y0 + 350, CABIN_Y0 + 1000):
         K.light(CAR[0], y, 720, 1000, '1 0.92 0.8')                      # dome lights in the cabin
     for x in (-1300, -650, 0, 450):
@@ -537,6 +537,7 @@ def lights():
     for (x, y) in ((-1100, 3000), (-200, 3300)):
         K.custom(ML.PLACE['bulb'], x, y, roof_under(x) - 2, lit=False, occupy=False)
     K.light(1650, 2150, 900, 420, '1 0.85 0.6')                            # gooseneck lamp
+    K.light(1700, FREEZER[1], 700, 500, '0.9 0.96 1')                      # over the gap behind the freezer
     K.light(1740, -2250, 1900, 2800, '1 0.75 0.45')                        # street lamp head (model turned 270)
     K.light(0, GY0 - 200, 1300, 1600, '1 0.9 0.7')                         # over the roller door
     K.light(2050, (SIDE_DOOR[0] + SIDE_DOOR[1]) / 2, 600, 900, '1 0.9 0.7')

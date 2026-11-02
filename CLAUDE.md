@@ -232,4 +232,14 @@ Tools and standing rules for building World of Padman (WoP) maps.
   `secret()` now reserves its trigger volumes so scattered props never cover an entry.
 - Bots holding a holdable (Killer Ducks, Floater) never pick up a second one: holdables in a secret room after a busy
   holdable elsewhere show 0 pickups in botreport (padfridge Root Cellar Boomies/Bambam) - that is not a routing bug.
-
+- `pad_aas.py <aas> <map>` (run by wopbuild `aas`) reads bspc's jump-pad reachabilities: FAIL when a pad has no link,
+  ends mid-air or lands > 220u from its spots.json landing. bspc flies pads 10 % faster horizontally in 0.1 s steps for
+  at most 3 s, so floor pads can't reach ~1450u up: padgarage reaches its roof via a woodshed roof (two pads).
+- `K.prop`/`K.custom` reserve the rotated collision boxes (not one circle), and a failed placement names the
+  reservation and function in the way; wopbuild now SKIPs every step after a failed gen/compile (stale outputs).
+- Raised things (car on axle stands, boat on a trailer) leave an eye-level gap under them that sightlines sees
+  through: store boxes under them flush with the underside (padgarage took the floor from 9.3 to 4.0 %); sightlines
+  `--hot` now also lists the 512u cells the long rays start from.
+- `loft()` bodies with closed rounded-rect sections have a flat top: over a car cabin it is a lid (seen from the
+  windows, black cabin lightmap whatever light you add). Skip those faces (padgarage `gr_models.car` skip()).
+- Lights inside a weapclip prop are culled by q3map2 ("culled lights" in light.log) and change nothing.
