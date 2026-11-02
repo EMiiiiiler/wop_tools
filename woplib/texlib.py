@@ -156,7 +156,7 @@ def is_tileable(arr, tol=6.0):
     a = np.asarray(arr, np.float32)
     cols = np.abs(np.diff(a, axis=1)).mean(axis=(0, 2)); rows = np.abs(np.diff(a, axis=0)).mean(axis=(1, 2))
     sx = np.abs(a[:, 0] - a[:, -1]).mean(); sy = np.abs(a[0] - a[-1]).mean()
-    return sx <= np.percentile(cols, 99) + tol and sy <= np.percentile(rows, 99) + tol
+    return sx <= cols.max() + tol and sy <= rows.max() + tol
 
 
 # ================================================================================================= registry
@@ -185,6 +185,8 @@ class Textures:
         assert name == name.lower(), f'texture names must be lower case: {name}'
         assert kind in BRUSH_KINDS, f'kind {kind} not in {BRUSH_KINDS}'
         if name in self.brush: raise ValueError(f'texture {name} added twice')
+        if alpha is not None and np.isscalar(alpha):        # water/glass opacity, not an image alpha channel
+            opt['alpha'] = float(alpha); alpha = None
         if check_tile and kind in ('lm', 'slick') and not is_tileable(arr):
             print(f'  note: texture {name} does not tile (visible seams on big faces); pass check_tile=False if intended')
         size = ML.save_img(self.path(name), arr, alpha)

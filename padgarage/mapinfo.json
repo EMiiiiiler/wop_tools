@@ -1,0 +1,58 @@
+{
+ "map": "wop_padgarage",
+ "ns": "padgarage",
+ "longname": "Padman's Garage",
+ "generator": "build_padgarage.py",
+ "bounds": [
+  -2304,
+  -2560,
+  2304,
+  4100
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   960,
+   1500
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Garage",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:2000,-2400,1900,125,-25",
+   "door:0,-1500,200,90,0",
+   "garage:-200,450,400,90,-8",
+   "workshop:300,1100,700,30,-12",
+   "car:-150,1300,500,140,-12",
+   "cabin:-1020,1650,420,90,-10",
+   "loft:500,2700,1650,180,-15",
+   "laundry:-700,3050,700,150,-25",
+   "shelves:900,2900,900,10,-10",
+   "driveway:-1800,-2300,700,40,-12",
+   "roof:-1600,800,2100,40,-20",
+   "den:0,-300,-1900,90,-5"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "garage",
+   "car",
+   "loft"
+  ]
+ }
+}
