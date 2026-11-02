@@ -52,4 +52,7 @@ Full pipeline: `wopbuild.py padgarage all --light final`.
   crickets and an owl outside, a dog barking on a timer, secret_found.
 
 ## Checks
-(wopbuild report.md; summary pasted when the map ships)
+wopbuild `all --light final` (Nov 2026): lint/audit OK, 0 portals, aas 12 routes OK + every pad linked where intended
+(pad_aas), lights median 77 / dark 5.3 % / bright 3.8 %, sightlines floor 4.0 % (upper levels 9.6 / 11.7 % vs 10 / 12),
+bots 3 min x 10: every weapon picked up (Pumper 20, Imperius 19, Boaster 17), 0 falling deaths; the two armor shards
+(roof ridge, bench) and Balloony/Imperius ammo are rarely taken by bots. pk3_check OK, pk3 3.4 MB.
