@@ -736,7 +736,9 @@ def blockers():
     K.prop(ML.PLACE['tyres'], 380, -1450, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
     K.custom(ML.PLACE['xmas3'], -760, 335, 0, angle=0, boxes=GM.COLL['xmas3']['boxes'])   # in front of the bonnet
     K.prop(ML.PLACE['xmas1'], 2060, 250, 0, boxes=GM.COLL['xmas1']['boxes'], angle=90)  # east alley mouth
-    for (x, y, nm, a) in ((2030, 700, 'bin', 0), (2030, 2250, 'tank', 0), (2030, 3350, 'bin', 0),
+    for (x, y, sc) in ((2056, 700, 1.15), (2056, 3350, 1.15)):          # plants down the side (one bin per house: the drive's)
+        K.catalog('pad_ddmix/trashcan/bush.md3', x, y, 0, sc)
+    for (x, y, nm, a) in ((2030, 2250, 'tank', 0),
                           (-2030, 2000, 'tank', 0), (-2000, 3300, 'firewood', 90), (2068, -350, 'reel', 0),
                           (-200, 3855, 'compost', 0), (1700, 3880, 'tank', 0)):
         c = GM.COLL[nm]
