@@ -12,6 +12,9 @@ Steps (in pipeline order; aliases: `check` = gen lint compile aas lights sight, 
   lights     light_check: floor brightness from the BSP lightmaps (dark / blown-out walkable areas, lights.png)
   sight      sightlines at each mapinfo "sightlines.zmax" level; fails above "target_pct" (default 4 %)
   bots       wopded with bots (mapinfo "bots"), then botreport (every weapon picked up, secret found)
+  quick      fast look before a full build: q3map2 -meta only (no vis, light or bspc; a copy named <map>_quick so the
+             real BSP is untouched), then an unlit, normal-shaded 3D walk-through <out>/quick.html with the mapinfo
+             camera buttons. Seconds to a minute; alias `preview` = gen quick
   render     bsp2scene walk-through page + screenshots from mapinfo "shots" AND automatic views (preview/autoviews.py:
              every weapon, secret, pad landing, two overviews); review.png = all of them on one labelled sheet,
              models.png = contact sheet of the map's custom MD3s
@@ -27,7 +30,7 @@ import os, sys, re, json, time, shutil, subprocess, argparse, zipfile, glob
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
 ORDER = ['gen', 'lint', 'compile', 'aas', 'lights', 'sight', 'bots', 'render', 'levelshots', 'package']
-ALIASES = {'check': ['gen', 'lint', 'compile', 'aas', 'lights', 'sight'], 'all': ORDER}
+ALIASES = {'check': ['gen', 'lint', 'compile', 'aas', 'lights', 'sight'], 'all': ORDER, 'preview': ['gen', 'quick']}
 
 
 class Build:
@@ -86,7 +89,8 @@ class Build:
     def write_report(self):
         json.dump(self.report, open(self.rp, 'w'), indent=1)
         rows = []
-        for s in ORDER:
+        shown = (['quick'] if 'quick' in self.report else []) + ORDER      # quick is not part of the definition of done
+        for s in shown:
             r = self.report.get(s)
             if not r: rows.append(f'| {s} | not run | |'); continue
             info = '; '.join(f'{k}: {v}' + (f' (was {r["was"][k]})' if k in r.get('was', {}) else '')
@@ -96,7 +100,7 @@ class Build:
         md = (f'# {self.info["longname"]} ({self.map}) - build report\n\n'
               f'Definition of done: every step PASS (WARN = looked at and accepted). **{"DONE" if done else "NOT DONE"}**\n\n'
               '| step | status | numbers |\n|---|---|---|\n' + '\n'.join(rows) + '\n')
-        for s in ORDER:
+        for s in shown:
             d = self.report.get(s, {}).get('details')
             if d: md += f'\n## {s}\n```\n{d.strip()[-6000:]}\n```\n'
         open(os.path.join(self.out, 'report.md'), 'w').write(md)
@@ -255,6 +259,36 @@ class Build:
         return self.set('bots', 'FAIL' if rc else ('WARN' if w else 'PASS'), kills=int(k.group(1)) if k else 0,
                         minutes=mins, bots=nb, details=o)
 
+    def s_quick(self):
+        """unlit walk-through from a -meta-only BSP: check the layout, props and look before paying for vis/light/bspc"""
+        if not self.link_into_game():
+            return self.set('quick', 'FAIL', details=f'GAME={self.game} has no wop/ folder')
+        qm = os.path.join(self.out, 'maps', self.map + '_quick.map')
+        shutil.copyfile(self.mapfile, qm)
+        Q = [self.q3map2, '-game', 'quake3', '-fs_basepath', self.game + '/', '-fs_game', 'wop']
+        rc, o, t = self.run(Q + ['-meta', '-custinfoparms', os.path.relpath(qm, self.out)], log='quick_bsp.log', cwd=self.out)
+        leak = 'leaked' in o.lower()
+        if rc: return self.set('quick', 'FAIL', details=o[-3000:])
+        pv = self.info.get('preview', {})
+        G = os.path.join(self.game, 'wop'); vfs = []
+        for d in ('textures.pk3dir', 'scripts.pk3dir', 'gfx.pk3dir', 'models.pk3dir', 'env.pk3dir'):
+            if os.path.isdir(os.path.join(G, d)): vfs += ['--vfs', os.path.join(G, d)]
+        vfs += ['--vfs', self.out]
+        page = os.path.join(self.out, 'quick.html')
+        cmd = [PY, os.path.join(HERE, 'preview', 'bsp2scene.py'), qm[:-4] + '.bsp', page] + vfs + \
+              ['--title', pv.get('title', self.info['longname']) + ' (quick preview)', '--texsize', str(min(128, pv.get('texsize', 256))),
+               '--unlit', '--compact', '--sub', 'Quick preview: -meta only, no lighting or bot paths',
+               '--threeurl', os.environ.get('THREEURL', 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')]
+        if pv.get('shots'): cmd += ['--views', ';'.join(pv['shots'])]
+        rc2, o2, t2 = self.run(cmd, log='quick_render.log')
+        if rc2: return self.set('quick', 'FAIL', details=o2[-3000:])
+        for f in glob.glob(qm[:-4] + '.*'):
+            if not f.endswith('.bsp'): os.remove(f)
+        mb = os.path.getsize(page) / 1e6
+        notes = 'LEAK: the map is not sealed (the full compile will fail)\n' if leak else ''
+        return self.set('quick', 'WARN' if leak else 'PASS', seconds=round(t + t2), page_mb=round(mb, 1),
+                        details=notes + f'{page}\n' + o2[-600:])
+
     def s_render(self):
         pv = self.info.get('preview', {})
         three = os.environ.get('THREE')
@@ -350,7 +384,7 @@ def main():
     steps = []
     for s in a.steps: steps += ALIASES.get(s, [s])
     for s in steps:
-        if s not in ORDER: sys.exit(f'unknown step {s}; steps: {" ".join(ORDER)} (aliases check, all)')
+        if s not in ORDER + ['quick']: sys.exit(f'unknown step {s}; steps: {" ".join(ORDER)} quick (aliases check, all, preview)')
     B = Build(a.folder, a.out, a.light)
     print(f'{B.map}: out {B.out}')
     ok = True

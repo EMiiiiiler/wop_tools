@@ -56,6 +56,8 @@ only about real ambiguity (theme, game types, "keep the old layout?"); otherwise
    kind, lathe=)` per model texture (lathe=True for labels on revolved models); never keep a separate name list.
    Use the `texlib` generators with the map's own palette; write a local function only for theme-unique art.
 
+**2b. Quick look first: `wopbuild.py <folder> preview`** (gen + quick: -meta BSP, unlit walk-through `<out>/quick.html`, about 20 s). Publish it and agree the layout and look with the user before paying for vis, light, bspc and bots; repeat it after every round of tweaks.
+
 **3. Loop `wopbuild.py <folder> check`** (gen, lint, compile, aas, lights, sight) until every step is PASS. Use the
 symptom table (section 2). A WARN is fine only after you looked at it. Every step prints what moved since the last
 run (`sight long_ray_pct 2.8 (was 6.0)`), so you can tell a fix from a regression. lint `boxes` lists plain brush

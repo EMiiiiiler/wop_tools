@@ -24,6 +24,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Read `docs/SKILL.md` (the process, definition of done, symptom -> fix table). It is the source of the wop-mapping skill.
 - `python3 newmap.py wop_x "Name"` scaffolds a folder on `woplib` (MapKit, models, shaders, padmath, wopdata);
   `templates/sample/build.py` is the reference generator. Don't copy a map's `*lib.py` any more.
+- Tweak rounds: `python3 wopbuild.py <folder> preview` (= gen + quick, ~20 s): q3map2 -meta only, then an unlit 3D
+  walk-through `<out>/quick.html` (no vis/light/bspc/bots). Publish that for the user to look at; run the full `check`
+  + `bots render levelshots package` once the layout is agreed (the user asked: full builds cost too much usage).
 - `python3 wopbuild.py <folder> check` (gen lint compile aas lights sight), then `bots render levelshots package`; every run
   writes `<out>/report.md` with what changed since the last run. A map is done when every step is PASS (or a WARN you looked at).
 - `tests/run.sh` must pass after any change to woplib or a checker.

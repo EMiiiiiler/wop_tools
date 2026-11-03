@@ -529,3 +529,17 @@ def test_aas_check_reports_escape_past_the_boundary_clip(tmp_path):
         outs[gap] = o
     assert 'OUT OF BOUNDS' in outs[True], outs[True][-800:]
     assert 'OUT OF BOUNDS' not in outs[False], outs[False][-800:]
+
+
+def test_quick_preview_renders_unlit_meta_bsp(tmp_path):
+    """wopbuild quick: a -meta-only BSP (no vis/light) becomes an unlit, normal-shaded walk-through page in seconds"""
+    if not os.environ.get('Q3MAP2'): pytest.skip('needs Q3MAP2')
+    mp, _ = room(tmp_path)
+    for t in ('floor', 'wall'):
+        ML.save_img(os.path.join(str(tmp_path), 'textures', 't', t), ML.fill(64, (180, 180, 180)))
+    r = subprocess.run([os.environ['Q3MAP2'], '-game', 'quake3', '-meta', mp], capture_output=True, text=True, timeout=600, cwd=str(tmp_path))
+    assert r.returncode == 0, r.stdout[-1500:]
+    page = os.path.join(str(tmp_path), 'quick.html')
+    rc, o = run(os.path.join('preview', 'bsp2scene.py'), mp[:-4] + '.bsp', page, '--vfs', str(tmp_path), '--unlit', '--compact',
+                '--threeurl', 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')
+    assert rc == 0 and os.path.exists(page) and '0 lightmaps' in o, o[-800:]
