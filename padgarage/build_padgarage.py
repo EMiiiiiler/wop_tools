@@ -462,12 +462,8 @@ def driveway():
     K.reserve(((bx - 420, by - 900, 0), (bx + 420, by + 900, 560)), ((bx + 300, by - 620, 0), (2200, by - 280, 560)))
     K.custom(ML.PLACE['suv_white'], -820, -1620, 0, angle=180, boxes=GM.COLL['suv_white']['boxes'])  # nose to the garage
     K.prop(ML.PLACE['bin'], -1550, -350, 0, boxes=GM.COLL['bin']['boxes'], angle=15)
-    K.prop(ML.PLACE['bin'], -1550, -820, 0, boxes=GM.COLL['bin']['boxes'], angle=-10)
     K.prop(ML.PLACE['reel'], -2040, -700, 0, boxes=GM.COLL['reel']['boxes'], angle=0)
-    K.prop(ML.PLACE['barrow'], -150, -2550, 0, boxes=GM.COLL['barrow']['boxes'], angle=0)
-    K.prop(ML.PLACE['tyres'], 450, -2050, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
     K.custom(ML.PLACE['hoop'], 0, GY0 - WT + 10, 1490, angle=0, lit=True, occupy=False)
-    K.catalog('pad_ball/pad_basketball.md3', 400, -700, 0, 1.6, clip=False)
     K.catalog('pad_ddmix/trashcan/tree_summer.md3', -2010, -2050, 0, 1.2, lit=True, clip=False)
     as_clip([cyl(-2010, -2050, 44, 0, 640, WCLIP, 8)])                 # trunk only (the canopy was a walkable box)
     K.catalog('animated/raven_sitting_1.md3', 0, 3300, roof_top(RIDGE_W) + 4, 1.0, angle=90, clip=False, nudge=False)
@@ -521,33 +517,17 @@ def facade():
 
 
 def street():
-    """verge furniture, parked cars, a skip and the roadworks that close both ends of the street. The road is 3000
-    wide: parked cars sit clear of the roadworks and the end barriers (audit overlaps), never across our crossing"""
+    """a clear street (user: the props made it too busy): only ROAD CLOSED barriers at both ends, where the player clip
+    stops you, street trees and lamps on the verges, our front garden wall"""
     zr = ROAD_Z
-    yc_n, yc_f = ROAD[1] - 570, ROAD[0] + 570          # 30u from the kerb: no long view along the gutter                                            # parked car centres
-    for (nm, x, y, a) in (('suv_blue', -2350, yc_n, 90), ('suv_silver', -2350, yc_f, 270), ('suv_red', 2400, yc_f, 270)):
-        K.custom(ML.PLACE[nm], x, y, zr, angle=a, boxes=GM.COLL[nm]['boxes'])
-    K.custom(ML.PLACE['skip'], 2060, ROAD[1] - 540, zr, angle=0, boxes=GM.COLL['skip']['boxes'])   # ours: the garage clear-out
-    # roadworks round a pipe stack in the middle of the road
     ym = (ROAD[0] + ROAD[1]) / 2
-    K.custom(ML.PLACE['pipes'], 200, ym, zr, angle=0, boxes=GM.COLL['pipes']['boxes'])
-    for x in (-400, 800):                                   # the north side: a 2400 run facing our crossing
-        K.custom(ML.PLACE['barrier'], x, ym + 640, zr, angle=0, boxes=GM.COLL['barrier']['boxes'])
-    K.custom(ML.PLACE['skip'], 0, ROAD[0] + 530, zr, angle=0, boxes=GM.COLL['skip']['boxes'])   # renovations over the road
-    for (x, y) in ((-600, ym + 300), (-600, ym - 300), (900, ym + 300), (900, ym - 300)):
-        K.custom(ML.PLACE['cone'], x, y, zr, angle=0, cyls=GM.COLL['cone']['cyls'])
-    # the ends of the street: barriers across the road and along the footpaths, a ROAD CLOSED board, cones
     for sx in (-1, 1):
         xb = sx * (STREET_X - 170)
         for y in (ROAD[1] - 600, ROAD[1] - 1800):
             K.custom(ML.PLACE['barrier'], xb, y, zr, angle=90, boxes=GM.COLL['barrier']['boxes'])
-        K.custom(ML.PLACE['cone'], xb, ROAD[0] + 500, zr, angle=0, cyls=GM.COLL['cone']['cyls'])
-        K.custom(ML.PLACE['cone'], xb, ROAD[0] + 200, zr, angle=0, cyls=GM.COLL['cone']['cyls'])
+        K.custom(ML.PLACE['closedsign'], xb - sx * 230, ym, zr, angle=90, boxes=GM.COLL['closed']['boxes'])
         for y in ((FOOT[0] + FOOT[1]) / 2, (FFOOT[0] + FFOOT[1]) / 2):
             K.custom(ML.PLACE['barrier'], sx * (STREET_X - 650), y, 0, angle=0, boxes=GM.COLL['barrier']['boxes'])
-        K.custom(ML.PLACE['closedsign'], xb - sx * 230, ym, zr, angle=90, boxes=GM.COLL['closed']['boxes'])
-        for y in ((BERM[0] + BERM[1]) / 2, (FBERM[0] + FBERM[1]) / 2):
-            K.custom(ML.PLACE['cone'], xb, y, 0, angle=0, cyls=GM.COLL['cone']['cyls'])
     # verges: street trees, lamps (arms over the road), wheelie bins out for collection, our letterbox
     bm, fm = (BERM[0] + BERM[1]) / 2, (FBERM[0] + FBERM[1]) / 2
     for (x, y) in ((-2900, bm), (3300, bm), (-1500, fm), (1500, fm)):
@@ -557,25 +537,8 @@ def street():
         K.custom(ML.PLACE['streetlamp'], x, y, 0, angle=a, cyls=GM.COLL['lamp']['cyls'])
         off = -380 if a == 0 else 380
         K.light(x, y + off, LAMP_H + 110, 2600, '1 0.78 0.5')
-    for (x, y, z, i) in ((200, ym, 500, 1100), (1300, ym + 300, 500, 900), (-2300, (FOOT[0] + FOOT[1]) / 2, 700, 1300),
-                         (-2900, (FFOOT[0] + FFOOT[1]) / 2, 600, 1700), (-2800, ym + 400, 650, 1700), (3700, ROAD[0] + 400, 700, 1000),
-                         (900, ROAD[0] + 560, 600, 1200), (-1600, DRIVE_Y0 - 60, 650, 1000), (-3300, (FOOT[0] + FOOT[1]) / 2, 650, 1200)):
-        K.light(x, y, z, i, '1 0.72 0.35')                                 # roadworks lamps + porch spill
-    for (x, y, a) in ((900, FOOT[1] - 230, 0), (1360, FOOT[1] - 230, 8), (1800, FOOT[0] + 230, -6), (-2500, FFOOT[1] - 230, 180)):
-        K.custom(ML.PLACE['bin'], x, y, 0, angle=a, boxes=GM.COLL['bin']['boxes'])
-    # inorganic collection: an old couch and a fridge out on the footpath edge west of our crossing
-    K.prop(ML.PLACE['bin'], 2070, -2550, 0, boxes=GM.COLL['bin']['boxes'], angle=0, search=0)
-    K.custom(ML.PLACE['couch'], -1050, FOOT[1] - 330, 0, angle=0, boxes=GM.COLL['couch']['boxes'])
-    K.custom(ML.PLACE['fridge'], -2000, FOOT[0] + 330, 0, angle=0, boxes=GM.COLL['fridge']['boxes'])
-    for (x, yw, a) in ((-2640, DRIVE_Y0, 0), (2640, DRIVE_Y0, 0), (-1900, PY0, 180)):
-        K.custom(ML.PLACE['clump'], x, yw, 0, angle=a, boxes=GM.COLL['clump']['boxes'])
-    for y in (ym - 1, ):
-        K.custom(ML.PLACE['barrier'], 2100, ym, zr, angle=15, boxes=GM.COLL['barrier']['boxes'])
-        K.custom(ML.PLACE['barrier'], -2350, ym, zr, angle=-15, boxes=GM.COLL['barrier']['boxes'])
-    K.custom(ML.PLACE['letterbox'], 2150, DRIVE_Y0 - 120, 0, angle=0, boxes=GM.COLL['letterbox']['boxes'])
-    for (x, y, a) in ((-2100, (BERM[0] + BERM[1]) / 2, 0), (2100, (BERM[0] + BERM[1]) / 2, 0), (-3200, FBERM[1] - 260, 90)):
-        K.custom(ML.PLACE['cabinet'], x, y, 0, angle=a, boxes=GM.COLL['cabinet']['boxes'])   # flank our crossing
-    K.custom(ML.PLACE['shelter'], 1900, (FFOOT[0] + FFOOT[1]) / 2 - 50, 0, angle=180, boxes=GM.COLL['shelter']['boxes'])
+    for (x, y, z, i) in ((-1600, DRIVE_Y0 - 60, 650, 1000), (1600, DRIVE_Y0 - 60, 650, 1000)):
+        K.light(x, y, z, i, '1 0.72 0.35')                                 # spill from the garden wall lamps
     # our front garden wall: low brick with pillars either side of the driveway (the drive itself stays open)
     br = []
     for (xa, xb) in ((X0 + 24, GX0 - WT), (GX1 + WT, X1 - 24)):
@@ -765,15 +728,11 @@ def blockers():
     back strip, the middle of the driveway"""
     for (nm, x, y, a) in (('xmas1', 900, 450, 15), ('xmas2', 760, 860, -10)):           # boxes just inside the door
         K.prop(ML.PLACE[nm], x, y, 0, boxes=GM.COLL[nm]['boxes'], angle=a)
-    K.prop(ML.PLACE['tyres'], 550, -400, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
-    K.prop(ML.PLACE['xmas1'], -1600, -2450, 0, boxes=GM.COLL['xmas1']['boxes'], angle=30)
     K.prop(ML.PLACE['drum'], 0, 2200, 0, cyls=GM.COLL['drum']['cyls'], angle=0)
-    K.prop(ML.PLACE['xmas2'], 100, -560, 0, boxes=GM.COLL['xmas2']['boxes'], angle=-12)
     K.prop(ML.PLACE['outboard'], 2020, -1150, 0, boxes=GM.COLL['outboard']['boxes'], angle=90)
     # the door axis: rolling toolbox mid-aisle, tyre stack on the threshold, bin and boxes on the apron
     K.prop(ML.PLACE['toolbox'], 170, 860, 0, boxes=GM.COLL['toolbox']['boxes'], angle=20)
     K.prop(ML.PLACE['toolbox'], 850, 1450, 0, boxes=GM.COLL['toolbox']['boxes'], angle=-15)
-    K.prop(ML.PLACE['bin'], 1640, -300, 0, boxes=GM.COLL['bin']['boxes'], angle=0)
     K.prop(ML.PLACE['tyres'], 380, -1450, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
     K.custom(ML.PLACE['xmas3'], -760, 335, 0, angle=0, boxes=GM.COLL['xmas3']['boxes'])   # in front of the bonnet
     K.prop(ML.PLACE['xmas1'], 2060, 250, 0, boxes=GM.COLL['xmas1']['boxes'], angle=90)  # east alley mouth

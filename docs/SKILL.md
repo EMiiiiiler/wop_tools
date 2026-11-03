@@ -56,7 +56,16 @@ only about real ambiguity (theme, game types, "keep the old layout?"); otherwise
    kind, lathe=)` per model texture (lathe=True for labels on revolved models); never keep a separate name list.
    Use the `texlib` generators with the map's own palette; write a local function only for theme-unique art.
 
-**2b. Quick look first: `wopbuild.py <folder> preview`** (gen + quick: -meta BSP, unlit walk-through `<out>/quick.html`, about 20 s). Publish it and agree the layout and look with the user before paying for vis, light, bspc and bots; repeat it after every round of tweaks.
+**2b. MUST: review the quick preview with the user before any full build.** `wopbuild.py <folder> preview`
+(= gen + quick, about 20 s) builds a -meta-only BSP (no vis, light, bspc or bots) and an unlit, normal-shaded 3D
+walk-through `<out>/quick.html` with the mapinfo camera buttons; it still reports a leak. Publish it with the Artifact
+tool (republish to the same URL each round) and ask the user to look at layout, scale, props and clutter. Every round
+of tweaks is edit generator -> `preview` -> republish, nothing more. Start step 3 only when the user says the layout is
+right (or the run is unattended and the layout is settled): full builds (vis, final light, bspc, bot matches,
+screenshots) take tens of minutes and cost the user's usage allocation. Fix overlaps the preview can't show by
+running `lint` (no compiler, a minute or two) before showing a round. Night mood and dark corners only show in the
+full build: say so when you share the preview. Don't fill an open space (a street, a yard) with props just to push
+sightlines under 4 %: the user called that "too busy"; keep cover where it reads naturally and accept a looked-at WARN.
 
 **3. Loop `wopbuild.py <folder> check`** (gen, lint, compile, aas, lights, sight) until every step is PASS. Use the
 symptom table (section 2). A WARN is fine only after you looked at it. Every step prints what moved since the last
@@ -79,6 +88,7 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 `claude/wop_<map>_notes.md` project note with new lessons.
 
 ### Definition of done (`report.md` says DONE)
+- review: the user has seen the quick preview (`quick.html`) of the current layout before the full build
 - gen: generator runs with `-W error::RuntimeWarning`, no kit warnings left unexplained
 - lint: `audit_map` RESULT OK, `lint_map` RESULT OK (warnings looked at), `pad_check` every pad lands (t < 2.9 s)
 - compile: no leak, q3map2 read the map's shader (build folder in the VFS), no model load failures, portals low

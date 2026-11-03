@@ -31,11 +31,10 @@ Full pipeline: `wopbuild.py padgarage all --light final`.
   - *Front* (photo reference: stucco walls, white trim with keystones round both doors, three coach lanterns, a
     shingle roof, a white SUV parked nose-in on the driveway): the dinghy on its trailer (plank ramp, boxes under it),
     wheelie bins, hose reel, wheelbarrow, a low brick garden wall either side of the open driveway, basketball hoop.
-  - *Street*: rubbish day and roadworks. Bins and an old couch + fridge (FREE!) out on the footpath, power
-    cabinets and street trees on the verges, parked SUVs, a skip, a pipe stack fenced with barriers in the middle of
-    the road, a bus shelter with a lit PADMAN COLA advert, ROAD CLOSED barriers at both ends. Neighbours' houses (custom
-    MD3s, lit windows) line both sides and close the view at each end of the street; their gardens sit behind low
-    brick walls + hedges with closed gates (scenery, not playable).
+  - *Street*: kept clear (the user found the props too busy): street trees and lamps on the verges, ROAD CLOSED
+    barriers at both ends where the player clip stops you. Neighbours' houses (custom MD3s, lit windows) line both
+    sides and close the view at each end; their gardens sit behind low brick walls + hedges with closed gates
+    (scenery, not playable). The driveway keeps only the SUV, the dinghy, two bins and the hose reel.
   - *Side alleys*: east alley with the side door into the workshop; west alley with a lean-to woodshed: pad onto its
     roof (800), then a pad onto the garage roof (bspc's 3 s flight can't clear the eave from the ground).
   - *Garage roof*: walkable gable, ridge walk 4u proud, nothing blocking shots.
