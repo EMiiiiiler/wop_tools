@@ -19,13 +19,16 @@ from wopmap import box, cyl, hull, sub_rects, sign_box
 from woplib.kit import MapKit, CAULK, WCLIP, CLIP, TRIG
 from woplib import models as ML, shaders as SH
 import gr_models as GM
+import gr_street as GS
 
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MAP, NS, LONG = INFO['map'], INFO['ns'], INFO['longname']
-X0, Y0, X1, Y1 = INFO['bounds']                     # hull inner faces
-ZSKY = 3000
-K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '12', '_color': '0.7 0.78 1'})
+PX0, PY0, PX1, PY1 = INFO['bounds']                 # playable rectangle (sightlines, prop bounds)
+HX0, HY0, HX1, HY1 = INFO['hull']                   # sky hull inner faces (the street runs on past the clip)
+X0, X1, Y1 = -2304, 2304, PY1                       # our lot: side fences and back fence
+ZSKY = 5200
+K = MapKit(MAP, NS, LONG, (PX0, PY0, PX1, PY1), worldspawn={'_ambient': '12', '_color': '0.7 0.78 1', 'gridsize': '192 192 256'})
 T = K.T
 ML.configure(NS, OUT); SH.configure(NS, MAP, LONG)
 
@@ -47,7 +50,13 @@ DOOR = (-1440, 1440, 1260)                            # roller door opening x0 x
 PIER = 160                                            # half-width of the pier splitting it into two doors
 DOOR_BOTTOM = 560                                     # curtain hangs down to here (walk under)
 SIDE_DOOR = (1010, 1250, 420)                         # east wall doorway y0 y1 top
-DRIVE_Y0 = -2400                                      # driveway / front lawn edge (hedge beyond)
+DRIVE_Y0 = -3000                                      # front property line: the footpath starts here
+FOOT = (-3700, DRIVE_Y0)                              # footpath (y0, y1)
+BERM = (-4100, -3700)                                 # grass verge: trees, lamps, bins
+ROAD = (-7100, -4100); ROAD_Z = -16                   # road (kerb 16u: a step, no ramp needed)
+FBERM = (-7500, -7100); FFOOT = (PY0, -7500)          # far verge + far footpath; the far property line is PY0
+STREET_X = PX1                                        # roadworks barriers close the street at +-STREET_X
+ROAD_X = 9300                                         # the road runs on to the houses at the ends of the street
 BACK_Y1 = Y1                                          # back strip y 3632..Y1
 
 CAR = (-1020, 1760)                                   # car centre (model space origin), front = -y
@@ -87,45 +96,121 @@ def as_clip(brushes):
 
 # ------------------------------------------------------------------------------------------------ structure
 def hull():
-    """sealed sky box: floor slab (structural, textured by region), sky walls and ceiling"""
-    fl = lambda top: {'top': T(top), 'side': CAULK, 'bot': CAULK}
-    # floor regions: garage + driveway concrete, lawns, the drain grate in the garage floor
+    """sealed sky box round the whole street (playable part + scenery): structural floor slabs by region, sky walls
+    and ceiling. The road is 16u below the footpath; the verge slabs show their kerb face"""
+    fl = lambda top, side=CAULK: {'top': T(top), 'side': side, 'bot': CAULK}
+    def slab(x0, y0, x1, y1, tex, z=0, side=CAULK):
+        if x1 - x0 > 0.5 and y1 - y0 > 0.5:
+            K.add(box((x0, y0, z - 32), (x1, y1, z), fl(tex, side), detail=False))
     dr = (DRAIN[0] - 64, DRAIN[1] - 64, DRAIN[0] + 64, DRAIN[1] + 64)
     for r in sub_rects((GX0 - WT, GY0, GX1 + WT, GY1 + WT), [dr]):
-        K.add(box((r[0], r[1], -32), (r[2], r[3], 0), fl('concrete'), detail=False))
-    K.add(box((dr[0], dr[1], -32), (dr[2], dr[3], 0), fl('drain'), detail=False))
-    K.add(box((GX0 - WT, DRIVE_Y0, -32), (GX1 + WT, GY0, 0), fl('drive'), detail=False))
-    for (x0, x1) in ((X0 - 32, GX0 - WT), (GX1 + WT, X1 + 32)):
-        K.add(box((x0, DRIVE_Y0, -32), (x1, Y1 + 32, 0), fl('grass'), detail=False))
-    K.add(box((GX0 - WT, GY1 + WT, -32), (GX1 + WT, Y1 + 32, 0), fl('grass'), detail=False))
-    K.add(box((X0 - 32, Y0 - 32, -32), (X1 + 32, DRIVE_Y0, 0), fl('grass'), detail=False))
-    sky = T('sky')
-    K.add(box((X0 - 32, Y0 - 32, 0), (X0, Y1 + 32, ZSKY), tex6(e=sky), detail=False))
-    K.add(box((X1, Y0 - 32, 0), (X1 + 32, Y1 + 32, ZSKY), tex6(w=sky), detail=False))
-    K.add(box((X0, Y0 - 32, 0), (X1, Y0, ZSKY), tex6(n=sky), detail=False))
-    K.add(box((X0, Y1, 0), (X1, Y1 + 32, ZSKY), tex6(s=sky), detail=False))
-    K.add(box((X0 - 32, Y0 - 32, ZSKY), (X1 + 32, Y1 + 32, ZSKY + 32), tex6(bot=sky), detail=False))
+        slab(*r, 'concrete')
+    slab(*dr, 'drain')
+    slab(GX0 - WT, DRIVE_Y0, GX1 + WT, GY0, 'drive')                                    # our driveway
+    slab(X0, DRIVE_Y0, GX0 - WT, Y1, 'grass'); slab(GX1 + WT, DRIVE_Y0, X1, Y1, 'grass')
+    slab(GX0 - WT, GY1 + WT, GX1 + WT, Y1, 'grass')
+    # neighbours' lots (both sides of the street) with their driveways
+    drives = [(x - 800, x + 800) for x in NEIGHBOUR_DRIVES]
+    for (xa, xb) in ((HX0, X0), (X1, HX1)):
+        holes = [(a, DRIVE_Y0, b, NEIGHBOUR_Y) for (a, b) in drives if xa <= a and b <= xb]
+        for r in sub_rects((xa, DRIVE_Y0, xb, Y1), holes): slab(*r, 'lawnfar')
+        for h_ in holes: slab(*h_, 'drive')
+    far = [(x - 800, x + 800) for x in FAR_DRIVES]
+    holes = [(a, FAR_Y, b, PY0) for (a, b) in far]
+    for r in sub_rects((HX0, HY0, HX1, PY0), holes): slab(*r, 'lawnfar')
+    for h_ in holes: slab(*h_, 'drive')
+    # footpaths, verges (driveway crossings in concrete), road; past the road ends: the end houses' lawns
+    for (y0, y1) in (FOOT, FFOOT): slab(HX0, y0, HX1, y1, 'footpath')
+    for (y0, y1, ds) in ((BERM[0], BERM[1], [(GX0 - WT, GX1 + WT)] + drives), (FBERM[0], FBERM[1], far)):
+        holes = [(max(a, -ROAD_X), y0, min(b, ROAD_X), y1) for (a, b) in ds if b > -ROAD_X and a < ROAD_X]
+        for r in sub_rects((-ROAD_X, y0, ROAD_X, y1), holes): slab(*r, 'grass', side=T('kerb'))
+        for h_ in holes: slab(*h_, 'drive', side=T('kerb'))
+    for (xa, xb) in ((HX0, -ROAD_X), (ROAD_X, HX1)): slab(xa, ROAD[0] - 400, xb, BERM[1], 'lawnfar', side=T('kerb'))
+    ym = (ROAD[0] + ROAD[1]) / 2
+    slab(-ROAD_X, ROAD[0], ROAD_X, ym - 12, 'asphalt', ROAD_Z); slab(-ROAD_X, ym + 12, ROAD_X, ROAD[1], 'asphalt', ROAD_Z)
+    x = -ROAD_X
+    while x < ROAD_X:                                                                   # dashed centre line
+        x2 = min(ROAD_X, x + 600)
+        slab(x, ym - 12, min(x + 360, x2), ym + 12, 'roadline', ROAD_Z)
+        if x + 360 < x2: slab(x + 360, ym - 12, x2, ym + 12, 'asphalt', ROAD_Z)
+        x = x2
+    # driveway crossing: a little ramp down the kerb
+    K.add(hull_([(x_, y_, z_) for x_ in (GX0 - WT, GX1 + WT) for (y_, z_) in ((ROAD[1], 0), (ROAD[1], ROAD_Z), (ROAD[1] - 26, ROAD_Z))],
+                lambda n: T('drive') if n[2] > 0.3 else (T('kerb') if abs(n[0]) > 0.9 else CAULK)))
+    sky = T('sky'); zb = ROAD_Z - 32                    # walls reach the road slab's bottom: the slabs seal the floor
+    K.add(box((HX0 - 32, HY0 - 32, zb), (HX0, HY1 + 32, ZSKY), tex6(e=sky), detail=False))
+    K.add(box((HX1, HY0 - 32, zb), (HX1 + 32, HY1 + 32, ZSKY), tex6(w=sky), detail=False))
+    K.add(box((HX0, HY0 - 32, zb), (HX1, HY0, ZSKY), tex6(n=sky), detail=False))
+    K.add(box((HX0, HY1, zb), (HX1, HY1 + 32, ZSKY), tex6(s=sky), detail=False))
+    K.add(box((HX0 - 32, HY0 - 32, ZSKY), (HX1 + 32, HY1 + 32, ZSKY + 32), tex6(bot=sky), detail=False))
 
 
-def fences():
-    """paling fences against the hull (players can't get between), a hedge and a gate across the front"""
+NEIGHBOUR_Y = -300                                    # our side: house fronts (their garages face the street)
+NEIGHBOUR_DRIVES = []                                 # x centres of their driveways (filled by neighbours())
+FAR_Y = -9000                                         # far side: house fronts (facing +y)
+FAR_DRIVES = []
+NEIGHBOURS = [  # (model, x centre, side): side +1 = our side (faces -y), -1 = far side (faces +y)
+    ('house_c', -3800, 1), ('house_e', -7100, 1), ('house_a', -10300, 1),
+    ('house_b', 4000, 1), ('house_d', 7400, 1), ('house_a', 10500, 1),
+    ('house_d', -9200, -1), ('house_a', -6000, -1), ('house_b', -2800, -1), ('house_e', 400, -1),
+    ('house_c', 3600, -1), ('house_a', 6700, -1), ('house_b', 9900, -1),
+]
+
+
+def plan_neighbours():
+    """driveway x per neighbour (from the house's garage side), before hull() lays the slabs"""
+    for (nm, x, side) in NEIGHBOURS:
+        a = next(h for h in GS.HOUSES if h[0] == nm)
+        w, gside = a[1], a[6]
+        gx = x + side * gside * (w / 2 - 200 - 750)          # model is turned 180 on the far side
+        (NEIGHBOUR_DRIVES if side > 0 else FAR_DRIVES).append(gx)
+
+
+def boundary():
+    """our lot: paling fences on both sides and the back (open to the street at the front). The playable area ends at
+    the neighbours' front walls, the far property line and the roadworks barriers at +-STREET_X: low brick walls +
+    hedges with player clip up to the sky, so nobody hops into a garden they can't use (or off the garage roof)."""
     ft = {'side': T('fence'), 'top': T('fence'), 'bot': CAULK}
-    K.add(box((X0, DRIVE_Y0, 0), (X0 + 24, Y1, 1000), dict(ft, w=CAULK)))
-    K.add(box((X1 - 24, DRIVE_Y0, 0), (X1, Y1, 1000), dict(ft, e=CAULK)))
-    K.add(box((X0 + 24, Y1 - 24, 0), (X1 - 24, Y1, 1000), dict(ft, n=CAULK)))
+    K.add(box((X0, DRIVE_Y0, 0), (X0 + 24, Y1 - 24, 1000), ft))
+    K.add(box((X1 - 24, DRIVE_Y0, 0), (X1, Y1 - 24, 1000), ft))
+    K.add(box((HX0, Y1 - 24, 0), (HX1, Y1, 1000), dict(ft, n=CAULK)))                  # back fences (all lots)
     K.reserve(((X0, DRIVE_Y0, 0), (X0 + 24, Y1, 1000)), ((X1 - 24, DRIVE_Y0, 0), (X1, Y1, 1000)),
               ((X0 + 24, Y1 - 24, 0), (X1 - 24, Y1, 1000)))
+    clip = lambda mn, mx: K.add(box(mn, mx, CLIP))
+    clip((X0, DRIVE_Y0, 1000), (X0 + 24, Y1 - 24, ZSKY)); clip((X1 - 24, DRIVE_Y0, 1000), (X1, Y1 - 24, ZSKY))
+    clip((X0 + 24, Y1 - 24, 1000), (X1 - 24, Y1, ZSKY))
+    # neighbours' front walls (our side) and the far property line: brick wall 360 + hedge, gates over their drives
+    bw = {'side': T('brickwall'), 'top': T('kerb'), 'bot': CAULK}
     ht = {'side': T('hedge'), 'top': T('hedge'), 'bot': CAULK}
-    for (a, b) in ((X0, -560), (560, X1)):
-        K.add(box((a, Y0, 0), (b, Y0 + 160, 900), dict(ht, s=CAULK)))
-    K.add(box((-560, Y0, 0), (560, Y0 + 24, 700), dict(ft, s=CAULK)))           # front gate (closed)
-    K.reserve(((X0, Y0, 0), (X1, Y0 + 200, 900)))
+    gt = {'side': T('fence'), 'top': T('fence'), 'bot': CAULK}
+    for (yw, sgn, drives, xs) in ((DRIVE_Y0, 1, NEIGHBOUR_DRIVES, ((HX0, X0), (X1, HX1))),
+                                  (PY0, -1, FAR_DRIVES, ((HX0, HX1),))):
+        ya, yb = (yw, yw + 120) if sgn > 0 else (yw - 120, yw)
+        yh0, yh1 = (yb, yb + 220) if sgn > 0 else (ya - 220, ya)
+        for (xa, xb) in xs:
+            gaps = sorted((d - 800, d + 800) for d in drives if xa <= d <= xb)
+            x = xa
+            for (g0, g1) in gaps + [(xb, xb)]:
+                if g0 > x:
+                    K.add(box((x, ya, 0), (g0, yb, 360), bw))
+                    K.add(box((x, yh0, 0), (g0, yh1, 760), ht))
+                if g1 > g0:
+                    gy = (ya, ya + 40) if sgn > 0 else (yb - 40, yb)              # flush with the street side: no
+                    K.add(box((g0, gy[0], 0), (g1, gy[1], 700), gt))                # walkable slot past the street end
+                x = g1
+            clip((xa, min(ya, yh0), 760), (xb, max(yb, yh1), ZSKY))     # above the hedge: the wall is 360 tall
+            K.reserve(((xa, min(ya, yh0), 0), (xb, max(yb, yh1), ZSKY)))
+    # the street ends: clip across at +-STREET_X (barriers stand just inside, roadworks() places them)
+    for sx in (-1, 1):
+        x0, x1 = (STREET_X, STREET_X + 32) if sx > 0 else (-STREET_X - 32, -STREET_X)
+        clip((x0, PY0, 0), (x1, DRIVE_Y0, ZSKY)); clip((x0, ROAD[0], ROAD_Z), (x1, ROAD[1], 0))
+    K.reserve(((X1, DRIVE_Y0, 0), (PX1, PY1, ZSKY)), ((PX0, DRIVE_Y0, 0), (X0, PY1, ZSKY)))   # neighbours' gardens
 
 
 def garage_walls():
     """detail walls (the sky hull seals the map): side walls with a sloped top, gable walls with the roller-door
     opening and the east side door, roof slabs + a 4u-proud ridge walk, bottom chords (beams) across"""
-    wb = T('weatherboard'); inner = T('wallboard'); tr = T('trim')
+    wb = T('stucco'); inner = T('wallboard'); tr = T('trim')
     # side walls: top follows the roof underside (no overlap with the slabs)
     for s in (-1, 1):
         xi, xo = s * GX1, s * (GX1 + WT)
@@ -172,16 +257,16 @@ def garage_walls():
         for x in (xa, xb):
             for y in (GY0 - 100, GY1 + 100):
                 pts += [(x, y, roof_under(x)), (x, y, roof_top(x))]
-        K.add(hull_(pts, lambda n: T('roofiron') if n[2] > 0.5 else (T('roofunder') if n[2] < -0.5 else tr)))
+        K.add(hull_(pts, lambda n: T('shingles') if n[2] > 0.5 else (T('roofunder') if n[2] < -0.5 else tr)))
     K.add(box((-RIDGE_W, GY0 - 100, roof_under(RIDGE_W)), (RIDGE_W, GY1 + 100, roof_top(RIDGE_W) + 4),
-              {'top': T('roofiron'), 'bot': T('roofunder'), 'side': tr}))
+              {'top': T('shingles'), 'bot': T('roofunder'), 'side': tr}))
     K.route('roof_ridge', (0, 900, roof_top(RIDGE_W) + 4), (0, 3200, roof_top(RIDGE_W) + 4))
     K.route('roof_climb', (-1250, 900, roof_top(1250)), (-200, 900, roof_top(200)))
     # bottom chords across the garage (beams; the loft boards rest on the ones over the back third)
     for y in BEAMS_Y:
         K.add(box((GX0, y - 20, EAVE - 40), (GX1, y + 20, EAVE), T('rafter')))
     # sign over the roller door
-    K.add(sign_box((-620, GY0 - WT - 6, 1290), (620, GY0 - WT, 1420), T('sign'), 1024, 256, back=CAULK, facing='s', edge=T('trim')))
+    K.add(sign_box((-280, GY0 - WT - 6, 1335), (280, GY0 - WT, 1475), T('sign'), 1024, 256, back=CAULK, facing='s', edge=T('trim')))
     K.reserve(((GX0 - WT, GY0 - WT, 0), (GX1 + WT, GY0, 2200)), ((GX0 - WT, GY1, 0), (GX1 + WT, GY1 + WT, 2200)),
               ((GX0 - WT, GY0, 0), (GX0, GY1, 1440)), ((GX1, GY0, 0), (GX1 + WT, GY1, 1440)))
     K.keep_clear(DOOR[0], GY0 - 200, DOOR[1], GY0 + 200, 0)
@@ -195,8 +280,8 @@ def hull_(pts, tf):
 
 
 def roller_door():
-    for s_ in (-1, 1):
-        K.custom(ML.PLACE['rollerdoor'], s_ * (PIER + DOOR[1]) / 2, GY0 + 10, DOOR_BOTTOM, lit=True, occupy=False)
+    for s_ in (-1, 1):                                  # sectional panel doors, raised to DOOR_BOTTOM
+        K.custom(ML.PLACE['paneldoor'], s_ * (PIER + DOOR[1]) / 2, GY0 + 4, DOOR_BOTTOM, lit=True, occupy=False)
     K.reserve(((-PIER, GY0 - WT, 0), (PIER, GY0, DOOR[2])))
     as_clip([cbox((DOOR[0], GY0 + 4, DOOR_BOTTOM), (-PIER, GY0 + 24, DOOR[2])),
              cbox((PIER, GY0 + 4, DOOR_BOTTOM), (DOOR[1], GY0 + 24, DOOR[2])),
@@ -372,17 +457,16 @@ def driveway():
     K.ramp(bx + 320, by - 550, 2150, by - 350, 0, 520, 'w', WCLIP, route='boat_ramp')
     K.custom(ML.PLACE['plank_b'], 2150, by - 450, 2, angle=180, lit=True, occupy=False,
              angles=(round(-math.degrees(math.atan2(520, 2150 - bx - 310)), 1), 180, 0))
-    for y in (by + 450, by - 500):                     # boxes stored under the boat (hull bottom 240): eye-level cover
+    for y in (by + 450, by, by - 500):                 # boxes stored under the boat (hull bottom 240): eye-level cover
         K.custom(ML.PLACE['xmas2'], bx, y, 0, angle=0, boxes=GM.COLL['xmas2']['boxes'])   # 240 tall: no crouch slot
     K.reserve(((bx - 420, by - 900, 0), (bx + 420, by + 900, 560)), ((bx + 300, by - 620, 0), (2200, by - 280, 560)))
-    trailer(-480, -1100)
+    K.custom(ML.PLACE['suv_white'], -820, -1620, 0, angle=180, boxes=GM.COLL['suv_white']['boxes'])  # nose to the garage
     K.prop(ML.PLACE['bin'], -1550, -350, 0, boxes=GM.COLL['bin']['boxes'], angle=15)
     K.prop(ML.PLACE['bin'], -1550, -820, 0, boxes=GM.COLL['bin']['boxes'], angle=-10)
     K.prop(ML.PLACE['reel'], -2040, -700, 0, boxes=GM.COLL['reel']['boxes'], angle=0)
-    K.prop(ML.PLACE['barrow'], -900, -1950, 0, boxes=GM.COLL['barrow']['boxes'], angle=0)
-    K.prop(ML.PLACE['tyres'], 0, -1900, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
-    K.custom(ML.PLACE['streetlamp'], 2120, -2250, 0, angle=270, cyls=GM.COLL['lamp']['cyls'])
-    K.custom(ML.PLACE['hoop'], 0, GY0 - WT + 10, 1460, angle=0, lit=True, occupy=False)
+    K.prop(ML.PLACE['barrow'], -150, -2550, 0, boxes=GM.COLL['barrow']['boxes'], angle=0)
+    K.prop(ML.PLACE['tyres'], 450, -2050, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
+    K.custom(ML.PLACE['hoop'], 0, GY0 - WT + 10, 1490, angle=0, lit=True, occupy=False)
     K.catalog('pad_ball/pad_basketball.md3', 400, -700, 0, 1.6, clip=False)
     K.catalog('pad_ddmix/trashcan/tree_summer.md3', -2010, -2050, 0, 1.2, lit=True, clip=False)
     as_clip([cyl(-2010, -2050, 44, 0, 640, WCLIP, 8)])                 # trunk only (the canopy was a walkable box)
@@ -417,6 +501,115 @@ def trailer(cx, cy):
     K.solid_piece('trailer_wheels', wh, GM.solids_tex('tyre'), clip=None)
     K.reserve(((cx - L - 330, cy - W - 90, 0), (cx + L, cy + W + 90, SZ)))
     K.catalog('pad_ddmix/trashcan/garbage_bag_group.md3', cx - 120, cy, DZ, 1.6, clip=False, nudge=False)
+
+
+def facade():
+    """the photo's front: white trim round both door openings with a keystone over each, coach lanterns either side
+    and on the pier (stucco walls + shingle roof come from garage_walls)"""
+    yf = GY0 - WT                                                                        # facade face (y -32)
+    br = []
+    for (a, b) in ((DOOR[0], -PIER), (PIER, DOOR[1])):
+        br += [cbox((a - 70, yf - 10, 0), (a, yf, DOOR[2] + 70)), cbox((b, yf - 10, 0), (b + 70, yf, DOOR[2] + 70)),
+               cbox((a, yf - 10, DOOR[2]), (b, yf, DOOR[2] + 70))]
+        m = (a + b) / 2
+        br.append(hull_([(x, y, z) for y in (yf - 16, yf) for (x, z) in ((m - 70, DOOR[2] + 70), (m + 70, DOOR[2] + 70),
+                                                                          (m + 90, DOOR[2] + 190), (m - 90, DOOR[2] + 190))], WCLIP))
+    K.solid_piece('facadetrim', br, GM.TX.texfn('trimm'))
+    for x in (DOOR[0] - 230, 0, DOOR[1] + 230):
+        K.custom(ML.PLACE['lantern'], x, yf, 760, angle=0, lit=True, occupy=False)
+        K.light(x, yf - 200, 880, 260, '1 0.82 0.55')
+
+
+def street():
+    """verge furniture, parked cars, a skip and the roadworks that close both ends of the street. The road is 3000
+    wide: parked cars sit clear of the roadworks and the end barriers (audit overlaps), never across our crossing"""
+    zr = ROAD_Z
+    yc_n, yc_f = ROAD[1] - 570, ROAD[0] + 570          # 30u from the kerb: no long view along the gutter                                            # parked car centres
+    for (nm, x, y, a) in (('suv_blue', -2350, yc_n, 90), ('suv_silver', -2350, yc_f, 270), ('suv_red', 2400, yc_f, 270)):
+        K.custom(ML.PLACE[nm], x, y, zr, angle=a, boxes=GM.COLL[nm]['boxes'])
+    K.custom(ML.PLACE['skip'], 2060, ROAD[1] - 540, zr, angle=0, boxes=GM.COLL['skip']['boxes'])   # ours: the garage clear-out
+    # roadworks round a pipe stack in the middle of the road
+    ym = (ROAD[0] + ROAD[1]) / 2
+    K.custom(ML.PLACE['pipes'], 200, ym, zr, angle=0, boxes=GM.COLL['pipes']['boxes'])
+    for x in (-400, 800):                                   # the north side: a 2400 run facing our crossing
+        K.custom(ML.PLACE['barrier'], x, ym + 640, zr, angle=0, boxes=GM.COLL['barrier']['boxes'])
+    K.custom(ML.PLACE['skip'], 0, ROAD[0] + 530, zr, angle=0, boxes=GM.COLL['skip']['boxes'])   # renovations over the road
+    for (x, y) in ((-600, ym + 300), (-600, ym - 300), (900, ym + 300), (900, ym - 300)):
+        K.custom(ML.PLACE['cone'], x, y, zr, angle=0, cyls=GM.COLL['cone']['cyls'])
+    # the ends of the street: barriers across the road and along the footpaths, a ROAD CLOSED board, cones
+    for sx in (-1, 1):
+        xb = sx * (STREET_X - 170)
+        for y in (ROAD[1] - 600, ROAD[1] - 1800):
+            K.custom(ML.PLACE['barrier'], xb, y, zr, angle=90, boxes=GM.COLL['barrier']['boxes'])
+        K.custom(ML.PLACE['cone'], xb, ROAD[0] + 500, zr, angle=0, cyls=GM.COLL['cone']['cyls'])
+        K.custom(ML.PLACE['cone'], xb, ROAD[0] + 200, zr, angle=0, cyls=GM.COLL['cone']['cyls'])
+        for y in ((FOOT[0] + FOOT[1]) / 2, (FFOOT[0] + FFOOT[1]) / 2):
+            K.custom(ML.PLACE['barrier'], sx * (STREET_X - 650), y, 0, angle=0, boxes=GM.COLL['barrier']['boxes'])
+        K.custom(ML.PLACE['closedsign'], xb - sx * 230, ym, zr, angle=90, boxes=GM.COLL['closed']['boxes'])
+        for y in ((BERM[0] + BERM[1]) / 2, (FBERM[0] + FBERM[1]) / 2):
+            K.custom(ML.PLACE['cone'], xb, y, 0, angle=0, cyls=GM.COLL['cone']['cyls'])
+    # verges: street trees, lamps (arms over the road), wheelie bins out for collection, our letterbox
+    bm, fm = (BERM[0] + BERM[1]) / 2, (FBERM[0] + FBERM[1]) / 2
+    for (x, y) in ((-2900, bm), (3300, bm), (-1500, fm), (1500, fm)):
+        K.catalog('pad_ddmix/trashcan/tree_summer.md3', x, y, 0, 1.2, lit=True, clip=False)
+        as_clip([cyl(x, y, 44, 0, 640, WCLIP, 8)])
+    for (x, y, a) in ((-3700, bm, 0), (3750, bm, 0), (-300, fm, 180), (3300, fm, 180)):
+        K.custom(ML.PLACE['streetlamp'], x, y, 0, angle=a, cyls=GM.COLL['lamp']['cyls'])
+        off = -380 if a == 0 else 380
+        K.light(x, y + off, LAMP_H + 110, 2600, '1 0.78 0.5')
+    for (x, y, z, i) in ((200, ym, 500, 1100), (1300, ym + 300, 500, 900), (-2300, (FOOT[0] + FOOT[1]) / 2, 700, 1300),
+                         (-2900, (FFOOT[0] + FFOOT[1]) / 2, 600, 1700), (-2800, ym + 400, 650, 1700), (3700, ROAD[0] + 400, 700, 1000),
+                         (900, ROAD[0] + 560, 600, 1200), (-1600, DRIVE_Y0 - 60, 650, 1000), (-3300, (FOOT[0] + FOOT[1]) / 2, 650, 1200)):
+        K.light(x, y, z, i, '1 0.72 0.35')                                 # roadworks lamps + porch spill
+    for (x, y, a) in ((900, FOOT[1] - 230, 0), (1360, FOOT[1] - 230, 8), (1800, FOOT[0] + 230, -6), (-2500, FFOOT[1] - 230, 180)):
+        K.custom(ML.PLACE['bin'], x, y, 0, angle=a, boxes=GM.COLL['bin']['boxes'])
+    # inorganic collection: an old couch and a fridge out on the footpath edge west of our crossing
+    K.prop(ML.PLACE['bin'], 2070, -2550, 0, boxes=GM.COLL['bin']['boxes'], angle=0, search=0)
+    K.custom(ML.PLACE['couch'], -1050, FOOT[1] - 330, 0, angle=0, boxes=GM.COLL['couch']['boxes'])
+    K.custom(ML.PLACE['fridge'], -2000, FOOT[0] + 330, 0, angle=0, boxes=GM.COLL['fridge']['boxes'])
+    for (x, yw, a) in ((-2640, DRIVE_Y0, 0), (2640, DRIVE_Y0, 0), (-1900, PY0, 180)):
+        K.custom(ML.PLACE['clump'], x, yw, 0, angle=a, boxes=GM.COLL['clump']['boxes'])
+    for y in (ym - 1, ):
+        K.custom(ML.PLACE['barrier'], 2100, ym, zr, angle=15, boxes=GM.COLL['barrier']['boxes'])
+        K.custom(ML.PLACE['barrier'], -2350, ym, zr, angle=-15, boxes=GM.COLL['barrier']['boxes'])
+    K.custom(ML.PLACE['letterbox'], 2150, DRIVE_Y0 - 120, 0, angle=0, boxes=GM.COLL['letterbox']['boxes'])
+    for (x, y, a) in ((-2100, (BERM[0] + BERM[1]) / 2, 0), (2100, (BERM[0] + BERM[1]) / 2, 0), (-3200, FBERM[1] - 260, 90)):
+        K.custom(ML.PLACE['cabinet'], x, y, 0, angle=a, boxes=GM.COLL['cabinet']['boxes'])   # flank our crossing
+    K.custom(ML.PLACE['shelter'], 1900, (FFOOT[0] + FFOOT[1]) / 2 - 50, 0, angle=180, boxes=GM.COLL['shelter']['boxes'])
+    # our front garden wall: low brick with pillars either side of the driveway (the drive itself stays open)
+    br = []
+    for (xa, xb) in ((X0 + 24, GX0 - WT), (GX1 + WT, X1 - 24)):
+        xp = xb if xa < 0 else xa
+        px0, px1 = (xp - 80, xp) if xa < 0 else (xp, xp + 80)
+        wa, wb_ = (xa, px0) if xa < 0 else (px1, xb)
+        br += [cbox((wa, DRIVE_Y0, 0), (wb_, DRIVE_Y0 + 100, 360)), cbox((px0, DRIVE_Y0 - 10, 0), (px1, DRIVE_Y0 + 110, 480))]
+        K.reserve(((xa, DRIVE_Y0 - 10, 0), (xb, DRIVE_Y0 + 110, 480)))
+    K.solid_piece('frontwall', br, lambda c, n, poly: (GM.M_['capm'] if n[2] > 0.7 else GM.M_['brickm'], ML.planar_uv(n, 300.0)))
+    K.route('street', (600, DRIVE_Y0 + 300, 0), (600, ROAD[1] - 300, ROAD_Z))
+
+
+LAMP_H = 3200
+
+
+def neighbours():
+    """the neighbours' houses (scenery past the player clip, no collision), the houses closing both ends of the
+    street, trees in their gardens and scenery street lamps down the road"""
+    for (nm, x, side) in NEIGHBOURS:
+        y = NEIGHBOUR_Y if side > 0 else FAR_Y
+        K.custom(ML.PLACE[nm], x, y, 0, angle=0 if side > 0 else 180, lit=True, occupy=False)
+    for (nm, sx) in (('house_c', 1), ('house_e', -1)):
+        K.custom(ML.PLACE[nm], sx * (ROAD_X + 700), (ROAD[0] + ROAD[1]) / 2, 0, angle=270 if sx > 0 else 90, lit=True, occupy=False)
+    for (x, y) in ((-5600, -1600), (5800, -1700), (-8700, -2100), (8900, -1900), (-4400, -9900), (2000, -10300),
+                   (-7600, -10100), (5200, -10000), (8300, -9800), (11300, -1900), (-11400, -1900)):
+        K.catalog('pad_ddmix/trashcan/tree_summer.md3', x, y, 0, 1.4, lit=True, clip=False, nudge=False)
+    bm, fm = (BERM[0] + BERM[1]) / 2, (FBERM[0] + FBERM[1]) / 2
+    for x in (-8200, -5600, 5600, 8200):
+        for (y, a) in ((bm, 0), (fm, 180)):
+            K.custom(ML.PLACE['streetlamp'], x + (0 if a == 0 else 1300), y, 0, angle=a, lit=True, occupy=False)
+            K.light(x + (0 if a == 0 else 1300), y + (-380 if a == 0 else 380), LAMP_H + 110, 2600, '1 0.78 0.5')
+    for (nm, x, side) in NEIGHBOURS:                                                     # porch lights
+        y = NEIGHBOUR_Y - 300 if side > 0 else FAR_Y + 300
+        K.light(x, y, 900, 500, '1 0.82 0.55')
 
 
 def den():
@@ -494,22 +687,29 @@ def items():
     ammo = {'imperius': [(-1250, 3150, LOFT_Z), (1665, 3450, SHELF_Z[2]), (1500, 3900, 0)],
             'betty': [(-1600, 3480, 510), (2050, 3000, 0), (-300, -2100, 0)],
             'balloony': [(1665, 3300, SHELF_Z[1]), (-2050, 3000, 0), (600, -2150, 0)],
-            'pumper': [(1665, 3150, SHELF_Z[0]), (-1150, -2100, 0), (-1700, 3900, 0)],
+            'pumper': [(1665, 3150, SHELF_Z[0]), (-1650, -1500, 0), (-1700, 3900, 0)],
             'splasher': [(1620, 2000, 0), (-300, 3200, 0), (2050, -800, 0)],
             'boaster': [(-100, 2850, LOFT_Z), (-1700, -1100, 0), (300, 3900, 0)],
-            'bubbleg': [(-500, -500, 0), (700, 1000, 0), (-2050, 100, 0)]}
+            'bubbleg': [(250, -250, 0), (700, 1000, 0), (-2050, 100, 0)]}
+    ym = (ROAD[0] + ROAD[1]) / 2; fp = (FFOOT[0] + FFOOT[1]) / 2; np_ = (FOOT[0] + FOOT[1]) / 2
+    street_ammo = {'imperius': (-3900, fp, 0), 'betty': (-2300, ym, ROAD_Z), 'balloony': (3800, np_, 0),
+                   'pumper': (1250, ROAD[1] - 250, ROAD_Z), 'splasher': (3200, ym, ROAD_Z),
+                   'boaster': (-3300, ROAD[0] + 1300, ROAD_Z), 'bubbleg': (-1900, fp, 0)}
     for w, spots in ammo.items():
-        for (x, y, z) in spots: K.ammo(w, x, y, z)
+        for (x, y, z) in spots + [street_ammo[w]]: K.ammo(w, x, y, z)
     K.ammo('nipper', 1200, -300, 0); K.ammo('nipper', -1600, 2800, 0); K.ammo('nipper', 2050, 2200, 0)
     K.item('item_armor_padshield', cx, 1700, 0)                       # under the car
     K.item('item_armor_shard', 0, 1500, roof_top(RIDGE_W) + 4)      # garage roof: on the flat ridge walk
     K.item('item_armor_shard', 1620, 1550, BENCH_Z)
-    K.item('item_speedy', -900, -1600, 0); K.item('holdable_floater', -700, 2700, LOFT_Z)
-    K.station(-1600, -2250, 0, ang=45); K.station(700, 3350, 0, ang=270)
+    K.item('item_speedy', -150, -1250, 0); K.item('holdable_floater', -700, 2700, LOFT_Z)
+    K.station(-1600, -2250, 0, ang=45); K.station(700, 3350, 0, ang=270); K.station(0, PY0 + 260, 0, ang=90)
+    K.item('item_armor_shard', 2200, ym - 300, ROAD_Z)                # out in the road beside the roadworks
     for (x, y, z, a) in ((-200, -800, 0, 90), (200, -2150, 0, 90), (500, -2250, 0, 90), (-1900, -1500, 0, 45),
                          (-300, 400, 0, 90), (800, 600, 0, 90), (900, 1900, 0, 180), (0, 2600, 0, 270), (-200, 1150, 0, 0),
                          (2050, 1800, 0, 270), (-2050, 2500, 0, 270), (-1000, 3880, 0, 0), (1200, 3880, 0, 180),
-                         (-500, 3100, LOFT_Z, 270), (1640, 2100, BENCH_Z, 270)):
+                         (-500, 3100, LOFT_Z, 270), (1640, 2100, BENCH_Z, 270),
+                         (2050, (FOOT[0] + FOOT[1]) / 2 + 100, 0, 0), (600, (FFOOT[0] + FFOOT[1]) / 2, 0, 180),
+                         (3600, (ROAD[0] + ROAD[1]) / 2 + 200, ROAD_Z, 180), (-3600, (ROAD[0] + ROAD[1]) / 2 - 300, ROAD_Z, 0)):
         K.spawn(x, y, z, a)
 
 
@@ -549,6 +749,7 @@ def lights():
     for y in (1000, 1700, 2400):
         K.light(GX0 + 90, y, 1000, 1100, '0.9 0.96 1')                     # the strip between the car and the west wall
     K.light_grid(X0 + 300, DRIVE_Y0 + 200, X1 - 300, GY0 - 200, 900, 1000, 2300, '0.6 0.7 1')
+    K.light_grid(PX0 + 400, FFOOT[0] + 250, PX1 - 400, FOOT[1] - 100, 1200, 1200, 4500, '0.62 0.7 1')   # the street (moonlight fill)
     for (x, y) in ((-1250, 1300), (-800, 1750), (-1250, 2250), (-800, 2650), (-1250, 750), (BOAT[0], BOAT[1] - 150),
                    (BOAT[0] - 200, BOAT[1] - 300), (BOAT[0] + 200, BOAT[1] + 300)):
         K.light(x, y, 150, 1000, '1 0.85 0.6')                              # trouble lights under the car / boat
@@ -565,14 +766,13 @@ def blockers():
     for (nm, x, y, a) in (('xmas1', 900, 450, 15), ('xmas2', 760, 860, -10)):           # boxes just inside the door
         K.prop(ML.PLACE[nm], x, y, 0, boxes=GM.COLL[nm]['boxes'], angle=a)
     K.prop(ML.PLACE['tyres'], 550, -400, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
-    K.prop(ML.PLACE['xmas1'], -1050, -480, 0, boxes=GM.COLL['xmas1']['boxes'], angle=30)
+    K.prop(ML.PLACE['xmas1'], -1600, -2450, 0, boxes=GM.COLL['xmas1']['boxes'], angle=30)
     K.prop(ML.PLACE['drum'], 0, 2200, 0, cyls=GM.COLL['drum']['cyls'], angle=0)
-    K.prop(ML.PLACE['xmas2'], -450, -450, 0, boxes=GM.COLL['xmas2']['boxes'], angle=-12)
+    K.prop(ML.PLACE['xmas2'], 100, -560, 0, boxes=GM.COLL['xmas2']['boxes'], angle=-12)
     K.prop(ML.PLACE['outboard'], 2020, -1150, 0, boxes=GM.COLL['outboard']['boxes'], angle=90)
     # the door axis: rolling toolbox mid-aisle, tyre stack on the threshold, bin and boxes on the apron
     K.prop(ML.PLACE['toolbox'], 170, 860, 0, boxes=GM.COLL['toolbox']['boxes'], angle=20)
     K.prop(ML.PLACE['toolbox'], 850, 1450, 0, boxes=GM.COLL['toolbox']['boxes'], angle=-15)
-    K.custom(ML.PLACE['drum'], 0, -214, 0, cyls=GM.COLL['drum']['cyls'])      # rain barrel at the pier: facade cover
     K.prop(ML.PLACE['bin'], 1640, -300, 0, boxes=GM.COLL['bin']['boxes'], angle=0)
     K.prop(ML.PLACE['tyres'], 380, -1450, 0, cyls=GM.COLL['tyres']['cyls'], angle=0)
     K.custom(ML.PLACE['xmas3'], -760, 335, 0, angle=0, boxes=GM.COLL['xmas3']['boxes'])   # in front of the bonnet
@@ -598,8 +798,9 @@ def ladder_stanza():
 if __name__ == '__main__':
     GM.textures(K)
     GM.build_all()                     # every MD3 (and its shaders) BEFORE the shader file is written
-    hull(); fences(); garage_walls(); roller_door(); loft(); car(); work_stairs(); workshop(); laundry(); woodshed()
-    aisle_props(); loft_props(); driveway(); den(); secret(); blockers()
+    plan_neighbours(); hull(); boundary(); garage_walls(); roller_door(); facade(); loft(); car(); work_stairs()
+    workshop(); laundry(); woodshed(); aisle_props(); loft_props(); driveway(); street(); neighbours(); den(); secret()
+    blockers()
     pads(); items(); lights()
     K.fix_items()
     shader()

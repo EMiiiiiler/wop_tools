@@ -1,14 +1,16 @@
 # Padman's Garage (wop_padgarage)
 
-FFA (also LPS, team, FT, SYC) in a suburban double garage at night, two roller doors half open onto a moonlit
-driveway. Built on `woplib` + `texlib`. Generator: `wopbuild.py padgarage gen` (or `OUT=<dir> python3 build_padgarage.py`).
+FFA (also LPS, team, FT, SYC) in a suburban double garage at night, two sectional doors half open onto a moonlit
+driveway that runs out to the street (footpath, grass verge, kerb, a two-lane road, the neighbours' houses). Built on `woplib` + `texlib`. Generator: `wopbuild.py padgarage gen` (or `OUT=<dir> python3 build_padgarage.py`).
 Full pipeline: `wopbuild.py padgarage all --light final`.
 
 ## Design sheet
 - **Theme + scale**: Padman scale, ~6 u/cm (1 m = 600u), catalog models at ~1.0 (paint tins, tyre, extinguisher match).
   Cold fluorescent strip lights inside, a warm street lamp and blue moonlight outside.
 - **Playable area**: garage interior 3600 x 3600 (x -1800..1800, y 0..3600), driveway 3600 x 2400 (y -2400..0),
-  side alleys ~470 wide east and west, all inside a sealed sky hull (fences + hedges + neighbours' trees outside).
+  side alleys ~470 wide east and west; in front: footpath (y -3700..-3000), verge, the road (y -7100..-4100, 16u
+  below the kerb), far verge and footpath to y -8200. Playable x -4200..4200 (roadworks close the street); the road and
+  the houses carry on to x +-12400 inside the sky hull, behind player clip (boundary() in build_padgarage.py).
   Levels: floor 0, car cabin 160, car roof ~790, workbench 540, shelving 400 / 800 / 1200, loft 1456, garage roof
   (gable, 22 deg, ridge 2200).
 - **Centrepiece (custom MD3)**: a 1960s station wagon on axle stands in the west bay, driver's door open, rolling
@@ -26,9 +28,14 @@ Full pipeline: `wopbuild.py padgarage all --light final`.
     (steps inside: washboard + soap), mop bucket, detergent.
   - *Loft* (back third, over the rafters' bottom chords at 1440): Christmas boxes, tent bag, sleeping-bag rolls,
     a chilly bin, fishing rods. Ladder for players, pads for bots.
-  - *Driveway*: an aluminium dinghy on a trailer (plank ramp up into the boat, boxes stored under it), a box trailer
-    of garden-waste bags, wheelie bins, hose reel, wheelbarrow, rain barrel at the door pier, street lamp, basketball
-    hoop over the doors.
+  - *Front* (photo reference: stucco walls, white trim with keystones round both doors, three coach lanterns, a
+    shingle roof, a white SUV parked nose-in on the driveway): the dinghy on its trailer (plank ramp, boxes under it),
+    wheelie bins, hose reel, wheelbarrow, a low brick garden wall either side of the open driveway, basketball hoop.
+  - *Street*: rubbish day and roadworks. Bins and an old couch + fridge (FREE!) out on the footpath, power
+    cabinets and street trees on the verges, parked SUVs, a skip, a pipe stack fenced with barriers in the middle of
+    the road, a bus shelter with a lit PADMAN COLA advert, ROAD CLOSED barriers at both ends. Neighbours' houses (custom
+    MD3s, lit windows) line both sides and close the view at each end of the street; their gardens sit behind low
+    brick walls + hedges with closed gates (scenery, not playable).
   - *Side alleys*: east alley with the side door into the workshop; west alley with a lean-to woodshed: pad onto its
     roof (800), then a pad onto the garage roof (bspc's 3 s flight can't clear the eave from the ground).
   - *Garage roof*: walkable gable, ridge walk 4u proud, nothing blocking shots.

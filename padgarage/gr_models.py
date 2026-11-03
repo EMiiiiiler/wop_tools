@@ -43,8 +43,10 @@ def textures(K):
     a('sky', TL.solid((20, 24, 40), 2, 33, 64), 'raw', shader=sky_stanza(K.ns), check_tile=False)
     a('stripglow', TL.solid((240, 248, 255), 1, 34, 64), 'raw', shader=glow_stanza(K.ns, 'stripglow'), check_tile=False)
     TX.add('sign', TL.label("PAD'S GARAGE", 1024, 256, (40, 44, 52), (250, 200, 60), border=(250, 200, 60)), 'sign', check_tile=False)
+    import gr_street as GS
+    GS.textures(TX)
     TX.kit_defaults(pad_rgb=(255, 170, 40), rubber=(40, 40, 44))
-    materials()
+    materials(); GS.materials()
     return TX
 
 
@@ -824,8 +826,10 @@ DOOR_W = 1280                     # each of the two roller doors (build_padgarag
 
 
 def build_all():
+    import gr_street as GS
+    GS.build_all()
     car(); engine_hoist(); mower(); tyre_stack(); toolbox(); freezer(); washer(); mop_bucket()
     plank('plank_a', 520); plank('plank_b', 780); plank('plank_c', 960); ladder('ladder', 1520)
     xmas_box('xmas1', 420, 300, 300); xmas_box('xmas2', 300, 300, 240, 'boxlabel'); xmas_box('xmas3', 360, 260, 200)
-    tent_bag(); chilly_bin(); fishing_rods(); roller_door(DOOR_W, 700); dinghy(); wheelie_bin(); bike(); hose_reel()
-    firewood(); wheelbarrow(); water_tank(); compost(); drum(); outboard(); street_lamp(); hoop(); strip_light(); bulb(); sewer_props(); pegboard_tools(); vice()
+    tent_bag(); chilly_bin(); fishing_rods(); dinghy(); wheelie_bin(); bike(); hose_reel()
+    firewood(); wheelbarrow(); water_tank(); compost(); drum(); outboard(); street_lamp(3200); hoop(); strip_light(); bulb(); sewer_props(); pegboard_tools(); vice()

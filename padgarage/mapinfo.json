@@ -4,9 +4,9 @@
  "longname": "Padman's Garage",
  "generator": "build_padgarage.py",
  "bounds": [
-  -2304,
-  -2560,
-  2304,
+  -4200,
+  -8200,
+  4200,
   4100
  ],
  "arena_types": "ffa lps team ft syc_ffa",
@@ -31,14 +31,18 @@
    "960": 10.0,
    "1500": 12.0
   },
-  "_note": "960/1500 levels: the car roof (Pumper) and loft look across the open garage atrium and out of the doors on purpose; the floor stays at 4 %"
+  "_note": "960/1500 levels: the car roof (Pumper) and loft look across the open garage atrium and out of the doors on purpose. Floor: the street (user request: houses viewable down the street) stays near 5 % after cover on every hot cell"
  },
  "preview": {
   "title": "Padman's Garage",
   "texsize": 256,
   "bigtex": "",
   "shots": [
-   "overview:2000,-2400,1900,125,-25",
+   "overview:3600,-7900,2700,125,-24",
+   "front:2900,-3500,420,148,-3",
+   "street_w:3900,-5500,420,180,1",
+   "street_e:-3900,-5700,420,0,1",
+   "driveway:-1800,-2500,600,40,-10",
    "door:350,-700,260,100,0",
    "garage:-200,450,400,90,-8",
    "workshop:300,1100,700,30,-12",
@@ -47,17 +51,22 @@
    "loft:500,2700,1650,180,-15",
    "laundry:-700,3050,700,150,-25",
    "shelves:900,2900,900,10,-10",
-   "driveway:-1800,-2300,700,40,-12",
    "roof:-1600,800,2100,40,-20",
    "den:0,-300,-1900,90,-5"
   ]
  },
  "levelshots": {
-  "cover": "overview",
+  "cover": "front",
   "shots": [
+   "overview",
    "garage",
-   "car",
-   "loft"
+   "car"
   ]
- }
+ },
+ "hull": [
+  -12400,
+  -12000,
+  12400,
+  4100
+ ]
 }

@@ -92,6 +92,8 @@ def main():
     ap.add_argument('--hot', type=int, default=0, help='print the N 128u floor cells crossed by the most long rays (where a blocker helps most)')
     ap.add_argument('--dirs', type=int, default=16)
     ap.add_argument('--shaders', action='append', default=[], help='dir(s) with scripts/*.shader (classify fog/nonsolid by surfaceparm)')
+    ap.add_argument('--aas', help='maps/X.aas: count only eye points a player can reach from a spawn (gardens behind the '
+                                  'player clip, roofs nobody gets onto)')
     a = ap.parse_args()
     if a.shaders: A.load_shaders(a.shaders); A.add_common_parms()
     x0, y0, x1, y1 = [float(v) for v in a.bounds.split(',')]
@@ -108,6 +110,13 @@ def main():
     for P in planes[:nb]:                       # brushes only (model boxes are shrunken stand-ins)
         ins = np.all(E0 @ P[:, :3].T - P[:, 3] < -0.5, axis=1)
         ok &= ~ins
+    if a.aas:                                   # floors players actually reach (AAS flood from the spawns)
+        import light_check as LC
+        F = np.column_stack([G, floor])
+        idx = np.where(ok)[0]
+        keep = LC.aas_mask(F[idx], a.aas, a.map)
+        ok[idx[~keep]] = False
+        print(f'aas: {int(keep.sum())} of {len(idx)} eye points are reachable')
     E = E0[ok]
     angs = np.arange(a.dirs) * 2 * math.pi / a.dirs
     D = np.array([(math.cos(t), math.sin(t), 0) for t in angs])

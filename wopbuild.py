@@ -214,10 +214,13 @@ class Build:
         # level_target_pct {"<zmax>": pct} relaxes the target for upper levels that look across an open atrium (padfridge
         # door bins); the floor level keeps target_pct. status compares each level with its own target.
         target = si.get('target_pct', 4.0); lt = si.get('level_target_pct', {}); worst = 0.0; over = -99.0; det = ''
+        # eye points only where players can stand (AAS reachable from a spawn): gardens behind the clip don't count
+        aas = os.path.join(self.out, 'maps', self.map + '.aas'); bsp = os.path.join(self.out, 'maps', self.map + '.bsp')
+        aas_arg = ['--aas', aas] if os.path.exists(aas) and os.path.exists(bsp) and os.path.getmtime(aas) >= os.path.getmtime(bsp) else []
         for z in si.get('zmax', [64]):
             png = os.path.join(self.out, f'sightlines_{z}.png')
             rc, o, t = self.run([PY, os.path.join(HERE, 'sightlines.py'), self.mapfile, png, f'--bounds={b}', '--zmax', str(z),
-                                 '--min', str(si.get('min', 1800)), '--hot', '8'] + self.md3roots() + self.shader_dirs(),
+                                 '--min', str(si.get('min', 1800)), '--hot', '8'] + self.md3roots() + self.shader_dirs() + aas_arg,
                                 log=f'sight_{z}.log')
             m = re.search(r'\(([\d.]+)%\)', o)
             pct = float(m.group(1)) if m else 100.0

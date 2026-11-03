@@ -150,6 +150,19 @@ def main():
             print(f'  UNREACHABLE    {c:24s} {[round(v) for v in o]} area {ar}'); bad += 1
         elif ar not in back:
             print(f'  TRAP (no exit) {c:24s} {[round(v) for v in o]} area {ar}'); bad += 1
+    # escapes: grounded areas reachable from a spawn whose centre lies outside the playable bounds (woplib's
+    # spots.json): a gap in the boundary clip (padgarage: a 40u slot in front of a neighbour's gate led past the
+    # roadworks into the scenery street)
+    import os, json as _json
+    spots_p = os.path.splitext(a.map)[0] + '.spots.json'
+    if os.path.exists(spots_p) and _json.load(open(spots_p)).get('bounds'):
+        bx0, by0, bx1, by1 = _json.load(open(spots_p))['bounds']
+        out = [ai for ai in fwd if sets[ai]['flags'] & 1 and not (bx0 - 64 <= areas['c'][ai][0] <= bx1 + 64 and
+                                                               by0 - 64 <= areas['c'][ai][1] <= by1 + 64)]
+        if out:
+            far = max(out, key=lambda ai: max(bx0 - areas['c'][ai][0], areas['c'][ai][0] - bx1, by0 - areas['c'][ai][1], areas['c'][ai][1] - by1))
+            print(f'  OUT OF BOUNDS  {len(out)} reachable area(s) outside the playable bounds, e.g. area {far} at '
+                  f'{[round(float(v)) for v in areas["c"][far]]}: a gap in the boundary clip'); bad += 1
     import heapq
     C = areas['c']
     MN, MX = areas['mins'], areas['maxs']

@@ -243,3 +243,13 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - `loft()` bodies with closed rounded-rect sections have a flat top: over a car cabin it is a lid (seen from the
   windows, black cabin lightmap whatever light you add). Skip those faces (padgarage `gr_models.car` skip()).
 - Lights inside a weapclip prop are culled by q3map2 ("culled lights" in light.log) and change nothing.
+- Streets / open fronts (padgarage street): the playable area can be smaller than the sky hull. Keep mapinfo `bounds` =
+  the playable rectangle and `hull` = the sky box; close the playable edge with `common/clip` (bspc treats playerclip as
+  solid) and make every closed gate flush with the street side: a 40u slot in front of a gate let bots walk past the
+  roadworks. `aas_check` now prints OUT OF BOUNDS for reachable areas outside spots.json bounds, and sightlines/light_check
+  take `--aas` so gardens behind the clip don't count (wopbuild passes it when the .aas is fresh).
+- Huge hulls: drop `gridsize` to 192 192 256 (the light grid was 7.9 MB of a 19 MB BSP) and give scenery-only
+  shaders `q3map_lightmapSampleSize` 32-48 (`TX.add(..., extra=...)`, model materials `sample=`). Never seal the floor
+  with one big brush under the slabs: every column gets a 48u "crouch slot" and lint headroom runs for minutes.
+- Parked cars: hug the kerb (<= 30u) or the gutter strip is a long sightline; cars across a driveway look wrong, so
+  block a driveway mouth with flanking verge cabinets, footpath bins and an inorganic-collection couch instead.

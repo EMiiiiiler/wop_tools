@@ -354,10 +354,19 @@ def check_headroom(BR, bounds, spots, step=16.0):
     for b in solids:
         i0 = max(0, int(np.ceil((b['mn'][0] - xs[0]) / step))); i1 = min(len(xs) - 1, int(np.floor((b['mx'][0] - xs[0]) / step)))
         j0 = max(0, int(np.ceil((b['mn'][1] - ys[0]) / step))); j1 = min(len(ys) - 1, int(np.floor((b['mx'][1] - ys[0]) / step)))
-        for i in range(i0, i1 + 1):
-            for j in range(j0, j1 + 1):
-                iv = column(b, xs[i], ys[j])
-                if iv: cols[(i, j)].append(iv)
+        if i1 < i0 or j1 < j0: continue
+        # all columns of the brush at once (column() per point was minutes on a street-sized map)
+        I, J = np.meshgrid(np.arange(i0, i1 + 1), np.arange(j0, j1 + 1), indexing='ij')
+        X, Y = xs[I], ys[J]
+        lo = np.full(X.shape, -1e9); hi = np.full(X.shape, 1e9); ok = np.ones(X.shape, bool)
+        for n, d in b['P']:
+            nz = n[2]; r = d - n[0] * X - n[1] * Y
+            if abs(nz) < 1e-6: ok &= r >= -0.01
+            elif nz > 0: hi = np.minimum(hi, r / nz)
+            else: lo = np.maximum(lo, r / nz)
+        ok &= hi - lo > 0.01
+        for i, j, l, h in zip(I[ok].tolist(), J[ok].tolist(), lo[ok].tolist(), hi[ok].tolist()):
+            cols[(i, j)].append((l, h))
     merged = {}
     for k, ivs in cols.items():
         ivs.sort(); m = [list(ivs[0])]
