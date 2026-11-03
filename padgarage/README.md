@@ -58,9 +58,9 @@ Full pipeline: `wopbuild.py padgarage all --light final`.
   crickets and an owl outside, a dog barking on a timer, secret_found.
 
 ## Checks
-Final build (Nov 2026, with the street; final light without bounce, which ran over an hour on the street-sized hull):
-lint/audit OK, 1 portal, AAS 13 routes OK, every pad linked where intended, no OUT OF BOUNDS escapes, pk3_check OK
-(pk3 6.7 MB). Sightlines: floor 5.2 % (WARN: the street is a long open road by design; every hot cell got cover:
-skips, roadworks, bins, the couch, cabinets, parked cars hugging the kerb), upper levels 9.5 / 9.8 % (targets 10 / 12).
-Lights median 69, dark 15.7 % (WARN: street shadows between props). Bots: every weapon picked up, 0 falling deaths,
-7.3 kills/min with 10 bots (the bigger map wants 12+ bots); armor shards (ridge, bench, road) not taken by bots.
+Final build (Nov 2026, clear street, final light without bounce): lint/audit OK, 1 portal, AAS 13 routes OK, every pad
+linked where intended, no OUT OF BOUNDS escapes, pk3_check OK (pk3 5.7 MB). Lights median 93, dark 5.5 %.
+Sightlines: floor 25 % of rays over 1800u (FAIL by design: the user asked for a clear street you can see down; the
+props that held it near 5 % were "too busy"). Bots: 9-11 kills/min with 10 bots, no falling deaths; the Splasher moved
+to the driver's footwell (bots never reached the cargo area); the Betty at the bottom of the laundry tub got 1-4
+pickups in earlier runs and 0 in the last two (bots rarely dive for it).
