@@ -119,6 +119,9 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | sight stuck high, rays cross props in the picture | eye-level gaps UNDER raised things (car on stands, boat/trailer decks, tables) | fill the gap (boxes stored under, a low deck from z 30); read `long rays by origin` in sight_*.log for where the rays start |
 | sight: one huge doorway | a 3000u door joins two open spaces | split it (a pier: padgarage double door), then props either side |
 | aas pad_aas FAIL "MID-AIR" / far from landing | bspc's own flight (10 % faster, 0.1 s steps, <= 3 s) hit an edge or fell short | more apex / start further back; two-stage access (shed roof, then roof) when one floor pad can't reach in 3 s |
+| aas OUT OF BOUNDS (bots/players reach the scenery) | a gap in the boundary clip: slot in front of a gate, clip that stops short | gates flush with the playable side, clip to the sky over walls + hedges, one clip line at the street ends |
+| sight/lights count gardens nobody can reach | eye points behind the clip | wopbuild passes `--aas` once the .aas is fresh (sightlines, light_check) |
+| BSP 15-20 MB on a big outdoor hull | light grid over the whole volume, fine lightmaps on scenery | worldspawn `gridsize 192 192 256`; `q3map_lightmapSampleSize` 32-48 on scenery shaders |
 | a light changes nothing in light_check | light inside a weapclip prop (culled), or a hidden closed surface between light and floor (a lofted body's flat top lid over a car cabin) | lights above props; skip lid faces in `loft(skip=)`; q3map2 log "culled lights" |
 
 ## 3. The user's standing rules
