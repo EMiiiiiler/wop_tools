@@ -14,7 +14,7 @@ Tool repo: https://github.com/EMiiiiiler/wop_tools. Use it; never hand-write .ma
 | Piece | What it does |
 |---|---|
 | `newmap.py wop_x "Name"` | scaffolds `<ns>/` with `mapinfo.json`, a working generator on woplib, a design-sheet README |
-| `wopbuild.py <folder> <steps>` | the pipeline: gen, lint, compile, aas, sight, bots, render, levelshots, package; writes `report.md` |
+| `wopbuild.py <folder> <steps>` | the pipeline: gen, lint, compile, aas, sight, bots, render, levelshots, package; writes `report.md`. `preview` (= gen + quick) is the ~20 s unlit walk-through for review rounds |
 | `woplib/kit.py` MapKit | placement with occupancy, catalog/custom models + collision, items, pads, secrets, movers, routes, spots.json |
 | `woplib/models.py` | custom MD3/IQM + procedural textures + model shader kinds (`configure(ns, out)` once) |
 | `woplib/shaders.py` | brush shader stanzas (lm, sky, water, fog, glass, neon, pad, pulse, slick), `.shader` + `.arena` writers (validated) |
@@ -250,7 +250,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 - Glass: GL_ONE GL_ONE + dim const (`SH.glass`); waterfalls alpha-blended (`flow` kind), never pure additive.
   Neon on a dark backing board. Flames: autosprite2 on single thin quads (`cross_sprites` for merged MD3 surfaces).
 - Light compile times: fast `-fast -samples 2 -filter` ~1-3 min; final `-bounce 2 -bouncegrid` 3-110 min (rises with
-  lightmapped MD3s and open areas); run long compiles as background tasks.
+  lightmapped MD3s and open areas; over an hour on padgarage's street-sized hull, so it ships without bounce); run long
+  compiles as background tasks.
 
 ## 10. Brushes, BSP, portals
 - Structural hull/slab only; everything else detail -> 0-35 portals, VIS < 1 s. Seals must be structural.
