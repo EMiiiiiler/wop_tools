@@ -60,7 +60,8 @@ only about real ambiguity (theme, game types, "keep the old layout?"); otherwise
 **2b. MUST: review the quick preview with the user before any full build.** `wopbuild.py <folder> preview`
 (= gen + quick, about 20 s) builds a -meta-only BSP (no vis, light, bspc or bots) and an unlit, normal-shaded 3D
 walk-through `<out>/quick.html` with the mapinfo camera buttons; it still reports a leak. Publish it with the Artifact
-tool (republish to the same URL each round) and ask the user to look at layout, scale, props and clutter. Every round
+tool (republish to the same URL each round; copy the FRESH `quick.html` into the publish path every round - a stale
+copy republished the old layout once) and ask the user to look at layout, scale, props and clutter. Every round
 of tweaks is edit generator -> `preview` -> republish, nothing more. Start step 3 only when the user says the layout is
 right (or the run is unattended and the layout is settled): full builds (vis, final light, bspc, bot matches,
 screenshots) take tens of minutes and cost the user's usage allocation. Fix overlaps the preview can't show by
