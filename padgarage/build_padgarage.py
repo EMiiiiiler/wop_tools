@@ -645,7 +645,7 @@ def items():
     K.weapon('betty', -1180, 3330, TUB_FLOOR, marker='black')
     K.weapon('balloony', 1665, 2800, SHELF_Z[2], marker='orange')
     K.weapon('pumper', -1020, 2500, ROOF_C, marker='green')
-    K.weapon('splasher', cx, 2700, FLOOR_C, marker='blue')
+    K.weapon('splasher', cx + 200, 1700, FLOOR_C, marker='blue')     # driver's footwell, right inside the open door
     K.weapon('boaster', 1760, FREEZER[1], 0, marker='orange')
     K.weapon('bubbleg', BOAT[0], BOAT[1] - 200, BOAT_DECK, marker='green')
     ammo = {'imperius': [(-1250, 3150, LOFT_Z), (1665, 3450, SHELF_Z[2]), (1500, 3900, 0)],
