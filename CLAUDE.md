@@ -24,9 +24,14 @@ Tools and standing rules for building World of Padman (WoP) maps.
 - Read `docs/SKILL.md` (the process, definition of done, symptom -> fix table). It is the source of the wop-mapping skill.
 - `python3 newmap.py wop_x "Name"` scaffolds a folder on `woplib` (MapKit, models, shaders, padmath, wopdata);
   `templates/sample/build.py` is the reference generator. Don't copy a map's `*lib.py` any more.
-- `python3 wopbuild.py <folder> check` (gen lint compile aas sight), then `bots render levelshots package`; every run
-  writes `<out>/report.md`. A map is done when every step is PASS (or a WARN you looked at).
+- `python3 wopbuild.py <folder> check` (gen lint compile aas lights sight), then `bots render levelshots package`; every run
+  writes `<out>/report.md` with what changed since the last run. A map is done when every step is PASS (or a WARN you looked at).
 - `tests/run.sh` must pass after any change to woplib or a checker.
+- Textures go through `woplib.texlib.Textures` (`TX.add` for brush textures, `TX.material` for model textures,
+  `TX.write_shader()` at the end): image, shader, footsteps and scale in one call. Reuse the texlib generators with the
+  map's palette; keep local functions only for theme-unique art.
+- Review = Read `<out>/review.png` (all screenshots incl. automatic views of every weapon, secret and pad landing),
+  `<out>/models.png` (every custom MD3) and `<out>/lights.png` (floor brightness). lint `boxes` lists plain brush boxes.
 
 ## Tools (see README.md)
 - Fresh cloud session: run `setup_cloud.sh` in the background (~15 min on 2 cores) for q3map2, wopbspc and wopded.

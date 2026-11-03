@@ -17,11 +17,14 @@ Tool repo: https://github.com/EMiiiiiler/wop_tools. Use it; never hand-write .ma
 | `wopbuild.py <folder> <steps>` | the pipeline: gen, lint, compile, aas, sight, bots, render, levelshots, package; writes `report.md` |
 | `woplib/kit.py` MapKit | placement with occupancy, catalog/custom models + collision, items, pads, secrets, movers, routes, spots.json |
 | `woplib/models.py` | custom MD3/IQM + procedural textures + model shader kinds (`configure(ns, out)` once) |
-| `woplib/shaders.py` | brush shader stanzas (lm, sky, water, fog, glass, neon, pad, pulse), `.shader` + `.arena` writers (validated) |
+| `woplib/shaders.py` | brush shader stanzas (lm, sky, water, fog, glass, neon, pad, pulse, slick), `.shader` + `.arena` writers (validated) |
+| `woplib/texlib.py` | texture generators (checker, tiles, bricks, planks, stone, metal, fabric, stripes, dots, frost, grime, neon, label) and `Textures`: one `TX.add` / `TX.material` call writes the image AND its shader |
 | `woplib/padmath.py` | AimAtTarget maths: target placement, flight time, bspc limits |
 | `woplib/wopdata.py` | WoP facts: classnames, forbidden items, bot weights, arena tokens, sounds that exist, common shaders |
 | `templates/sample/` | the reference generator: hull, house + roof, pool + steps, secret vault, tower pad, cover, loot |
 | `tests/run.sh` | regression tests: each rebuilds a bug a shipped map had and checks the checker catches it |
+| `light_check.py` | floor brightness from the BSP lightmaps (reachable floor only, via the .aas): dark and blown-out areas, `lights.png` |
+| `preview/autoviews.py`, `montage.py` | review cameras generated from the map (every weapon, secret, pad landing, overviews) and one labelled `review.png` |
 
 Older map folders (`padbakery/`, `padspace/` ...) are worked examples for special shapes (lathe shells, ships, carved
 slabs, solids->MD3). New maps import `woplib`, they don't copy a `*lib.py`.
@@ -47,18 +50,26 @@ only about real ambiguity (theme, game types, "keep the old layout?"); otherwise
 3. Main pieces as custom MD3s (`woplib.models`) with `common/weapclip` collision of the same shapes; look at each on a
    contact sheet (`preview/md3sheet.py`) before placing it.
 4. Catalog props on real surfaces (`K.catalog`), cover where `sight --hot` says.
-5. Items, pads, secret, movers, lights, sounds. `K.fix_items()` last, then `ML.model_shaders()` and write the shader.
-   **MUST** register every model shader before the `.shader` file is written (late registrations draw black/grey).
+5. Items, pads, secret, movers, lights, sounds. `K.fix_items()` last, then `TX.write_shader()` (brush + model shaders,
+   levelshots, arena). **MUST** register every model shader before the `.shader` file is written (late registrations
+   draw black/grey). Textures: one `TX.add(name, array, kind, steps=)` per brush texture and `TX.material(key, array,
+   kind, lathe=)` per model texture (lathe=True for labels on revolved models); never keep a separate name list.
+   Use the `texlib` generators with the map's own palette; write a local function only for theme-unique art.
 
-**3. Loop `wopbuild.py <folder> check`** (gen, lint, compile, aas, sight) until every step is PASS. Use the symptom
-table (section 2). A WARN is fine only after you looked at it.
+**3. Loop `wopbuild.py <folder> check`** (gen, lint, compile, aas, lights, sight) until every step is PASS. Use the
+symptom table (section 2). A WARN is fine only after you looked at it. Every step prints what moved since the last
+run (`sight long_ray_pct 2.8 (was 6.0)`), so you can tell a fix from a regression. lint `boxes` lists plain brush
+boxes no model dresses - the "looks boring" complaint before the user makes it.
 
 **4. `wopbuild.py <folder> bots`**: every weapon picked up, secret found, few environmental deaths. Fix by moving loot,
 adding pads from busy routes, botclip strips (section 6).
 
-**5. `wopbuild.py <folder> render levelshots`** and LOOK at every screenshot (Read the PNGs): stairs and ceiling edges,
-caulk holes, floating/sunk models, plain boxes that should be props, signs mirrored, rooms too dark/bright. Add camera
-shots in `mapinfo.json` for every landmark, inside every building and on every roof.
+**5. `wopbuild.py <folder> render levelshots`**, then Read `<out>/review.png` (every screenshot on one labelled sheet:
+your mapinfo shots plus automatic views of every weapon, secret entry and room, pad landing and two overviews),
+`<out>/models.png` (every custom MD3) and `<out>/lights.png`. Look for stairs and ceiling edges, caulk holes,
+floating/sunk models, plain boxes that should be props, mirrored or upside-down labels, rooms too dark/bright. Add
+mapinfo shots for landmarks the automatic views miss (inside every building, on every roof); open a single
+`shots/<name>.png` only to look closer.
 
 **6. Final**: `wopbuild.py <folder> compile --light final` then `aas bots render levelshots package` (the .aas must be
 rebuilt after the final light). Publish `<out>/walkthrough.html` with the Artifact tool (republish to the same URL for
@@ -70,9 +81,10 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 - lint: `audit_map` RESULT OK, `lint_map` RESULT OK (warnings looked at), `pad_check` every pad lands (t < 2.9 s)
 - compile: no leak, q3map2 read the map's shader (build folder in the VFS), no model load failures, portals low
 - aas: every pickup reachable from spawns, no TRAP, every route in `routes.txt` works both ways standing
+- lights: <= 10 % of reachable floor dark (raw lightmap < 30), <= 35 % blown out (> 200); WARN = look at lights.png
 - sight: <= 4 % of eye-level rays over 1800u at every floor level in `mapinfo.json`
 - bots: every weapon picked up, secret items taken, environmental deaths < 15 %
-- render: walk-through <= 16 MB, screenshots looked at; levelshots made
+- render: walk-through <= 16 MB, review.png and models.png looked at; levelshots made
 - package: `pk3_check` OK on the pk3 + source zip (every texture, model surface shader, sound, arena, levelshot)
 
 ## 2. Symptom -> cause -> fix
@@ -96,7 +108,9 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | item missing at its spot in game | dropped through `common/clip`/botclip/nonsolid at spawn | lint `items`; solid floor or `suspended=True` |
 | sight > 4 % | open floors, aligned doorways, spaces under tables/overhangs | props at `sight --hot` cells beside paths; one prop per bay in shelving tunnels |
 | "Duplicate or Flipped triangle" | thin rounded parts (r 1), coincident parts, shared railing posts | sharp boxes, dedupe |
-| user: "looks boring" / "plain box" | brush blocks for buildings/furniture | custom MD3 + props + lights; the most frequent play-test complaint |
+| user: "looks boring" / "plain box" (lint `boxes`) | brush blocks for buildings/furniture | custom MD3 (`K.solid_piece` keeps the same collision) + props + lights; the most frequent play-test complaint |
+| user: "too dark" (lights WARN, red on lights.png) | shade side of a house, secret rooms, under roofs; sunny maps are bimodal | fill lights at the listed coordinates; `K.light_grid` over big rooms |
+| washed-out white floors (lights bright %) | too many overlapping point lights, strong sun on pale textures | fewer/weaker lights (raw 128 = neutral), darker floor texture |
 | user: "secret too obvious" | visible entrance | hide it (underwater tunnel, fireplace, coffin, flour bin, drain) |
 | aas TRAP on a high shelf/tray whose only drop is > 1000u | bspc traces walk-offs only 1000u down | an exit over a lower drop (botclip gap) or a pad (padfridge freezer) |
 | lathe label upside down / mirrored on the contact sheet | revolve() v runs up, image rows run down | flip the image vertically before ML.T (padfridge `reg(lathe=True)`) |
@@ -204,8 +218,11 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 - Skies: `env/fort-pad512` sunny garden, `env/pf-garden512` night, `env/frost-bite512` snowy evening forest,
   `env/pc-friday-13th-512` night city. Custom cube faces: rt=+x, lf=-x, bk=+y, ft=-y. Indoor maps: sky shader on the
   hull's inner faces so every window shows sky. `q3map_sun` yaw points TO the sun (270 = sun in the south).
-- Light: point lights fall off with distance squared: lights ~170u under a 768u ceiling need ~1800-2400 on a 450u grid
-  (`K.light_grid`); room lamps ~400 at floor + 150. No `q3map_surfacelight` on shaders of dense MD3s (one emitter per
+- Light: point lights fall off with distance squared. Measured (light_check median, 128 = neutral, 200+ washed out):
+  `K.light_grid` 600u over the floor on a 512 grid: 900 -> 79, 1500 -> 124, 2200 -> 173; 300u over the floor on a 384
+  grid: 300 -> 64, 600 -> 113, 900 -> 162. (The old "1800-2400 on a 450 grid" advice washed floors out.) Room lamps
+  ~400 at floor + 150. Sun: `sun_int` 110 + `skylight` 60 kept the sample yard at median 108 with 3 % dark; sun 220
+  with skylight 40 gave 215 (51 % blown out). Run the `lights` step; WARN = read lights.png. No `q3map_surfacelight` on shaders of dense MD3s (one emitter per
   triangle). Shaded sides of houses need fill lights.
 - Glass: GL_ONE GL_ONE + dim const (`SH.glass`); waterfalls alpha-blended (`flow` kind), never pure additive.
   Neon on a dark backing board. Flames: autosprite2 on single thin quads (`cross_sprites` for merged MD3 surfaces).

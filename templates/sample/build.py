@@ -19,8 +19,8 @@ ROOT = HERE
 while not os.path.exists(os.path.join(ROOT, 'wopmap.py')): ROOT = os.path.dirname(ROOT)
 sys.path.insert(0, ROOT)
 from wopmap import box, cyl, hull, carve, sub_rects, sign_box
-from woplib.kit import MapKit, write_kit_textures, CAULK, WCLIP, CLIP, TRIG
-from woplib import models as ML, shaders as SH
+from woplib.kit import MapKit, CAULK, WCLIP, CLIP, TRIG
+from woplib import models as ML, shaders as SH, texlib as TL
 from meshlib import revolve, disc, rbox
 
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
@@ -42,38 +42,25 @@ VAULT = (-256, -256, 256, 256); VAULT_Z = -1024
 
 
 # ------------------------------------------------------------------------------------------------ textures
+TX = TL.Textures(K)
+
+
 def textures():
-    TD = os.path.join(OUT, 'textures', NS)
-
-    def W(name, a): ML.save_img(os.path.join(TD, name), a)
-    W('paving', paving()); W('plaster', ML.fill(256, (214, 196, 168), 6, 3)); W('stone', ML.fill(256, (150, 146, 140), 9, 5))
-    W('tile', tile()); W('roof', ML.fill(256, (150, 70, 52), 7, 9)); W('water', ML.fill(128, (60, 140, 170), 10, 11))
-    W('wood', wood()); W('grate', grate())
-    write_kit_textures(OUT, NS)
-    return ['paving', 'plaster', 'stone', 'tile', 'roof', 'wood', 'grate']
-
-
-def paving(n=256):
-    x, y = ML.xy(n)
-    c = ML.fill(n, (180, 176, 168), 6, 21)
-    j = ((x * 4) % 1 < 0.03) | ((y * 4 + (np.floor(x * 4) % 2) * 0.5) % 1 < 0.03)
-    return np.where(j[..., None], ML.C((110, 104, 98)), c)
-
-
-def tile(n=256):
-    x, y = ML.xy(n)
-    c = ML.fill(n, (90, 170, 200), 4, 31)
-    j = ((x * 8) % 1 < 0.06) | ((y * 8) % 1 < 0.06)
-    return np.where(j[..., None], ML.C((235, 240, 240)), c)
-
-
-def wood(n=256):
-    x, y = ML.xy(n)
-    g = np.sin((x * 24 + ML.noise(n, 6, 41) * 0.6) * math.pi) * 10
-    return ML.fill(n, (150, 104, 62), 5, 43) + g[..., None]
+    """one TX.add per brush texture: writes the image, its shader (kind/steps) and its world scale together.
+    Use the texlib generators with this map's palette; write your own function for anything unique to the theme."""
+    TX.add('paving', TL.tiles((180, 176, 168), (110, 104, 98), cols=4, rows=4, offset=0.5, grout_w=0.03))
+    TX.add('plaster', TL.solid((214, 196, 168), 6, 3, 256))
+    TX.add('stone', TL.stone((150, 146, 140), cells=18))
+    TX.add('tile', TL.tiles((90, 170, 200), (235, 240, 240), cols=8, rows=8, offset=0, grout_w=0.06))
+    TX.add('roof', TL.tiles((150, 70, 52), (96, 44, 32), cols=6, rows=10, offset=0.5, vary=14))
+    TX.add('wood', TL.planks((150, 104, 62)), steps='woodsteps')
+    TX.add('grate', grate(), check_tile=True)
+    TX.add('water', TL.solid((60, 140, 170), 10, 11, 128), 'water')
+    TX.kit_defaults(pad_rgb=(90, 200, 255))
 
 
 def grate(n=128):
+    """a theme-specific texture stays a local function"""
     x, y = ML.xy(n)
     bars = ((x * 8) % 1 < 0.35)
     return np.where(bars[..., None], ML.C((70, 74, 78)), ML.C((14, 14, 16))) + ML.N3(n, 1, 47, 4)
@@ -82,17 +69,16 @@ def grate(n=128):
 # ------------------------------------------------------------------------------------------------ custom MD3s
 def models():
     """main pieces are custom MD3s (user rule). Look at every model on a contact sheet (preview/md3sheet.py) first."""
-    ML.T('stone_m', ML.fill(256, (176, 170, 160), 8, 51)); ML.T('water_m', ML.fill(128, (80, 170, 210), 12, 53))
+    st = TX.material('stone', TL.stone((176, 170, 160), cells=14), shade=40)       # image + model shader in one call
     X = ML.Model()
-    st = ML.S('stone_m', 'lm', shade=40)
     # basin wall: profile from the ground out, up over the rim and down inside (one lathe, normals outward)
     revolve(X.mesh(st), [(150, 0), (150, 40), (142, 48), (126, 48), (126, 12)], u_tiles=6, n=48)
     revolve(X.mesh(st), [(24, 0), (24, 120), (40, 132), (40, 140), (0, 140)], u_tiles=2, n=24)    # column; cap runs inward = faces up
-    disc(X.mesh(ML.S('water_m', 'add', wave='sin 0.6 0.1 0 0.5', tcmod='scroll 0.03 0.02')), 126, 30, up=True)
+    wat = TX.material('water', TL.solid((80, 170, 210), 12, 53), 'add', wave='sin 0.6 0.1 0 0.5', tcmod='scroll 0.03 0.02')
+    disc(X.mesh(wat), 126, 30, up=True)
     ML.save('fountain', X)
     # cover: a stack of crates (rounded boxes); collision boxes are kept in CRATES for K.prop()
-    ML.T('crate_m', crate_tex())
-    cr = ML.S('crate_m', 'lm', shade=30)
+    cr = TX.material('crate', crate_tex(), shade=30)
     X = ML.Model()
     for (mn, mx) in CRATES:
         rbox(X.mesh(cr), mn, mx, r=4, k=2, tile=96)
@@ -104,7 +90,7 @@ CRATES = [((-48, -48, 0), (48, 48, 96)), ((48, -40, 0), (128, 40, 80)), ((-40, -
 
 def crate_tex(n=256):
     x, y = ML.xy(n)
-    c = wood(n)
+    c = TL.planks((160, 112, 66), n_planks=4, stagger=False, n=n)
     edge = (x < 0.07) | (x > 0.93) | (y < 0.07) | (y > 0.93) | (np.abs(x - y) < 0.05)
     return np.where(edge[..., None], ML.C((110, 72, 40)), c)
 
@@ -255,23 +241,19 @@ def items():
 
 
 def lights():
-    K.light_grid(X0, Y0, X1, Y1, 700, 640, 1500)
+    K.light_grid(X0, Y0, X1, Y1, 700, 768, 600)          # light_check: raw 128 = neutral, keep the median ~90-150
     K.light(0, 448, 200, 600)                                     # inside the house
     K.timer_sound(0, 0, 900, 'animal/blackbird', 'birds', 20, 10)
 
 
 def shader():
-    parts = [SH.lm(n, steps={'wood': 'woodsteps'}.get(n)) for n in TEX]
-    parts += [SH.sky('env/fort-pad512', sun=(225, 55)), SH.water('water'), SH.nodraw_ns(), SH.jumppad(), SH.glass(),
-              ML.model_shaders(), SH.levelshot_anim()]
-    SH.write_shader(OUT, parts)
-    SH.write_arena(OUT, INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})
-    probs = ML.check_registry()
-    if probs: raise SystemExit('model shader problems:\n  ' + '\n  '.join(probs))
+    """brush shaders from TX + anything special + every model shader, then the .arena (checked against the lollies)"""
+    TX.write_shader(extra=[SH.sky('env/fort-pad512', sun=(225, 55), sun_int=110, skylight=(60, 3))],
+                    arena_types=INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})
 
 
 if __name__ == '__main__':
-    TEX = textures()
+    textures()
     models()                          # every MD3 (and its shaders) BEFORE the shader file is written
     shell(); house(); pool(); vault(); tower_ledge_platform()
     props(); blockers(); items(); lights()

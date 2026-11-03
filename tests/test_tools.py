@@ -371,3 +371,112 @@ def test_secret_entry_is_reserved():
     K.secret((0, 0, 0), (150, 160, 100), dest=(500, 500, 0), angle=0, name='s', approach='e')
     assert not K.free(100, 80, 10, 0, 50) and not K.free(170, 80, 10, 0, 50)        # entry and sound slab
     assert K.free(-200, 80, 10, 0, 50)
+
+
+# ------------------------------------------------------------------------------------------------ texlib, boxes, autoviews, lights, report deltas
+def test_texlib_registry_writes_images_and_shaders(tmp_path):
+    """one TX.add per texture: image + shader + steps together (padfridge kept three lists in sync by hand)"""
+    from woplib import texlib as TL
+    out = str(tmp_path)
+    ML.configure('t', out); SH.configure('t', 'wop_t', 'T')
+    TX = TL.Textures(ns='t', out=out)
+    assert TX.add('floor', TL.planks(), steps='woodsteps', scale=1.0) == 't/floor'
+    TX.add('ice', TL.stone((170, 210, 236)), 'slick', steps='snowsteps')
+    TX.add('bar', TL.neon('BAR', (255, 60, 150)), 'neon', rgb=(1, 0.3, 0.6), check_tile=False)
+    with pytest.raises(ValueError): TX.add('floor', TL.planks())
+    lab = TL.label('COLA', 64, 128, (60, 24, 14), (255, 255, 255), band=(0.25, 0.5))
+    sh = TX.material('cola', lab, 'lms', v=0.2, lathe=True)
+    flipped = np.asarray(Image_open(os.path.join(out, 'models', 't', 'cola_m.jpg')), np.float32)
+    assert abs(flipped[2].mean() - lab[-3].mean()) < 25          # lathe=True stored the image upside down
+    TX.kit_defaults()
+    txt = open(TX.write_shader()).read()
+    for need in ('textures/t/floor', 'surfaceparm woodsteps', 'surfaceparm slick', 'textures/t/bar', 'q3map_surfacelight',
+                 sh, 'textures/t/jumppad', 'textures/t/nodraw_ns'):
+        assert need in txt, need
+    for f in ('floor.jpg', 'ice.jpg', 'bar.jpg', 'jumppad.jpg', 'nodraw_ns.jpg'):
+        assert os.path.exists(os.path.join(out, 'textures', 't', f)), f
+    import wopmap
+    assert wopmap.TEXSCALE['t/floor'] == (1.0, 1.0)
+
+
+def Image_open(p):
+    from PIL import Image
+    return Image.open(p).convert('RGB')
+
+
+def test_texlib_generators_tile():
+    from woplib import texlib as TL
+    for a in (TL.checker((1, 1, 1), (200, 200, 200)), TL.tiles((200, 200, 200)), TL.bricks(), TL.planks(), TL.planks(vertical=True),
+              TL.stone(), TL.metal(), TL.fabric(), TL.stripes((0, 0, 0), (255, 255, 255)), TL.frost()):
+        assert TL.is_tileable(a)
+    x = np.linspace(0, 255, 128); assert not TL.is_tileable(np.zeros((128, 128, 3)) + x[None, :, None])
+
+
+def test_plain_box_warns_and_dressed_box_does_not(tmp_path):
+    """the most frequent play-test complaint: a grey brush box where a modelled object should be"""
+    from meshlib import rbox
+    mp, _ = room(tmp_path, extra=lambda K: K.add(box((300, 300, 0), (556, 556, 256), 't/wall')))
+    rc, o = lint(mp, 'boxes')
+    assert 'plain brush box 256x256x256' in o
+    out = str(tmp_path / 'b'); os.makedirs(out)
+    ML.configure('t', out)
+    ML.T('w', ML.fill(32, (120, 80, 40))); X = ML.Model(); rbox(X.mesh(ML.S('w', 'lm')), (-130, -130, 0), (130, 130, 260), r=4, k=1)
+    ML.save('crate', X)
+    mp2, _ = room(out, extra=lambda K: (K.add(box((300, 300, 0), (556, 556, 256), 't/wall')), K.custom(ML.PLACE['crate'], 428, 428, 0)))
+    rc, o = run('lint_map.py', mp2, '--shaders', out, '--md3root', out, '--only', 'boxes')
+    assert 'plain brush box' not in o, o
+
+
+def test_autoviews_put_cameras_in_clear_air(tmp_path):
+    """review cameras are generated, never inside a wall, and see their subject"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('autoviews', os.path.join(ROOT, 'preview', 'autoviews.py'))
+    AV = importlib.util.module_from_spec(spec); spec.loader.exec_module(AV)
+
+    def extra(K):
+        K.add(box((-32, -600, 0), (32, 600, 400), 't/wall'))          # a wall right next to the weapon
+        K.weapon('imperius', 80, 0, 0)
+    mp, _ = room(tmp_path, extra=extra)
+    spots = json.load(open(os.path.join(os.path.dirname(mp), 'wop_t.spots.json')))
+    v = AV.views(mp, spots)
+    names = [s.split(':')[0] for s in v]
+    assert 'w_imperius' in names and 'overview_sw' in names
+    x, y, z, yaw, pitch = [float(t) for t in v[names.index('w_imperius')].split(':')[1].split(',')]
+    assert x > 32, 'camera must be on the weapon side of the wall'
+
+
+def test_wopbuild_report_shows_change_since_last_run(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('wopbuild', os.path.join(ROOT, 'wopbuild.py'))
+    WB = importlib.util.module_from_spec(spec); spec.loader.exec_module(WB)
+    B = WB.Build(os.path.join(ROOT, 'templates', 'sample'), str(tmp_path), None)
+    B.set('sight', 'FAIL', long_ray_pct=6.0)
+    B.set('sight', 'PASS', long_ray_pct=2.8)
+    assert B.report['sight']['was'] == {'long_ray_pct': 6.0, 'status': 'FAIL'}
+    assert '(was 6.0)' in open(os.path.join(str(tmp_path), 'report.md')).read()
+
+
+def compile_room(tmp_path, lights):
+    def extra(K):
+        if lights: K.light_grid(-1024, -1024, 1024, 1024, 700, 512, 900)
+    mp, _ = room(tmp_path, extra=extra)
+    ML.save_img(os.path.join(str(tmp_path), 'textures', 't', 'floor'), ML.fill(64, (180, 180, 180)))
+    ML.save_img(os.path.join(str(tmp_path), 'textures', 't', 'wall'), ML.fill(64, (180, 180, 180)))
+    q = os.environ['Q3MAP2']
+    for args in (['-meta'], ['-vis'], ['-light', '-fast', '-samples', '1']):
+        r = subprocess.run([q, '-game', 'quake3'] + args + [mp], capture_output=True, text=True, timeout=900, cwd=str(tmp_path))
+        assert r.returncode == 0, r.stdout[-2000:]
+    return mp
+
+
+@pytest.mark.skipif(not os.environ.get('Q3MAP2') or not os.path.exists(os.environ.get('Q3MAP2', '')),
+                    reason='needs Q3MAP2 (source setup_cloud.sh env.sh)')
+def test_light_check_dark_room_fails_lit_room_passes(tmp_path):
+    """'the ant colony is too dim': an unlit room fails light_check, the same room with a light grid passes"""
+    d1, d2 = tmp_path / 'dark', tmp_path / 'lit'; d1.mkdir(); d2.mkdir()
+    mp = compile_room(d1, lights=False)
+    rc, o = run('light_check.py', mp[:-4] + '.bsp', '--map', mp)
+    assert rc == 1 and 'too dark' in o, o
+    mp = compile_room(d2, lights=True)
+    rc, o = run('light_check.py', mp[:-4] + '.bsp', '--map', mp)
+    assert rc == 0, o
