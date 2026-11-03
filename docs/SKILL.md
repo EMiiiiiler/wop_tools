@@ -7,9 +7,10 @@ description: Build World of Padman (WoP) maps for NetRadiant Custom / q3map2 / b
 
 Distilled from 20+ shipped maps (waterpark, cratercrust, playroom, xmas, padbath, padtank, padpinball, padkitchen,
 padattic, padlounge, padshroom, area51, moosefalls, padcandy, padhalloween, paddollhouse, padbbq, padmuseum, padaztec,
-padpirate, padspace, padbakery, padgelato). **MUST** rules broke a shipped map when ignored.
+padpirate, padspace, padbakery, padgelato, padgarage). **MUST** rules broke a shipped map when ignored.
 
-Tool repo: https://github.com/EMiiiiiler/wop_tools. Use it; never hand-write .map files. Key pieces:
+Tool repo: https://github.com/EMiiiiiler/wop_tools. Use it; never hand-write .map files. The repo's `docs/SKILL.md` is
+the source of this skill. Key pieces:
 
 | Piece | What it does |
 |---|---|
@@ -92,7 +93,7 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 - gen: generator runs with `-W error::RuntimeWarning`, no kit warnings left unexplained
 - lint: `audit_map` RESULT OK, `lint_map` RESULT OK (warnings looked at), `pad_check` every pad lands (t < 2.9 s)
 - compile: no leak, q3map2 read the map's shader (build folder in the VFS), no model load failures, portals low
-- aas: every pickup reachable from spawns, no TRAP, every route in `routes.txt` works both ways standing
+- aas: every pickup reachable from spawns, no TRAP, no OUT OF BOUNDS, every route in `routes.txt` works both ways standing
 - lights: <= 10 % of reachable floor dark (raw lightmap < 30), <= 35 % blown out (> 200); WARN = look at lights.png
 - sight: <= 4 % of eye-level rays over 1800u at every floor level in `mapinfo.json`
 - bots: every weapon picked up, secret items taken, environmental deaths < 15 %
@@ -121,6 +122,7 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | sight > 4 % | open floors, aligned doorways, spaces under tables/overhangs | props at `sight --hot` cells beside paths; one prop per bay in shelving tunnels |
 | "Duplicate or Flipped triangle" | thin rounded parts (r 1), coincident parts, shared railing posts | sharp boxes, dedupe |
 | user: "looks boring" / "plain box" (lint `boxes`) | brush blocks for buildings/furniture | custom MD3 (`K.solid_piece` keeps the same collision) + props + lights; the most frequent play-test complaint |
+| user: "too busy" | props piled into an open space to push sightlines down | clear it back to a few natural pieces; review with `preview` before building |
 | user: "too dark" (lights WARN, red on lights.png) | shade side of a house, secret rooms, under roofs; sunny maps are bimodal | fill lights at the listed coordinates; `K.light_grid` over big rooms |
 | washed-out white floors (lights bright %) | too many overlapping point lights, strong sun on pale textures | fewer/weaker lights (raw 128 = neutral), darker floor texture |
 | user: "secret too obvious" | visible entrance | hide it (underwater tunnel, fireplace, coffin, flour bin, drain) |
@@ -141,11 +143,15 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
   (centrepieces, buildings, furniture) MUST be custom MD3s, not brush boxes.
 - Never place a solid or entity inside another solid or entity (audit_map overlaps + point entities).
 - Low portal counts (detail everything but the hull). Models fully on surfaces (no float/overhang).
-- Break long sightlines with models (< 4 % of eye rays > 1800u).
+- Break long sightlines with models (< 4 % of eye rays > 1800u), without making open spaces look cluttered.
 - Hard-to-reach spots get the best weapons; 3-6 ammo spots per weapon, some hidden, some in plain sight.
 - Every water area has a way out (steps/ramp or teleporter). Full explorability: every door enterable, every building
   climbable, roofs with a clear line of fire (no parapets/clutter).
 - Bots must reach everything important (bspc AAS). Include `.shader`, `.arena`, textures, and a phone walk-through.
+- Show the quick preview before any full build; full builds cost the user's usage allocation.
+- Deliverables: `maps/X.map/.bsp/.aas`, `scripts/X.shader` (every custom shader), `scripts/X.arena` (map, longname,
+  supported types only), `textures/X/*`, `models/mapobjects/X/*.md3`, levelshots, `X.pk3` + a source zip, and the phone
+  walk-through (`wopbuild package` + `render` make all of them).
 - Answers are in terms of NetRadiant Custom 20260114, q3map2 `-game quake3 -fs_game wop`, no gamepack.
 
 ## 4. Scale
@@ -156,6 +162,7 @@ Player box 30 x 30 x 56 (crouch 40), eye +26 over origin (origin = floor + 24), 
 |---|---|---|---|
 | Padman scale (tiny hero, giant room) | ~8 u/cm | 1.0 | playroom, xmas, lounge, shroom, tank, bakery, gelato |
 | Backyard toy | ~5 u/cm | 0.6-0.9 | padbbq |
+| Garage / street | ~6 u/cm (1 m = 600u) | 1.0 | padgarage |
 | Army man | ~13 u/cm | 1.3-1.6 | kitchen |
 | Dollhouse | ~12 u/cm, doll furniture at 1.5x | - | dollhouse |
 | Human 1:4 | 128 u/m | tree 1.0-1.3, bush 0.5, padcar x7 = car | cratercrust |
@@ -196,6 +203,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   routes can't start in wadeable water; items on islets 16u above deep water are unreachable.
 - Crawl spaces (64u) work (`K.crawl()` to tell lint it is intended). `func_plat` elevators work (`K.elevator`).
 - Spiral stairs with ~15-degree treads in a small tower (r < 120) give bspc broken links: add a lift pad.
+- Playable area smaller than the sky hull (streets): mapinfo `bounds` = playable rectangle, `hull` = sky box, the edge
+  closed with `common/clip` (solid for bspc), gates flush with the playable side; aas_check prints OUT OF BOUNDS.
 - Count route use with trigger_multiple -> target_score probes (`AddScore` lines) when a spot gets no visits.
 
 ## 7. Jump pads (`K.jumppad`, `woplib.padmath`)
@@ -266,6 +275,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   leaves slivers (drop hull volume < 16); `python3 -W error::RuntimeWarning` catches NaN planes.
 - Headroom: the step before a ceiling edge needs step top + 56; railings need clip behind them; every entrance a
   96u clear landing.
+- Big outdoor hulls: worldspawn `gridsize 192 192 256`, `q3map_lightmapSampleSize` 32-48 on scenery shaders, and never
+  a single sealing brush under the floor slabs (48u crouch slots everywhere; lint headroom runs for minutes).
 
 ## 11. Custom MD3s (woplib.models)
 1. `ML.configure(ns, out)`; textures with `ML.T(name, array[, alpha])`; shaders with `ML.S(img, kind, **opt)`.
@@ -279,6 +290,7 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 - Normals follow the profile direction: a cap profile running outward from the axis faces DOWN (black from above):
   run caps inward or use `inward=True`. Axis swaps must be rotations (det +1). Text on +y quads: u runs +x -> -x;
   on cylinders u increases with the angle. Per-instance colours: misc_model `_remap`. MD3 names unique per variant.
+- `loft()` through closed sections leaves a flat lid at the section top (a car cabin went black): skip those faces.
 - Animated bits: `deformVertexes move/wave` per surface (lava lamp blobs, fish tails, flies).
 
 ## 12. Catalog models
@@ -288,17 +300,22 @@ waterplant1a/1b (318u) aquarium plants; padstatue_gold (243u) spinning centrepie
 
 ## 13. Sounds (wopdata.SOUNDS, all verified to exist)
 Looped speakers near sources (`K.speaker`), `K.timer_sound` for occasional ones, `K.trigger_sound` for one-shots
-(doorbell, applause on a summit). `pk3_check --game` proves every noise exists.
+(doorbell, applause on a summit). `pk3_check --game` proves every noise exists. Common ones (sound/world/...):
+ambient/fire_crackling wind_icy wind_night water_rippling water_drippling water_flowing slime_bubbling floor_creaking;
+machine/clock_ticking fog_horn fishtank transformer electric_sizzle fan_pc aircon freezer mechanics dingdong;
+misc/wind_chimes secret_found alarm_buzzer bicycle_bell door_buzzer toilet_flush; human/applause footsteps_m snoring;
+animal/bird_owl1 cricket_chirp1 dog_bark2 kitten_meow blackbird.
 
 ## 14. "Deluxe" features the user likes
 Movers (rotating/swinging/orbiting decor), a hidden secret room, an alternative way up (tractor beam, bubble lift,
 suction pipe = trigger_push with a glass tube MD3 along `padmath.arc`), ambient + timed + triggered sounds, neon,
 animated externalmodels, cloud layer (`SH.sky(cloud=...)`), levelshots, the phone walk-through. "Make it twice as
-awesome" went best as a second connected area (balcony, frost deck, wave hall) keeping the old layout.
+awesome" went best as a second connected area (balcony, frost deck, wave hall) keeping the old layout. Real-world
+reference photos (a driveway, a street) are welcome: match the look (materials, trim, lanterns) but keep it uncluttered.
 
 ## 15. Compile commands (what wopbuild runs)
 ```
-q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -meta -custinfoparms maps/X.map
+q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -meta -custinfoparms maps/X.map      (quick preview stops here)
 q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -vis -saveprt maps/X.map
 q3map2 -game quake3 -fs_basepath "<WoP dir>/" -fs_game wop -light -fast -samples 3 -filter -bounce 2 -bouncegrid -custinfoparms maps/X.map
 bspc -forcesidesvisible -optimize -bsp2aas maps/X.bsp          (MUST run after -light: the checksum changes)
