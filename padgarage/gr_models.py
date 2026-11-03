@@ -576,10 +576,19 @@ def dinghy():
     L, B, H, z0 = 1500, 300, 260, 260                # length, half-beam, side height, keel z
     ys = np.linspace(-L / 2, L / 2, 14)
     outer, inner = [], []
-    for y in ys:
+
+    def beam(y):                                     # outer half-beam at the gunwale and keel height along the boat
         t = (y + L / 2) / L
         bw = B * (0.35 + 0.65 * math.sin(min(1, t * 1.25) * math.pi / 2)) if t < 0.8 else B
-        zk = z0 + (max(0, 0.22 - t) / 0.22) ** 2 * 140      # bow lifts
+        return bw, z0 + (max(0, 0.22 - t) / 0.22) ** 2 * 140
+
+    def inner_w(y, z):                               # inside half-width of the hull at height z (deck boards, seats)
+        bw, zk = beam(y)
+        zc, zt = zk + 54, z0 + H + 14
+        f = min(1.0, max(0.0, (z - zc) / max(1.0, zt - zc)))
+        return bw * 0.92 * (0.9 + 0.1 * f) - 4
+    for y in ys:
+        bw, zk = beam(y)
         sec = [(-bw, y, z0 + H), (-bw * 0.9, y, zk + 40), (0, y, zk), (bw * 0.9, y, zk + 40), (bw, y, z0 + H)]
         outer.append(sec); inner.append([(p[0] * 0.92, p[1], p[2] + 14) for p in sec])
     for S, cf in ((outer, lambda c: np.array([0, c[1], z0 + H + 200])), (inner, lambda c: np.array([0, c[1], z0 + H + 900]))):
@@ -593,8 +602,10 @@ def dinghy():
     # transom (flat stern), seats, gunwale
     st = outer[-1]
     X.mesh(M_['alu']).poly([np.array(p) for p in st], (0, 1, 0), [(p[0] / 400, p[2] / 400) for p in st])
-    for yy in (-200, 300):
-        rbox(X.mesh(M_['wood']), (-B * 0.9, yy - 60, z0 + 170), (B * 0.9, yy + 60, z0 + 190), r=3, k=1)
+    for yy in (-200, 300):                           # thwarts: trapezoids that follow the narrowing hull
+        za = z0 + 170
+        wa, wb = inner_w(yy - 60, za + 20), inner_w(yy + 60, za + 20)
+        mprism(X.mesh(M_['wood']), [(-wa, yy - 60), (wa, yy - 60), (wb, yy + 60), (-wb, yy + 60)], za, za + 20, tile=200)
     # trailer: frame, axle, wheels, drawbar, winch post
     for s in (-1, 1):
         tube(X.mesh(M_['trailer']), [(s * 200, -L / 2 - 200, 200), (s * 200, L / 2, 200)], [20, 20], nseg=6)
@@ -603,13 +614,21 @@ def dinghy():
     for s in (-1, 1): wheel(X, (s * 380, 150, 150), 150, 100)
     tube(X.mesh(M_['trailer']), [(-380, 150, 150), (380, 150, 150)], [16, 16], nseg=6)
     # collision pieces only touch: wheels below the hull, deck boards (z 490) inside the side and end walls
-    COLL['dinghy'] = dict(boxes=[((-B - 20, -L / 2, 240), (B + 20, L / 2, z0 + 14)),
-                                 ((-B + 20, -L / 2 + 40, z0 + 14), (B - 20, L / 2 - 40, 490)),
-                                 ((-B - 20, -L / 2, z0 + 14), (-B + 20, L / 2, z0 + H)), ((B - 20, -L / 2, z0 + 14), (B + 20, L / 2, z0 + H)),
-                                 ((-B + 20, -L / 2, z0 + 14), (B - 20, -L / 2 + 40, z0 + H)), ((-B + 20, L / 2 - 40, z0 + 14), (B - 20, L / 2, z0 + H))],
-                          cyls=[(s * 380, 150, 150, 0, 240) for s in (-1, 1)])
-    for yy in np.linspace(-L / 2 + 60, L / 2 - 60, 9):               # deck boards across the boat (the walk-on floor)
-        rbox(X.mesh(M_['wood']), (-B + 22, yy - 70, 482), (B - 22, yy + 70, 490), r=2, k=1)
+    # collision: a flat bottom box under the hull, then per hull section a tapered deck slab (z 274..490) and two
+    # tapered side walls up to the gunwale (convex point sets, model space): the bow narrows in play as it looks
+    sol = []
+    for y0, y1 in zip(ys[:-1], ys[1:]):
+        w0, w1 = inner_w(y0, 490), inner_w(y1, 490)
+        o0, o1 = beam(y0)[0] + 6, beam(y1)[0] + 6
+        sol.append([(sx * w, y, z) for (w, y) in ((w0, y0), (w1, y1)) for sx in (-1, 1) for z in (z0 + 14, 490)])
+        for sx in (-1, 1):
+            sol.append([(sx * a, y, z) for (a, b_, y) in ((w0, o0, y0), (w1, o1, y1)) for a in (a, b_) for z in (z0 + 14, z0 + H)])
+    COLL['dinghy'] = dict(boxes=[((-B - 20, -L / 2, 240), (B + 20, L / 2, z0 + 14))],
+                          cyls=[(s * 380, 150, 150, 0, 240) for s in (-1, 1)], solids=sol)
+    yb = np.linspace(-L / 2 + 50, L / 2 - 50, 10)                    # deck boards across the boat (the walk-on floor),
+    for ya, yc in zip(yb[:-1] + 4, yb[1:] - 4):                      # each one cut to the hull's width at both ends
+        wa, wc = inner_w(ya, 490), inner_w(yc, 490)
+        mprism(X.mesh(M_['wood']), [(-wa, ya), (wa, ya), (wc, yc), (-wc, yc)], 482, 490, tile=200)
     return ML.save('dinghy', X)
 
 

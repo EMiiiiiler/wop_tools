@@ -454,6 +454,7 @@ def driveway():
     """dinghy on its trailer (plank ramp up the side onto the deck boards), bin, bike, hose reel, barrow, lamp, hoop"""
     bx, by = BOAT
     K.custom(ML.PLACE['dinghy'], bx, by, 0, angle=180, boxes=GM.COLL['dinghy']['boxes'], cyls=GM.COLL['dinghy']['cyls'])
+    as_clip([hull_([(bx - x, by - y, z) for (x, y, z) in pts], lambda n: WCLIP) for pts in GM.COLL['dinghy']['solids']])   # tapered deck + sides (model turned 180)
     K.ramp(bx + 320, by - 550, 2150, by - 350, 0, 520, 'w', WCLIP, route='boat_ramp')
     K.custom(ML.PLACE['plank_b'], 2150, by - 450, 2, angle=180, lit=True, occupy=False,
              angles=(round(-math.degrees(math.atan2(520, 2150 - bx - 310)), 1), 180, 0))
