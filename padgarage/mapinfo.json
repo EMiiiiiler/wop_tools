@@ -12,7 +12,8 @@
  "arena_types": "ffa lps team ft syc_ffa",
  "light": {
   "fast": "-fast -samples 2 -filter",
-  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+  "final": "-fast -samples 3 -filter",
+  "_note": "bounce on the street-sized hull ran > 1 h; the street has its own fill lights instead"
  },
  "bots": {
   "gametype": 0,
