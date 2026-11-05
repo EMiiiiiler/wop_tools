@@ -1,0 +1,10 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padarcade
+prize_chute:        624,-448,0 > -400,-448,480
+skee_lane0:         920,-820,0 > 1840,-720,300
+skee_lane1:         920,-380,0 > 1840,-280,300
+skee_lane2:         920,60,0 > 1840,160,300
+hockey_stairs:      -2048,488,0 > -1152,488,400
+prize_stairs:       -652,-1680,0 > -1644,-1680,448
+stage_steps:        0,1260,0 > 0,1548,96
+dance_steps:        1500,1306,0 > 1500,1498,48

@@ -1,0 +1,61 @@
+{
+ "map": "wop_padarcade",
+ "ns": "padarcade",
+ "longname": "Midnight Arcade",
+ "generator": "build_padarcade.py",
+ "bounds": [
+  -2304,
+  -2048,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa syc_tp",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 4,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Midnight Arcade",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:2000,-1900,1900,135,-30",
+   "claw:-200,-1300,500,80,-8",
+   "skee:700,-400,500,0,-12",
+   "hockey:-800,-900,600,135,-15",
+   "prizes:-500,-1300,500,200,-10",
+   "north:-1100,500,700,40,-8"
+  ],
+  "quick_shots": [
+   "claw_inside:-450,-450,620,45,-12",
+   "chute:650,-450,60,180,8",
+   "claw_roof:-450,-350,1420,45,-20",
+   "skee_top:2200,-1000,1180,110,-15",
+   "dance:2150,1250,600,135,-14",
+   "booth:1150,-1150,450,-50,-12",
+   "hall:0,-300,-1900,90,-6",
+   "racer:500,-2000,300,90,-10"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "claw",
+   "skee",
+   "north",
+   "overview"
+  ]
+ }
+}
