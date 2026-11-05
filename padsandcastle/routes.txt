@@ -1,0 +1,21 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padsandcastle
+wallstair_s_blue:   1656,10,0 > 2264,10,256
+wallstair_n_blue:   1656,890,0 > 2264,890,256
+gate_blue:          900,450,0 > 1580,450,0
+keepdoor_blue:      1580,300,0 > 1900,310,0
+postern_s_blue:     1643,-300,0 > 1643,20,0
+postern_n_blue:     1643,1200,0 > 1643,880,0
+wallwalk_blue:      2100,-102,256 > 1448,600,256
+wallstair_s_red:    -1656,10,0 > -2264,10,256
+wallstair_n_red:    -1656,890,0 > -2264,890,256
+gate_red:           -900,450,0 > -1580,450,0
+keepdoor_red:       -1580,300,0 > -1900,310,0
+postern_s_red:      -1643,-300,0 > -1643,20,0
+postern_n_red:      -1643,1200,0 > -1643,880,0
+wallwalk_red:       -2100,-102,256 > -1448,600,256
+mount_stair_blue:   987,300,0 > 507,300,192
+mount_stair_red:    -987,300,0 > -507,300,192
+tunnel:             0,-360,0 > 0,960,0
+bin_ramp_blue:      800,680,0 > 800,1380,336
+bin_ramp_red:       -800,680,0 > -800,1380,336

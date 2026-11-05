@@ -107,6 +107,15 @@ class MapKit:
 
     def occupy_r(self, x, y, r, z0, z1): self.occupy(x - r, y - r, x + r, y + r, z0, z1)
 
+    def occupy_disc(self, x, y, r, z0, z1, strips=8):
+        """reserve a round footprint as horizontal strips (occupy_r reserves the whole square, which blocks props and
+        spawns in the corners round big round things: mountains, towers, pools)"""
+        for k in range(strips):
+            ya, yb = y - r + 2 * r * k / strips, y - r + 2 * r * (k + 1) / strips
+            d = 0.0 if ya <= y <= yb else min(abs(ya - y), abs(yb - y))
+            w = math.sqrt(max(0.0, r * r - d * d))
+            self.occupy(x - w, ya, x + w, yb, z0, z1, why=self._caller())
+
     def reserve(self, *things, pad=0):
         """mark architecture as occupied: brushes, lists of brushes or (mn, mx) bounds. Reserve walls, stairs, pads and
         door approaches BEFORE scattering props ('nearest free spot' otherwise fills doorways). Never reserve a whole

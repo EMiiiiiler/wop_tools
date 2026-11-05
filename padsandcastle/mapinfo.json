@@ -1,0 +1,59 @@
+{
+ "map": "wop_padsandcastle",
+ "ns": "padsandcastle",
+ "longname": "Sandcastle Showdown",
+ "generator": "build_padsandcastle.py",
+ "bounds": [
+  -2624,
+  -1792,
+  2624,
+  1792
+ ],
+ "arena_types": "ffa lps team ft ctl 1lc syc_ffa syc_tp",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 8,
+  "minutes": 5,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Sandcastle Showdown",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:0,-2900,2300,90,-38",
+   "blue_castle:950,-520,520,35,-16",
+   "red_gate:-900,450,120,180,-4",
+   "mount:-1000,-500,420,40,-12",
+   "picnic:-1700,700,420,25,-10",
+   "pool:0,-950,300,270,-28"
+  ],
+  "quick_shots": [
+   "courtyard:1560,-20,300,40,-12",
+   "keep_roof:1700,250,640,30,-25",
+   "tunnel:0,-380,60,90,0",
+   "summit:-380,-120,500,45,-18",
+   "conch:300,1580,120,180,-6",
+   "grotto:0,-300,-1900,90,-8"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "blue_castle",
+   "mount",
+   "picnic",
+   "overview"
+  ]
+ }
+}

@@ -133,7 +133,8 @@ class Build:
         sd, mr = self.shader_dirs(), self.md3roots()
         res = {}
         ok = True; det = ''
-        for name, cmd in (('audit', [PY, os.path.join(HERE, 'audit_map.py'), self.mapfile] + mr + sd),
+        scen = ['--scenery=' + ','.join(str(v) for v in self.info['bounds'])] if self.info.get('bounds') else []
+        for name, cmd in (('audit', [PY, os.path.join(HERE, 'audit_map.py'), self.mapfile] + mr + sd + scen),
                           ('lint', [PY, os.path.join(HERE, 'lint_map.py'), self.mapfile] + mr + sd),
                           ('pads', [PY, os.path.join(HERE, 'pad_check.py'), self.mapfile] + sd)):
             rc, o, t = self.run(cmd, log=f'{name}.log')
@@ -282,6 +283,25 @@ class Build:
         if pv.get('shots'): cmd += ['--views', ';'.join(pv['shots'])]
         rc2, o2, t2 = self.run(cmd, log='quick_render.log')
         if rc2: return self.set('quick', 'FAIL', details=o2[-3000:])
+        # self-review before showing the user: a local page (three.js inlined) shot from the mapinfo cameras plus
+        # preview.quick_shots, montaged into <out>/quick_review.png
+        three = os.environ.get('THREE')
+        shots = pv.get('shots', []) + pv.get('quick_shots', [])
+        if three and shots:
+            local = os.path.join(self.out, 'quick_local.html')
+            lc = [c for c in cmd if c not in ('--threeurl',)]
+            i = cmd.index('--threeurl'); lc = cmd[:i] + cmd[i + 2:]
+            lc[lc.index(page)] = local
+            self.run(lc + ['--three', three], log='quick_local.log')
+            sdir = os.path.join(self.out, 'quickshots')
+            for f in glob.glob(os.path.join(sdir, '*.png')): os.remove(f)
+            self.run([PY, os.path.join(HERE, 'preview', 'shoot.py'), local, sdir] + shots + ['--size=960x560', '--nomarkers'],
+                     log='quick_shoot.log', timeout=3600)
+            pngs = [os.path.join(sdir, s.split(':')[0] + '.png') for s in shots]
+            pngs = [p for p in pngs if os.path.exists(p)]
+            if pngs:
+                self.run([PY, os.path.join(HERE, 'preview', 'montage.py'), os.path.join(self.out, 'quick_review.png')] + pngs +
+                         ['--title', f'{self.info["longname"]} - quick preview'], log='quick_montage.log')
         for f in glob.glob(qm[:-4] + '.*'):
             if not f.endswith('.bsp'): os.remove(f)
         mb = os.path.getsize(page) / 1e6

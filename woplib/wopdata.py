@@ -37,12 +37,13 @@ ARENA_NEEDS = {'ctl': ('team_CTL_redlolly', 'team_CTL_bluelolly'),
 SOUNDS = {
     'ambient': ('fire_crackling', 'fire_sizzling', 'wind_icy', 'wind_night', 'water_rippling', 'water_drippling',
                 'water_drain', 'water_shower', 'water_bubbling', 'water_bubble', 'water_flowing', 'slime_bubbling',
-                'floor_creaking', 'train_intercity', 'police_pass'),
+                'floor_creaking', 'train_intercity', 'police_pass', 'ocean_waves', 'water_falling', 'wind_stormy'),
     'machine': ('clock_ticking', 'fog_horn', 'fishtank', 'transformer', 'electric_sizzle', 'fan_pc', 'aircon',
                 'ventilation', 'freezer', 'tv_upstairs', 'mechanics', 'dingdong'),
     'misc': ('wind_chimes', 'secret_found', 'alarm_buzzer', 'bicycle_bell', 'door_buzzer', 'toilet_flush'),
     'human': ('applause', 'footsteps_m', 'snoring'),
-    'animal': ('bird_owl1', 'cricket_chirp1', 'cicada_chirp', 'dog_bark2', 'kitten_meow', 'bird_blackcap', 'blackbird'),
+    'animal': ('bird_owl1', 'cricket_chirp1', 'cicada_chirp', 'dog_bark2', 'kitten_meow', 'bird_blackcap', 'blackbird',
+               'bird_gull', 'bird_crow', 'bird_owl2', 'bird_eagle', 'bird_cardinal', 'bird_vireo'),
 }
 KNOWN_SOUNDS = {f'sound/world/{k}/{n}' for k, v in SOUNDS.items() for n in v} | {'sound/items/jumper/boing'}
 

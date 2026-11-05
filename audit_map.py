@@ -16,6 +16,8 @@ Checks
   4. misc_model vs brush: model bbox shrunk by 25% must not sink into solid brushes.
      misc_externalmodel (animated, frame 0) gets the same support/sink checks.
   5. counts: weapons, ammo per weapon type (rule: 3-6), spawns, models.
+--scenery x0,y0,x1,y1 (the playable bounds; wopbuild passes mapinfo bounds): models lying entirely outside it are
+  scenery behind the boundary clip (dunes, grass on them, distant houses): not support-checked, only sink-checked.
 --shaders: read every scripts/*.shader below the given dir(s) and classify brushes by surfaceparm
   (water/slime/lava -> liquid, fog -> ignored (a fog volume may enclose everything), nonsolid -> decoration)
   instead of guessing from the texture name.
@@ -207,6 +209,7 @@ def main():
     ap.add_argument('-v', action='store_true')
     ap.add_argument('--maxlist', type=int, default=40)
     ap.add_argument('--shaders', action='append', default=[], help='dir(s) holding scripts/*.shader')
+    ap.add_argument('--scenery', default=None, help='x0,y0,x1,y1 playable bounds: models wholly outside are scenery')
     a = ap.parse_args()
     if a.shaders: load_shaders(a.shaders); add_common_parms()
     ents = parse(a.map)
@@ -284,6 +287,8 @@ def main():
     fails += len(bad)
     # 3/4 models
     mbad = []
+    scen = [float(v) for v in a.scenery.split(',')] if a.scenery else None
+    nscen = 0
     if a.md3root:
         floors = [b for b in B if b[1] in ('solid', 'clip', 'water')]
         fmn = np.array([b[4] for b in floors]); fmx = np.array([b[5] for b in floors])
@@ -313,6 +318,10 @@ def main():
                         ok = True; break
                 if not ok: unsup += 1
             frac = unsup / max(1, len(ring))
+            if scen is not None:
+                vmn_, vmx_ = v.min(0), v.max(0)
+                if vmx_[0] <= scen[0] or vmn_[0] >= scen[2] or vmx_[1] <= scen[1] or vmn_[1] >= scen[3]:
+                    frac = 0.0; nscen += 1
             attached = False
             if frac > 0.2:
                 # wall- or ceiling-mounted (wreath, picture frame, hanging star): enough vertices touch a solid/clip
@@ -343,7 +352,8 @@ def main():
                 if frac > 0.2: msg += f'{frac * 100:.0f}% of base unsupported (base z {zb:.1f}) '
                 if sink: msg += f'intersects solid ent{sink[0][2]}/b{sink[0][3]} {sink[0][6][0]}'
                 mbad.append(msg)
-    print(f'[models] {len(mbad)} problems ({counts.get("misc_model", 0)} models, {counts.get("misc_externalmodel", 0)} external)')
+    print(f'[models] {len(mbad)} problems ({counts.get("misc_model", 0)} models, {counts.get("misc_externalmodel", 0)} external'
+          + (f', {nscen} scenery outside the playable bounds' if nscen else '') + ')')
     for s in mbad[:a.maxlist]: print(s)
     fails += len(mbad)
     # 5. counts
