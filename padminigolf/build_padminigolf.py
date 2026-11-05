@@ -277,50 +277,85 @@ def clown():
 
 # ================================================================================================= clubhouse
 def clubhouse():
+    """Putt-Putt Paradise: white weatherboard clubhouse with green trim. Outside: striped awning over the door, framed
+    windows with shutters and flower boxes (north and west), a giant putter, a putter barrel, a soda machine, a rooftop
+    billboard. Inside: chequered floor, striped wallpaper, counter with a trophy shelf and pendant lamps over it, turning
+    ceiling fans, drinks fridge, snack table, ball crates, putter rack, scoreboard and posters. Stairs to the roof
+    terrace (umbrella tables)."""
     x0, y0, x1, y1 = L.CLUB
     h = L.CLUB_H; w = 24
     d0, d1 = L.CLUB_DOOR
+    NW = ((-1880, -1680), (-1360, -1160))           # north windows (x spans)
+    WW = ((-1480, -1360), (-1240, -1120))           # west windows (y spans)
     br = []
-    # north wall: door + two windows
-    for (a, b) in ((x0, -1880), (-1680, d0), (d1, -1360), (-1160, x1)):
+    for (a, b) in ((x0, NW[0][0]), (NW[0][1], d0), (d1, NW[1][0]), (NW[1][1], x1)):
         br.append(box((a, y1 - w, 0), (b, y1, h), WCLIP))
-    for (a, b) in ((-1880, -1680), (-1360, -1160)):
+    for (a, b) in NW:
         br.append(box((a, y1 - w, 0), (b, y1, 110), WCLIP)); br.append(box((a, y1 - w, 240), (b, y1, h), WCLIP))
     br.append(box((d0, y1 - w, 224), (d1, y1, h), WCLIP))
     br.append(box((x0, y0, 0), (x1, y0 + w, h), WCLIP))
-    br.append(box((x0, y0 + w, 0), (x0 + w, y1 - w, h), WCLIP))
+    for (a, b) in ((y0 + w, WW[0][0]), (WW[0][1], WW[1][0]), (WW[1][1], y1 - w)):
+        br.append(box((x0, a, 0), (x0 + w, b, h), WCLIP))
+    for (a, b) in WW:
+        br.append(box((x0, a, 0), (x0 + w, b, 110), WCLIP)); br.append(box((x0, a, 240), (x0 + w, b, h), WCLIP))
     br.append(box((x1 - w, y0 + w, 0), (x1, y1 - w, h), WCLIP))
     br.append(box((x0, y0, h), (x1, y1, h + 16), WCLIP))
-    stc = TX.material('stucco_m', TL.solid((236, 224, 196), 5, 7, 128), shade=20)
+    cb = TX.material('clapboard', MM.clapboard(), shade=20)
+    wp = TX.material('wallpaper', MM.wallpaper(), shade=20)
     rf = TX.material('roof_m', TL.tiles((120, 120, 124), (100, 100, 104), cols=4, rows=4, grout_w=0.02), shade=20)
     tr = TX.material('club_trim', TL.solid((40, 110, 60), 2, 9, 64), shade=20)
+    ce = TX.material('club_ceiling', TL.planks((236, 232, 220), n_planks=6), shade=20)
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
 
     def texfn(c, n, poly):
-        if n[2] > 0.7 and c[2] > h: return rf, ML.planar_uv(n, 256)
-        if abs(n[2]) > 0.7: return stc, ML.planar_uv(n, 256)
-        if c[2] > h - 1: return tr, ML.planar_uv(n, 64)
-        return stc, ML.planar_uv(n, 256)
+        if n[2] > 0.7: return (rf if c[2] > h else tr), ML.planar_uv(n, 256)
+        if n[2] < -0.7: return (ce if c[2] > h - 1 else tr), ML.planar_uv(n, 256)
+        if c[2] > h - 1: return tr, ML.planar_uv(n, 64)                       # roof fascia
+        inner = (cx - c[0]) * n[0] + (cy - c[1]) * n[1] > 0 and x0 + 1 < c[0] < x1 - 1 and y0 + 1 < c[1] < y1 - 1
+        jamb = abs(n[0]) > 0.7 and y1 - w - 1 < c[1] < y1 + 1 or abs(n[1]) > 0.7 and x0 - 1 < c[0] < x0 + w + 1
+        if jamb: return tr, ML.planar_uv(n, 64)
+        return (wp if inner else cb), ML.planar_uv(n, 256)
     K.solid_piece('clubhouse', br, texfn)
-    for (a, b) in ((-1880, -1680), (-1360, -1160)):
-        K.add(box((a, y1 - 14, 110), (b, y1 - 10, 240), T('glass')))
-    K.add(box((x0 + w, y0 + w, 0), (x1 - w, y1 - w, 4), tx('path')))           # tiled floor
-    K.add(sign_box((-1720, y1, 236), (-1320, y1 + 4, 304), T('sign_club'), 1024, 256, back=CAULK, facing='n', edge=T('rail_white')))
-    K.add(sign_box((x1 - w - 4, -1480, 110), (x1 - w, -1160, 270), T('sign_score'), 512, 256, back=CAULK, facing='w', edge=T('rail_white')))
+    for (a, b) in NW: K.add(box((a, y1 - 14, 110), (b, y1 - 10, 240), T('glass')))
+    for (a, b) in WW: K.add(box((x0 + 10, a, 110), (x0 + 14, b, 240), T('glass')))
+    K.add(box((x0 + w, y0 + w, 0), (x1 - w, y1 - w, 4), tx('checker')))
     K.reserve(((x0, y0, 0), (x0 + w + 4, y1, h + 16)), ((x1 - w - 4, y0, 0), (x1, y1, h + 16)),
               ((x0, y0, 0), (x1, y0 + w + 4, h + 16)), ((x0, y1 - w - 4, 0), (x1, y1, h + 16)))
-    K.keep_clear(d0 - 40, y1 - 120, d1 + 40, y1 + 120, 0)
-    # inside: counter, putter racks, ball piles in bins
+    K.keep_clear(d0 - 40, y1 - 140, d1 + 40, y1 + 180, 0)
+    # ---- outside
+    place('awning', (d0 + d1) / 2, y1, 300, 0, occupy=False)
+    for (a, b) in NW: place('window_dress', (a + b) / 2, y1, 110, 0, occupy=False)
+    for (a, b) in WW: place('window_dress', x0, (a + b) / 2, 110, 90, occupy=False)
+    place('giant_putter', -1925, y1 + 50, 0, 180, boxes=[((-150, -64, 0), (64, 14, 90)), ((40, -6, 90), (68, 34, 380))])
+    place('putter_barrel', d0 - 70, y1 + 90, 0, 0, cyls=[(0, 0, 56, 0, 100)])
+    place('vending', -2140, -1250, 0, 0, boxes=[((-86, -61, 0), (86, 61, 320))])
+    K.speaker(-2120, -1250, 120, 'machine/freezer')
+    place('billboard', (x0 + x1) / 2, y0 + 60, h + 16, 0,
+          boxes=[((-250, -10, 0), (-230, 10, 330)), ((230, -10, 0), (250, 10, 330)), ((-330, -14, 140), (-250, 0, 330)),
+                 ((-230, -14, 140), (230, 0, 330)), ((250, -14, 140), (330, 0, 330))])
+    # ---- inside
     place('counter', -1620, y0 + w + 110, 4, 0, boxes=[((-300, -80, 0), (300, 80, 150))])
-    place('putter_rack', x0 + w + 44, -1220, 4, 270, boxes=[((-180, -40, 0), (180, 40, 230))])
-    K.light(-1700, -1320, 290, 260); K.light(-1340, -1320, 290, 260)
-    # stairs up the east side to the roof terrace; umbrella tables up there
+    place('trophy_shelf', -1620, y0 + w + 20, 210, 180, boxes=[((-280, -20, 0), (280, 20, 10))])
+    for x in (-1800, -1440): place('pendant_lamp', x, -1500, h, 0, occupy=False); K.light(x, -1500, h - 100, 160, '1 0.9 0.7')
+    for (fx, nm) in ((-1700, 'fan_w'), (-1300, 'fan_e')):
+        place('fan_mount', fx, -1260, h, 0, occupy=False)
+        K.rotating_model2(ML.IQM['fan'], (fx, -1260, h - 42), 90)
+    place('drinks_fridge', x1 - w - 76, y0 + w + 60, 4, 0, boxes=[((-70, -55, 0), (70, 55, 280))])
+    place('snack_set', -1700, -1170, 4, 0, cyls=[(0, 0, 70, 0, 112), (-120, 0, 34, 0, 78), (120, 0, 34, 0, 78)])
+    place('ball_crate', -1850, -1320, 4, 0, boxes=[((-70, -50, 0), (70, 50, 80))])
+    place('putter_rack', x1 - w - 44, -1280, 4, 90, boxes=[((-180, -40, 0), (180, 40, 230))])
+    K.add(sign_box((x0 + w, -1600, 110), (x0 + w + 4, -1500, 250), T('poster_rules'), 256, 384, back=CAULK, facing='e', edge=T('rail_white')))
+    K.add(sign_box((-1660, y1 - w - 4, 240), (-1380, y1 - w, 300), T('poster_hio'), 512, 128, back=CAULK, facing='s', edge=T('rail_white')))
+    K.add(sign_box((x1 - w - 4, -1440, 236), (x1 - w, -1120, 312), T('sign_score'), 512, 256, back=CAULK, facing='w', edge=T('rail_white')))
+    K.light(-1700, -1320, 290, 220); K.light(-1340, -1320, 290, 220)
+    # ---- stairs up the east side to the roof terrace; umbrella tables up there
     sx0, sy0, sx1, sy1 = L.CSTAIR
     K.stairs16(sx0, sy0, sx1, sy1, 0, h + 16, 's', tx('planks'), route='club_stairs')
     K.reserve(((sx0, sy0, 0), (sx1, sy1, h + 16)))
     K.keep_clear(sx0, sy1, sx1, sy1 + 110, 0)
-    for (x, y) in ((-1740, -1200), (-1300, -1460)):
+    for (x, y) in ((-1740, -1200), (-1300, -1300)):
         place('umbrella_table', x, y, h + 16, 0, cyls=[(0, 0, 100, 0, 124), (0, 0, 10, 124, 340)])
-    K.route('club_door', ((d0 + d1) / 2, y1 + 100, 0), ((d0 + d1) / 2, -1250, 4))
+    K.route('club_door', ((d0 + d1) / 2, y1 + 140, 0), ((d0 + d1) / 2, -1250, 4))
     K.speaker(-1520, -1450, 120, 'machine/tv_upstairs')
 
 
@@ -419,7 +454,7 @@ def items():
     K.item('item_armor_shard', mx + 380, my, L.STAGE_Z); K.item('item_armor_shard', vx - 236, vy, L.V2_H)
     K.item('item_armor_padshield', -1600, -1500, L.CLUB_H + 16)
     K.item('item_speedy', 1600, 1700, 0); K.item('holdable_floater', -1000, 300, 0); K.item('item_jumper', 2050, -1600, 0)
-    K.station(-1220, -1500, 4, 90); K.station(2150, 650, 0, 180)
+    K.station(-1500, -1300, 4, 90); K.station(2150, 650, 0, 180)
 
 
 def spawns():

@@ -92,6 +92,9 @@ def make_textures():
         '\tq3map_surfacelight 120\n\tq3map_lightRGB 1 0.45 0.1\n'
         f'\t{{\n\t\tmap textures/{TX.ns}/lava\n\t\ttcMod turb 0 0.03 0 0.08\n\t\ttcMod scroll 0.02 0.01\n\t}}\n}}\n\n'))
     TX.add('cavern', rock(seed=33, base=(70, 64, 60)))
+    TX.add('checker', TL.checker((30, 30, 34), (240, 238, 228), n_tiles=4))
+    TX.add('poster_rules', ML.text_img('CLUB RULES\n\n1. NO RUNNING\n2. NO SPLASHERS\n3. BEAT PAR', 256, 384, (250, 246, 230), (30, 90, 50), serif=True), 'sign', check_tile=False)
+    TX.add('poster_hio', TL.label('HOLE-IN-ONE CLUB', 512, 128, (200, 40, 40), (250, 240, 200), serif=True), 'sign', check_tile=False)
     TX.add('sign_club', TL.label('PUTT-PUTT PARADISE', 1024, 256, (30, 90, 50), (250, 240, 200), serif=True), 'sign', check_tile=False)
     TX.add('sign_score', score_tex(), 'sign', check_tile=False)
     TX.add('sign_cavern', TL.label('LOST BALL CAVERN', 512, 128, (40, 36, 30), (240, 220, 140), serif=True), 'sign', check_tile=False)
@@ -487,3 +490,228 @@ def make_all():
     hedge(1024, 'hedge_long'); hedge(512, 'hedge_short')
     bench(); buggy(); counter(); putter_rack(); umbrella_table()
     ball_pile('balls_big', 200, 1); ball_pile('balls_small', 120, 2)
+    make_club()
+
+
+# ================================================================================================= clubhouse dressing
+def clapboard(n=256):
+    """white weatherboards (horizontal) with a shadow line under each board"""
+    x, y = xy(n)
+    c = np.zeros((n, n, 3), np.float32) + C((244, 242, 234)) + N3(n, 1, 71, 3)
+    return c * (1 - 0.18 * (((y * 8) % 1) > 0.88))[..., None]
+
+
+def wallpaper(n=256):
+    return TL.stripes((236, 226, 196), (214, 230, 206), n_stripes=8, vertical=True) + N3(n, 1, 73, 2)
+
+
+def awning(width=320, depth=170):
+    """striped shop awning over a door: attached to the wall at local y 0 (wall face), projecting +y, sloping down,
+    scalloped valance, two iron brackets. Origin = wall face, at the top attachment height."""
+    cv = TX.material('awning', TL.stripes((40, 130, 70), (246, 242, 230), n_stripes=6), shade=60, two=True)
+    ir = TX.material('iron_dark', TL.metal((50, 54, 60)), 'lms', v=0.15)
+    X = Model()
+    w = width / 2
+    P = [(-w, 0, 0), (w, 0, 0), (w, depth, -70), (-w, depth, -70)]
+    X.mesh(cv).poly([np.array(p, float) for p in P], (0, 0.37, 0.93), [(0, 0), (3, 0), (3, 1), (0, 1)])
+    # scalloped valance hanging from the front edge
+    for k in range(8):
+        a, b = -w + width * k / 8, -w + width * (k + 1) / 8
+        q = [(a, depth, -70), (b, depth, -70), (b, depth, -100), ((a + b) / 2, depth, -116), (a, depth, -100)]
+        X.mesh(cv).poly([np.array(p, float) for p in q], (0, 1, 0), [(k / 8 * 3, 1), ((k + 1) / 8 * 3, 1), ((k + 1) / 8 * 3, 1.3), ((k + 0.5) / 8 * 3, 1.4), (k / 8 * 3, 1.3)])
+    for sx in (-1, 1):
+        bar(X.mesh(ir), (sx * (w - 10), 0, -150), (sx * (w - 10), depth - 6, -70), 4, 5)
+        X.mesh(cv).poly([np.array(p, float) for p in ((sx * w, 0, 0), (sx * w, depth, -70), (sx * w, depth, -100), (sx * w, 0, -40))],
+                        (sx, 0, 0), [(0, 0), (1, 0), (1, 0.3), (0, 0.2)])
+    return ML.save('awning', X)
+
+
+def window_dress(name='window_dress', ww=200, wh=130):
+    """white frame round a ww x wh window, green shutters folded back, a flower box under the sill full of flowers.
+    Local: the wall face is y 0, outside is +y; origin = bottom centre of the window opening."""
+    wh_ = TX.material('trim_white2', TL.solid((246, 246, 240), 2, 75, 64), shade=30)
+    gr = TX.material('shutter_green', TL.planks((40, 110, 60), n_planks=5, vertical=True), shade=30)
+    bx = TX.material('flower_box', TL.planks((150, 104, 62), n_planks=2), shade=30)
+    lf = TX.material('box_leaves', leaves(seed=77), shade=89)
+    X = Model()
+    w = ww / 2
+    for (a, b) in (((-w - 14, -14), (w + 14, 0)), ((-w - 14, wh), (w + 14, wh + 14)), ((-w - 14, 0), (-w, wh)), ((w, 0), (w + 14, wh))):
+        rbox(X.mesh(wh_), (a[0], 0, a[1]), (b[0], 10, b[1]), r=2, k=1, tile=64)
+    rbox(X.mesh(wh_), (-w - 20, 0, -14), (w + 20, 30, 0), r=3, k=1, tile=64)                 # sill
+    for sx in (-1, 1):
+        x_in, x_out = sx * (w + 16), sx * (w + 96)
+        rbox(X.mesh(gr), (min(x_in, x_out), 0, 0), (max(x_in, x_out), 8, wh), r=2, k=1, tile=128)
+    rbox(X.mesh(bx), (-w, 0, -60), (w, 40, -16), r=4, k=1, tile=128)                         # flower box
+    rng = np.random.default_rng(len(name))
+    cols = [TX.material(f'flower_{c}', TL.solid(rgb, 2, 79 + i, 32)) for i, (c, rgb) in
+            enumerate((('red', (230, 40, 50)), ('yellow', (250, 210, 40)), ('pink', (250, 120, 180)), ('white', (250, 250, 250))))]
+    for k in range(14):
+        x = -w + 14 + (ww - 28) * k / 13; y = rng.uniform(10, 30)
+        sphere(X.mesh(lf), (x, y, -12), rng.uniform(12, 18), nu=8, nv=5)
+        sphere(X.mesh(cols[k % 4]), (x + rng.uniform(-6, 6), y, rng.uniform(4, 16)), 8, nu=8, nv=5)
+    return ML.save(name, X)
+
+
+def ceiling_fan():
+    """fan blades (IQM, func_rotating about z; origin = hub) and the static mount (MD3, origin = ceiling point)"""
+    wd = TX.material('fan_blade', TL.planks((120, 80, 50), n_planks=2), 'dyn')
+    br = TX.material('fan_brass', TL.metal((200, 170, 90)), 'dyn')
+    X = Model()
+    revolve(X.mesh(br), [(0, -14), (34, -12), (36, 6), (0, 8)], n=16)
+    for k in range(4):
+        a = k * math.pi / 2
+        m = Mesh(); rbox(m, (30, -16, -3), (130, 16, 3), r=3, k=1, tile=128)
+        X.mesh(wd).add(m, rot_z(a) @ rot_axis((1, 0, 0), 0.15), (0, 0, 0))
+    ML.save_iqm('fan', X)
+    ms = TX.material('fan_brass_lm', TL.metal((200, 170, 90)), 'lms', v=0.25)
+    Y = Model()
+    revolve(Y.mesh(ms), [(0, -42), (24, -42), (30, -30), (24, -18), (8, -16), (6, 0), (30, 0), (0, 0)], n=16)
+    return ML.save('fan_mount', Y)
+
+
+def pendant_lamp():
+    """lamp hanging 90u from the ceiling: cord, green enamel shade, glowing bulb. Origin = ceiling point."""
+    gr = TX.material('shade_green', TL.solid((30, 110, 60), 2, 83, 64), 'lms', v=0.15)
+    bk = TX.material('cord', TL.solid((20, 20, 22), 2, 85, 32))
+    gl = TX.material('bulb_glow', TL.solid((255, 240, 190), 2, 87, 32), 'glow')
+    X = Model()
+    bar(X.mesh(bk), (0, 0, 0), (0, 0, -60), 2, 5)
+    revolve(X.mesh(gr), [(6, -60), (14, -64), (40, -88), (44, -92)], n=20)
+    revolve(X.mesh(gr), [(44, -92), (40, -88), (14, -64), (6, -60)], n=20)
+    sphere(X.mesh(gl), (0, 0, -84), 12, nu=10, nv=6)
+    return ML.save('pendant_lamp', X)
+
+
+def drinks_fridge():
+    """glass-fronted drinks fridge 140 x 110 x 280 (front -y): glowing shelves of bottles behind the glass"""
+    wh = TX.material('fridge_white', TL.solid((240, 240, 236), 2, 89, 64), 'lms', v=0.1)
+    fr = TX.material('fridge_glow', fridge_tex(), 'glow')
+    lg = TX.material('fridge_logo', ML.text_img('ICE COLD', 256, 64, (200, 30, 40), (250, 250, 250), serif=False), shade=30)
+    X = Model()
+    rbox(X.mesh(wh), (-70, -55, 0), (70, 55, 280), r=8, k=2, tile=128)
+    quad_tex(X.mesh(fr), (0, -56, 135), (0, -1, 0), (1, 0, 0), 112, 200)
+    quad_tex(X.mesh(lg), (0, -56, 258), (0, -1, 0), (1, 0, 0), 110, 28)
+    return ML.save('drinks_fridge', X)
+
+
+def fridge_tex(n=128):
+    im = np.zeros((n * 2, n, 3), np.float32) + C((40, 70, 90))
+    rng = np.random.default_rng(3)
+    for r in range(4):
+        y0 = int(n * 2 * (r + 0.25) / 4)
+        im[y0 + 28:y0 + 31, :] = C((220, 230, 240))
+        for k in range(6):
+            x = 6 + k * 20; col = C([(230, 40, 40), (40, 160, 230), (250, 200, 40), (60, 200, 90)][rng.integers(0, 4)])
+            im[y0:y0 + 28, x:x + 12] = col
+    return im + 30
+
+
+def quad_tex(M, c, nrm, right, w, h):
+    c = np.asarray(c, float); r = np.asarray(right, float) * w / 2; u = np.array([0, 0, 1.0]) * h / 2
+    M.poly([c - r - u, c + r - u, c + r + u, c - r + u], nrm, [(0, 1), (1, 1), (1, 0), (0, 0)])
+
+
+def trophy_shelf(length=560):
+    """wall shelf (depth 40, board at z 0..10, local wall at y +20 so the shelf sticks out toward -y) with brackets and a
+    row of gold cups and plaques. Origin = shelf centre at board bottom."""
+    wd = TX.material('counter_wood', TL.planks((120, 80, 50), n_planks=6, vertical=True), shade=30)
+    gd = TX.material('gold', TL.metal((230, 190, 70)), 'lms', v=0.35)
+    X = Model()
+    rbox(X.mesh(wd), (-length / 2, -20, 0), (length / 2, 20, 10), r=2, k=1, tile=128)
+    for x in (-length / 2 + 40, length / 2 - 40):
+        rbox(X.mesh(wd), (x - 6, 12, -50), (x + 6, 20, 0), r=1, k=1)
+    for k in range(5):
+        x = -length / 2 + 60 + k * (length - 120) / 4
+        s = 0.8 + 0.25 * (k % 2)
+        revolve(X.mesh(gd), [(0, 10), (22 * s, 10), (22 * s, 16), (8 * s, 20), (6 * s, 40 * s), (26 * s, 56 * s), (28 * s, 80 * s), (0, 78 * s)],
+                n=16, cx=x, cy=0)
+        for sx in (-1, 1):
+            tube(X.mesh(gd), [(x + sx * 24 * s, 0, 70 * s), (x + sx * 38 * s, 0, 60 * s), (x + sx * 26 * s, 0, 46 * s)], 3, nseg=5)
+    return ML.save('trophy_shelf', X)
+
+
+def snack_set():
+    """round snack table (r 70, 110 tall) with two stools; origin = table centre"""
+    wh = TX.material('table_white', TL.solid((240, 240, 236), 2, 47, 64), 'lms', v=0.08)
+    rd = TX.material('stool_red', TL.solid((200, 40, 40), 2, 91, 64), 'lms', v=0.12)
+    X = Model()
+    revolve(X.mesh(wh), [(40, 0), (36, 6), (8, 14), (8, 100), (70, 102), (70, 110), (0, 112)], n=24)
+    for sx in (-1, 1):
+        revolve(X.mesh(wh), [(28, 0), (24, 6), (6, 12), (6, 64)], n=12, cx=sx * 120)
+        revolve(X.mesh(rd), [(34, 64), (36, 70), (34, 76), (0, 78)], n=16, cx=sx * 120)
+    return ML.save('snack_set', X)
+
+
+def ball_crate():
+    """wooden crate 140 x 100 x 80 heaped with coloured range balls; origin floor centre"""
+    wd = TX.material('crate_wood', TL.planks((170, 120, 70), n_planks=3, vertical=False), shade=30)
+    X = Model()
+    rbox(X.mesh(wd), (-70, -50, 0), (70, 50, 80), r=3, k=1, tile=128)
+    rng = np.random.default_rng(9)
+    cols = [TX.material(f'ball_{c}', TL.solid(rgb, 2, 93 + i, 32), 'lms', v=0.15) for i, (c, rgb) in
+            enumerate((('pink', (250, 90, 160)), ('orange', (250, 140, 30)), ('green', (80, 220, 90)), ('blue', (60, 140, 250))))]
+    for k in range(18):
+        sphere(X.mesh(cols[k % 4]), (rng.uniform(-50, 50), rng.uniform(-32, 32), 80 + rng.uniform(0, 14)), 11, nu=8, nv=5)
+    return ML.save('ball_crate', X)
+
+
+def vending():
+    """soda machine 180 wide x 130 deep x 320 tall, front -y: glowing panel, buttons, delivery slot"""
+    rd = TX.material('vend_red', TL.solid((200, 30, 40), 2, 97, 64), 'lms', v=0.15)
+    pn = TX.material('vend_panel', ML.text_img('FIZZ\nPOP', 256, 384, (240, 240, 236), (200, 30, 40), serif=False), 'glow')
+    bk = TX.material('vend_black', TL.solid((20, 20, 24), 2, 99, 32))
+    X = Model()
+    rbox(X.mesh(rd), (-90, -65, 0), (90, 65, 320), r=10, k=2, tile=128)
+    quad_tex(X.mesh(pn), (-20, -66, 190), (0, -1, 0), (1, 0, 0), 110, 180)
+    rbox(X.mesh(bk), (-70, -70, 40), (40, -62, 80), r=3, k=1)
+    for k in range(4): sphere(X.mesh(bk), (62, -66, 230 - k * 26), 7, nu=6, nv=4)
+    return ML.save('vending', X)
+
+
+def putter_barrel():
+    """half barrel of loaner putters by the door; origin floor centre"""
+    wd = TX.material('crate_wood', TL.planks((170, 120, 70), n_planks=3, vertical=False), shade=30)
+    st = TX.material('steel', TL.metal((200, 206, 212)), 'lms', v=0.25)
+    rb = TX.material('grip', TL.solid((30, 30, 34), 2, 45, 64))
+    X = Model()
+    revolve(X.mesh(wd), [(52, 0), (60, 50), (54, 100), (46, 100), (46, 92), (0, 92)], n=20, u_tiles=3)
+    rng = np.random.default_rng(11)
+    for k in range(7):
+        a = 2 * math.pi * k / 7; r = 26
+        top = (r * 1.6 * math.cos(a), r * 1.6 * math.sin(a), 240 + rng.uniform(-10, 10))
+        bar(X.mesh(st), (r * 0.5 * math.cos(a), r * 0.5 * math.sin(a), 92), top, 3, 5)
+        bar(X.mesh(rb), top, (top[0] * 1.08, top[1] * 1.08, top[2] + 40), 5, 5)
+    return ML.save('putter_barrel', X)
+
+
+def giant_putter():
+    """a giant putter leaning on the clubhouse wall (wall at local y +40), head on the ground, with a giant ball"""
+    st = TX.material('steel', TL.metal((200, 206, 212)), 'lms', v=0.25)
+    rb = TX.material('grip', TL.solid((30, 30, 34), 2, 45, 64))
+    bl = TX.material('ball_dimples', dimples(), shade=89)
+    X = Model()
+    rbox(X.mesh(st), (-60, -14, 0), (60, 14, 36), r=6, k=2)
+    tube(X.mesh(st), [(50, 0, 30), (54, 30, 300)], 8, nseg=8)
+    tube(X.mesh(rb), [(54, 30, 300), (56, 36, 380)], 12, nseg=8)
+    sphere(X.mesh(bl), (-110, -20, 44), 44, nu=16, nv=8, u1=3, v1=2)
+    return ML.save('giant_putter', X)
+
+
+def billboard():
+    """rooftop billboard: PUTT-PUTT PARADISE panel (640 x 180) on two posts, a giant golf ball on its corner.
+    Origin = roof surface centre under the panel; the panel faces +y."""
+    wd = TX.material('mill_wood', TL.planks((150, 104, 62)), shade=40)
+    sg = TX.material('billboard', TL.label('PUTT-PUTT PARADISE', 1024, 256, (30, 90, 50), (250, 240, 200), serif=True), shade=30)
+    bl = TX.material('ball_dimples', dimples(), shade=89)
+    X = Model()
+    for sx in (-1, 1):
+        rbox(X.mesh(wd), (sx * 240 - 10, -10, 0), (sx * 240 + 10, 10, 330), r=2, k=1, tile=128)
+    rbox(X.mesh(wd), (-330, -14, 140), (330, 0, 330), r=3, k=1, tile=256)
+    quad_tex(X.mesh(sg), (0, 1, 235), (0, 1, 0), (-1, 0, 0), 640, 180)
+    sphere(X.mesh(bl), (300, -6, 380), 50, nu=16, nv=8, u1=3, v1=2)
+    return ML.save('billboard', X)
+
+
+def make_club():
+    awning(); window_dress(); ceiling_fan(); pendant_lamp(); drinks_fridge(); trophy_shelf(); snack_set(); ball_crate()
+    vending(); putter_barrel(); giant_putter(); billboard()
