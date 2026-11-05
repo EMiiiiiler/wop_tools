@@ -1,0 +1,73 @@
+{
+ "map": "wop_padgarage",
+ "ns": "padgarage",
+ "longname": "Padman's Garage",
+ "generator": "build_padgarage.py",
+ "bounds": [
+  -4200,
+  -8200,
+  4200,
+  4100
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter",
+  "_note": "bounce on the street-sized hull ran > 1 h; the street has its own fill lights instead"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   960,
+   1500
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "960": 10.0,
+   "1500": 12.0
+  },
+  "_note": "960/1500 levels: the car roof (Pumper) and loft look across the open garage atrium and out of the doors on purpose. Floor: the street (user request: houses viewable down the street) stays near 5 % after cover on every hot cell"
+ },
+ "preview": {
+  "title": "Padman's Garage",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:3600,-7900,2700,125,-24",
+   "front:1150,-4350,330,98,3",
+   "street_w:3550,-5550,330,180,1",
+   "street_e:-3550,-5650,330,0,1",
+   "driveway:1650,-2750,520,148,-6",
+   "door:350,-700,260,100,0",
+   "garage:-200,450,400,90,-8",
+   "workshop:300,1100,700,30,-12",
+   "car:-150,1300,500,140,-12",
+   "cabin:-1020,1650,420,90,-10",
+   "loft:500,2700,1650,180,-15",
+   "laundry:-700,3050,700,150,-25",
+   "shelves:900,2900,900,10,-10",
+   "roof:-1600,800,2100,40,-20",
+   "den:0,-300,-1900,90,-5"
+  ]
+ },
+ "levelshots": {
+  "cover": "front",
+  "shots": [
+   "overview",
+   "garage",
+   "car"
+  ]
+ },
+ "hull": [
+  -12400,
+  -12000,
+  12400,
+  4100
+ ]
+}

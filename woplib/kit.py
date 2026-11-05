@@ -45,6 +45,7 @@ class MapKit:
         self.M = Map(ws)
         self.rng = np.random.default_rng(seed)
         self.FOOT = []                                         # occupied (x0, y0, x1, y1, z0, z1)
+        self.FOOT_WHY = []                                     # who reserved each FOOT box
         self.spots = {'weapon': [], 'ammo': [], 'item': [], 'spawn': [], 'pads': [], 'teleports': [], 'secrets': [],
                       'hurt': [], 'crawl': [], 'stairs': [], 'movers': [], 'botclip': []}
         self.routes = []
@@ -72,7 +73,37 @@ class MapKit:
         self._names.add(name); return name
 
     # ------------------------------------------------------------------ occupancy (prop placement)
-    def occupy(self, x0, y0, x1, y1, z0, z1): self.FOOT.append((x0, y0, x1, y1, z0, z1))
+    def occupy(self, x0, y0, x1, y1, z0, z1, why=None):
+        self.FOOT.append((x0, y0, x1, y1, z0, z1))
+        self.FOOT_WHY.append(why or self._caller())
+
+    @staticmethod
+    def _caller():
+        """generator function + line that reserved a volume (for 'no room' messages)"""
+        import inspect
+        for f in inspect.stack()[2:8]:
+            if not f.filename.endswith(('kit.py',)):
+                return f'{f.function}():{f.lineno}'
+        return '?'
+
+    def blockers(self, x, y, r, z0, z1, margin=4, n=3):
+        """what occupies the spot: [(reason, (x0, y0, x1, y1, z0, z1))] nearest first"""
+        out = []
+        for box_, why in zip(self.FOOT, self.FOOT_WHY):
+            a, b, c, d, e, f = box_
+            if z1 <= e + 0.5 or z0 >= f - 0.5: continue
+            dx = max(a - x, 0, x - c); dy = max(b - y, 0, y - d)
+            dist = math.hypot(dx, dy)
+            if dist < r + margin: out.append((dist, why, tuple(round(v) for v in box_)))
+        return [(w, bx) for _, w, bx in sorted(out)[:n]]
+
+    def _no_room(self, what, x, y, z, r, h):
+        bl = self.blockers(x, y, r, z, z + h)
+        X0, Y0, X1, Y1 = self.bounds
+        out = x - r < X0 + 8 or x + r > X1 - 8 or y - r < Y0 + 8 or y + r > Y1 - 8
+        bounds = f' (reaches outside the playable bounds {self.bounds})' if out else ''
+        self.warn(f'no room for {what} near ({x:.0f},{y:.0f},{z:.0f}) r {r:.0f}{bounds}' +
+                  (': blocked by ' + '; '.join(f'{w} {bx}' for w, bx in bl) if bl else ''))
 
     def occupy_r(self, x, y, r, z0, z1): self.occupy(x - r, y - r, x + r, y + r, z0, z1)
 
@@ -141,7 +172,7 @@ class MapKit:
         r = max(sx, sy) / 2
         p = self.near_free(x, y, r, z, z + sz, search) if nudge else (x, y)
         if p is None:
-            self.warn(f'no room for {path} near ({x:.0f},{y:.0f},{z:.0f})'); return None
+            self._no_room(path, x, y, z, r, sz); return None
         a = self.rng.uniform(0, 360) if angle is None else angle
         kw = dict(spawnflags=4, _castshadows=1) if lit else {}
         e = self.model_on(path, p[0], p[1], z, scale, a, **kw)
@@ -166,29 +197,60 @@ class MapKit:
         extra = dict(spawnflags=4, _castshadows=1, _receiveshadows=1) if lit else {}
         extra.update(kw)
         e = self.M.model(path, (round(x, 2), round(y, 2), round(zbase + zo, 2)), scale=round(sc, 4), angle=angle, **extra)
-        ar = math.radians(angle)
-        rmax, hmax = 16.0, 16.0
+        ar = math.radians(angle); ca, sa = math.cos(ar), math.sin(ar)
         for (mn, mx) in boxes:
             self.lbox(x, y, zbase, angle, mn, mx)
-            rmax = max(rmax, math.hypot(max(abs(mn[0]), abs(mx[0])), max(abs(mn[1]), abs(mx[1])))); hmax = max(hmax, mx[2])
+            if occupy:      # the box's own rotated footprint (a circle round the origin blocked far too much)
+                pts = [(x + px * ca - py * sa, y + px * sa + py * ca) for px in (mn[0], mx[0]) for py in (mn[1], mx[1])]
+                self.occupy(min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts),
+                            zbase + mn[2], zbase + mx[2])
         for (cx, cy, rr, z0, z1) in cyls:
-            wx = x + cx * math.cos(ar) - cy * math.sin(ar); wy = y + cx * math.sin(ar) + cy * math.cos(ar)
+            wx = x + cx * ca - cy * sa; wy = y + cx * sa + cy * ca
             self.add(cyl(round(wx, 1), round(wy, 1), rr, zbase + z0, zbase + z1, WCLIP, 12 if rr > 40 else 8))
-            rmax = max(rmax, math.hypot(cx, cy) + rr); hmax = max(hmax, z1)
-        if occupy and (boxes or cyls): self.occupy_r(x, y, rmax, zbase, zbase + hmax)
+            if occupy: self.occupy_r(wx, wy, rr, zbase + z0, zbase + z1)
         return e
 
-    def prop(self, place, x, y, z, boxes=(), cyls=(), angle=None, search=160, lit=True, **kw):
-        """custom MD3 + its collision, nudged to the nearest free spot (cover pieces, furniture). Returns (x, y) or None."""
-        r, h = 16.0, 16.0
+    def footprint(self, x, y, angle, boxes=(), cyls=(), z=0):
+        """world AABBs (x0, y0, x1, y1, z0, z1) of a model's collision at (x, y, angle)"""
+        ar = math.radians(angle); ca, sa = math.cos(ar), math.sin(ar)
+        out = []
         for (mn, mx) in boxes:
-            r = max(r, math.hypot(max(abs(mn[0]), abs(mx[0])), max(abs(mn[1]), abs(mx[1])))); h = max(h, mx[2])
+            pts = [(x + px * ca - py * sa, y + px * sa + py * ca) for px in (mn[0], mx[0]) for py in (mn[1], mx[1])]
+            out.append((min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts),
+                        z + mn[2], z + mx[2]))
         for (cx, cy, rr, z0, z1) in cyls:
-            r = max(r, math.hypot(cx, cy) + rr); h = max(h, z1)
-        p = self.near_free(x, y, r, z, z + h, search)
-        if p is None:
-            self.warn(f'no room for {place[0]} near ({x:.0f},{y:.0f},{z:.0f})'); return None
+            wx = x + cx * ca - cy * sa; wy = y + cx * sa + cy * ca
+            out.append((wx - rr, wy - rr, wx + rr, wy + rr, z + z0, z + z1))
+        return out
+
+    def fits(self, fp, margin=4):
+        """do these AABBs avoid every reserved volume and stay inside the playable bounds?"""
+        X0, Y0, X1, Y1 = self.bounds
+        for (a, b, c, d, e, f) in fp:
+            if a < X0 + 8 or b < Y0 + 8 or c > X1 - 8 or d > Y1 - 8: return False
+            for (p, q, r_, t, u, v) in self.FOOT:
+                if f <= u + 0.5 or e >= v - 0.5: continue
+                if a < r_ + margin and c > p - margin and b < t + margin and d > q - margin: return False
+        return True
+
+    def prop(self, place, x, y, z, boxes=(), cyls=(), angle=None, search=200, lit=True, **kw):
+        """custom MD3 + its collision at the nearest spot (rings of 16 directions, 24u steps) where its real rotated
+        footprint fits. Returns (x, y) or None (the warning names what is in the way)."""
         a = self.rng.uniform(0, 360) if angle is None else angle
+        fp = lambda px, py: self.footprint(px, py, a, boxes, cyls, z)
+        p = (x, y) if self.fits(fp(x, y)) else None
+        d = 24
+        while p is None and d <= search:
+            for k in range(16):
+                t = k * math.pi / 8
+                px, py = round(x + d * math.cos(t)), round(y + d * math.sin(t))
+                if self.fits(fp(px, py)): p = (px, py); break
+            d += 24
+        if p is None:
+            r = max([math.hypot(max(abs(mn[0]), abs(mx[0])), max(abs(mn[1]), abs(mx[1]))) for mn, mx in boxes] +
+                    [math.hypot(cx, cy) + rr for cx, cy, rr, _, _ in cyls] + [16])
+            h = max([mx[2] for _, mx in boxes] + [c[4] for c in cyls] + [16])
+            self._no_room(place[0], x, y, z, r, h); return None
         self.custom(place, p[0], p[1], z, a, lit=lit, boxes=boxes, cyls=cyls, **kw)
         return p
 
@@ -281,7 +343,7 @@ class MapKit:
     def spawn(self, x, y, floor, ang, cls='info_player_deathmatch', nudge=True):
         p = self.near_free(x, y, 40, floor, floor + 64) if nudge else (x, y)
         if p is None:
-            self.warn(f'no room for a spawn near ({x:.0f},{y:.0f},{floor:.0f})'); return None
+            self._no_room('a spawn', x, y, floor, 40, 64); return None
         self.ent(cls, (round(p[0]), round(p[1]), round(floor) + 25), angle=round(ang) % 360)
         self.spots['spawn'].append(dict(cls=cls, x=round(p[0]), y=round(p[1]), floor=round(floor)))
         self.occupy_r(p[0], p[1], 40, floor, floor + 64)
@@ -300,6 +362,9 @@ class MapKit:
         Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground)."""
         x, y = round(x), round(y)
         name = self.uniq(name)
+        if not self.free(x, y, radius, z, z + 90, margin=0):
+            bl = self.blockers(x, y, radius, z, z + 90, margin=0)
+            self.warn(f'pad {name}: launch spot ({x},{y},{z}) is occupied by ' + '; '.join(f'{w} {b}' for w, b in bl))
         P = padmath.plan(z, (x, y), land, apex, ceiling=ceiling, edges=edges)
         for w in P['warnings']: self.warn(f'pad {name}: {w}')
         if P['target'] is None: raise ValueError(f'pad {name}: {P["warnings"]}')

@@ -213,6 +213,15 @@ def bezier_patch(ctrl, w, h, sub=6):
 
 
 # ------------------------------------------------------------------ main
+def unlit_shade(nrm):
+    """vertex colour for --unlit: a sun from high up one side plus a soft sky fill, in the page's vertex-colour scale
+    (118 = a lit model surface)"""
+    n = np.asarray(nrm, np.float32).reshape(-1, 3)
+    L = np.array([0.45, 0.3, 0.84], np.float32); L /= np.linalg.norm(L)
+    k = 62 + 62 * np.clip(n @ L, 0, 1) + 22 * (0.5 + 0.5 * n[:, 2])
+    return np.repeat(k[:, None], 3, 1).astype(np.float32)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bsp'); ap.add_argument('out')
@@ -231,6 +240,8 @@ def main():
                     'lightmap UVs and indices): about half the page size, for phone-friendly / <16 MB artifacts')
     ap.add_argument('--dropout', default=None, help='"x0,y0,x1,y1:sub1,sub2": leave out surfaces whose shader contains one of the '
                     'substrings and that lie entirely outside the rectangle (scenery beyond the playable area, to keep phone pages small)')
+    ap.add_argument('--unlit', action='store_true', help='quick preview of a BSP built with -meta only (no -light): ignore '
+                    'lightmaps and shade every surface by its normal (sun from above + sky fill), so shapes read at once')
     ap.add_argument('--fog', default=None, help='"r,g,b,dist": distance fog (Q3 fogparms colour + distance to opaque), e.g. for a map inside a fog volume')
     a = ap.parse_args()
 
@@ -302,6 +313,8 @@ def main():
             tris = di[fi:fi + ni].astype(np.int64)
         if surf_off[si].any(): xyz = np.asarray(xyz, np.float32) + surf_off[si]   # (an ndarray: 'si in surf_off' tested values)
         lmn = int(s['lm'])
+        if a.unlit and not info.get('fullbright'):
+            lmn = -1; col = unlit_shade(nrm)
         if lmn >= 0:
             li = lmn; ax = (li % cols) * 128; ay = (li // cols) * 128
             u2 = (ax + lmst[:, 0] * 128) / (cols * 128)
@@ -348,7 +361,8 @@ def main():
             g['nrm'].append((np.asarray(srf['normals'], np.float32) @ R).astype(np.float32))
             v = srf['verts'] @ R + (o if anim < 0 else 0)
             g['pos'].append(v.astype(np.float32)); g['uv'].append(srf['st'].astype(np.float32))
-            g['uv2'].append(np.zeros((len(v), 2), np.float32)); g['col'].append(np.full((len(v), 3), 118, np.float32))
+            g['uv2'].append(np.zeros((len(v), 2), np.float32))
+            g['col'].append(unlit_shade((np.asarray(srf['normals'], np.float32) @ R)) if a.unlit else np.full((len(v), 3), 118, np.float32))
             g['idx'].append(srf['tris'][:, ::-1].astype(np.int64) + g['n']); g['n'] += len(v)
         nent_models += 1
 

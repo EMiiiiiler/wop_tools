@@ -7,10 +7,14 @@ Steps (in pipeline order; aliases: `check` = gen lint compile aas lights sight, 
   gen        run the folder's generator (mapinfo.json "generator") with OUT=<out>
   lint       audit_map + lint_map + pad_check (+ mover_sweep when the map has func_bobbing)      [no compiler needed]
   compile    q3map2 BSP -> VIS -> LIGHT, then bspc (always after -light); fails on a leak; reports portals and warnings
-  aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways)
+  aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways) and
+             pad_aas (bspc's own flight for every jump pad lands where intended, not in mid-air)
   lights     light_check: floor brightness from the BSP lightmaps (dark / blown-out walkable areas, lights.png)
   sight      sightlines at each mapinfo "sightlines.zmax" level; fails above "target_pct" (default 4 %)
   bots       wopded with bots (mapinfo "bots"), then botreport (every weapon picked up, secret found)
+  quick      fast look before a full build: q3map2 -meta only (no vis, light or bspc; a copy named <map>_quick so the
+             real BSP is untouched), then an unlit, normal-shaded 3D walk-through <out>/quick.html with the mapinfo
+             camera buttons. Seconds to a minute; alias `preview` = gen quick
   render     bsp2scene walk-through page + screenshots from mapinfo "shots" AND automatic views (preview/autoviews.py:
              every weapon, secret, pad landing, two overviews); review.png = all of them on one labelled sheet,
              models.png = contact sheet of the map's custom MD3s
@@ -26,7 +30,7 @@ import os, sys, re, json, time, shutil, subprocess, argparse, zipfile, glob
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
 ORDER = ['gen', 'lint', 'compile', 'aas', 'lights', 'sight', 'bots', 'render', 'levelshots', 'package']
-ALIASES = {'check': ['gen', 'lint', 'compile', 'aas', 'lights', 'sight'], 'all': ORDER}
+ALIASES = {'check': ['gen', 'lint', 'compile', 'aas', 'lights', 'sight'], 'all': ORDER, 'preview': ['gen', 'quick']}
 
 
 class Build:
@@ -85,7 +89,8 @@ class Build:
     def write_report(self):
         json.dump(self.report, open(self.rp, 'w'), indent=1)
         rows = []
-        for s in ORDER:
+        shown = (['quick'] if 'quick' in self.report else []) + ORDER      # quick is not part of the definition of done
+        for s in shown:
             r = self.report.get(s)
             if not r: rows.append(f'| {s} | not run | |'); continue
             info = '; '.join(f'{k}: {v}' + (f' (was {r["was"][k]})' if k in r.get('was', {}) else '')
@@ -95,7 +100,7 @@ class Build:
         md = (f'# {self.info["longname"]} ({self.map}) - build report\n\n'
               f'Definition of done: every step PASS (WARN = looked at and accepted). **{"DONE" if done else "NOT DONE"}**\n\n'
               '| step | status | numbers |\n|---|---|---|\n' + '\n'.join(rows) + '\n')
-        for s in ORDER:
+        for s in shown:
             d = self.report.get(s, {}).get('details')
             if d: md += f'\n## {s}\n```\n{d.strip()[-6000:]}\n```\n'
         open(os.path.join(self.out, 'report.md'), 'w').write(md)
@@ -200,8 +205,12 @@ class Build:
         rc, o, t = self.run(cmd, log='aas.log')
         bad = [l for l in o.splitlines() if re.search(r'NO AREA|UNREACHABLE|TRAP|blocked|NO PATH', l)]
         nr = len([l for l in o.splitlines() if l.strip().startswith('route ')])
-        return self.set('aas', 'PASS' if rc == 0 else 'FAIL', routes=nr, problems=len(bad),
-                        details='\n'.join(bad[:60]) or '\n'.join(o.splitlines()[-6:]))
+        # bspc's own jump-pad flights (lower and shorter than the game's): every pad must land where intended
+        rc2, o2, _ = self.run([PY, os.path.join(HERE, 'pad_aas.py'), os.path.join(self.out, 'maps', self.map + '.aas'),
+                               self.mapfile], log='pad_aas.log')
+        pbad = [l.strip() for l in o2.splitlines() if l.strip().startswith('FAIL')]
+        return self.set('aas', 'PASS' if rc == 0 and rc2 == 0 else 'FAIL', routes=nr, problems=len(bad), pads_unlinked=len(pbad),
+                        details='\n'.join(bad[:60] + pbad) or '\n'.join(o.splitlines()[-6:]))
 
     def s_sight(self):
         si = self.info.get('sightlines', {})
@@ -209,10 +218,13 @@ class Build:
         # level_target_pct {"<zmax>": pct} relaxes the target for upper levels that look across an open atrium (padfridge
         # door bins); the floor level keeps target_pct. status compares each level with its own target.
         target = si.get('target_pct', 4.0); lt = si.get('level_target_pct', {}); worst = 0.0; over = -99.0; det = ''
+        # eye points only where players can stand (AAS reachable from a spawn): gardens behind the clip don't count
+        aas = os.path.join(self.out, 'maps', self.map + '.aas'); bsp = os.path.join(self.out, 'maps', self.map + '.bsp')
+        aas_arg = ['--aas', aas] if os.path.exists(aas) and os.path.exists(bsp) and os.path.getmtime(aas) >= os.path.getmtime(bsp) else []
         for z in si.get('zmax', [64]):
             png = os.path.join(self.out, f'sightlines_{z}.png')
             rc, o, t = self.run([PY, os.path.join(HERE, 'sightlines.py'), self.mapfile, png, f'--bounds={b}', '--zmax', str(z),
-                                 '--min', str(si.get('min', 1800)), '--hot', '8'] + self.md3roots() + self.shader_dirs(),
+                                 '--min', str(si.get('min', 1800)), '--hot', '8'] + self.md3roots() + self.shader_dirs() + aas_arg,
                                 log=f'sight_{z}.log')
             m = re.search(r'\(([\d.]+)%\)', o)
             pct = float(m.group(1)) if m else 100.0
@@ -246,6 +258,36 @@ class Build:
         w = len(re.findall(r'^WARN', o, re.M))
         return self.set('bots', 'FAIL' if rc else ('WARN' if w else 'PASS'), kills=int(k.group(1)) if k else 0,
                         minutes=mins, bots=nb, details=o)
+
+    def s_quick(self):
+        """unlit walk-through from a -meta-only BSP: check the layout, props and look before paying for vis/light/bspc"""
+        if not self.link_into_game():
+            return self.set('quick', 'FAIL', details=f'GAME={self.game} has no wop/ folder')
+        qm = os.path.join(self.out, 'maps', self.map + '_quick.map')
+        shutil.copyfile(self.mapfile, qm)
+        Q = [self.q3map2, '-game', 'quake3', '-fs_basepath', self.game + '/', '-fs_game', 'wop']
+        rc, o, t = self.run(Q + ['-meta', '-custinfoparms', os.path.relpath(qm, self.out)], log='quick_bsp.log', cwd=self.out)
+        leak = 'leaked' in o.lower()
+        if rc: return self.set('quick', 'FAIL', details=o[-3000:])
+        pv = self.info.get('preview', {})
+        G = os.path.join(self.game, 'wop'); vfs = []
+        for d in ('textures.pk3dir', 'scripts.pk3dir', 'gfx.pk3dir', 'models.pk3dir', 'env.pk3dir'):
+            if os.path.isdir(os.path.join(G, d)): vfs += ['--vfs', os.path.join(G, d)]
+        vfs += ['--vfs', self.out]
+        page = os.path.join(self.out, 'quick.html')
+        cmd = [PY, os.path.join(HERE, 'preview', 'bsp2scene.py'), qm[:-4] + '.bsp', page] + vfs + \
+              ['--title', pv.get('title', self.info['longname']) + ' (quick preview)', '--texsize', str(min(128, pv.get('texsize', 256))),
+               '--unlit', '--compact', '--sub', 'Quick preview: -meta only, no lighting or bot paths',
+               '--threeurl', os.environ.get('THREEURL', 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')]
+        if pv.get('shots'): cmd += ['--views', ';'.join(pv['shots'])]
+        rc2, o2, t2 = self.run(cmd, log='quick_render.log')
+        if rc2: return self.set('quick', 'FAIL', details=o2[-3000:])
+        for f in glob.glob(qm[:-4] + '.*'):
+            if not f.endswith('.bsp'): os.remove(f)
+        mb = os.path.getsize(page) / 1e6
+        notes = 'LEAK: the map is not sealed (the full compile will fail)\n' if leak else ''
+        return self.set('quick', 'WARN' if leak else 'PASS', seconds=round(t + t2), page_mb=round(mb, 1),
+                        details=notes + f'{page}\n' + o2[-600:])
 
     def s_render(self):
         pv = self.info.get('preview', {})
@@ -342,12 +384,17 @@ def main():
     steps = []
     for s in a.steps: steps += ALIASES.get(s, [s])
     for s in steps:
-        if s not in ORDER: sys.exit(f'unknown step {s}; steps: {" ".join(ORDER)} (aliases check, all)')
+        if s not in ORDER + ['quick']: sys.exit(f'unknown step {s}; steps: {" ".join(ORDER)} quick (aliases check, all, preview)')
     B = Build(a.folder, a.out, a.light)
     print(f'{B.map}: out {B.out}')
     ok = True
+    stale = None              # a failed build step makes every later check read stale files
     for s in steps:
+        if stale:
+            B.set(s, 'SKIP', details=f'skipped: {stale} failed, its outputs are stale')
+            continue
         if not getattr(B, 's_' + s)():
+            if s in ('gen', 'compile'): stale = s
             ok = False
             print(f'see {os.path.join(B.out, "report.md")} and {s}*.log')
             if not a.keep_going: break
