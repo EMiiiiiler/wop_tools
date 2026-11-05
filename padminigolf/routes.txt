@@ -1,0 +1,10 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padminigolf
+mill_stairs:        1389,1000,0 > 493,1000,400
+mill_tunnel:        0,520,4 > 0,1480,4
+volcano_stairs:     1560,728,0 > 1560,248,192
+clown_mouth:        0,-740,4 > 0,-1820,4
+club_stairs:        -1000,-920,0 > -1000,-1688,336
+club_door:          -1520,-900,0 > -1520,-1250,4
+lighthouse_door:    -1230,700,0 > -1520,700,0
+bridge:             -770,700,0 > -1280,700,0

@@ -1,0 +1,61 @@
+{
+ "map": "wop_padminigolf",
+ "ns": "padminigolf",
+ "longname": "Mini Golf Madness",
+ "generator": "build_padminigolf.py",
+ "bounds": [
+  -2304,
+  -2048,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa syc_tp",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 4,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Mini Golf Madness",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1900,-2600,1900,120,-32",
+   "windmill:600,100,350,125,-10",
+   "lighthouse:-700,100,400,135,-12",
+   "volcano:700,-1100,500,40,-14",
+   "clown:-500,-400,300,-65,-10",
+   "clubhouse:-900,-700,400,215,-14"
+  ],
+  "quick_shots": [
+   "stage:-300,520,470,40,-10",
+   "lookout:-150,850,1290,60,-35",
+   "mill_tunnel:0,500,70,90,0",
+   "clown_mouth:0,-700,70,270,0",
+   "hat:-150,-1200,1080,0,-25",
+   "cavern:0,-300,-1900,90,-8",
+   "club_inside:-1800,-1100,150,320,-8",
+   "loop:1150,1000,260,40,-8"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "windmill",
+   "volcano",
+   "clown",
+   "overview"
+  ]
+ }
+}
