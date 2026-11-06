@@ -1,0 +1,17 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padlaundry
+washer0:            -1504,-1220,224 > -1824,-1120,224
+washer1:            -1504,-660,224 > -1824,-560,224
+washer2:            -1504,-100,224 > -1824,0,224
+washer3:            -1504,460,224 > -1824,560,224
+washer4:            -1504,1020,224 > -1824,1120,224
+ped_end_n:          -1520,1936,0 > -1520,1392,224
+ped_end_s:          -1520,-1936,0 > -1520,-1392,224
+ped_front:          -696,0,0 > -1240,0,224
+dryer0:             1360,-1120,0 > 1824,-1120,112
+dryer1:             1360,-560,0 > 1824,-560,112
+dryer2:             1360,0,0 > 1824,0,112
+dryer3:             1360,560,0 > 1824,560,112
+dryer4:             1360,1120,0 > 1824,1120,112
+board_rim:          830,1800,720 > 536,1800,720
+pile:               640,-1250,0 > 0,-1250,224

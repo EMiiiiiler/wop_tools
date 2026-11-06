@@ -1,0 +1,57 @@
+{
+ "map": "wop_padlaundry",
+ "ns": "padlaundry",
+ "longname": "Spin Cycle",
+ "generator": "build_padlaundry.py",
+ "bounds": [
+  -2304,
+  -2048,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 4,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   24,
+   248,
+   744
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Spin Cycle",
+  "texsize": 256,
+  "shots": [
+   "overview:1900,-1900,1800,135,-30",
+   "overview_west:1800,1700,1500,210,-28",
+   "washers:-900,-500,450,160,-12",
+   "in_drum:-1820,0,300,180,-5",
+   "dryer_top:2100,-1200,1360,100,-8",
+   "pile:700,-700,300,225,-10",
+   "shopfront:0,0,300,270,-3",
+   "sock_secret:-500,-450,-1350,40,-8",
+   "dryers:1150,-450,260,30,-6",
+   "sink:300,1000,1050,100,-35",
+   "tables:-1300,-1300,260,45,-6",
+   "under_table:-560,-150,60,90,0"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "washers",
+   "dryers",
+   "sink"
+  ]
+ }
+}

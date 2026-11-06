@@ -191,6 +191,22 @@ def ring_tex(amid, inner, outer, top, bot, side):
     return f
 
 
+def axis_prism(axis, a0, a1, cu, cv, r, tex, n=16, flat=True):
+    """n-gon prism lying along `axis` ('x' or 'y') from a0 to a1, centred at (cu, cv) in the other two axes (the
+    horizontal one, then z). flat=True circumscribes the circle with a flat face at the bottom (a walkable strip of
+    width 2 r tan(180/n)), so a drum or a pipe cut with it has a floor at exactly cv - r. Use as a carve() cutter for
+    horizontal drums, pipes and tunnels."""
+    off = math.pi / n if flat else 0.0
+    R = r / math.cos(math.pi / n) if flat else r
+    pts = []
+    for k in range(n):
+        t = -math.pi / 2 + off + 2 * math.pi * k / n
+        u, v = cu + R * math.cos(t), cv + R * math.sin(t)
+        for a in (a0, a1):
+            pts.append((a, u, v) if axis == 'x' else (u, a, v))
+    return hull(pts, tex, round_pts=False)
+
+
 def disc_brush(cx, cy, r, z0, z1, tex, n=16):
     """n-gon prism with a vertex at angle 0 (matches ring_seg wedges of the same n)"""
     pts = []
