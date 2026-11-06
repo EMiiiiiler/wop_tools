@@ -75,6 +75,7 @@ def washers():
     ped_pieces = carve(ped, drums, WCLIP)
     K.add(*ped_pieces)
     K.reserve(((px0, py0, 0), (L.W_X[1], py1, L.PED + L.W_H)))
+    K.reserve(((L.W_X[1], py0, 0), (px1, py1, L.PED)))
     for i, yc in enumerate(L.W_YC):
         body = box((L.W_X[0], yc - L.W_HALF, L.PED), (L.W_X[1], yc + L.W_HALF, L.PED + L.W_H), WCLIP)
         door = axis_prism('x', L.W_DRUM_X[1] - 4, L.W_X[1] + 4, yc, L.W_DRUM_Z, L.W_DOOR_R, WCLIP)
@@ -170,6 +171,22 @@ def sink():
 
 
 # ================================================================================================= centre
+def island():
+    """back-to-back washer island (second reference photo): three closed washers each way under an orange counter,
+    which is walkable high ground reached by pads at both ends"""
+    x0, y0, x1, y1 = L.ISLAND
+    K.add(box((x0, y0, 0), (x1, y1, L.ISLAND_TOP), WCLIP))
+    for yc in L.ISLAND_YC:
+        K.custom(ML.PLACE['washer_closed'], x1, yc, 0, angle=0, occupy=False)
+        K.custom(ML.PLACE['washer_closed'], x0, yc, 0, angle=180, occupy=False)
+    K.custom(ML.PLACE['island_top'], (x0 + x1) / 2, (y0 + y1) / 2, 0, occupy=False)
+    K.reserve(((x0, y0, 0), (x1, y1, L.ISLAND_TOP)), pad=12)
+    K.jumppad(0, y1 + 270, 0, land=(0, y1 - 320, L.ISLAND_TOP), apex=L.ISLAND_TOP + 260, name='pad_island_n',
+              edges=[(0, y1 + 12, L.ISLAND_TOP)])
+    K.jumppad(x1 + 400, 240, 0, land=(x1 - 300, 240, L.ISLAND_TOP), apex=L.ISLAND_TOP + 260, name='pad_island_e',
+              edges=[(x1 + 12, 240, L.ISLAND_TOP)])
+
+
 def tables():
     for i, (x0, y0, x1, y1) in enumerate(L.TABLES):
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
@@ -179,12 +196,11 @@ def tables():
             K.occupy_r(cx + lx, cy + ly, r + 8, z0, z1)
         K.custom(ML.PLACE['table'], cx, cy, 0, occupy=False)
         K.occupy(x0, y0, x1, y1, L.TABLE_Z - L.TABLE_T - 24, L.TABLE_Z + 4, why='table top')
-        # pad at the far end onto the top
-        s = -1 if i == 0 else 1
-        py = (y0 - 300) if s < 0 else (y1 + 300)
-        land_y = (y0 + 300) if s < 0 else (y1 - 300)
-        K.jumppad(cx, py, 0, land=(cx, land_y, L.TABLE_Z), apex=L.TABLE_Z + 230, name=f'pad_table{i}',
-                  edges=[(cx, y0 if s < 0 else y1, L.TABLE_Z)])
+        # pad from the centre aisle sideways onto the top
+        s = 1 if cx < 0 else -1
+        px = (x1 + 260) if s > 0 else (x0 - 260)
+        K.jumppad(px, cy, 0, land=(cx, cy, L.TABLE_Z), apex=L.TABLE_Z + 220, name=f'pad_table{i}',
+                  edges=[(x1 if s > 0 else x0, cy, L.TABLE_Z)])
 
 
 def mount_laundry():
@@ -197,34 +213,42 @@ def mount_laundry():
     K.route('pile', (cx + L.PILE_R0 + 120, cy, 0), (cx, cy, L.PILE_TIERS * 16))
 
 
-def south_side():
-    # change machine (Betty on top) and the soap machine, against the shopfront
-    for (x0, y0, x1, y1, top), name in ((L.CHANGE, 'change_machine'), (L.SOAPVEND, 'soap_machine')):
-        K.add(box((x0 + 4, y0 + 4, 0), (x1 - 4, y1 - 4, top), WCLIP))
-        K.custom(ML.PLACE[name], (x0 + x1) / 2, (y0 + y1) / 2 + 2, 0, occupy=False)
-        K.reserve(((x0, y0, 0), (x1, y1, top)), pad=8)
+def vending():
+    """the vending row on the north wall: soap (detergent bottles behind glass), change (Betty on top), snacks, drinks"""
+    y0, y1 = L.VEND_Y, L.Y1
+    for (x0, x1), name in ((L.SOAPVEND, 'soap_machine'), (L.CHANGE, 'change_machine'), (L.SNACK, 'snack_machine'),
+                           (L.DRINK, 'drink_machine')):
+        K.add(box((x0 + 4, y0 + 4, 0), (x1 - 4, y1, L.VEND_TOP), WCLIP))
+        K.custom(ML.PLACE[name], (x0 + x1) / 2, (y0 + y1) / 2 - 2, 0, angle=180, occupy=False)
+        K.reserve(((x0, y0, 0), (x1, y1, L.VEND_TOP)), pad=8)
+        K.keep_clear(x0, y0 - 112, x1, y0, 0)
+    for (x0, x1), name in ((L.SOAPVEND, 'soap'), (L.CHANGE, 'change')):
         cx = (x0 + x1) / 2
-        K.jumppad(cx, y1 + 300, 0, land=(cx, (y0 + y1) / 2 - 20, top), apex=top + 150,
-                  name=f'pad_{name.split("_")[0]}', edges=[(cx, y1, top)])
-    # chairs along the windows, facing the room
-    for x in (-560, -400, 400, 560, 1820, 2000):
-        K.prop(ML.PLACE['chair_orange' if x < 0 else 'chair_teal'], x, L.Y0 + 140, 0, boxes=LM.CHAIR_BOXES, angle=0, search=40)
-    K.catalog('padtv/padtv2.md3', -2050, -1750, 0, angle=45, scale=1.0)
+        K.jumppad(cx, y0 - 330, 0, land=(cx, (y0 + y1) / 2 + 20, L.VEND_TOP), apex=L.VEND_TOP + 150, name=f'pad_{name}',
+                  edges=[(cx, y0, L.VEND_TOP)])
+    K.speaker((L.SNACK[0] + L.DRINK[1]) / 2, y0, 300, 'machine/freezer', volume=0.4)
+
+
+def seating():
+    """joined yellow seats along the shop windows, facing into the room"""
+    for (x0, x1) in L.BENCHES:
+        K.custom(ML.PLACE['bench'], (x0 + x1) / 2, L.BENCH_Y, 0, angle=0, boxes=LM.BENCH_BOXES)
     K.station(1500, L.Y0 + 150, 0, ang=90)
-    K.station(-900, 1900, 0, ang=270)
+    K.station(-700, 1900, 0, ang=270)
 
 
 def props():
-    for (x, y) in ((0, 300), (-1000, -150), (1050, 420), (-200, 1300)):
+    for (x, y) in ((-1000, 1100), (1250, 1000)):
         K.prop(ML.PLACE['cart'], x, y, 0, boxes=LM.CART_BOXES, angle=None, search=200)
-    for (x, y) in ((-1000, 1000), (1100, -1100), (0, -400)):
-        K.prop(ML.PLACE['detergent'], x, y, 0, cyls=[(0, 0, 158, 0, 640)], angle=None, search=200)
+    for i, (x, y) in enumerate(((-1200, -800), (1200, 800), (-1100, 700), (1200, -700), (0, -1700))):
+        K.custom(ML.PLACE[f'fern{i % 2}'], x, y, L.CEIL - 1, angle=i * 50, occupy=False)
     # catalog things people leave in laundromats
-    for (path, x, y, z, a) in (('pad_cups/pad_cup03.md3', -500, 0, L.TABLE_Z, 30), ('pad_cups/pad_cup05.md3', 500, 300, L.TABLE_Z, 200),
-                               ('pad_books/pad_cb_fl_md.md3', -600, 300, L.TABLE_Z, 10), ('pad_phones/pad_padika2.md3', 600, -300, L.TABLE_Z, 70),
+    for (path, x, y, z, a) in (('pad_cups/pad_cup03.md3', -850, -700, L.TABLE_Z, 30), ('pad_cups/pad_cup05.md3', 950, -1200, L.TABLE_Z, 200),
+                               ('pad_books/pad_cb_fl_md.md3', -950, -1250, L.TABLE_Z, 10), ('pad_phones/pad_padika2.md3', 850, -700, L.TABLE_Z, 70),
                                ('gummybears/redbear.md3', -1000, 1500, 0, 20), ('gummybears/yellowbear.md3', 1200, 1400, 0, 200),
-                               ('pad_ddmix/trashcan/garbage_bag_group.md3', 2050, 1700, 0, 0),
-                               ('pad_ddmix/plants/bonsai.md3', -2050, 1800, 0, 0), ('pad_ducks/pad_duck.md3', 200, 1850, L.SINK_FLOOR, 160)):
+                               ('pad_ddmix/trashcan/garbage_bag_group.md3', 2150, 1580, 0, 0),
+                               ('pad_ddmix/plants/bonsai.md3', -2050, 1800, 0, 0), ('pad_ducks/pad_duck.md3', 200, 1850, L.SINK_FLOOR, 160),
+                               ('padtv/padtv2.md3', 830, 1880, L.SINK_Z[1], 270)):
         K.catalog(path, x, y, z, angle=a, lit=True, clip=(z == 0), nudge=(z == 0))
 
 
@@ -258,35 +282,40 @@ def lost_sock_dimension():
 
 # ================================================================================================= items, spawns, lights
 def items():
+    chx = (L.CHANGE[0] + L.CHANGE[1]) / 2
+    svx = (L.SOAPVEND[0] + L.SOAPVEND[1]) / 2
+    vy = (L.VEND_Y + L.Y1) / 2 + 20
+    T1, T2 = L.TABLES
+    t1x, t2x = (T1[0] + T1[2]) / 2, (T2[0] + T2[2]) / 2
     K.weapon('imperius', 2010, 0, L.D_TOP, marker='purple')
     K.weapon('splasher', 300, 1800, L.SINK_FLOOR, marker='blue')
-    K.weapon('betty', (L.CHANGE[0] + L.CHANGE[2]) / 2, (L.CHANGE[1] + L.CHANGE[3]) / 2 - 20, L.CHANGE[4], marker='black')
+    K.weapon('betty', chx, vy, L.VEND_TOP, marker='black')
     K.weapon('balloony', -2010, 0, L.PED + L.W_H, marker='orange')
     K.weapon('pumper', L.PILE[0], L.PILE[1], L.PILE_TIERS * 16, marker='green')
     K.weapon('boaster', (L.W_DRUM_X[0] + L.W_DRUM_X[1]) / 2, 0, L.W_DRUM_Z - L.W_DRUM_R, marker='orange')
-    K.weapon('bubbleg', 560, 100, 0, marker='green')
-    A = {'imperius': [(2010, 1000, L.D_TOP), (-560, 300, L.TABLE_Z), (1300, 1900, 0)],
-         'splasher': [(830, 1900, L.SINK_Z[1]), (-1984, -1120, L.W_DRUM_Z - L.W_DRUM_R), (-1300, 1700, 0)],
-         'betty': [(L.CHANGE[0] + 60, -1700, 0), (2010, -1000, L.D_TOP), (-1300, 300, L.PED), (1300, -400, 0)],
-         'balloony': [(-2010, -1000, L.PED + L.W_H), (-2010, 1000, L.PED + L.W_H), (560, -300, L.TABLE_Z), (-1700, -1900, 0)],
-         'pumper': [(0, -680, 0), (1300, -1600, 0), (-1984, 560, L.W_DRUM_Z - L.W_DRUM_R)],
-         'boaster': [(-1984, 1120, L.W_DRUM_Z - L.W_DRUM_R), (1964, 560, L.PLINTH), (-200, 900, 0)],
-         'bubbleg': [(-560, -300, 0), (1964, -560, L.PLINTH), (0, 1600, 0), (-1300, -1300, L.PED)]}
+    K.weapon('bubbleg', t2x, -1300, 0, marker='green')
+    A = {'imperius': [(2010, 1000, L.D_TOP), (t1x, -700, L.TABLE_Z), (900, 1450, 0)],
+         'splasher': [(830, 1750, L.SINK_Z[1]), (-1984, -1120, L.W_DRUM_Z - L.W_DRUM_R), (-1300, 1650, 0)],
+         'betty': [(chx, 1500, 0), (2010, -1000, L.D_TOP), (-1300, 300, L.PED), (0, 800, L.ISLAND_TOP)],
+         'balloony': [(-2010, -1000, L.PED + L.W_H), (-2010, 1000, L.PED + L.W_H), (t2x, -1300, L.TABLE_Z), (-1800, -1750, 0)],
+         'pumper': [(0, -800, 0), (1300, -1600, 0), (-1984, 560, L.W_DRUM_Z - L.W_DRUM_R)],
+         'boaster': [(-1984, 1120, L.W_DRUM_Z - L.W_DRUM_R), (1964, 560, L.PLINTH), (-800, 400, 0)],
+         'bubbleg': [(t1x, -1300, 0), (1964, -560, L.PLINTH), (0, 1450, 0), (-1300, -1300, L.PED)]}
     for w, spots in A.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
-    for (x, y, z) in ((0, 0, 0), (1900, 1800, 0), (-1900, -1700, 0)):
+    for (x, y, z) in ((800, 0, 0), (1900, 1650, 0), (-1900, -1600, 0)):
         K.ammo('nipper', x, y, z)
-    K.item('item_armor_padshield', (L.SOAPVEND[0] + L.SOAPVEND[2]) / 2 + 80, -1920, L.SOAPVEND[4])
-    K.item('item_speedy', 560, 500, L.TABLE_Z)
-    K.item('holdable_floater', 2010, 1000 - 200, L.D_TOP)
-    for (x, y, z) in ((-560, -500, L.TABLE_Z), (-1400, 600, L.PED), (1964, 0, L.PLINTH), (0, 1450, 0)):
+    K.item('item_armor_padshield', svx, vy, L.VEND_TOP)
+    K.item('item_speedy', 0, 240, L.ISLAND_TOP)
+    K.item('holdable_floater', 2010, 800, L.D_TOP)
+    for (x, y, z) in ((t1x, -500, L.TABLE_Z), (-1400, 600, L.PED), (1964, 0, L.PLINTH), (0, -300, L.ISLAND_TOP)):
         K.item('item_armor_shard', x, y, z)
 
 
 def spawns():
-    for (x, y, a) in ((-900, -1500, 45), (900, -1500, 135), (-1000, 600, 0), (1000, 900, 180), (0, 900, 270), (0, -700, 90),
-                      (-300, 1600, 270), (1300, 1500, 225), (-1700, 1800, 315), (1700, -1800, 135), (-1700, -1700, 45),
-                      (1250, -300, 180), (-900, 100, 0), (300, -500, 90), (1400, 600, 180), (-500, -1800, 90)):
+    for (x, y, a) in ((-900, -1500, 45), (900, -1500, 135), (-1000, 600, 0), (1000, 900, 180), (0, -760, 90),
+                      (-300, 1600, 270), (1300, 1500, 225), (-1700, 1800, 315), (1700, -1700, 135), (-1700, -1650, 45),
+                      (1250, -300, 180), (-900, 300, 0), (900, 200, 180), (1400, 600, 180), (-500, -1750, 90), (500, -1750, 90)):
         K.spawn(x, y, 0, a)
     for (x, y, a) in ((-1300, -1000, 0), (-1300, 1000, 0)):
         K.spawn(x, y, L.PED, a)
@@ -332,7 +361,7 @@ if __name__ == '__main__':
     textures()
     models()
     shell()
-    washers(); dryers(); sink(); tables(); mount_laundry(); south_side(); lost_sock_dimension()
+    washers(); dryers(); sink(); island(); tables(); mount_laundry(); vending(); seating(); lost_sock_dimension()
     items(); spawns(); props(); lights_and_sound()
     K.fix_items()
     shader()

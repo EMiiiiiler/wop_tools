@@ -23,10 +23,14 @@ def setup(tx):
 
 # ================================================================================================= brush textures
 def checker_vinyl(n=256):
+    """pale mint / white vinyl checker with a terrazzo speckle (first reference photo); 2 x 2 tiles per image"""
     x, y = xy(n)
-    c = ((np.floor(x * 4) + np.floor(y * 4)) % 2)[..., None]
-    base = lerp(C((236, 228, 206)), C((40, 120, 120)), c)
-    return base + N3(n, 2, 11, 5) - (noise(n, 3, 12)[..., None] * 8)
+    c = ((np.floor(x * 2) + np.floor(y * 2)) % 2)[..., None]
+    base = lerp(C((242, 244, 238)), C((176, 214, 198)), c)
+    spk = (noise(n, 96, 11) > 0.78)[..., None]
+    base = np.where(spk, base - 26, base)
+    grout = ((x * 2) % 1 < 0.006) | ((y * 2) % 1 < 0.006)
+    return np.where(grout[..., None], C((200, 204, 198)), base + N3(n, 2, 12, 3))
 
 
 def acoustic(n=256):
@@ -39,9 +43,9 @@ def acoustic(n=256):
 
 
 def make_brush_textures():
-    TX.add('vinyl', checker_vinyl(), scale=1.0)
-    TX.add('wall_tile', TL.tiles(MINT, (232, 240, 236), cols=4, rows=4, offset=0, grout_w=0.04, vary=6))
-    TX.add('wall_upper', TL.solid(CREAM, 4, 3, 256))
+    TX.add('vinyl', checker_vinyl(), scale=2.0)
+    TX.add('wall_tile', TL.tiles((244, 246, 246), (214, 220, 222), cols=4, rows=4, offset=0, grout_w=0.03, vary=3))
+    TX.add('wall_upper', TL.solid((246, 246, 244), 3, 3, 256))
     TX.add('ceiling', acoustic(), scale=2.0)
     TX.add('steel', TL.metal((170, 174, 182)))
     TX.add('mat_floor', TL.dots((50, 52, 60), (70, 72, 80), 10, 0.25))
@@ -71,11 +75,52 @@ def lint_tex(n=128):
 
 
 # ================================================================================================= model textures
-def panel_tex(text, w=512, h=128, bg=(70, 74, 84)):
+def brushed(n=256):
+    x, y = xy(n)
+    return fill(n, (178, 182, 188), 2, 43) + (noise(n, 1, 44) * 0)[..., None] + (np.sin(y * 900 + noise(n, 8, 45) * 6) * 5)[..., None]
+
+
+def snack_front(w=256, h=512):
+    """snack machine glass: five shelves of colourful bags and bars on spirals, a keypad column on the right"""
+    rng = np.random.default_rng(8)
+    a = np.zeros((h, w, 3), np.float32) + C((22, 22, 28))
+    for r in range(6):
+        y0 = 30 + r * 72
+        a[y0 + 60:y0 + 64, 8:190] = C((150, 150, 160))
+        for c in range(6):
+            x0 = 12 + c * 30
+            col = C([(220, 40, 40), (250, 200, 40), (40, 120, 220), (240, 120, 30), (60, 170, 70), (160, 60, 170)][rng.integers(6)])
+            a[y0 + 8:y0 + 58, x0:x0 + 24] = col
+            a[y0 + 26:y0 + 34, x0 + 4:x0 + 20] = C((250, 250, 250))
+    a[30:470, 200:244] = C((40, 40, 46))
+    for i in range(12):
+        yy = 60 + i * 28
+        a[yy:yy + 16, 208:236] = C((190, 190, 196))
+    a[400:430, 208:236] = C((40, 220, 120))
+    return a
+
+
+def drink_front(w=256, h=512):
+    """drink machine: backlit blue panel with a bottle splash, a button column on the right"""
+    x, y = xy(w, h)
+    a = lerp(C((20, 60, 160)), C((60, 180, 240)), (1 - y)[..., None])
+    bottle = (np.abs(x - 0.4) < 0.11 * (1 - 0.6 * np.clip((0.35 - y) / 0.12, 0, 1))) & (y > 0.2) & (y < 0.82)
+    a = np.where(bottle[..., None], C((210, 240, 255)), a)
+    spl = np.exp(-((y - 0.8) / 0.05) ** 2) * (np.sin(x * 60) * 0.5 + 0.5)
+    a = a + (spl * 120)[..., None]
+    col = x > 0.8
+    a = np.where(col[..., None], C((30, 30, 36)), a)
+    for i in range(8):
+        a[60 + i * 50:90 + i * 50, int(0.84 * w):int(0.96 * w)] = C((230, 230, 236))
+    return np.clip(a, 0, 255)
+
+
+def panel_tex(text, w=512, h=128, bg=(24, 24, 28)):
     """machine control panel: coin slot, a dial, two buttons and a small LED label"""
     a = np.zeros((h, w, 3), np.float32) + C(bg)
     x, y = xy(w, h)
-    lab = TL.label(text, 256, 48, (20, 22, 26), (90, 240, 160))
+    lab = TL.label(text, 256, 48, (10, 10, 12), (255, 70, 60))
+    a[100:104, 20:w - 20] = C((220, 40, 40))
     a[40:88, 40:296] = lab[:48, :256]
     d = np.hypot((x - 0.72) * w / h, y - 0.5)
     a = np.where((d < 0.30)[..., None], C((200, 204, 212)), a)
@@ -131,6 +176,13 @@ def mats():
     M['dark'] = TX.material('dark', TL.solid((40, 42, 48), 3, 22, 128), shade=40)
     M['panel_w'] = TX.material('panel_w', panel_tex('WASH 4.50'), shade=40)
     M['panel_d'] = TX.material('panel_d', panel_tex('DRY 2.00'), shade=40)
+    M['stainless'] = TX.material('stainless', brushed(), 'lms', v=0.18, shade=40)
+    M['counter'] = TX.material('counter', TL.solid((246, 140, 96), 3, 40, 128), shade=40)
+    M['snack'] = TX.material('snack_front', snack_front(), shade=40)
+    M['drink'] = TX.material('drink_front', drink_front(), 'glow')
+    M['seat'] = TX.material('seat_yellow', TL.solid((250, 205, 30), 3, 41, 128), shade=60)
+    M['fern'] = TX.material('fern', TL.stripes((40, 110, 40), (70, 150, 60), 8), shade=60)
+    M['pot'] = TX.material('pot', TL.solid((240, 240, 236), 3, 42, 128), shade=50)
     M['glass'] = TX.material('glass_m', TL.solid((170, 210, 230), 2, 23, 64), 'glass', c='0.1 0.13 0.15')
     M['rubber'] = TX.material('rubber_m', TL.solid((40, 40, 46), 3, 24, 128), shade=40)
     M['drum'] = TX.material('drum_m', drum_tex(), shade=40)
@@ -216,24 +268,25 @@ def plate_with_hole(M, o, u, v, nrm, w, h, hc, r, n=48, tile=None):
         fpoly(M, [P(*p) for p in pts], nrm, [uvf(*p) for p in pts])
 
 
-def front_loader(name, depth, width, height, hole_r, hole_z, panel, door_tunnel, closed=False, base=0):
+def front_loader(name, depth, width, height, hole_r, hole_z, panel, door_tunnel, closed=False, base=0, top=None):
     """machine cabinet facing +x: front plate with a round door hole (or a closed glass door), chrome rim, control
     panel strip at the top, enamel sides/top, rubber tunnel through the front. Origin = front-face centre at the
     cabinet's floor; the cabinet extends to -x."""
     X = ML.Model()
-    e = MAT['enamel']; hw = width / 2
-    boxm(X.mesh(e), (-depth, -hw, base), (-4, hw, height), r=6, tile=128, faces='nsewt')
+    e = MAT['stainless']; hw = width / 2
+    boxm(X.mesh(e), (-depth, -hw, base + 48), (-4, hw, height), r=4, tile=128, faces='nsewt')
+    boxm(X.mesh(MAT['dark']), (-depth, -hw + 2, base), (-10, hw - 2, base + 48), r=2, tile=64, faces='nsewt')
+    if top:
+        boxm(X.mesh(MAT[top]), (-depth - 2, -hw, height - 4), (6, hw, height + 0.5), r=2, tile=128, faces='nsewt')
     # front plate with the hole, a hair in front of the box face
-    plate_with_hole(X.mesh(e), (-2, hw, base), (0, -1, 0), (0, 0, 1), (1, 0, 0), width, height - base - 96,
-                    (hw, hole_z - base), hole_r + 6)
+    plate_with_hole(X.mesh(e), (-2, hw, base + 48), (0, -1, 0), (0, 0, 1), (1, 0, 0), width, height - base - 144,
+                    (hw, hole_z - base - 48), hole_r + 6)
     picture(X.mesh(MAT[panel]), (-1.5, 0, height - 50), width - 24, 80, (1, 0, 0))
-    torus(X.mesh(MAT['chrome']), (0, 0, hole_z), hole_r + 10, 8, axis=(1, 0, 0), n=48, m=8)
+    torus(X.mesh(MAT['chrome']), (0, 0, hole_z), hole_r + 14, 12, axis=(1, 0, 0), n=48, m=8)
     revolve_tunnel(X.mesh(MAT['rubber']), hole_r + 6, door_tunnel, hole_z)
     if closed:
         disc_x(X.mesh(MAT['glass']), 6, hole_r + 4, hole_z)
         disc_x(X.mesh(MAT['drum']), -door_tunnel - 4, hole_r + 6, hole_z)
-    # feet / kick plate
-    boxm(X.mesh(MAT['dark']), (-depth + 8, -hw + 8, base), (-8, hw - 8, base + 12), r=2, tile=64, faces='nsewt')
     return ML.save(name, X)
 
 
@@ -258,7 +311,91 @@ def disc_x(M, x, r, zc, n=32, facing=1):
 
 # ================================================================================================= models
 def washer():
-    return front_loader('washer', L.W_X[1] - L.W_X[0], 2 * L.W_HALF, L.W_H, L.W_DOOR_R, L.W_DRUM_Z - L.PED, 'panel_w', 40)
+    return front_loader('washer', L.W_X[1] - L.W_X[0], 2 * L.W_HALF, L.W_H, L.W_DOOR_R, L.W_DRUM_Z - L.PED, 'panel_w', 40,
+                        top='counter')
+
+
+def washer_closed():
+    """island washer: same cabinet, door shut (glass bowl over the drum), orange counter top"""
+    return front_loader('washer_closed', 600, 2 * L.W_HALF, L.ISLAND_TOP - 24, 160, 330, 'panel_w', 30, closed=True, top='counter')
+
+
+def island_top():
+    """the orange counter over the washer island (walkable high ground); origin = island centre on the floor"""
+    X = ML.Model()
+    x0, y0, x1, y1 = L.ISLAND
+    hx, hy = (x1 - x0) / 2, (y1 - y0) / 2
+    boxm(X.mesh(MAT['counter']), (-hx - 12, -hy - 12, L.ISLAND_TOP - 24), (hx + 12, hy + 12, L.ISLAND_TOP), r=4, tile=128)
+    boxm(X.mesh(MAT['dark']), (-hx + 2, -hy - 2, 0), (hx - 2, -hy + 8, L.ISLAND_TOP - 24), r=1, tile=128)
+    boxm(X.mesh(MAT['dark']), (-hx + 2, hy - 8, 0), (hx - 2, hy + 2, L.ISLAND_TOP - 24), r=1, tile=128)
+    return ML.save('island_top', X)
+
+
+def vend(name, front, glass=False, bottles=False):
+    """vending machine 400 x 256 x 1000, faces +y, origin floor centre: black cabinet, a picture or glass front,
+    lit header; bottles=True fills three shelves with SUDZ! detergent bottles behind the glass"""
+    X = ML.Model()
+    if bottles:      # hollow display: back, sides, base and header around a glass-fronted bay
+        d = MAT['dark']
+        boxm(X.mesh(d), (-200, -128, 0), (200, -40, 1000), r=6, tile=128)
+        boxm(X.mesh(d), (-200, -40, 0), (-170, 120, 1000), r=4, tile=128)
+        boxm(X.mesh(d), (170, -40, 0), (200, 120, 1000), r=4, tile=128)
+        boxm(X.mesh(d), (-170, -40, 0), (170, 120, 200), r=2, tile=128)
+        boxm(X.mesh(d), (-170, -40, 920), (170, 120, 1000), r=2, tile=128)
+    else:
+        boxm(X.mesh(MAT['dark']), (-200, -128, 0), (200, 120, 1000), r=8, tile=128)
+    picture(X.mesh(MAT[front]), (0, -39 if bottles else 121, 560), 340, 720, (0, 1, 0))
+    boxm(X.mesh(MAT['glow_w']), (-180, 116, 950), (180, 124, 985), r=2, tile=64)
+    boxm(X.mesh(MAT['stainless']), (-170, 100, 110), (170, 124, 170), r=2, tile=64)
+    if bottles:
+        for z in (208, 448, 688):
+            boxm(X.mesh(MAT['steel']), (-170, -40, z - 8), (170, 110, z), r=1, tile=64)
+            for x in (-120, -40, 40, 120):
+                revolve(X.mesh(MAT['bottle']), [(0, z), (30, z), (32, z + 10), (32, z + 130), (20, z + 160), (12, z + 172), (0, z + 172)],
+                        n=16, cx=x, cy=40, vlen=172, u_tiles=1)
+                revolve(X.mesh(MAT['red']), [(12, z + 172), (13, z + 192), (0, z + 192)], n=12, cx=x, cy=40, vlen=32)
+        picture(X.mesh(MAT['glass']), (0, 119, 560), 340, 720, (0, 1, 0))
+    return ML.save(name, X)
+
+
+def bench():
+    """joined airport-style seats: four yellow shells on a black beam (640 long), faces +y, origin floor centre"""
+    X = ML.Model()
+    boxm(X.mesh(MAT['dark']), (-320, -20, 110), (320, 20, 130), r=3, tile=64)
+    for x in (-250, 250):
+        boxm(X.mesh(MAT['dark']), (x - 10, -50, 0), (x + 10, 50, 110), r=2, tile=64)
+        boxm(X.mesh(MAT['dark']), (x - 14, -70, 0), (x + 14, 70, 10), r=2, tile=64)
+    for k in range(4):
+        x = -240 + k * 160
+        G = Mesh(); boxm(G, (-70, -70, 0), (70, 70, 14), r=10, tile=64)
+        X.mesh(MAT['seat']).add(G, np.eye(3), (x, 0, 140))
+        V = Mesh(); boxm(V, (-66, 0, 0), (66, 14, 160), r=10, tile=64)
+        a = math.radians(-12); R = np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]])
+        X.mesh(MAT['seat']).add(V, R, (x, -74, 150))
+        boxm(X.mesh(MAT['dark']), (x - 8, -10, 128), (x + 8, 10, 142), r=1, tile=32)
+    return ML.save('bench', X)
+
+
+BENCH_BOXES = [((-312, -72, 0), (312, 72, 154)), ((-312, -92, 154), (312, -58, 310))]
+
+
+def hanging_fern(seed=0):
+    """potted fern hanging on three chains from the ceiling; origin at the ceiling, everything hangs below"""
+    X = ML.Model()
+    rng = np.random.default_rng(seed + 50)
+    pz = -470
+    revolve(X.mesh(MAT['pot']), [(0, pz), (60, pz), (90, pz + 110), (84, pz + 112), (0, pz + 112)], n=20, vlen=128)
+    for k in range(3):
+        a = k * 2 * math.pi / 3
+        tube(X.mesh(MAT['chrome']), [(90 * math.cos(a), 90 * math.sin(a), pz + 118), (0, 0, 1)], 2, nseg=5)
+    f = X.mesh(MAT['fern'])
+    for i in range(22):
+        a = rng.uniform(0, 2 * math.pi); L_ = rng.uniform(150, 260); up = rng.uniform(40, 110)
+        d = np.array([math.cos(a), math.sin(a), 0])
+        p0 = np.array([0, 0, pz + 110]) + d * 30
+        path = [p0 + d * L_ * t + np.array([0, 0, up * math.sin(math.pi * t * 0.8) - 200 * t * t]) for t in np.linspace(0, 1, 7)]
+        tube(f, path, [10, 11, 10, 8, 6, 4, 2], nseg=6)
+    return ML.save(f'fern{seed}', X)
 
 
 def dryer_low():
@@ -498,9 +635,10 @@ def lint_screen():
 
 def make_all():
     mats()
-    washer(); dryer_low(); dryer_up(); door()
+    washer(); washer_closed(); island_top(); dryer_low(); dryer_up(); door()
     drum_iqm('washer_drum', L.W_DRUM_R + 6, L.W_DRUM_X[1] - L.W_DRUM_X[0])
     drum_iqm('dryer_drum', L.D_DRUM_R + 6, L.D_DRUM_X[1] - L.D_DRUM_X[0], socks=4)
-    folding_table(); pile(); chair('orange'); chair('teal'); cart(); detergent(); sink(); soap_steps(17)
-    vending('change_machine', 'change'); vending('soap_machine', 'soapv'); bubbles(); ceiling_fan(); light_panel()
+    folding_table(); pile(); cart(); sink(); soap_steps(17); bench(); hanging_fern(0); hanging_fern(1)
+    vend('change_machine', 'change'); vend('soap_machine', 'soapv', bottles=True); vend('snack_machine', 'snack')
+    vend('drink_machine', 'drink'); bubbles(); ceiling_fan(); light_panel()
     lint_screen()

@@ -40,18 +40,29 @@ SINK_WATER = 704
 BOARD = (560, 1504, 1104, 2048)   # drainboard counter beside the sink (top = rim height)
 
 # ---- centre
-TABLES = [(-760, -820, -360, 620), (360, -620, 760, 820)]      # folding tables x0 y0 x1 y1
+ISLAND = (-600, -600, 600, 1080)  # back-to-back washer island (fronts face -x / +x), orange counter on top
+ISLAND_YC = (-320, 240, 800)
+ISLAND_TOP = 704
+TABLES = [(-1100, -1700, -700, -260), (700, -1700, 1100, -260)]   # folding tables x0 y0 x1 y1
 TABLE_Z = 720
 TABLE_T = 32
-PILE = (0, -1250)                 # Mount Laundry centre
-PILE_R0, PILE_STEP_R, PILE_TIERS = 520, 26, 14
+PILE = (0, -1350)                 # Mount Laundry centre
+PILE_R0, PILE_STEP_R, PILE_TIERS = 440, 22, 14
 
-# ---- south: shopfront
-CHANGE = (760, -2048, 1160, -1792, 1000)    # change machine x0 y0 x1 y1 top
-SOAPVEND = (-1160, -2048, -760, -1792, 1000)
+# ---- vending machines against the north wall (x0, x1); depth along y from VEND_Y to the wall
+VEND_Y = 1792
+VEND_TOP = 1000
+SOAPVEND = (-1300, -900)          # detergent bottles behind glass
+CHANGE = (1104, 1504)
+SNACK = (1504, 1904)
+DRINK = (1904, 2304)
+
+# ---- south: shopfront with joined seats along the windows
 DOOR_X = (-320, 320)                          # entrance (glass doors, closed)
 WIN = [(-2176, -1560), (-1000, -400), (400, 1000), (1560, 2176)]   # shop windows (x ranges)
 WIN_Z = (200, 1500)
+BENCHES = [(-2200, -1640), (-1080, -440), (440, 1080), (1640, 2200)]   # joined seats (x ranges), 4 shells each
+BENCH_Y = -1945                   # bench centre line (seats face north)
 
 # ---- secret: the Lost Sock Dimension (sealed, under the floor)
 SOCK = dict(x0=-640, x1=640, y0=-512, y1=512, z0=-1600, h=640)
