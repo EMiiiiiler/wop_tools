@@ -94,15 +94,11 @@ def washers():
         K.keep_clear(L.W_X[1], yc - 150, L.W_X[1] + 120, yc + 150, L.PED)
         K.speaker(L.W_X[1] - 200, yc, L.PED + 60, 'ambient/water_bubbling', volume=0.35)
         K.route(f'washer{i}', (L.W_X[1] + 200, yc - 100, L.PED), (L.W_DRUM_X[1] - 80, yc, L.PED))
-    # stairs: both pedestal ends (along y) and one flight down the middle of the front
-    for s in (1, -1):
-        y0, y1 = (py1, py1 + 448) if s > 0 else (py0 - 448, py0)
-        K.stairs16(-1600, y0, -1440, y1, 0, L.PED, 's' if s > 0 else 'n', {'top': T('mat_floor'), 'side': T('steel')},
-                   route=f'ped_end_{"n" if s > 0 else "s"}')
-        K.reserve(((-1600, y0, 0), (-1440, y1, L.PED)), pad=4)
-    K.stairs16(px1, -80, px1 + 448, 80, 0, L.PED, 'w', {'top': T('mat_floor'), 'side': T('steel')}, route='ped_front')
-    K.reserve(((px1, -80, 0), (px1 + 448, 80, L.PED)), pad=4)
-    K.keep_clear(px1 + 448, -100, px1 + 560, 100, 0)
+    # jump pads up onto the pedestal: two along the front, one at each end (the user preferred pads to stairs)
+    for name, (sx, sy), (lx, ly) in (('front_s', (px1 + 230, -60), (px1 - 230, -60)), ('front_n', (px1 + 230, 640), (px1 - 230, 640)),
+                                     ('end_n', (-1300, py1 + 230), (-1300, py1 - 200)), ('end_s', (-1300, py0 - 230), (-1300, py0 + 200))):
+        K.jumppad(sx, sy, 0, land=(lx, ly, L.PED), apex=L.PED + 140, name=f'pad_ped_{name}',
+                  edges=[(px1 if 'front' in name else lx, ly if 'front' in name else (py1 if sy > 0 else py0), L.PED)])
     # soap-bubble lifts onto the machine tops
     for y in (-840, 840):
         K.jumppad(-1290, y, L.PED, land=(-2010, y, L.PED + L.W_H), apex=L.PED + L.W_H + 160, name=f'pad_washer_{"n" if y > 0 else "s"}',
@@ -118,8 +114,7 @@ def overlaps(b, xr, yc):
 # ================================================================================================= dryers (east)
 def dryers():
     x0, x1 = L.D_X
-    K.stairs16(L.PLINTH_X[0], L.PED_Y[0], L.PLINTH_X[1], L.PED_Y[1], 0, L.PLINTH, 'e', {'top': T('mat_floor'), 'side': T('steel')})
-    K.reserve(((L.PLINTH_X[0], L.PED_Y[0], 0), (x1, L.PED_Y[1], L.D_TOP)), pad=4)
+    K.reserve(((x0, L.PED_Y[0], 0), (x1, L.PED_Y[1], L.D_TOP)), pad=4)
     for i, yc in enumerate(L.D_YC):
         drum = axis_prism('x', x0 - 4, L.D_DRUM_X[1], yc, L.D_DRUM_Z, L.D_DRUM_R, WCLIP)
         low = box((x0, yc - L.D_HALF, 0), (x1, yc + L.D_HALF, L.D_LOW_H), WCLIP)
@@ -128,8 +123,8 @@ def dryers():
         K.custom(ML.PLACE['dryer_low'], x0, yc, 0, angle=180, occupy=False)
         K.custom(ML.PLACE['dryer_up'], x0, yc, L.D_LOW_H, angle=180, occupy=False)
         K.rotating_model2(ML.IQM['dryer_drum'], ((L.D_DRUM_X[0] + L.D_DRUM_X[1]) / 2, yc, L.D_DRUM_Z), 25, axis='x', reverse=bool(i % 2))
-        K.keep_clear(L.PLINTH_X[0] - 112, yc - 120, x0, yc + 120, 0)
-        K.route(f'dryer{i}', (L.PLINTH_X[0] - 120, yc, 0), (x0 + 120, yc, L.PLINTH))
+        K.keep_clear(x0 - 112, yc - 120, x0, yc + 120, 0)
+        K.route(f'dryer{i}', (x0 - 160, yc, 0), (x0 + 120, yc, L.PLINTH))
     # dryer stack top (the high ground): pad from the floor in front of the plinth
     K.jumppad(1280, 0, 0, land=(2010, 0, L.D_TOP), apex=L.D_TOP + 140, name='pad_dryers', edges=[(x0, 0, L.D_TOP)])
     K.speaker(2000, 0, 400, 'machine/aircon', volume=0.4)
@@ -248,7 +243,7 @@ def props():
                                ('gummybears/redbear.md3', -1000, 1500, 0, 20), ('gummybears/yellowbear.md3', 1200, 1400, 0, 200),
                                ('pad_ddmix/trashcan/garbage_bag_group.md3', 2150, 1580, 0, 0),
                                ('pad_ddmix/plants/bonsai.md3', -2050, 1800, 0, 0), ('pad_ducks/pad_duck.md3', 200, 1850, L.SINK_FLOOR, 160),
-                               ('padtv/padtv2.md3', 830, 1880, L.SINK_Z[1], 270)):
+                               ('padtv/padtv2.md3', 830, 1880, L.SINK_Z[1], 90)):
         K.catalog(path, x, y, z, angle=a, lit=True, clip=(z == 0), nudge=(z == 0))
 
 
