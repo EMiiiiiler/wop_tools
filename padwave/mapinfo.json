@@ -1,0 +1,67 @@
+{
+ "map": "wop_padwave",
+ "ns": "padwave",
+ "longname": "Neon Tide",
+ "generator": "build_padwave.py",
+ "bounds": [
+  -1152,
+  -2304,
+  1680,
+  2304
+ ],
+ "arena_types": "ffa lps team ft ctl syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 4,
+  "bots": 12
+ },
+ "sightlines": {
+  "zmax": [
+   -392,
+   24,
+   408,
+   792
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Neon Tide",
+  "texsize": 256,
+  "bigtex": "sunset_=512",
+  "shots": [
+   "overview:2300,2900,2000,225,-32",
+   "overview_stern:-2300,-2900,1800,45,-30",
+   "pool_bow:-700,600,120,60,-8",
+   "sky_terrace:-900,2250,860,315,-12",
+   "bridge:0,1700,860,270,-12",
+   "crown:300,-300,1250,120,-10",
+   "disco:0,900,-330,90,-5",
+   "arcade:0,-900,-330,270,-5",
+   "atrium:-800,-500,-330,30,-5",
+   "skypool:900,-520,60,30,-12",
+   "waverider:-500,-600,120,140,-8",
+   "promenade:1000,-1500,450,90,-5",
+   "lounge:-560,1760,60,60,-5",
+   "lifeboat:-960,800,440,80,-5"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview_bow",
+  "shots": [
+   "pool_bow",
+   "crown",
+   "disco"
+  ]
+ },
+ "hull": [
+  -3584,
+  -4352,
+  3584,
+  4352
+ ]
+}

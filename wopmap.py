@@ -342,7 +342,23 @@ def carve(brush, cutters, tex=None, min_thick=1.0):
                     inside = False; break
             # whatever is left in `cur` lies inside the cutter: dropped
         pieces = nxt
-    return [brush_from_planes(P, tex, brush.detail) for P in pieces]
+    # faces that lie on one of the original brush's planes keep that face's texture (a carved bridge kept its teak top
+    # and white sides); only the new cut faces get `tex`
+    orig = [(np.asarray(f.n, dtype=np.float64), float(f.d), f.tex) for f in brush.faces]
+    cut_tex = tex
+
+    def keep(n):
+        for (on, od, ot) in orig:
+            if np.allclose(on, n, atol=1e-5): return ot
+        return _pick_tex(cut_tex, n)
+    out = []
+    for P in pieces:
+        b = brush_from_planes(P, keep, brush.detail)
+        for f in b.faces:          # a cut plane parallel to an original face but elsewhere gets the cut texture
+            for (on, od, ot) in orig:
+                if np.allclose(on, f.n, atol=1e-5) and abs(od - f.d) > 0.5: f.tex = _pick_tex(cut_tex, f.n); f.sc = default_scale(f.tex)
+        out.append(b)
+    return out
 
 
 # ------------------------------------------------------------------ map

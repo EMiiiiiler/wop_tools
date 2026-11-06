@@ -63,6 +63,14 @@ def slick(name, steps=None, glint=True, editor=None):
     return lm(name, steps=steps, extra='\tsurfaceparm slick\n', stage=stage, editor=editor)
 
 
+def slide_clip(name='slide_clip'):
+    """invisible slick PLAYER clip for slide floors (woplib.slides.collision): players slide, shots and items pass, the
+    visible flume/tube MD3 needs no collision. Uses the nodraw_ns image in the editor."""
+    t = f'{td()}/{name}'
+    return (f'{t}\n{{\n\tqer_editorimage {td()}/nodraw_ns\n\tqer_trans 0.4\n\tsurfaceparm nodraw\n\tsurfaceparm nolightmap\n'
+            f'\tsurfaceparm nomarks\n\tsurfaceparm slick\n\tsurfaceparm playerclip\n\tsurfaceparm trans\n}}\n\n')
+
+
 def nodraw_ns(name='nodraw_ns'):
     """invisible nonsolid brush (movers' tiny brush for model2, decal backs). WoP's common/nodrawnonsolid also works."""
     t = f'{td()}/{name}'
