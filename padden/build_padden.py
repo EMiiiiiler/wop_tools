@@ -169,9 +169,10 @@ def furniture():
     place('radiator', 0, Y0, 0)
     place('curtains', 0, Y0, 0)
     K.catalog('pad_ddmix/plants/bonsai.md3', 560, -1700, SILL[4], scale=0.6, angle=0)
-    # fridge + the pizza box staircase onto it
+    # fridge (pad onto its top) + a pile of pizza boxes
     place('fridge', *FRIDGE_C, 0)
-    place('pizza_stack', -844, -1650, 0)
+    place('pizza_pile', -1150, -1560, 0, angle=12)
+    place('bed_ladder', -620, 1008, 0)
     place('ceiling_lamp', 0, 0, ZC)
 
 
@@ -209,6 +210,7 @@ def pads():
     K.jumppad(0, -1240, 0, land=(0, -1690, SILL[4]), apex=SILL[4] + 140, name='pad_sill', edges=[(0, SILL[3], SILL[4])])
     K.jumppad(1480, -400, DESK_Z, land=(1930, -150, SHELF_Z), apex=SHELF_Z + 130, name='pad_shelf', ceiling=ZC,
               edges=[(1792, -200, SHELF_Z)])
+    K.jumppad(-1440, -1600, 0, land=(-1860, -1600, 480), apex=480 + 200, name='pad_fridge', edges=[(-1664, -1600, 480)])
     K.jumppad(1200, 1000, 0, land=(1680, 1000, DESK_Z), apex=DESK_Z + 240, name='pad_desk', edges=[(1408, 1000, DESK_Z)])
 
 
@@ -255,7 +257,7 @@ def lights_sounds():
     K.light(1700, 440, 1000, 600, '0.5 0.7 1')                # monitor glow
     K.light(1550, 440, 760, 350, '0.6 0.8 1')
     for x in (-1800, -1400, -1000, -650):                     # fairy lights in the den
-        K.light(x, 1300, 900, 260, '1 0.8 0.55')
+        K.light(x, 1300, 560, 220, '1 0.8 0.55')
     K.light(-1240, 1300, 200, 200, '0.8 0.8 1')               # TV static
     K.light(-1800, 300, 900, 260, '1 0.95 0.85')              # inside the wardrobe
     K.light(984, 1536, 250, 220, '0.6 0.4 1')                 # inside the tower

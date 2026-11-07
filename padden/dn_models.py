@@ -459,7 +459,7 @@ def game_box_tex(w=256, h=256):
 # ================================================================================================= models
 # geometry shared with build_padden.py (world layout lives there; these are model-space sizes)
 BED_L, BED_W = 1600, 784            # loft bed footprint (x by y)
-DECK_Z0, MATT_Z = 1040, 1216        # slat deck bottom, walkable mattress/duvet top
+DECK_Z0, MATT_Z = 704, 880          # slat deck bottom, walkable mattress/duvet top (a mid-sleeper, ~1.1 m)
 WARD_D, WARD_W, WARD_H = 480, 992, 1760
 DRESS_W, DRESS_D, DRESS_H = 512, 416, 720
 DESK_D, DESK_L, DESK_Z = 640, 2000, 600
@@ -472,7 +472,7 @@ FRIDGE = (384, 384, 480)
 def all_models():
     loft_bed(); wardrobe(); dresser(); desk(); monitors(); keyboard(); mouse(); headset(); pc_tower(); fan()
     gaming_chair(); beanbag('beanbag', 'beanbag', 360, 420); beanbag('beanbag_den', 'beanbag2', 280, 330)
-    crt_tv(); retro_console(); pizza_stack(); drinks_cases(); laundry(); backpack(); guitar(); skateboard()
+    crt_tv(); retro_console(); pizza_pile(); bed_ladder(); drinks_cases(); laundry(); backpack(); guitar(); skateboard()
     trash_bin(); fridge(); speaker(); subwoofer(); radiator(); curtains(); shelf_brackets(); ceiling_lamp(); trophy()
     games_row(); energy_can('can_g'); energy_can('can_p'); glass_panel(); controller()
 
@@ -771,20 +771,33 @@ def controller():
     ML.save('controller', X)
 
 
-def pizza_stack():
-    """a lazy staircase of 16 pizza boxes, each shifted 36u: 30u risers, top 480 = the fridge top. Origin at the
-    bottom box's -x edge centre, rises toward -x."""
-    X = ML.Model(); steps = []
-    for k in range(16):
-        x1 = -k * 36; x0 = x1 - 280
+def pizza_pile():
+    """four pizza boxes dumped in a pile (cover). Origin at the footprint centre."""
+    X = ML.Model(); boxes = []
+    for k, (dx, dy) in enumerate(((0, 0), (24, -18), (-30, 10), (12, 26))):
         z0 = k * 30
-        b = ((x0, -140, z0), (x1, 140, z0 + 30))
+        b = ((dx - 140, dy - 140, z0), (dx + 140, dy + 140, z0 + 30))
         rbox(X.mesh(M_['pizzaside']), *b, r=2, k=1, faces='nsewb', tile=280)
-        q = [(x0, -140, z0 + 30), (x1, -140, z0 + 30), (x1, 140, z0 + 30), (x0, 140, z0 + 30)]
+        q = [(b[0][0], b[0][1], z0 + 30), (b[1][0], b[0][1], z0 + 30), (b[1][0], b[1][1], z0 + 30), (b[0][0], b[1][1], z0 + 30)]
         X.mesh(M_['pizza']).poly([np.array(p, float) for p in q], (0, 0, 1), [(0, 1), (1, 1), (1, 0), (0, 0)])
-        steps.append(b)
-    ML.save('pizza_stack', X)
-    coll('pizza_stack', steps)
+        boxes.append(b)
+    ML.save('pizza_pile', X)
+    coll('pizza_pile', boxes)
+
+
+def bed_ladder():
+    """the bed's steel ladder, leaning from the floor (y -280) to hooks over the side beam (y 0). Origin at the
+    bed edge on the floor; the rungs face south. Decoration (players and bots go up by the pads)."""
+    X = ML.Model(); fr = M_['frame']
+    top = MATT_Z + 90
+    for x in (-80, 80):
+        tube(X.mesh(fr), [(x, -280, 0), (x, -24, top), (x, 0, top + 20), (x, 24, top - 10)], 10, nseg=8)
+    for k in range(1, 8):
+        t = k / 8.0
+        tube(X.mesh(M_['steel']), [(-80, -280 + 256 * t, top * t), (80, -280 + 256 * t, top * t)], 8, nseg=8)
+    for x in (-80, 80):
+        rbox(X.mesh(M_['black']), (x - 14, -294, 0), (x + 14, -266, 10), r=3, k=1)
+    ML.save('bed_ladder', X)
 
 
 def drinks_cases():
