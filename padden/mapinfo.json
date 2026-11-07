@@ -1,0 +1,56 @@
+{
+ "map": "wop_padden",
+ "ns": "padden",
+ "longname": "Respawn Room",
+ "generator": "build_padden.py",
+ "bounds": [
+  -2048,
+  -1792,
+  2048,
+  1792
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Respawn Room",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1950,-1750,1850,135,-28",
+   "desk:800,-500,760,35,-12",
+   "den:-450,350,280,125,-2",
+   "bed:-500,1250,1300,170,-12",
+   "wardrobe_top:-1650,150,1850,35,-18",
+   "tower:350,900,260,40,-5",
+   "tower_in:700,1450,60,0,4",
+   "window:0,-500,600,270,8",
+   "shelf:1880,-350,1370,90,-12",
+   "wardrobe_in:-1400,250,90,180,0",
+   "vault:0,-330,-1460,90,2",
+   "room_west:1600,0,500,180,-6"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "desk",
+   "bed",
+   "den"
+  ]
+ }
+}

@@ -1,0 +1,5 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padden
+wardrobe_in:        -1300,250,0 > -1720,300,16
+desk_ramp:          1744,-1664,0 > 1744,-496,600
+tower_in:           520,1450,0 > 980,1450,16
