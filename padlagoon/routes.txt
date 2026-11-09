@@ -1,5 +1,4 @@
 # On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
 # name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padlagoon
 tent_in:            1376,-1440,0 > 1696,-1440,0
-pool_out_s:         -1030,-568,-192 > -1030,-1048,0
-pool_out_n:         1030,68,-192 > 1030,548,0
+cushion_ramp:       -1250,266,0 > -1250,964,400

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Couch Lock Lagoon (wop_padlagoon) - Couch Lock's living room flooded into a water park. FFA, built on woplib.
+"""Couch Lock Lagoon (wop_padlagoon) - a water park built out of Couch Lock's furniture, on a night balcony. FFA.
 
     OUT=<dir> python3 build_padlagoon.py          (wopbuild.py padlagoon preview / all)
 
@@ -14,7 +14,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = HERE
 while not os.path.exists(os.path.join(ROOT, 'wopmap.py')): ROOT = os.path.dirname(ROOT)
 sys.path.insert(0, ROOT); sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(ROOT, 'lounge'))
-from wopmap import box, hull, sign_box
+import wopmap
+from wopmap import box, hull, prism, ngon, sign_box
 from woplib.kit import MapKit, CAULK, WCLIP, CLIP, TRIG
 from woplib import models as ML, shaders as SH
 import lg_models as GM
@@ -30,16 +31,27 @@ T = K.T
 ML.configure(NS, OUT); SH.configure(NS, MAP, LONG)
 
 # ------------------------------------------------------------------------------------------------ layout (world)
-POOL = (-1200, -1000, 1200, 500)             # pool hole in the deck
+PCX, PCY = GM.POOL_C                         # the Whirl Pool: round (16-gon, flat edges on the axes), sunk in the deck
+POOL_POLY = ngon(PCX, PCY, GM.POOL_R, 16)
+PN, PS = PCY + GM.POOL_A, PCY - GM.POOL_A    # its north / south flat edges (y 664 / -1064)
 PZ, WZ = -192, -16                           # pool floor top, water top
+NOTCH_X, NOTCH_Y = 320, 600                  # the cave steps: a 640-wide flight from under the couch down into the pool
+CAVE_STAIRS = (-NOTCH_X, GM.SEAT_Y0 - 384, NOTCH_X, GM.SEAT_Y0, 'n')
+S_STAIRS = (-160, PS, 160, PS + 384, 's')
+TUB_STAIRS = [(-GM.LAND_X, GM.TUB_Y0, -GM.LAND_X + 320, GM.BACK_Y0, 'w'), (GM.LAND_X - 320, GM.TUB_Y0, GM.LAND_X, GM.BACK_Y0, 'e')]
 VAULT = (-448, -384, 448, 384); VAULT_Z = -4400       # under the street slab, outside the sky box
 TX0, TY0, TX1, TY1 = GM.TABLE
 SHELF = (-2048, -1650, -1728, -300, 1200)    # x0 y0 x1 y1 top (north end over the sideboard: a 640 drop, no bot trap)
-BONG = (-1470, -1100)
-BONG_SC = 1.5
-SLIDE = [(1550, 900, 640), (1550, 470, 510), (1550, 60, 370), (1440, -290, 240), (1210, -560, 120), (980, -700, 40)]
-DRAIN = (-760, 300)
-STAIRS = [(-1150, -1000, -910, -616, 's'), (910, 116, 1150, 500, 'n')]   # 16u flights out of the pool
+BONG = (-1590, -1100)                        # the Bong Tube: ride up inside the glass and out of the mouthpiece
+BONG_SC = 1.75
+# Slip'n'Slide: east couch arm (640) -> over the east deck -> shoots you under the coffee table
+SLIP = [(1550, 900, 640), (1550, 500, 520), (1450, 150, 400), (1250, -100, 290), (1000, -200, 180), (780, -200, 90)]
+# Gutter Run: white guttering from the top shelf (1200) along the south railing and round into the pool
+FLUME = [(-1728, -1500, 1200), (-1400, -1500, 1120), (-280, -1630, 850), (480, -1600, 668), (960, -1480, 540),
+         (1180, -1220, 440), (1010, -900, 300), (770, -700, 170), (545, -565, 75)]
+DRAIN = (PCX, PCY)                           # under the island, where the whirlpool turns
+STACK = (-810, -1340)                        # the spare seat cushions, stacked on the south deck
+RAMP = (-1380, 330, -1120, GM.SEAT_Y0)       # the third cushion leaning on the couch: the walk up to the tub
 
 
 def tex6(**faces):
@@ -81,16 +93,17 @@ def shell():
     K.add(box((-3800, -7400, hz0), (-600, -6400, 1200), T('far_a')))                       # across the street
     K.add(box((600, -7000, hz0), (4600, -6100, -400), T('far_b')))
     K.add(box((3600, -2600, hz0), (6400, 400, 900), T('far_a')))                           # east, down the road
-    # deck: detail blocks round the pool hole, a lip past the bounds for the railings
-    px0, py0, px1, py1 = POOL
+    # deck: one slab with the round pool and the notch for the cave steps carved out of it
     ex, ey = X1 + 40, Y0 - 40
-    deck = [((X0, ey), (ex, py0), {'n': T('pool_tile')}), ((X0, py1), (ex, Y1), {'s': T('pool_tile')}),
-            ((X0, py0), (px0, py1), {'e': T('pool_tile')}), ((px1, py0), (ex, py1), {'w': T('pool_tile')})]
-    for (a, b, side) in deck:
-        t = {'top': T('carpet'), 'side': T('concrete'), 'bot': T('concrete')}
-        t.update(side)
-        K.add(box((a[0], a[1], ZF), (b[0], b[1], 0), t))
-    K.add(box((px0, py0, ZF), (px1, py1, PZ), {'top': T('pool_floor'), 'side': CAULK, 'bot': T('concrete')}))
+    cutters = [prism(POOL_POLY, ZF - 8, 8, CAULK), box((-NOTCH_X, NOTCH_Y, ZF - 8), (NOTCH_X, GM.SEAT_Y0, 8), CAULK)]
+    for pc in wopmap.carve(box((X0, ey, ZF), (ex, Y1, 0), T('carpet')), cutters):
+        for f in pc.faces:
+            f.tex = T('carpet') if f.n[2] > 0.9 else T('concrete') if f.n[2] < -0.9 else T('pool_tile')
+        K.add(pc)
+    floor = prism(POOL_POLY, ZF, PZ, {'top': T('pool_floor'), 'side': CAULK, 'bot': T('concrete')})
+    K.add(floor)
+    for pc in wopmap.carve(box((-NOTCH_X, NOTCH_Y, ZF), (NOTCH_X, GM.SEAT_Y0, PZ), T('pool_floor')), [floor]):
+        K.add(pc)
     K.reserve(((X0, ey, ZF), (ex, Y1, 0)))
     # glass railings (south + east) with steel posts and top rail; clip up to the sky above them
     rh = 400
@@ -111,13 +124,14 @@ def shell():
 
 
 def pool():
-    """water box carved by the table legs and the walk-out stairs; drain grate = the secret"""
-    px0, py0, px1, py1 = POOL
+    """the Whirl Pool: round water body carved by the steps and the island's legs, a slow circular current, the
+    drain under the island (the secret). Cave steps north (through the waterfall), pool steps south."""
+    st = {'top': T('coping'), 'side': T('pool_tile'), 'bot': CAULK}
     cutters = []
-    for (x0, y0, x1, y1, d) in STAIRS:
-        K.stairs16(x0, y0, x1, y1, PZ, 0, d, {'top': T('coping'), 'side': T('pool_tile'), 'bot': CAULK},
-                   route=f'pool_out_{d}')
-        cutters.append(box((x0, y0, PZ), (x1, y1, 0), CAULK))
+    for (x0, y0, x1, y1, d) in (CAVE_STAIRS, S_STAIRS):
+        K.stairs16(x0, y0, x1, y1, PZ, 0, d, st)
+        cutters.append(K.stair_wedge(x0, y0, x1, y1, PZ, 0, d))
+    K.keep_clear(-200, PS - 110, 200, PS, 0)
     tc = ((TX0 + TX1) / 2, (TY0 + TY1) / 2)
     for (a, b) in GM.COLL['coffee_table']['boxes']:
         if a[2] < WZ - PZ:
@@ -125,8 +139,31 @@ def pool():
     dx, dy = DRAIN
     K.add(box((dx - 96, dy - 96, PZ), (dx + 96, dy + 96, PZ + 2), {'top': T('drain'), 'side': T('pool_floor'), 'bot': CAULK}))
     cutters.append(box((dx - 96, dy - 96, PZ), (dx + 96, dy + 96, PZ + 2), CAULK))
-    K.water_box((px0, py0, PZ), (px1, py1, WZ), T('water'), cutters=cutters)
+    body = prism(POOL_POLY, PZ, WZ, T('water'))
+    K.water_box(None, None, T('water'), cutters=cutters, brush=body)
+    K.water_box((-NOTCH_X, NOTCH_Y, PZ), (NOTCH_X, GM.SEAT_Y0, WZ), T('water'),
+                cutters=[prism(POOL_POLY, PZ - 8, WZ + 8, CAULK)] + cutters[:1])
     K.secret((dx - 80, dy - 80, PZ + 2), (dx + 80, dy + 80, PZ + 72), dest=(0, -250, VAULT_Z), angle=90, name='drain')
+    place('coping_ring', 0, 0, 0)
+    for k, yaw in enumerate((135, 225, 315, 45)):                      # the whirl: four short pulses, anticlockwise
+        a = math.radians(45 + 90 * k)
+        cx, cy = PCX + 600 * math.cos(a), PCY + 600 * math.sin(a)
+        K.current((cx - 80, cy - 80, PZ + 8), (cx + 80, cy + 80, WZ), yaw, speed=190, wait=0.45, name=f'whirl{k}')
+
+
+def tub():
+    """the Couch Tub: water in the couch (floor 240, surface 384), moulded steps up to the end cushions, and Couch
+    Falls spilling over the lip onto the cave steps"""
+    st = {'top': T('coping'), 'side': T('coping'), 'bot': CAULK}
+    cutters = []
+    for (x0, y0, x1, y1, d) in TUB_STAIRS:
+        K.stairs16(x0, y0, x1, y1, GM.TUB_FLOOR, GM.SEAT_Z, d, st)
+        cutters.append(K.stair_wedge(x0, y0, x1, y1, GM.TUB_FLOOR, GM.SEAT_Z, d))
+    K.water_box((-GM.LAND_X, GM.TUB_Y0, GM.TUB_FLOOR), (GM.LAND_X, GM.BACK_Y0, GM.TUB_WATER), T('water'), cutters=cutters)
+    place('waterfall', 0, 0, 0, lit=False)
+    place('hose', 0, 0, 0)
+    rb = K.ramp(*RAMP, 0, GM.SEAT_Z, 'n', {'top': T('cushion'), 'side': T('cushion'), 'bot': CAULK}, route='cushion_ramp')
+    K.keep_clear(RAMP[0], RAMP[1] - 110, RAMP[2], RAMP[1], 0)
 
 
 def vault():
@@ -144,7 +181,7 @@ def vault():
     lounge('grinder', 200, 150, z, scale=1.3, cyls=[(0, 0, LM.GRINDER_R * 1.3, 0, 70)])
     K.item('item_padpower', 0, 150, z); K.item('item_revival', -300, -200, z); K.item('holdable_killerducks', 300, -200, z)
     K.item('item_armor_padshield', 0, 0, z)
-    K.teleporter((-48, y0, z), (48, y0 + 64, z + 96), dest=(0, -1450, 0), angle=90, name='stash_exit')
+    K.teleporter((-48, y0, z), (48, y0 + 64, z + 96), dest=(460, -1180, 0), angle=90, name='stash_exit')
     K.light(0, 0, z + 320, 700, '1 0.85 0.6'); K.light(-300, 0, z + 160, 250, '0.6 1 0.6'); K.light(300, 0, z + 160, 250, '0.6 1 0.6')
 
 
@@ -152,16 +189,18 @@ def vault():
 def furniture():
     place('couch', 0, 0, 0)
     place('festoon', 0, 0, 0)
-    sz = GM.SEAT_Z
-    place('pillow0', -1050, 1440, sz, angle=8); place('pillow1', -560, 1462, sz, angle=-4); place('pillow2', 1180, 1440, sz, angle=4)
-    place('pillow3', 850, 1455, sz, angle=8)
-    place('blanket', -560, 1180, sz, angle=0)
-    place('pizza_box', 320, 1180, sz, angle=-12)
-    place('remote', 40, 1000, sz, angle=30, lit=False)
-    place('controller', 560, 1000, sz, angle=-40, lit=False)
-    lounge('crisps', 100, 1360, sz, angle=60, lit=False)
+    sz, bz = GM.SEAT_Z, GM.BACK_Z
+    place('pillow0', -1250, 1456, sz, angle=4)                       # on the west end cushion
+    place('pillow2', -600, 1700, bz, angle=-5); place('pillow1', 1050, 1700, bz, angle=4)     # along the back
+    place('remote', -700, 924, sz, angle=8, lit=False)
     place('popcorn', -1550, 1150, GM.ARM_Z)
-    K.catalog('pad_ducks/pad_duck.md3', 450, 1660, GM.BACK_Z, angle=250, clip=True)
+    K.catalog('pad_ducks/pad_duck.md3', 450, 1660, bz, angle=250, clip=True)
+    # the spare seat cushions: two stacked on the south deck (cover) with what was on the couch
+    sx, sy = STACK
+    place('cushion', sx, sy, 0); place('cushion', sx + 30, sy - 10, 160, angle=7)
+    place('pillow3', sx - 90, sy + 60, 320, angle=20)
+    place('pizza_box', sx + 220, sy - 60, 320, angle=-12)
+    place('controller', sx - 250, sy - 160, 320, angle=-40, lit=False)
     K.crawl((-GM.COUCH_X, GM.SEAT_Y0, 0), (GM.COUCH_X, GM.COUCH_Y1, GM.LEG_Z))
     tc = ((TX0 + TX1) / 2, (TY0 + TY1) / 2)
     place('coffee_table', tc[0], tc[1], PZ)
@@ -185,7 +224,7 @@ def furniture():
     lounge('bong', bx, by, 0, scale=BONG_SC, ofs=LM.BONG_OFS, occupy=False)
     # giant lava lamps (floor towers), the grow-tent cabin, plants
     lounge('lava_purple', -1880, 1300, 0, scale=2.4, cyls=[(0, 0, LM.LAVA_R * 2.4, 0, LM.LAVA_H * 2.4)])
-    lounge('lava_green', 1000, -1600, 0, scale=2.4, cyls=[(0, 0, LM.LAVA_R * 2.4, 0, LM.LAVA_H * 2.4)])
+    lounge('lava_green', 1880, -150, 0, scale=2.4, cyls=[(0, 0, LM.LAVA_R * 2.4, 0, LM.LAVA_H * 2.4)])
     x0, y0, x1, y1, H = GM.TENT
     place('grow_tent', (x0 + x1) / 2, (y0 + y1) / 2, 0)
     K.keep_clear(x0 - 160, GM.TENT_DOOR[0], x0, GM.TENT_DOOR[1], 0)
@@ -197,54 +236,25 @@ def furniture():
     K.rotating_model2(f'models/{NS}/floats.iqm', (tc[0], tc[1], WZ + 60), 6)
 
 
-def slide():
-    """'Cushion Plunge': from the east couch arm (640) down over the east deck into the pool. Slick floor."""
-    P = [np.array(p, float) for p in SLIDE]
-    n = len(P); hw, wt, wh, ft = 96, 16, 40, 16
-    dirs = [(P[i + 1][:2] - P[i][:2]) / np.linalg.norm(P[i + 1][:2] - P[i][:2]) for i in range(n - 1)]
-    perps = [np.array([-d[1], d[0]]) for d in dirs]
-    J = []
-    for k in range(n):
-        mm = perps[0] if k == 0 else perps[-1] if k == n - 1 else (perps[k - 1] + perps[k]) / np.linalg.norm(perps[k - 1] + perps[k])
-        J.append((mm, 1.0 / max(0.5, float(mm @ perps[min(k, n - 2)]))))
-    for i in range(n - 1):
-        (ma, fa), (mb, fb) = J[i], J[i + 1]
-        ca, cb = P[i], P[i + 1]
-        za, zb = ca[2], cb[2]
-        e = lambda c, mm, f, off: c[:2] + mm * off * f
-        La, Ra, Lb, Rb = e(ca, ma, fa, hw), e(ca, ma, fa, -hw), e(cb, mb, fb, hw), e(cb, mb, fb, -hw)
-        for (p1, p2, p3, z1, z2, z3) in ((La, Ra, Lb, za, za, zb), (Ra, Rb, Lb, za, zb, zb)):
-            pts = [(p1[0], p1[1], z1), (p2[0], p2[1], z2), (p3[0], p3[1], z3),
-                   (p1[0], p1[1], z1 - ft), (p2[0], p2[1], z2 - ft), (p3[0], p3[1], z3 - ft)]
-            K.add(hull(pts, {'top': T('slide'), 'side': T('slide_side'), 'bot': T('slide_side')}, round_pts=False))
-        for s in (1, -1):
-            ia, ib = e(ca, ma, fa, s * hw), e(cb, mb, fb, s * hw)
-            oa, ob = e(ca, ma, fa, s * (hw + wt)), e(cb, mb, fb, s * (hw + wt))
-            pw = []
-            for (p, zz) in ((ia, za), (ib, zb), (oa, za), (ob, zb)):
-                pw += [(p[0], p[1], zz - ft), (p[0], p[1], zz + wh)]
-            K.add(hull(pw, T('slide_side'), round_pts=False))
-    for (x, y, z) in SLIDE[1:4]:                     # supports down to the deck
-        K.add(box((x - 20, y - 20, 0), (x + 20, y + 20, z - ft - 24), T('support')))
-    x, y, z = SLIDE[4]
-    K.add(box((1240, y - 20, 0), (1280, y + 20, z - ft - 30), T('support')))
-    mn = np.min([p for p in SLIDE], 0) - (hw + wt + 8); mx = np.max([p for p in SLIDE], 0) + (hw + wt + 8)
-    for i in range(n - 1):                           # keep props off the slide's footprint
-        a, b = P[i], P[i + 1]
-        K.reserve(((min(a[0], b[0]) - 120, min(a[1], b[1]) - 120, 0), (max(a[0], b[0]) + 120, max(a[1], b[1]) + 120, max(a[2], b[2]) + 60)))
+def slides():
+    """two rides, both slick: the Slip'n'Slide off the east couch arm, and the Gutter Run from the top shelf"""
+    K.flume(SLIP, T('slipslide'), T('slip_edge'), half_width=120, wall=28, supports=[(k, 0) for k in (1, 2, 3, 4)],
+            support_tex=T('support'))
+    K.flume(FLUME, T('gutter'), T('gutter_side'), half_width=88, wall=48, supports=[(k, 0) for k in range(1, 8)],
+            support_tex=T('support'))
 
 
 def clutter():
-    """poolside: loungers, umbrellas, towels, bean bags, the hookah, crisps - the floor cover"""
-    place('lounger', -400, -1500, 0, angle=90); place('lounger', 200, -1520, 0, angle=90)
-    place('umbrella', -100, -1400, 0)
-    place('towel', 650, -1250, 0, angle=15); place('towel', -1500, 200, 0, angle=80)
-    lounge('beanbag', -1050, -1380, 0, angle=40, cyls=[(0, 0, LM.BEANBAG_R * 0.75, 0, LM.BEANBAG_H * 0.7)])
-    lounge('hookah', -1450, 750, 0, ofs=LM.HOOKAH_OFS, cyls=[(0, 0, LM.HOOKAH_BASE_R, 0, 280)])
-    lounge('chips', 800, 700, 0, scale=0.6, boxes=[((-LM.CHIPS[0] * 0.6, -LM.CHIPS[1] * 0.6, 0), (LM.CHIPS[0] * 0.6, LM.CHIPS[1] * 0.6, 70))])
-    lounge('crisps', 1150, 640, 0, angle=40, lit=False)
-    K.catalog('pad_ducks/pad_duck.md3', 1870, 300, 0, angle=180, clip=True)
-    for (x, y, a) in ((-900, -1650, 20), (800, -1100, 100), (-1700, 300, 200)):
+    """poolside: loungers, an umbrella, towels, a bean bag, the hookah, crisps - the floor cover"""
+    place('lounger', -60, -1480, 0, angle=90); place('lounger', 640, -1480, 0, angle=90)
+    place('umbrella', 1300, -560, 0)
+    place('towel', -1200, -170, 0, angle=80); place('towel', 1650, 760, 0, angle=15)
+    lounge('beanbag', -1150, -600, 0, angle=40, cyls=[(0, 0, LM.BEANBAG_R * 0.75, 0, LM.BEANBAG_H * 0.7)])
+    lounge('hookah', -1510, 760, 0, ofs=LM.HOOKAH_OFS, cyls=[(0, 0, LM.HOOKAH_BASE_R, 0, 280)])
+    lounge('chips', 580, 750, 0, scale=0.6, boxes=[((-LM.CHIPS[0] * 0.6, -LM.CHIPS[1] * 0.6, 0), (LM.CHIPS[0] * 0.6, LM.CHIPS[1] * 0.6, 70))])
+    lounge('crisps', 1180, 520, 0, angle=40, lit=False)
+    K.catalog('pad_ducks/pad_duck.md3', 1870, 560, 0, angle=180, clip=True)
+    for (x, y, a) in ((-900, 760, 20), (850, -1150, 100), (-1700, 330, 200)):
         K.catalog('pad_tins/pad_coke_cr.md3', x, y, 0, angle=a, clip=False)
 
 
@@ -252,70 +262,72 @@ def clutter():
 def pads():
     bx, by = BONG
     sx0, sy0, sx1, sy1, sz = SHELF
-    K.jumppad(bx, by, 0, land=(-1890, by, sz), apex=sz + 160, name='bong_lift', ceiling=ZC, edges=[(sx1, by, sz)],
-              light_rgb='0.5 1 0.6')
-    K.jumppad(0, -1250, 0, land=(0, -380, GM.TABLE_Z), apex=GM.TABLE_Z + 260, name='pad_table', edges=[(0, TY0, GM.TABLE_Z)])
-    K.jumppad(420, 720, 0, land=(300, -60, GM.TABLE_Z), apex=GM.TABLE_Z + 260, name='pad_table2', edges=[(300, TY1, GM.TABLE_Z)])
-    K.jumppad(-500, 720, 0, land=(-500, 1200, GM.SEAT_Z), apex=GM.SEAT_Z + 260, name='pad_seat', edges=[(-500, GM.SEAT_Y0, GM.SEAT_Z)])
-    K.jumppad(800, 1030, GM.SEAT_Z, land=(800, 1660, GM.BACK_Z), apex=GM.BACK_Z + 200, name='pad_back', ceiling=ZC,
-              edges=[(800, GM.BACK_Y0, GM.BACK_Z)])
-    K.jumppad(-1180, 1050, GM.SEAT_Z, land=(-1550, 1350, GM.ARM_Z), apex=GM.ARM_Z + 200, name='pad_westarm',
-              edges=[(-1400, 1200, GM.ARM_Z)])
-    K.jumppad(1874, 1560, 0, land=(1550, 1500, GM.ARM_Z), apex=GM.ARM_Z + 220, name='pad_slide', edges=[(1700, 1530, GM.ARM_Z)])
+    tz, az, bz, lz = GM.TABLE_Z, GM.ARM_Z, GM.BACK_Z, GM.SEAT_Z
+    K.jumppad(bx, by, 0, land=(-1880, by, sz), apex=sz + 260, name='bong_lift', edges=[(sx1, by, sz)], light_rgb='0.5 1 0.6')
+    K.jumppad(300, -1320, 0, land=(220, -420, tz), apex=tz + 260, name='pad_table', edges=[(240, TY0, tz)])
+    K.jumppad(-1060, 60, 0, land=(-380, -100, tz), apex=tz + 260, name='pad_table2', edges=[(TX0, -60, tz)])
+    K.jumppad(900, 760, 0, land=(1250, 1180, lz), apex=lz + 260, name='pad_tub', edges=[(1040, GM.SEAT_Y0, lz)])
+    K.jumppad(1250, 1420, lz, land=(800, 1660, bz), apex=bz + 200, name='pad_back', edges=[(1000, GM.BACK_Y0, bz)])
+    K.jumppad(-1250, 1280, lz, land=(-1550, 1350, az), apex=az + 200, name='pad_westarm', edges=[(-1400, 1330, az)])
+    K.jumppad(1874, 1560, 0, land=(1550, 1500, az), apex=az + 220, name='pad_slide', edges=[(1700, 1530, az)])
     K.jumppad(-1440, 160, 0, land=(-1844, 160, GM.TV_STAND[4]), apex=GM.TV_STAND[4] + 220, name='pad_sideboard',
               edges=[(-1648, 160, GM.TV_STAND[4])])
     x0, y0, x1, y1, H = GM.TENT
-    K.jumppad(1150, -1300, 0, land=(1780, -1300, H + 16), apex=H + 16 + 300, name='pad_tent', ceiling=ZC, edges=[(x0, -1260, H + 16)])
+    K.jumppad(1770, -880, 0, land=(1770, -1380, H + 16), apex=H + 16 + 300, name='pad_tent', edges=[(1770, y1, H + 16)])
 
 
 def items():
-    sz = SHELF[4]
-    K.weapon('imperius', -1890, -1250, sz, marker='purple')
-    K.weapon('betty', 1780, -1500, GM.TENT[4] + 16, marker='black')
-    K.weapon('balloony', -300, 1660, GM.BACK_Z, marker='orange')
-    K.weapon('pumper', 150, -250, GM.TABLE_Z, marker='green')
-    K.weapon('splasher', -1844, 300, GM.TV_STAND[4], marker='blue')
-    K.weapon('boaster', 0, 1340, 0, marker='orange')
-    K.weapon('bubbleg', -300, -1250, 0, marker='green')
-    ammo = {'imperius': [(-1890, -850, sz), (-500, -700, PZ), (1780, -1150, GM.TENT[4] + 16)],
-            'betty': [(1700, -1450, 0), (-1550, 1500, GM.ARM_Z), (600, 1650, GM.BACK_Z), (300, -800, PZ)],
-            'balloony': [(-900, 1660, GM.BACK_Z), (1550, 1650, GM.ARM_Z), (-1700, -1650, 0)],
-            'pumper': [(-150, -420, GM.TABLE_Z), (800, 200, PZ), (1650, -900, 0), (-1000, 750, 0)],
-            'splasher': [(-1844, -250, GM.TV_STAND[4]), (-900, -200, PZ), (1300, 1300, 0)],
-            'boaster': [(-700, 1300, 0), (700, 1300, 0), (1880, 0, 0), (-600, -1700, 0)],
-            'bubbleg': [(500, -1700, 0), (-1600, -300, 0), (1400, 650, 0), (200, 650, 0)]}
+    sz, tz, az, bz, lz, th = SHELF[4], GM.TABLE_Z, GM.ARM_Z, GM.BACK_Z, GM.SEAT_Z, GM.TENT[4] + 16
+    K.weapon('imperius', -1890, -1250, sz, marker='purple')          # top shelf: up the Bong Tube, down the Gutter Run
+    K.weapon('betty', 1780, -1500, th, marker='black')               # tent roof
+    K.weapon('balloony', -300, 1660, bz, marker='orange')            # couch back
+    K.weapon('pumper', 150, -250, tz, marker='green')                # the island
+    K.weapon('splasher', -1844, 300, GM.TV_STAND[4], marker='blue')  # sideboard
+    K.weapon('boaster', 0, 1340, 0, marker='orange')                 # the cave behind the waterfall
+    K.weapon('bubbleg', 120, -1240, 0, marker='green')
+    ammo = {'imperius': [(-1890, -850, sz), (-500, -700, PZ), (1780, -1150, th)],
+            'betty': [(1700, -1450, 0), (-1550, 1500, az), (600, 1650, bz), (300, -800, PZ)],
+            'balloony': [(-900, 1660, bz), (1500, 1640, az), (-1700, -1650, 0), (500, 1234, GM.TUB_FLOOR)],
+            'pumper': [(-150, -420, tz), (600, 150, PZ), (1480, -1000, 0), (-1000, 750, 0)],
+            'splasher': [(-1844, -250, GM.TV_STAND[4]), (-650, -150, PZ), (1300, 1300, 0)],
+            'boaster': [(-700, 1300, 0), (700, 1300, 0), (1880, 200, 0), (-500, 1234, GM.TUB_FLOOR)],
+            'bubbleg': [(330, -1700, 0), (-1600, -300, 0), (1400, 650, 0), (700, 540, 0)]}
     for w, spots in ammo.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
-    K.ammo('nipper', -1000, -1150, 0); K.ammo('nipper', 1500, -200, 0); K.ammo('nipper', 0, 800, 0)
-    K.item('item_armor_padshield', -1550, 1500, GM.ARM_Z)
-    K.item('item_armor_shard', 1100, 1200, GM.SEAT_Z); K.item('item_armor_shard', 400, -300, GM.TABLE_Z)
-    K.item('item_speedy', 1550, 1250, GM.ARM_Z)
+    K.ammo('nipper', -250, -1140, 0); K.ammo('nipper', 1650, -380, 0); K.ammo('nipper', -760, 700, 0)
+    K.item('item_armor_padshield', 0, 1234, GM.TUB_FLOOR)            # bottom of the Couch Tub
+    K.item('item_armor_shard', 300, 1660, bz); K.item('item_armor_shard', 400, -300, tz)
+    K.item('item_speedy', 1550, 1250, az)
     K.item('holdable_floater', 1800, -1500, 0)
-    K.item('item_jumper', -1250, 1300, GM.SEAT_Z)
+    K.item('item_jumper', -1560, 1620, az)
     K.station(1600, -700, 0, ang=180)
-    for (x, y, z, a) in ((-1400, -1500, 0, 45), (-200, -1150, 0, 90), (600, -1600, 0, 90), (1300, -1000, 0, 135),
-                         (1880, -250, 0, 180), (1300, 800, 0, 225), (-200, 820, 0, 270), (-1100, 800, 0, 300),
-                         (-1600, -900, 0, 0), (-1400, 0, 0, 0), (900, 1200, GM.SEAT_Z, 270), (-200, 1700, GM.BACK_Z, 270),
-                         (1800, -1300, 0, 180), (0, -400, GM.TABLE_Z, 90)):
+    for (x, y, z, a) in ((-1560, -1600, 0, 45), (-200, -1180, 0, 90), (960, -1690, 0, 90), (1340, -1000, 0, 135),
+                         (1700, -300, 0, 180), (1300, 800, 0, 225), (-560, 800, 0, 270), (-980, 560, 0, 300),
+                         (-1560, -360, 0, 0), (-1320, -40, 0, 0), (-1250, 1050, lz, 270), (100, 1680, bz, 270),
+                         (1800, -1300, 0, 180), (0, -400, tz, 90)):
         K.spawn(x, y, z, a)
 
 
 def lights_sounds():
     K.light_grid(X0, Y0, X1, Y1, 1450, 768, 3600, color='1 0.88 0.72')
-    for (x, y) in ((-700, -600), (0, -100), (700, -600), (-700, 250), (700, 250)):       # underwater
-        K.light(x, y, -100, 300, '0.4 0.9 1')
+    for k in range(6):                                                                     # underwater ring
+        a = math.radians(60 * k)
+        K.light(PCX + 620 * math.cos(a), PCY + 620 * math.sin(a), -100, 300, '0.4 0.9 1')
+    K.light(0, 1234, 330, 260, '0.4 0.8 1'); K.light(-600, 1234, 330, 220, '0.4 0.8 1'); K.light(600, 1234, 330, 220, '0.4 0.8 1')
+    K.light(0, 780, 200, 300, '0.6 0.9 1')                                                 # Couch Falls
     K.light(-1700, 160, 900, 400, '0.6 0.8 1')                                             # telly
-    K.light(-1880, 1300, 900, 350, '0.9 0.4 1'); K.light(1000, -1600, 900, 350, '0.4 1 0.5')
+    K.light(-1880, 1300, 900, 350, '0.9 0.4 1'); K.light(1880, -150, 900, 350, '0.4 1 0.5')
     K.light(1768, -1440, 850, 450, '1 0.5 0.9')                                            # grow light in the tent
-    K.light(BONG[0], BONG[1], 600, 350, '0.5 1 0.6')
+    K.light(BONG[0] + 200, BONG[1], 700, 400, '0.5 1 0.6')
     K.light(-1880, -1000, 1400, 400, '1 0.9 0.8')                                           # over the shelf
-    K.light(0, 1300, 40, 200, '1 0.8 0.6')                                                  # crawl space
+    K.light(-500, 1300, 40, 200, '1 0.8 0.6'); K.light(500, 1300, 40, 200, '1 0.8 0.6')     # the cave
     K.speaker(0, -250, 0, 'ambient/water_rippling')
-    K.speaker(BONG[0], BONG[1], 200, 'ambient/slime_bubbling')
+    K.speaker(0, 860, 150, 'ambient/water_flowing')
+    K.speaker(BONG[0], BONG[1] + 200, 300, 'ambient/slime_bubbling')
     K.speaker(-1700, 160, 800, 'machine/tv_upstairs')
-    K.speaker(0, 1300, 450, 'human/snoring')
+    K.speaker(1250, 1700, 1100, 'human/snoring')
     K.timer_sound(0, 0, 1700, 'ambient/police_pass', 'siren', 50, 25)
-    K.timer_sound(-1900, -1700, 400, 'misc/door_buzzer', 'pizza', 70, 30)
+    K.timer_sound(1900, 1700, 400, 'misc/door_buzzer', 'pizza', 70, 30)
     K.trigger_sound((-2040, -1350, SHELF[4]), (-1740, -1150, SHELF[4] + 96), 'human/applause', 'summit', wait=8)
 
 
@@ -324,7 +336,7 @@ if __name__ == '__main__':
     GM.all_models()
     lm_shaders = LM.make(OUT)                    # Couch Lock's models + textures -> models/padlounge
     GM.BT.make_sky(OUT)                          # Couch Lock's painted night city -> env/padlounge/night_*
-    shell(); vault(); furniture(); pool(); slide(); pads(); clutter(); items(); lights_sounds()
+    shell(); vault(); furniture(); pool(); tub(); slides(); pads(); clutter(); items(); lights_sounds()
     K.fix_items()
     TX.write_shader(extra=[lm_shaders], arena_types=INFO.get('arena_types'), ents={e['classname'] for e in K.M.ents})
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))

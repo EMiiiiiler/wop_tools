@@ -20,6 +20,10 @@ COUCH_X = 1400                     # seat half length
 SEAT_Y0, BACK_Y0, COUCH_Y1 = 900, 1520, 1792
 SEAT_Z, BACK_Z, ARM_Z, LEG_Z = 400, 1000, 640, 64
 ARM_W = 300
+# the Couch Tub: seat cushions pulled off, the base lined with a tarp and filled by the garden hose
+TUB_Y0, TUB_FLOOR, TUB_WATER = 948, 240, 384     # inner face of the front lip, tub floor (frame top), water top
+LAND_X = 1100                                    # the end cushions left in place: landings at SEAT_Z beyond +-LAND_X
+SPILL_X, SPILL_Z = 280, 368                      # the notch in the front lip the water falls over
 TABLE = (-520, -520, 520, 120)     # coffee table top rect (world == model, origin at 0, 0)
 TABLE_Z = 320
 TV_STAND = (-2040, -400, -1648, 700, 560)
@@ -68,6 +72,11 @@ def textures(K):
     a('coping', TL.tiles((236, 232, 220), grout=(150, 150, 140), cols=2, rows=1, offset=0.0, grout_w=0.03, seed=33), scale=0.5)
     a('drain', drain_tex(), check_tile=False)
     a('slide', slide_tex(), 'slick', glint=True)
+    a('slipslide', slipslide_tex(), 'slick', glint=True)           # the yellow Slip'n'Slide sheet
+    a('slip_edge', TL.solid((40, 120, 220), 3, 62, 64))
+    a('gutter', TL.metal((226, 230, 234)), 'slick', glint=True)    # white PVC guttering: the shelf flume
+    a('gutter_side', TL.solid((206, 210, 216), 3, 63, 64))
+    a('cushion', TL.fabric((92, 46, 34), weave=96), steps='carpetsteps', scale=1.0)
     a('slide_side', TL.solid((240, 120, 40), 3, 41, 128))
     a('support', TL.metal((220, 220, 226)))
     a('skirting', TL.solid((60, 44, 30), 2, 16, 64))
@@ -152,6 +161,47 @@ def slide_tex(n=256):
     return c + (np.sin(y * 2 * math.pi * 2) * 10)[..., None]
 
 
+def slipslide_tex(n=256):
+    """wet yellow plastic sheet with printed blue wave bands"""
+    x, y = TL.xy(n)
+    c = TL.fill(n, (250, 214, 40), 3, 64)
+    w = (np.sin(y * 2 * math.pi * 4 + np.sin(x * 2 * math.pi * 2) * 1.2) > 0.86)[..., None]
+    return np.where(w, ML.C((40, 150, 230)), c)
+
+
+def tarp_tex(n=256):
+    """blue polytarp: woven grid, crease lines"""
+    x, y = TL.xy(n)
+    c = TL.fill(n, (36, 100, 196), 3, 65)
+    g = ((np.floor(x * 32) + np.floor(y * 32)) % 2)[..., None]
+    c = c * (0.94 + 0.06 * g)
+    cr = np.abs(np.sin((x * 3 + y * 2 + 0.15 * np.sin(x * 20)) * 2 * math.pi)) ** 24
+    return c + (cr * 46)[..., None]
+
+
+def falls_tex(w=128, h=256):
+    """falling water: white-blue streaks, alpha from the streaks (tileable both ways)"""
+    rng = np.random.default_rng(66)
+    col = rng.random(w)
+    col = (col + np.roll(col, 1) + np.roll(col, -1)) / 3
+    x, y = np.meshgrid(np.arange(w) / w, np.arange(h) / h)
+    st = 0.5 + 0.5 * np.sin(y * 2 * math.pi * 3 + col[None, :] * 20)
+    a = np.clip(0.35 + 0.5 * col[None, :] * 1.6 * (0.6 + 0.4 * st), 0.25, 0.92)
+    rgb = np.zeros((h, w, 3), np.float32) + ML.C((170, 225, 245))
+    rgb = rgb + (st * col[None, :] * 80)[..., None]
+    return np.clip(rgb, 0, 255), np.uint8(a * 255)
+
+
+def swirl_tex(n=256):
+    """whirlpool spiral (additive) for the water over the drain"""
+    x, y = TL.xy(n)
+    dx, dy = x - 0.5, y - 0.5
+    r = np.hypot(dx, dy); a = np.arctan2(dy, dx)
+    s = (np.sin(a * 3 + r * 34) * 0.5 + 0.5) ** 3
+    f = np.clip(1 - r * 2, 0, 1) * np.clip(r * 14, 0, 1)
+    return (s * f)[..., None] * ML.C((150, 235, 235))
+
+
 def stash_lid(w=512, h=512):
     im = Image.fromarray(np.uint8(np.clip(TL.planks((120, 80, 46), n_planks=6, grain=10, seed=57, n=512), 0, 255)))
     d = ImageDraw.Draw(im)
@@ -200,6 +250,13 @@ def materials():
     m('lounger', stripe_tex((40, 160, 170), (240, 240, 230)), shade=60)
     m('umbrella', umbrella_tex(), shade=40, two=True)
     m('towel', stripe_tex((230, 70, 90), (250, 220, 120), k=8), shade=80)
+    m('tarp', tarp_tex(), shade=40)
+    frgb, fa = falls_tex()
+    m('falls', frgb, 'flow', alpha=fa, speed=-1.5)
+    m('swirl', swirl_tex(), 'add', tcmod='rotate 40')
+    m('hose', TL.solid((40, 150, 60), 3, 67, 64), shade=80)
+    m('brass', TL.metal((200, 160, 70), brushed=False), 'lms', v=0.4, shade=60)
+    m('stone', TL.tiles((236, 232, 220), grout=(150, 150, 140), cols=4, rows=1, offset=0.0, grout_w=0.03, seed=33), shade=20)
     m('fairy', TL.solid((255, 210, 140), 1, 85, 32), 'glow', wave='wave sin 0.85 0.15 0 0.3')
     m('tile_m', TL.tiles((70, 170, 205), grout=(210, 235, 240), cols=8, rows=8, offset=0.0, grout_w=0.05, seed=31), shade=20)
 
@@ -241,34 +298,127 @@ def umbrella_tex(n=256):
 
 # ================================================================================================= models
 def all_models():
-    couch(); couch_stuff(); festoon(); rail_posts(); coffee_table(); tv_stand(); wall_shelf(); grow_tent(); floats(); lounger(); umbrella(); towel()
+    couch(); couch_stuff(); waterfall(); cushion(); hose(); coping_ring(); festoon(); rail_posts(); coffee_table(); tv_stand(); wall_shelf(); grow_tent(); floats(); lounger(); umbrella(); towel()
+
+
+def tquad(M, P, n, tile=256.0):
+    """a quad with planar UVs in `tile` units (P = four corners in order, n = facing normal)"""
+    P = [np.asarray(p, float) for p in P]
+    n = np.asarray(n, float)
+    a = np.array([1.0, 0, 0]) if abs(n[0]) < 0.9 else np.array([0, 1.0, 0])
+    u = np.cross(n, a); u /= np.linalg.norm(u); v = np.cross(n, u)
+    M.poly(P, n, [(float(p @ u) / tile, float(p @ v) / tile) for p in P])
 
 
 def couch():
-    """giant 70s corduroy couch, model origin = world (0, 0, 0). Seat 400, back top 1000 (272 deep, walkable),
-    arms 640 (300 wide). Short legs leave a 64u crawl space under the seat (Couch Lock's Boaster spot)."""
-    X = ML.Model(); v, vd = M_['velvet'], M_['velvet_dark']
+    """the Couch Tub (model origin = world 0, 0, 0): the giant 70s corduroy couch with its seat cushions pulled off,
+    lined with a blue tarp and filled with water. Back top 1000 (walkable), arms 640, an end cushion left at each
+    end (landings at 400), a rolled tarp lip along the front (400) with a spill notch in the middle where the
+    water falls onto the steps below. Short legs: the 64u crawl cave under it is behind that waterfall."""
+    X = ML.Model(); v, vd, tp = M_['velvet'], M_['velvet_dark'], M_['tarp']
     L = COUCH_X
-    legs = [((x - 40, y - 40, 0), (x + 40, y + 40, LEG_Z)) for x in (-L + 60, 0, L - 60) for y in (SEAT_Y0 + 60, COUCH_Y1 - 60)]
+    legs = [((x - 40, y - 40, 0), (x + 40, y + 40, LEG_Z)) for x in (-L + 60, -480, 480, L - 60) for y in (SEAT_Y0 + 60, COUCH_Y1 - 60)]
     for a, b in legs: rbox(X.mesh(M_['wood']), a, b, r=8, k=2, tile=128)
-    frame = ((-L, SEAT_Y0, LEG_Z), (L, COUCH_Y1, 240))
+    frame = ((-L, SEAT_Y0, LEG_Z), (L, COUCH_Y1, TUB_FLOOR))
     rbox(X.mesh(vd), *frame, r=16, k=2, tile=256)
-    cush = []
+    back = ((-L, BACK_Y0, TUB_FLOOR), (L, COUCH_Y1, BACK_Z))
     for k in range(3):
         x0 = -L + k * (2 * L / 3); x1 = x0 + 2 * L / 3
-        c = ((x0, SEAT_Y0, 240), (x1, BACK_Y0, SEAT_Z))
-        rbox(X.mesh(v), (x0 + 4, SEAT_Y0, 240), (x1 - 4, BACK_Y0, SEAT_Z), r=40, k=4, tile=320,
-             inflate=lambda x, y, z, n: 14 * max(0, n[2]))
-        cush.append(c)
-    back = ((-L, BACK_Y0, 240), (L, COUCH_Y1, BACK_Z))
-    for k in range(3):
-        x0 = -L + k * (2 * L / 3); x1 = x0 + 2 * L / 3
-        rbox(X.mesh(v), (x0 + 4, BACK_Y0, 240), (x1 - 4, COUCH_Y1, BACK_Z), r=50, k=4, tile=320,
+        rbox(X.mesh(v), (x0 + 4, BACK_Y0, TUB_FLOOR), (x1 - 4, COUCH_Y1, BACK_Z), r=50, k=4, tile=320,
              inflate=lambda x, y, z, n: 18 * max(0, -n[1]))
     arms = [((-L - ARM_W, SEAT_Y0, 0), (-L, COUCH_Y1, ARM_Z)), ((L, SEAT_Y0, 0), (L + ARM_W, COUCH_Y1, ARM_Z))]
     for a, b in arms: rbox(X.mesh(v), a, b, r=60, k=4, tile=320, inflate=lambda x, y, z, n: 12 * max(0, n[2]))
+    lands = [((-L, TUB_Y0, TUB_FLOOR), (-LAND_X, BACK_Y0, SEAT_Z)), ((LAND_X, TUB_Y0, TUB_FLOOR), (L, BACK_Y0, SEAT_Z))]
+    for a, b in lands:
+        rbox(X.mesh(v), (a[0] + 2, a[1], a[2]), (b[0] - 2, b[1], b[2]), r=30, k=3, tile=320)
+    lips = [((-L, SEAT_Y0, TUB_FLOOR), (-SPILL_X, TUB_Y0, SEAT_Z)), ((SPILL_X, SEAT_Y0, TUB_FLOOR), (L, TUB_Y0, SEAT_Z)),
+            ((-SPILL_X, SEAT_Y0, TUB_FLOOR), (SPILL_X, TUB_Y0, SPILL_Z))]
+    for a, b in lips: rbox(X.mesh(tp), a, b, r=14, k=3, tile=256)
+    # the tarp: tub floor, up the back cushions and the end cushions, hanging a little over the front
+    e = 0.8
+    tquad(X.mesh(tp), [(-LAND_X, TUB_Y0, TUB_FLOOR + e), (LAND_X, TUB_Y0, TUB_FLOOR + e), (LAND_X, BACK_Y0, TUB_FLOOR + e),
+                       (-LAND_X, BACK_Y0, TUB_FLOOR + e)], (0, 0, 1))
+    tquad(X.mesh(tp), [(-LAND_X, BACK_Y0 - 19, TUB_FLOOR), (LAND_X, BACK_Y0 - 19, TUB_FLOOR), (LAND_X, BACK_Y0 - 19, SEAT_Z + 40),
+                       (-LAND_X, BACK_Y0 - 19, SEAT_Z + 40)], (0, -1, 0))
+    for sx in (-1, 1):
+        x = sx * (LAND_X - e)
+        tquad(X.mesh(tp), [(x, TUB_Y0, TUB_FLOOR), (x, BACK_Y0, TUB_FLOOR), (x, BACK_Y0, SEAT_Z + e), (x, TUB_Y0, SEAT_Z + e)], (-sx, 0, 0))
+    tquad(X.mesh(tp), [(-L, SEAT_Y0 - e, 300), (L, SEAT_Y0 - e, 300), (L, SEAT_Y0 - e, SEAT_Z - 10), (-L, SEAT_Y0 - e, SEAT_Z - 10)], (0, -1, 0))
+    for x in range(-L + 100, L, 200):                                   # brass grommets along the hanging edge
+        tube(X.mesh(M_['brass']), [(x, SEAT_Y0 - 3, 316), (x, SEAT_Y0 - 0.5, 316)], 9, nseg=8)
     ML.save('couch', X)
-    coll('couch', legs + [frame, back] + cush + arms)
+    coll('couch', legs + [frame, back] + arms + lands + lips)
+
+
+def waterfall():
+    """Couch Falls: the sheet of water spilling over the lip notch down to the steps in front of the couch, plus the
+    wet film running over the notch. World coordinates; nonsolid (you walk through it into the cave)."""
+    X = ML.Model()
+    prof = [(TUB_Y0 + 30, TUB_WATER + 1), (TUB_Y0, TUB_WATER + 1), (SEAT_Y0 + 20, TUB_WATER - 2), (SEAT_Y0 - 4, SPILL_Z + 6),
+            (SEAT_Y0 - 16, SPILL_Z - 20), (SEAT_Y0 - 22, 300), (SEAT_Y0 - 24, 200), (SEAT_Y0 - 24, 100), (SEAT_Y0 - 24, 0),
+            (SEAT_Y0 - 24, -14)]
+    xs = np.linspace(-SPILL_X + 8, SPILL_X - 8, 9)
+    P = np.zeros((len(prof), len(xs), 3)); UV = np.zeros((len(prof), len(xs), 2))
+    d = 0.0
+    for i, (y, z) in enumerate(prof):
+        if i: d += math.hypot(y - prof[i - 1][0], z - prof[i - 1][1])
+        for j, x in enumerate(xs):
+            P[i, j] = (x, y + 5 * math.sin(j * 2.1 + i * 0.7) * min(1, i / 4), z)
+            UV[i, j] = (x / 140.0, d / 256.0)
+    from meshlib import grid_normals
+    N = grid_normals(P)
+    if N[..., 1].mean() > 0: N = -N
+    X.mesh(M_['falls']).grid(P, N, UV)
+    for k, x in enumerate(np.linspace(-SPILL_X + 40, SPILL_X - 40, 7)):       # foam where it lands
+        sphere(X.mesh(M_['float_white']), (x, SEAT_Y0 - 30 + 8 * math.sin(k * 2.3), -12), 26 + 6 * math.sin(k * 1.7), nu=8, nv=5)
+    ML.save('waterfall', X)
+
+
+def cushion():
+    """one of the seat cushions pulled off the couch (lying flat; origin footprint centre)"""
+    X = ML.Model()
+    b = ((-466, -310, 0), (466, 310, 160))
+    rbox(X.mesh(M_['velvet']), *b, r=40, k=4, tile=320, inflate=lambda x, y, z, n: 14 * max(0, n[2]))
+    ML.save('cushion', X)
+    coll('cushion', [b])
+
+
+HOSE = [(1890, 1786, 560), (1890, 1730, 540), (1880, 1690, 300), (1840, 1700, 30), (1760, 1740, 16), (1730, 1750, 300),
+        (1690, 1740, 650), (1560, 1750, 656), (1440, 1730, 700), (1390, 1690, 1010), (1300, 1600, 1016), (1250, 1500, 900),
+        (1215, 1300, 520), (1180, 1100, 418), (1160, 1010, 416)]
+
+
+def hose():
+    """the garden hose that started it all: from the tap on the facade, over the couch's east arm and back, down
+    onto the east end cushion. World coordinates."""
+    X = ML.Model()
+    P = [np.array(p, float) for p in HOSE]
+    pts = []
+    for i in range(len(P) - 1):                                         # Catmull-Rom so it bends like a hose
+        p0, p1, p2, p3 = P[max(i - 1, 0)], P[i], P[i + 1], P[min(i + 2, len(P) - 1)]
+        for t in np.linspace(0, 1, 5, endpoint=False):
+            pts.append(tuple(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t ** 3)))
+    pts.append(tuple(P[-1]))
+    tube(X.mesh(M_['hose']), pts, 13, nseg=8)
+    a, b = np.array(pts[-1]), np.array(pts[-1]) + (np.array(pts[-1]) - np.array(pts[-3])) / np.linalg.norm(np.array(pts[-1]) - np.array(pts[-3])) * 46
+    tube(X.mesh(M_['brass']), [tuple(a), tuple(b)], [15, 9], 8)
+    rbox(X.mesh(M_['brass']), (1868, 1770, 540), (1912, 1792, 584), r=4, k=1)            # the tap
+    tube(X.mesh(M_['brass']), [(1890, 1770, 590), (1890, 1770, 620)], 6, nseg=6)
+    rbox(X.mesh(M_['float_orange']), (1860, 1762, 620), (1920, 1778, 630), r=3, k=1)
+    ML.save('hose', X)
+
+
+POOL_C, POOL_A = (0, -200), 864                 # round pool: centre, apothem (16-gon, flat edges on the axes)
+POOL_R = POOL_A / math.cos(math.pi / 16)
+
+
+def coping_ring():
+    """pale stone coping round the pool (a flat ring just proud of the deck), open at the north where the steps
+    come down from the couch. World coordinates."""
+    X = ML.Model()
+    revolve(X.mesh(M_['stone']), [(POOL_R + 6, 1.0), (POOL_R + 62, 1.0)], 13.0, n=13, a0=123.75, a1=416.25, inward=True,
+            cx=POOL_C[0], cy=POOL_C[1], v_of=lambda r, z: (r - POOL_R) / 64.0)
+    ML.save('coping_ring', X)
 
 
 def couch_stuff():
@@ -443,7 +593,7 @@ def rail_posts():
     ML.save('rail_posts', X)
 
 
-FESTOON = [(-1990, 1780, 1500), (-1990, -1730, 900), (1990, -1730, 900), (1990, 1780, 1500)]
+FESTOON = [(-1990, 1780, 1700), (-1990, -1760, 1400), (1450, -1760, 1400), (1990, 1780, 1700)]
 
 
 def festoon():
@@ -586,6 +736,7 @@ def floats():
     revolve(O.mesh(M_['float_white']), [(60 + 40 * math.cos(t), 16 + 26 * math.sin(t)) for t in np.linspace(-math.pi, math.pi, 13)],
             n=24, u_tiles=3)
     place(O, 3 * math.pi / 2)
+    tquad(X.mesh(M_['swirl']), [(-340, -340, -58), (340, -340, -58), (340, 340, -58), (-340, 340, -58)], (0, 0, 1), tile=680.0)
     ML.save_iqm('floats', X)
 
 

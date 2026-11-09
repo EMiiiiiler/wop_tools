@@ -242,6 +242,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 
 ## 9. Water, fog, sky, light (woplib.shaders)
 - `K.water_box(mn, mx, tex, cutters=[...])`: the whole water recipe (one box, carved, top face drawn, the rest nodraw).
+  Round pools: `brush=prism(ngon(...))`; cut stairs with `K.stair_wedge()` (a box cutter leaves a dry stairwell);
+  `K.current()` for whirl/lazy-river pulses, `K.flume(path, slick_tex, side_tex, supports=)` for slides.
   A shallow puddle standing on a flat floor (<= 24u) passes lint's water check. `SH.slick(name)` = ice (keep it off
   pad landings and deadly edges); `SH.glass(name, shadow=False)` for glass shelves the lights shine through.
 - Water: ONE box per body carved by everything inside it (`wopmap.carve`); only top faces get the water shader, the

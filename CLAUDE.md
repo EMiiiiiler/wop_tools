@@ -256,3 +256,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
   with one big brush under the slabs: every column gets a 48u "crouch slot" and lint headroom runs for minutes.
 - Parked cars: hug the kerb (<= 30u) or the gutter strip is a long sightline; cars across a driveway look wrong, so
   block a driveway mouth with flanking verge cabinets, footpath bins and an inorganic-collection couch instead.
+- Water-park helpers in MapKit (padlagoon): `water_box(brush=prism(ngon(...)))` for round pools, `stair_wedge()` as the
+  water cutter for a stairs16 flight (a bounding-box cutter left a dry stairwell in the surface), `current()` (pulsed
+  trigger_multiple -> target_push whirl/lazy river; target_push replaces velocity, keep zones ~160u and off exits) and
+  `flume()` (mitred slick slide along a path with supports). Round pool holes: carve the deck slab with the pool prism.
+- A jump pad up a vertical tube (bong lift): the higher the apex above the landing, the longer the arc stays inside the
+  tube (apex +260 over a landing 290u away kept the player in a r126 tube until the mouth).
