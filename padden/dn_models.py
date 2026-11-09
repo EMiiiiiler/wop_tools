@@ -298,6 +298,7 @@ def materials():
     m('cartridge', cartridge_tex(), shade=20)
     m('trophy', TL.metal((230, 180, 50), brushed=False), 'lms', v=0.45, shade=60)
     m('gamebox', game_box_tex(), shade=10)
+    m('boxart', monitor_box_art(256, 512), shade=10)
 
 
 def duvet_tex(n=256):
@@ -472,7 +473,7 @@ FRIDGE = (384, 384, 480)
 def all_models():
     loft_bed(); wardrobe(); dresser(); desk(); monitors(); keyboard(); mouse(); headset(); pc_tower(); fan()
     gaming_chair(); beanbag('beanbag', 'beanbag', 360, 420); beanbag('beanbag_den', 'beanbag2', 280, 330)
-    crt_tv(); retro_console(); pizza_pile(); bed_ladder(); drinks_cases(); laundry(); backpack(); guitar(); skateboard()
+    crt_tv(); retro_console(); pizza_pile(); bed_ladder(); cardboard_box('pc_box', 380, 300, 300, open_top=True); cardboard_box('store_box', 300, 260, 260, open_top=False); laundry_basket(); drinks_cases(); laundry(); backpack(); guitar(); skateboard()
     trash_bin(); fridge(); speaker(); subwoofer(); radiator(); curtains(); shelf_brackets(); ceiling_lamp(); trophy()
     games_row(); energy_can('can_g'); energy_can('can_p'); glass_panel(); controller()
 
@@ -798,6 +799,43 @@ def bed_ladder():
     for x in (-80, 80):
         rbox(X.mesh(M_['black']), (x - 14, -294, 0), (x + 14, -266, 10), r=3, k=1)
     ML.save('bed_ladder', X)
+
+
+def cardboard_box(name, L, W, H, open_top):
+    """a cardboard box (the PC's shipping box with the flaps folded out, or a closed storage box). Origin footprint centre."""
+    X = ML.Model(); c = M_['pizzaside']
+    L2, W2 = L / 2, W / 2
+    if open_top:
+        walls = [((-L2, -W2, 0), (L2, -W2 + 8, H)), ((-L2, W2 - 8, 0), (L2, W2, H)),
+                 ((-L2, -W2 + 8, 0), (-L2 + 8, W2 - 8, H)), ((L2 - 8, -W2 + 8, 0), (L2, W2 - 8, H)),
+                 ((-L2 + 8, -W2 + 8, 0), (L2 - 8, W2 - 8, 8))]
+        for a, b in walls: rbox(X.mesh(c), a, b, r=1, k=1, tile=256)
+        for (q, n) in ((([-L2, -W2, H], [L2, -W2, H], [L2, -W2 - 110, H + 70], [-L2, -W2 - 110, H + 70]), (0, -0.54, 0.84)),
+                       (([L2, W2, H], [-L2, W2, H], [-L2, W2 + 110, H + 70], [L2, W2 + 110, H + 70]), (0, 0.54, 0.84))):
+            P = [np.array(v, float) for v in q]
+            X.mesh(c).poly(P, n, [(v[0] / 256, v[1] / 256) for v in q])
+            X.mesh(c).poly(P[::-1], tuple(-np.array(n)), [(v[0] / 256, v[1] / 256) for v in q[::-1]])
+        pic(X.mesh(M_['boxart']), (0, -W2 - 0.6, H / 2), (0, -1, 0), H * 0.45, H * 0.9)
+        coll(name, walls)
+    else:
+        b = ((-L2, -W2, 0), (L2, W2, H))
+        rbox(X.mesh(c), *b, r=2, k=1, tile=256)
+        tape = ((-L2 - 0.5, -24, H - 2), (L2 + 0.5, 24, H + 0.5))
+        rbox(X.mesh(M_['paper']), *tape, r=0, k=1)
+        coll(name, [b])
+    ML.save(name, X)
+
+
+def laundry_basket():
+    """round plastic laundry basket overflowing with clothes. Origin at the base centre."""
+    X = ML.Model()
+    revolve(X.mesh(M_['white']), [(150, 0), (175, 330), (166, 330), (142, 12), (0, 12)], n=28, u_tiles=4)
+    mats = ['laundry1', 'laundry2', 'laundry3']
+    for k, (x, y, z) in enumerate(((0, 0, 330), (60, -40, 350), (-50, 50, 345), (120, 60, 300))):
+        ellipsoid(X.mesh(M_[mats[k % 3]]), (x, y, z), 110 - k * 10, 90, 50, nu=12, nv=6,
+                  bump=lambda p, t, s=k: 1 + 0.12 * math.sin(4 * t + s) * math.cos(2 * p))
+    ML.save('laundry_basket', X)
+    coll('laundry_basket', cyls=[(0, 0, 165, 0, 330)])
 
 
 def drinks_cases():

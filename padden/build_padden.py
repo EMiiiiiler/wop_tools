@@ -24,7 +24,7 @@ OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MAP, NS, LONG = INFO['map'], INFO['ns'], INFO['longname']
 X0, Y0, X1, Y1 = INFO['bounds']
 ZC = 2048
-K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '14', '_color': '0.75 0.75 1'})
+K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '34', '_color': '0.75 0.75 1'})
 T = K.T
 ML.configure(NS, OUT); SH.configure(NS, MAP, LONG)
 
@@ -185,9 +185,14 @@ def clutter():
     place('guitar', -1520, -760, 0, angle=70)
     place('skateboard', 250, -1380, 0, angle=12)
     place('trash_bin', 1250, -1150, 0)
+    place('pc_box', 380, 300, 4, angle=8)
+    place('laundry_basket', -850, 140, 4)
+    place('store_box', -160, -560, 4, angle=20)
+    place('subwoofer', 120, 1090, 0, angle=270)              # the guitar amp
+    place('store_box', 1640, -260, 0, angle=90); place('store_box', 1640, 760, 0, angle=85)
     K.catalog('pad_ddmix/padshop/cardboard_standup.md3', -1700, -1150, 0, angle=40)
     K.catalog('pad_ball/pad_basketball.md3', -1250, -350, 0, clip=True)
-    K.catalog('pad_nascars/padcar_orange_rc.md3', 300, 900, 0, angle=200)
+    K.catalog('pad_nascars/padcar_orange_rc.md3', 380, 700, 4, angle=200)
     K.catalog('pad_radio_car/radio_control_fl.md3', 520, 1000, 0, angle=160, clip=False)
     for (x, y, a) in ((-600, -500, 10), (700, 100, 80), (-200, 900, 140), (1200, -800, 30), (-1500, 500, 200)):
         K.catalog('pad_tins/pad_coke_cr.md3', x, y, fz(x, y), angle=a, clip=False)
@@ -201,12 +206,12 @@ def clutter():
 # ------------------------------------------------------------------------------------------------ pads, loot, spawns
 def pads():
     bx, by = BED_C
-    K.jumppad(-900, 760, 0, land=(-950, 1300, BED_Z), apex=BED_Z + 260, name='pad_bed', edges=[(-1000, 1008, BED_Z)])
-    K.jumppad(-1350, 760, 0, land=(-1450, 1300, BED_Z), apex=BED_Z + 260, name='pad_bed2', edges=[(-1500, 1008, BED_Z)])
+    K.jumppad(-900, 760, 0, land=(-950, 1300, BED_Z), apex=BED_Z + 340, name='pad_bed', edges=[(-1000, 1008, BED_Z)])
+    K.jumppad(-1350, 760, 0, land=(-1450, 1300, BED_Z), apex=BED_Z + 340, name='pad_bed2', edges=[(-1500, 1008, BED_Z)])
     K.jumppad(-1700, 1500, BED_Z, land=(-1808, 600, WARD_Z), apex=WARD_Z + 240, name='pad_wardrobe',
               ceiling=ZC, edges=[(-1808, 992, WARD_Z)])
-    K.jumppad(-176, 1180, 0, land=(-176, 1620, DRESS_Z), apex=DRESS_Z + 240, name='pad_dresser', edges=[(-176, 1376, DRESS_Z)])
-    K.jumppad(984, 1060, 0, land=(984, 1620, TOWER_Z), apex=TOWER_Z + 150, name='pad_tower', edges=[(984, 1296, TOWER_Z)])
+    K.jumppad(-176, 1180, 0, land=(-176, 1620, DRESS_Z), apex=DRESS_Z + 320, name='pad_dresser', edges=[(-176, 1376, DRESS_Z)])
+    K.jumppad(984, 1000, 0, land=(984, 1600, TOWER_Z), apex=TOWER_Z + 260, name='pad_tower', edges=[(984, 1296, TOWER_Z)])
     K.jumppad(0, -1240, 0, land=(0, -1690, SILL[4]), apex=SILL[4] + 140, name='pad_sill', edges=[(0, SILL[3], SILL[4])])
     K.jumppad(1480, -400, DESK_Z, land=(1930, -150, SHELF_Z), apex=SHELF_Z + 130, name='pad_shelf', ceiling=ZC,
               edges=[(1792, -200, SHELF_Z)])
@@ -253,12 +258,18 @@ def secret():
 
 def lights_sounds():
     K.light(0, 0, ZC - 120, 1100, '1 0.95 0.9')
-    K.light_grid(X0, Y0, X1, Y1, 1500, 1024, 520, color='0.8 0.75 1')
+    K.light_grid(X0, Y0, X1, Y1, 1450, 768, 5400, color='0.8 0.75 1')
+    K.light(-1808, 250, 1880, 600, '0.9 0.85 1'); K.light(-1808, 750, 1880, 600, '0.9 0.85 1')              # over the wardrobe top
     K.light(1700, 440, 1000, 600, '0.5 0.7 1')                # monitor glow
     K.light(1550, 440, 760, 350, '0.6 0.8 1')
+    for y in (-200, 450, 1100):                                # RGB glow under the desk
+        K.light(1600, y, 320, 750, '0.75 0.5 1')
+    K.light(1301, 1486, 300, 300, '0.7 0.7 1')
+    K.light(1744, -1100, 950, 700, '0.7 0.75 1')              # over the monitor-box ramp
     for x in (-1800, -1400, -1000, -650):                     # fairy lights in the den
-        K.light(x, 1300, 560, 220, '1 0.8 0.55')
-    K.light(-1240, 1300, 200, 200, '0.8 0.8 1')               # TV static
+        K.light(x, 1250, 450, 800, '1 0.8 0.55')
+    K.light(-1240, 1300, 200, 200, '0.8 0.8 1')
+    K.light(-1850, 1500, 400, 600, '1 0.8 0.55')               # den corner               # TV static
     K.light(-1800, 300, 900, 260, '1 0.95 0.85')              # inside the wardrobe
     K.light(984, 1536, 250, 220, '0.6 0.4 1')                 # inside the tower
     K.light(-1700, -1600, 300, 200, '0.6 0.8 1')              # fridge glow
