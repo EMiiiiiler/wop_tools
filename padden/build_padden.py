@@ -271,7 +271,8 @@ def lights_sounds():
     K.light(-1240, 1300, 200, 200, '0.8 0.8 1')
     K.light(-1850, 1500, 400, 600, '1 0.8 0.55')               # den corner               # TV static
     K.light(-1800, 300, 900, 260, '1 0.95 0.85')              # inside the wardrobe
-    K.light(984, 1536, 250, 220, '0.6 0.4 1')                 # inside the tower
+    K.light(940, 1400, 120, 380, '0.7 0.5 1'); K.light(940, 1650, 120, 380, '0.7 0.5 1')   # inside the tower (RGB)
+    K.light(700, 1536, 200, 400, '0.7 0.6 1')                 # at the open side
     K.light(-1700, -1600, 300, 200, '0.6 0.8 1')              # fridge glow
     K.light(0, -1650, 1300, 300, '0.55 0.6 1')                # moonlight at the window
     K.speaker(984, 1536, 200, 'machine/fan_pc')
