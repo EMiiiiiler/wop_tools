@@ -125,7 +125,7 @@ def furniture():
     place('keyboard', 1600, 440, DESK_Z)
     place('mouse', 1600, 820, DESK_Z, lit=True)
     place('headset', 1720, -380, DESK_Z, angle=90)
-    place('can_g', 1520, 30, DESK_Z); place('can_p', 1700, 1020, DESK_Z); place('can_g', 1560, 1300, DESK_Z, angle=40)
+    place('can_g', 1520, 30, DESK_Z); place('can_p', 1700, 1020, DESK_Z); place('can_g', 1930, 1390, DESK_Z, angle=40)
     K.catalog('pad_lamps/gooseneck.md3', 1960, -440, DESK_Z, angle=150)
     K.catalog('pad_cups/pad_cup03.md3', 1800, 1150, DESK_Z, angle=200)
     K.catalog('gummybears/ldredbear.md3', 1560, -150, DESK_Z, angle=70)
@@ -215,6 +215,8 @@ def pads():
     K.jumppad(0, -1240, 0, land=(0, -1690, SILL[4]), apex=SILL[4] + 140, name='pad_sill', edges=[(0, SILL[3], SILL[4])])
     K.jumppad(1480, -400, DESK_Z, land=(1930, -150, SHELF_Z), apex=SHELF_Z + 130, name='pad_shelf', ceiling=ZC,
               edges=[(1792, -200, SHELF_Z)])
+    K.jumppad(1500, 1320, DESK_Z, land=(1935, 820, SHELF_Z), apex=SHELF_Z + 150, name='pad_shelf2', ceiling=ZC,
+              edges=[(1792, 900, SHELF_Z)])
     K.jumppad(-1440, -1600, 0, land=(-1860, -1600, 480), apex=480 + 200, name='pad_fridge', edges=[(-1664, -1600, 480)])
     K.jumppad(1200, 1000, 0, land=(1680, 1000, DESK_Z), apex=DESK_Z + 240, name='pad_desk', edges=[(1408, 1000, DESK_Z)])
 
@@ -223,7 +225,7 @@ def items():
     K.weapon('imperius', -1808, 260, WARD_Z, marker='purple')
     K.weapon('betty', -1150, 1500, BED_Z, marker='black')
     K.weapon('balloony', 1930, 700, SHELF_Z, marker='orange')
-    K.weapon('pumper', 1520, 1180, DESK_Z, marker='green')
+    K.weapon('pumper', 1700, 1180, DESK_Z, marker='green')
     K.weapon('splasher', -220, 1560, DRESS_Z, marker='blue')
     K.weapon('boaster', 960, 1430, 16, marker='orange')
     K.weapon('bubbleg', 140, -40, 4, marker='green')
