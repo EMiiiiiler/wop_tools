@@ -358,7 +358,11 @@ class Build:
         dist = os.path.join(self.out, 'dist'); os.makedirs(dist, exist_ok=True)
         pk3 = os.path.join(dist, self.map + '.pk3'); src = os.path.join(dist, self.map + '_source.zip')
         common = []
-        for d in (f'textures/{self.ns}', f'models/{self.ns}', f'env/{self.ns}', f'sound/{self.ns}', 'levelshots'):
+        # the map's own namespace plus any other namespace the generator wrote (padlagoon reuses the padlounge models + sky)
+        dirs = [f'{k}/{n}' for k in ('textures', 'models', 'env', 'sound')
+                for n in sorted(os.listdir(os.path.join(self.out, k)) if os.path.isdir(os.path.join(self.out, k)) else [])
+                if os.path.isdir(os.path.join(self.out, k, n))]
+        for d in dirs + ['levelshots']:
             common += [p for p in glob.glob(os.path.join(self.out, d, '**', '*'), recursive=True) if os.path.isfile(p)]
         common += [os.path.join(self.out, 'scripts', self.ns + '.shader'), os.path.join(self.out, 'scripts', self.map + '.arena')]
         bins = [os.path.join(self.out, 'maps', self.map + e) for e in ('.bsp', '.aas')]
