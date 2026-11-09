@@ -97,6 +97,7 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 - aas: every pickup reachable from spawns, no TRAP, no OUT OF BOUNDS, every route in `routes.txt` works both ways standing
 - lights: <= 10 % of reachable floor dark (raw lightmap < 30), <= 35 % blown out (> 200); WARN = look at lights.png
 - sight: <= 4 % of eye-level rays over 1800u at every floor level in `mapinfo.json`
+  (water parks are exempt: set mapinfo `"sightlines": {"enforce": false}`; the number is still reported)
 - bots: every weapon picked up, secret items taken, environmental deaths < 15 %
 - render: walk-through <= 16 MB, review.png and models.png looked at; levelshots made
 - package: `pk3_check` OK on the pk3 + source zip (every texture, model surface shader, sound, arena, levelshot)
@@ -145,6 +146,8 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 - Never place a solid or entity inside another solid or entity (audit_map overlaps + point entities).
 - Low portal counts (detail everything but the hull). Models fully on surfaces (no float/overhang).
 - Break long sightlines with models (< 4 % of eye rays > 1800u), without making open spaces look cluttered.
+  **Not on water-park maps** (user, Nov 2026: the rule over-complicates them and goes against the concept): set
+  `sightlines.enforce` false in mapinfo and add no props just for sightlines.
 - Hard-to-reach spots get the best weapons; 3-6 ammo spots per weapon, some hidden, some in plain sight.
 - Every water area has a way out (steps/ramp or teleporter). Full explorability: every door enterable, every building
   climbable, roofs with a clear line of fire (no parapets/clutter).

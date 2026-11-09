@@ -10,7 +10,8 @@ Steps (in pipeline order; aliases: `check` = gen lint compile aas lights sight, 
   aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways) and
              pad_aas (bspc's own flight for every jump pad lands where intended, not in mid-air)
   lights     light_check: floor brightness from the BSP lightmaps (dark / blown-out walkable areas, lights.png)
-  sight      sightlines at each mapinfo "sightlines.zmax" level; fails above "target_pct" (default 4 %)
+  sight      sightlines at each mapinfo "sightlines.zmax" level; fails above "target_pct" (default 4 %);
+             "sightlines.enforce": false (water parks) only reports the number
   bots       wopded with bots (mapinfo "bots"), then botreport (every weapon picked up, secret found)
   quick      fast look before a full build: q3map2 -meta only (no vis, light or bspc; a copy named <map>_quick so the
              real BSP is untouched), then an unlit, normal-shaded 3D walk-through <out>/quick.html with the mapinfo
@@ -232,6 +233,11 @@ class Build:
             det += f'--- zmax {z}: {pct}% (target {lt.get(str(z), target)})\n' + '\n'.join(o.splitlines()[-10:]) + '\n'
         kw = dict(long_ray_pct=worst, target=target)
         if lt: kw['level_targets'] = ' '.join(f'{k}:{v}' for k, v in lt.items())
+        if si.get('enforce', True) is False:
+            # water parks (user rule, Nov 2026): open pools are the concept, so the 4 % target is not applied there.
+            # The step still measures and reports the number, it just never fails the build.
+            kw['target'] = 'none (sightlines.enforce false)'
+            return self.set('sight', 'PASS', details=det, **kw)
         return self.set('sight', 'PASS' if over <= 0 else ('WARN' if over <= 1.5 else 'FAIL'), details=det, **kw)
 
     def s_bots(self):

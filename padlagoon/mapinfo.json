@@ -24,7 +24,8 @@
    64
   ],
   "min": 1800,
-  "target_pct": 4.0
+  "target_pct": 4.0,
+  "enforce": false
  },
  "preview": {
   "title": "Couch Lock Lagoon",
