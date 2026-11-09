@@ -663,6 +663,8 @@ def steamer():
     K.jumppad(1800, 20, zr, land=(1800, (wy0 + wy1) / 2, zr + 144), apex=zr + 144 + 120, name='pad_wheelhouse',
               edges=[(1800, wy1, zr + 144)])
     K.reserve(((SH_X[0], SH_Y[0], LAKE_F), (SH_X[1], SH_BOW, DECK)), ((cx0, cy0, DECK), (cx1, cy1, zr)))
+    # second way up from the busy west shore (bots ignored the Betty with only the deck pad)
+    K.jumppad(900, 40, 0, land=(1800, 50, zr), apex=zr + 260, name='pad_shore_deck', edges=[(cx0, 50, zr)])
     K.keep_clear(dc - 60, SH_Y[0] + 20, dc + 60, cy0, DECK)
     K.light(dc, (cy0 + cy1) / 2, DECK + 120, 300, '1 0.85 0.6')
     K.light(1800, -186, zr + 90, 200, '1 0.85 0.6')
