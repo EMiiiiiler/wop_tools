@@ -263,17 +263,17 @@ def pads():
     bx, by = BONG
     sx0, sy0, sx1, sy1, sz = SHELF
     tz, az, bz, lz = GM.TABLE_Z, GM.ARM_Z, GM.BACK_Z, GM.SEAT_Z
-    K.jumppad(bx, by, 0, land=(-1880, by, sz), apex=sz + 260, name='bong_lift', edges=[(sx1, by, sz)], light_rgb='0.5 1 0.6')
+    K.jumppad(bx, by, 0, land=(-1800, by, sz), apex=sz + 290, name='bong_lift', edges=[(sx1, by, sz)], light_rgb='0.5 1 0.6')
     K.jumppad(300, -1320, 0, land=(220, -420, tz), apex=tz + 260, name='pad_table', edges=[(240, TY0, tz)])
     K.jumppad(-1060, 60, 0, land=(-380, -100, tz), apex=tz + 260, name='pad_table2', edges=[(TX0, -60, tz)])
     K.jumppad(900, 760, 0, land=(1250, 1180, lz), apex=lz + 260, name='pad_tub', edges=[(1040, GM.SEAT_Y0, lz)])
-    K.jumppad(1250, 1420, lz, land=(800, 1660, bz), apex=bz + 200, name='pad_back', edges=[(1000, GM.BACK_Y0, bz)])
+    K.jumppad(1250, 1420, lz, land=(800, 1660, bz), apex=bz + 300, name='pad_back', edges=[(1000, GM.BACK_Y0, bz)])
     K.jumppad(-1250, 1280, lz, land=(-1550, 1350, az), apex=az + 200, name='pad_westarm', edges=[(-1400, 1330, az)])
     K.jumppad(1874, 1560, 0, land=(1550, 1500, az), apex=az + 220, name='pad_slide', edges=[(1700, 1530, az)])
     K.jumppad(-1440, 160, 0, land=(-1844, 160, GM.TV_STAND[4]), apex=GM.TV_STAND[4] + 220, name='pad_sideboard',
               edges=[(-1648, 160, GM.TV_STAND[4])])
     x0, y0, x1, y1, H = GM.TENT
-    K.jumppad(1770, -880, 0, land=(1770, -1380, H + 16), apex=H + 16 + 300, name='pad_tent', edges=[(1770, y1, H + 16)])
+    K.jumppad(1770, -700, 0, land=(1770, -1380, H + 16), apex=H + 16 + 360, name='pad_tent', edges=[(1770, y1, H + 16)])
 
 
 def items():
