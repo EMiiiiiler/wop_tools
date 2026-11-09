@@ -254,6 +254,14 @@ def clutter():
     lounge('chips', 580, 750, 0, scale=0.6, boxes=[((-LM.CHIPS[0] * 0.6, -LM.CHIPS[1] * 0.6, 0), (LM.CHIPS[0] * 0.6, LM.CHIPS[1] * 0.6, 70))])
     lounge('crisps', 1180, 520, 0, angle=40, lit=False)
     K.catalog('pad_ducks/pad_duck.md3', 1870, 560, 0, angle=180, clip=True)
+    # eye-level cover on the long open bands (spots from sight --hot): spare loungers, beanbags, a second brolly.
+    # Each spot is only used when the deck there is still free (nothing may overlap).
+    for (x, y, a) in ((1100, 420, 90), (200, -960, 0), (-700, -960, 90), (1500, -700, 0),
+                      (-300, 1000, 0), (-1300, -1100, 90)):
+        if K.free(x, y, 190, 0, 240, margin=0): place('lounger', x, y, 0, angle=a)
+    for (x, y, a) in ((-1100, 1000, 140), (1250, 1150, 60), (500, -640, 30), (-800, -1400, 10)):
+        if K.free(x, y, 110, 0, 120, margin=0):
+            lounge('beanbag', x, y, 0, angle=a, cyls=[(0, 0, LM.BEANBAG_R * 0.75, 0, LM.BEANBAG_H * 0.7)])
     for (x, y, a) in ((-900, 760, 20), (850, -1150, 100), (-1700, 330, 200)):
         K.catalog('pad_tins/pad_coke_cr.md3', x, y, 0, angle=a, clip=False)
 
@@ -321,6 +329,8 @@ def lights_sounds():
     K.light(BONG[0] + 200, BONG[1], 700, 400, '0.5 1 0.6')
     K.light(-1880, -1000, 1400, 400, '1 0.9 0.8')                                           # over the shelf
     K.light(-500, 1300, 40, 200, '1 0.8 0.6'); K.light(500, 1300, 40, 200, '1 0.8 0.6')     # the cave
+    for (x, y) in ((0, 1300), (-950, 1300), (950, 1300), (-300, 1150), (300, 1150), (-300, 1450), (300, 1450), (-950, 1550), (950, 1550)):
+        K.light(x, y, 40, 160, '1 0.8 0.6')                                                # more fill in the crawl cave
     K.speaker(0, -250, 0, 'ambient/water_rippling')
     K.speaker(0, 860, 150, 'ambient/water_flowing')
     K.speaker(BONG[0], BONG[1] + 200, 300, 'ambient/slime_bubbling')
