@@ -25,14 +25,14 @@ OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MAP, NS, LONG = INFO['map'], INFO['ns'], INFO['longname']
 X0, Y0, X1, Y1 = INFO['bounds']
 ZC, ZF = 2048, -256                          # ceiling, hull floor
-K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '30', '_color': '1 0.9 0.8'})
+K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '24', '_color': '0.85 0.85 1'})
 T = K.T
 ML.configure(NS, OUT); SH.configure(NS, MAP, LONG)
 
 # ------------------------------------------------------------------------------------------------ layout (world)
 POOL = (-1200, -1000, 1200, 500)             # pool hole in the deck
 PZ, WZ = -192, -16                           # pool floor top, water top
-VAULT = (-448, -384, 448, 384); VAULT_Z = -1600
+VAULT = (-448, -384, 448, 384); VAULT_Z = -4400       # under the street slab, outside the sky box
 TX0, TY0, TX1, TY1 = GM.TABLE
 SHELF = (-2048, -1650, -1728, -300, 1200)    # x0 y0 x1 y1 top (north end over the sideboard: a 640 drop, no bot trap)
 BONG = (-1470, -1100)
@@ -59,35 +59,55 @@ def lounge(name, x, y, z, angle=0, scale=1.0, ofs=0.0, boxes=(), cyls=(), lit=Tr
 
 
 # ------------------------------------------------------------------------------------------------ structure
+HULL = (-4500, -8000, 7000, 2400, -3200, 6000)   # sky box round the balcony (x0 y0 x1 y1 z0 z1)
+ROOF = 4200                                   # top of the apartment block
+
+
 def shell():
-    """structural hull round the room and the sunken pool; the deck is detail blocks round the pool hole"""
-    K.add(box((X0 - 32, Y0 - 32, ZF - 32), (X1 + 32, Y1 + 32, ZF), tex6(), detail=False))
-    K.add(box((X0 - 32, Y0 - 32, ZF), (X0, Y1 + 32, ZC), tex6(e=T('wall')), detail=False))
-    K.add(box((X1, Y0 - 32, ZF), (X1 + 32, Y1 + 32, ZC), tex6(w=T('wall')), detail=False))
-    K.add(box((X0, Y0 - 32, ZF), (X1, Y0, ZC), tex6(n=T('wall')), detail=False))
-    K.add(box((X0, Y1, ZF), (X1, Y1 + 32, ZC), tex6(s=T('wall')), detail=False))
-    K.add(box((X0 - 32, Y0 - 32, ZC), (X1 + 32, Y1 + 32, ZC + 32), tex6(bot=T('ceiling')), detail=False))
+    """a corner balcony high up an apartment block: the building's facade north (sliding door, LAGOON neon), a brick
+    wing west, glass railings south and east open to Couch Lock's painted night city. Sky box + building + street are
+    the structural hull; the deck (detail) floats over the street, closed by clip above the railings."""
+    hx0, hy0, hx1, hy1, hz0, hz1 = HULL
+    sky = T('sky')
+    for (mn, mx) in (((hx0 - 16, hy0 - 16, hz1), (hx1 + 16, hy1 + 16, hz1 + 16)), ((hx0 - 16, hy0 - 16, hz0), (hx0, hy1 + 16, hz1)),
+                     ((hx1, hy0 - 16, hz0), (hx1 + 16, hy1 + 16, hz1)), ((hx0, hy0 - 16, hz0), (hx1, hy0, hz1)),
+                     ((hx0, hy1, hz0), (hx1, hy1 + 16, hz1))):
+        K.add(box(mn, mx, {'side': sky, 'top': sky, 'bot': sky}, detail=False))
+    K.add(box((hx0 - 16, hy0 - 16, hz0 - 16), (hx1 + 16, hy1 + 16, hz0), {'top': T('street'), 'side': CAULK, 'bot': CAULK}, detail=False))
+    fac = {'s': T('facade'), 'w': T('brick'), 'e': T('brick'), 'top': T('concrete'), 'n': CAULK, 'bot': CAULK}
+    K.add(box((hx0, Y1, hz0), (hx1, hy1, ROOF), fac, detail=False))                       # the block (north)
+    K.add(box((hx0, Y0 - 64, hz0), (X0, Y1, ROOF), {'e': T('brick'), 's': T('brick'), 'top': T('concrete'),
+                                                     'n': CAULK, 'w': CAULK, 'bot': CAULK}, detail=False))   # west wing
+    K.add(box((-3800, -7400, hz0), (-600, -6400, 1200), T('far_a')))                       # across the street
+    K.add(box((600, -7000, hz0), (4600, -6100, -400), T('far_b')))
+    K.add(box((3600, -2600, hz0), (6400, 400, 900), T('far_a')))                           # east, down the road
+    # deck: detail blocks round the pool hole, a lip past the bounds for the railings
     px0, py0, px1, py1 = POOL
-    deck = [((X0, Y0), (X1, py0), {'n': T('pool_tile')}), ((X0, py1), (X1, Y1), {'s': T('pool_tile')}),
-            ((X0, py0), (px0, py1), {'e': T('pool_tile')}), ((px1, py0), (X1, py1), {'w': T('pool_tile')})]
+    ex, ey = X1 + 40, Y0 - 40
+    deck = [((X0, ey), (ex, py0), {'n': T('pool_tile')}), ((X0, py1), (ex, Y1), {'s': T('pool_tile')}),
+            ((X0, py0), (px0, py1), {'e': T('pool_tile')}), ((px1, py0), (ex, py1), {'w': T('pool_tile')})]
     for (a, b, side) in deck:
-        K.add(box((a[0], a[1], ZF), (b[0], b[1], 0), tex6(top=T('carpet'), **side)))
-    K.add(box((px0, py0, ZF), (px1, py1, PZ), tex6(top=T('pool_floor'))))
-    K.reserve(((X0, Y0, ZF), (X1, Y1, 0)))
-    # skirting, neon strips, posters, the neon LAGOON sign over the couch
-    for (a, b) in (((X0, Y0), (X0 + 8, Y1)), ((X1 - 8, Y0), (X1, Y1)), ((X0 + 8, Y0), (X1 - 8, Y0 + 8)), ((X0 + 8, Y1 - 8), (-1700, Y1)), ((1700, Y1 - 8), (X1 - 8, Y1))):
-        K.add(box((a[0], a[1], 0), (b[0], b[1], 48), T('skirting')))
-    zt = ZC - 80
-    K.add(box((X0 + 8, Y1 - 14, zt), (X1 - 8, Y1 - 6, zt + 14), T('neon_purple')))
-    K.add(box((X0 + 8, Y0 + 6, zt), (X1 - 8, Y0 + 14, zt + 14), T('neon_purple')))
-    K.add(box((X0 + 6, Y0 + 14, zt), (X0 + 14, Y1 - 14, zt + 14), T('neon_green')))
-    K.add(box((X1 - 14, Y0 + 14, zt), (X1 - 6, Y1 - 14, zt + 14), T('neon_green')))
+        t = {'top': T('carpet'), 'side': T('concrete'), 'bot': T('concrete')}
+        t.update(side)
+        K.add(box((a[0], a[1], ZF), (b[0], b[1], 0), t))
+    K.add(box((px0, py0, ZF), (px1, py1, PZ), {'top': T('pool_floor'), 'side': CAULK, 'bot': T('concrete')}))
+    K.reserve(((X0, ey, ZF), (ex, Y1, 0)))
+    # glass railings (south + east) with steel posts and top rail; clip up to the sky above them
+    rh = 400
+    for (a, b) in (((X0, Y0 - 24), (ex, Y0 - 8)), ((X1 + 8, Y0 - 8), (X1 + 24, Y1))):
+        K.add(box((a[0], a[1], 0), (b[0], b[1], rh), T('rail_glass')))
+        K.add(box((a[0], a[1], rh), (b[0], b[1], rh + 24), T('rail_steel')))
+        K.add(box((a[0], a[1], rh + 24), (b[0], b[1], 3600), CLIP))
+    place('rail_posts', 0, 0, 0)
+    K.reserve(((X0, Y0 - 40, 0), (ex, Y0 + 8, rh + 24)), ((X1 - 8, Y0 - 40, 0), (ex, Y1, rh + 24)))
+    # the flat's sliding door (lit room behind sheer curtains), LAGOON neon over the couch, one poster on the brick
+    K.add(sign_box((1730, Y1 - 4, 0), (2030, Y1, 1100), T('slider_door'), 512, 512, facing='s', edge=T('rail_steel')))
     K.add(sign_box((-512, Y1 - 6, 1300), (512, Y1, 1556), T('sign_lagoon'), 1024, 256, facing='s', edge=T('skirting')))
-    K.add(sign_box((X1 - 4, -200, 800), (X1, 200, 1400), T('poster0'), 512, 768, facing='w', edge=T('skirting')))
-    K.add(sign_box((-1000, Y0, 800), (-600, Y0 + 4, 1400), T('poster1'), 512, 768, facing='n', edge=T('skirting')))
+    K.add(box((-1700, Y1 - 10, 1240), (1700, Y1 - 2, 1254), T('neon_purple')))
+    K.add(box((X0 + 2, -1700, 1640), (X0 + 10, 1700, 1654), T('neon_green')))
     K.add(sign_box((X0, 900, 800), (X0 + 4, 1300, 1400), T('poster2'), 512, 768, facing='e', edge=T('skirting')))
-    # the haze (Couch Lock's smoky room): one fog brush over the deck level
-    K.add(box((X0 + 16, Y0 + 16, 0), (X1 - 16, Y1 - 16, ZC - 96), T('fog_haze')))
+    # a low smoky haze over the deck (Couch Lock's)
+    K.add(box((X0 + 16, Y0 + 16, 0), (X1 - 16, Y1 - 16, 1300), T('fog_haze')))
 
 
 def pool():
@@ -131,6 +151,17 @@ def vault():
 # ------------------------------------------------------------------------------------------------ furniture
 def furniture():
     place('couch', 0, 0, 0)
+    place('festoon', 0, 0, 0)
+    sz = GM.SEAT_Z
+    place('pillow0', -1050, 1440, sz, angle=8); place('pillow1', -560, 1462, sz, angle=-4); place('pillow2', 1180, 1440, sz, angle=4)
+    place('pillow3', 850, 1455, sz, angle=8)
+    place('blanket', -560, 1180, sz, angle=0)
+    place('pizza_box', 320, 1180, sz, angle=-12)
+    place('remote', 40, 1000, sz, angle=30, lit=False)
+    place('controller', 560, 1000, sz, angle=-40, lit=False)
+    lounge('crisps', 100, 1360, sz, angle=60, lit=False)
+    place('popcorn', -1550, 1150, GM.ARM_Z)
+    K.catalog('pad_ducks/pad_duck.md3', 450, 1660, GM.BACK_Z, angle=250, clip=True)
     K.crawl((-GM.COUCH_X, GM.SEAT_Y0, 0), (GM.COUCH_X, GM.COUCH_Y1, GM.LEG_Z))
     tc = ((TX0 + TX1) / 2, (TY0 + TY1) / 2)
     place('coffee_table', tc[0], tc[1], PZ)
@@ -260,7 +291,7 @@ def items():
     K.item('item_armor_shard', 1100, 1200, GM.SEAT_Z); K.item('item_armor_shard', 400, -300, GM.TABLE_Z)
     K.item('item_speedy', 1550, 1250, GM.ARM_Z)
     K.item('holdable_floater', 1800, -1500, 0)
-    K.item('item_jumper', -800, 1250, GM.SEAT_Z)
+    K.item('item_jumper', -1250, 1300, GM.SEAT_Z)
     K.station(1600, -700, 0, ang=180)
     for (x, y, z, a) in ((-1400, -1500, 0, 45), (-200, -1150, 0, 90), (600, -1600, 0, 90), (1300, -1000, 0, 135),
                          (1880, -250, 0, 180), (1300, 800, 0, 225), (-200, 820, 0, 270), (-1100, 800, 0, 300),
@@ -270,7 +301,7 @@ def items():
 
 
 def lights_sounds():
-    K.light_grid(X0, Y0, X1, Y1, 1450, 768, 5000, color='1 0.88 0.72')
+    K.light_grid(X0, Y0, X1, Y1, 1450, 768, 3600, color='1 0.88 0.72')
     for (x, y) in ((-700, -600), (0, -100), (700, -600), (-700, 250), (700, 250)):       # underwater
         K.light(x, y, -100, 300, '0.4 0.9 1')
     K.light(-1700, 160, 900, 400, '0.6 0.8 1')                                             # telly
@@ -292,6 +323,7 @@ if __name__ == '__main__':
     TX = GM.textures(K)
     GM.all_models()
     lm_shaders = LM.make(OUT)                    # Couch Lock's models + textures -> models/padlounge
+    GM.BT.make_sky(OUT)                          # Couch Lock's painted night city -> env/padlounge/night_*
     shell(); vault(); furniture(); pool(); slide(); pads(); clutter(); items(); lights_sounds()
     K.fix_items()
     TX.write_shader(extra=[lm_shaders], arena_types=INFO.get('arena_types'), ents={e['classname'] for e in K.M.ents})
