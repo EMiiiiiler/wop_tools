@@ -223,7 +223,9 @@ def furniture():
     bx, by = BONG
     lounge('bong', bx, by, 0, scale=BONG_SC, ofs=LM.BONG_OFS, occupy=False)
     # giant lava lamps (floor towers), the grow-tent cabin, plants
-    lounge('lava_purple', -1880, 1300, 0, scale=2.4, cyls=[(0, 0, LM.LAVA_R * 2.4, 0, LM.LAVA_H * 2.4)])
+    # NW corner, hard against the wall and the couch arm: it used to stand mid-pocket and seal the corner behind it
+    lounge('lava_purple', -1872, 1640, 0, scale=2.4, cyls=[(0, 0, LM.LAVA_R * 2.4, 0, LM.LAVA_H * 2.4)])
+    K.keep_clear(-2040, 700, -1700, 1100, 0)                         # the pocket between the west arm and the wall
     lounge('lava_green', 1880, -150, 0, scale=2.4, cyls=[(0, 0, LM.LAVA_R * 2.4, 0, LM.LAVA_H * 2.4)])
     x0, y0, x1, y1, H = GM.TENT
     place('grow_tent', (x0 + x1) / 2, (y0 + y1) / 2, 0)
@@ -250,7 +252,8 @@ def clutter():
     place('umbrella', 1300, -560, 0)
     place('towel', -1200, -170, 0, angle=80); place('towel', 1650, 760, 0, angle=15)
     lounge('beanbag', -1150, -600, 0, angle=40, cyls=[(0, 0, LM.BEANBAG_R * 0.75, 0, LM.BEANBAG_H * 0.7)])
-    lounge('hookah', -1510, 760, 0, ofs=LM.HOOKAH_OFS, cyls=[(0, 0, LM.HOOKAH_BASE_R, 0, 280)])
+    # the hookah stood in the only way into the west pocket (between the sideboard and the cushion ramp): moved east
+    lounge('hookah', 1890, 380, 0, ofs=LM.HOOKAH_OFS, cyls=[(0, 0, LM.HOOKAH_BASE_R, 0, 280)])
     lounge('chips', 580, 750, 0, scale=0.6, boxes=[((-LM.CHIPS[0] * 0.6, -LM.CHIPS[1] * 0.6, 0), (LM.CHIPS[0] * 0.6, LM.CHIPS[1] * 0.6, 70))])
     lounge('crisps', 1180, 520, 0, angle=40, lit=False)
     K.catalog('pad_ducks/pad_duck.md3', 1870, 560, 0, angle=180, clip=True)
@@ -277,6 +280,7 @@ def pads():
     K.jumppad(900, 760, 0, land=(1250, 1180, lz), apex=lz + 260, name='pad_tub', edges=[(1040, GM.SEAT_Y0, lz)])
     K.jumppad(1250, 1420, lz, land=(800, 1660, bz), apex=bz + 300, name='pad_back', edges=[(1000, GM.BACK_Y0, bz)])
     K.jumppad(-1250, 1280, lz, land=(-1550, 1350, az), apex=az + 200, name='pad_westarm', edges=[(-1400, 1330, az)])
+    K.jumppad(-1880, 1180, 0, land=(-1550, 1400, az), apex=az + 300, name='pad_pocket', edges=[(-1700, 1330, az)])
     K.jumppad(1874, 1560, 0, land=(1550, 1500, az), apex=az + 220, name='pad_slide', edges=[(1700, 1530, az)])
     K.jumppad(-1440, 160, 0, land=(-1844, 160, GM.TV_STAND[4]), apex=GM.TV_STAND[4] + 220, name='pad_sideboard',
               edges=[(-1648, 160, GM.TV_STAND[4])])

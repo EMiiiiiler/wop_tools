@@ -756,7 +756,8 @@ def lounger():
     R = np.array([[math.cos(a), 0, math.sin(a)], [0, 1, 0], [-math.sin(a), 0, math.cos(a)]])
     X.add_model(back, R, (160, 0, 100))
     ML.save('lounger', X)
-    coll('lounger', [((-260, -90, 0), (160, 90, 120))])
+    # collision = the seat slab and the raised backrest only: 90u clear underneath, so you can walk under it
+    coll('lounger', [((-260, -90, 90), (160, 90, 120)), ((160, -90, 100), (232, 90, 200)), ((232, -90, 184), (300, 90, 290))])
 
 
 def umbrella():
