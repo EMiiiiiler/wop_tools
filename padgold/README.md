@@ -37,4 +37,11 @@ Models/textures: `gold_models.py`. Layout constants live at the top of `build_pa
   train_intercity on a timer, toilet_flush (outhouse), applause on the tower cap, cicada_chirp, secret_found.
 
 ## Checks
-(wopbuild writes report.md in the build folder; paste the summary here when the map ships)
+Nov 2026, report DONE: audit/lint OK (14 looked-at warnings: window sills, slanted tower legs, plain rock mesa),
+4 portals, BSP 6.4 MB, final light (-bounce 2 -bouncegrid) 81 s on 2 cores, aas OK (24 routes, every pickup
+reachable, every pad linked), lights median 114 / dark 5.9 %, sightlines 4.0 %, bots 10 x 3 min: 49 kills, every
+weapon taken (Bubble G 23, Imperius 20, Balloony 17, Pumper 11, Splasher 8, Betty 6, Boaster 4), secret found.
+
+Lessons: the plaza needed a real building (chapel) plus cover under the water tower and in the back alley to get
+sightlines from 9.6 % to 4 %; the Betty on the steamer wheelhouse got 0 pickups with only a deck pad, a pad from the
+busy shore onto the upper deck gave 6.
