@@ -274,12 +274,12 @@ def couch():
 def couch_stuff():
     """what lives on the couch: throw pillows, a crumpled blanket, an open pizza box, a remote, a games controller,
     a popcorn bowl (each its own MD3 so they sit on their own surfaces)"""
-    cols = [(240, 190, 60), (60, 150, 140), (200, 80, 120), (120, 90, 200)]
-    for k, c in enumerate(cols):
+    arts = [pillow_sunburst(), pillow_palms(), pillow_tiedye(), pillow_chill()]
+    for k, art in enumerate(arts):
         key = f'pillow{k}'
-        m(key, TL.fabric(c, weave=64), shade=80, tag=key)
+        m(key, np.roll(art, art.shape[1] // 2, axis=1), shade=80, tag=key)     # rbox u = x / tile is 0 at the centre
         X = ML.Model()
-        rbox(X.mesh(M_[key]), (-130, -45, 0), (130, 45, 250), r=40, k=4,
+        rbox(X.mesh(M_[key]), (-130, -45, 0), (130, 45, 250), r=40, k=4, tile=264,
              inflate=lambda x, y, z, n: 22 * abs(n[1]) * (1 - min(1, (abs(x) / 130) ** 2)) * (1 - min(1, ((z - 125) / 125) ** 2)))
         ML.save(key, X)
         coll(key, [((-130, -45, 0), (130, 45, 250))])
@@ -324,6 +324,88 @@ def couch_stuff():
                bump=lambda p, t: 1 + 0.25 * math.sin(4 * t) * math.sin(3 * p))
     ML.save('popcorn', X)
     coll('popcorn', cyls=[(0, 0, 110, 0, 110)])
+
+
+# ------------------------------------------------------------------------------------------------- pillow covers
+# one 256 texel tile = one pillow face (rbox tile=264), so each motif reads whole; a woven grain over every cover
+def _weave(a, k=0.10, seed=0):
+    x, y = TL.xy(a.shape[0])
+    w = (np.sin(x * 2 * math.pi * 96) * np.sin(y * 2 * math.pi * 96)) * 0.5 + 0.5
+    return a * (1 - k + k * w[..., None]) * (0.96 + 0.08 * TL.N3(a.shape[0], 1, 90 + seed, 4) / 255)
+
+
+def _piping(d, n, col):
+    d.rectangle((2, 2, n - 3, n - 3), outline=col, width=5)
+
+
+def pillow_sunburst(n=256):
+    """70s mustard: concentric orange/brown rings in quarter circles from each corner, cream piping"""
+    im = Image.new('RGB', (n, n), (232, 178, 52)); d = ImageDraw.Draw(im)
+    cols = [(196, 92, 32), (120, 60, 30), (244, 220, 160), (210, 120, 40)]
+    for (cx, cy) in ((0, 0), (n, 0), (0, n), (n, n)):
+        for k, r in enumerate(range(150, 20, -26)):
+            d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=cols[k % 4])
+    d.ellipse((n / 2 - 34, n / 2 - 34, n / 2 + 34, n / 2 + 34), fill=(120, 60, 30))
+    d.ellipse((n / 2 - 18, n / 2 - 18, n / 2 + 18, n / 2 + 18), fill=(244, 220, 160))
+    _piping(d, n, (244, 220, 160))
+    return _weave(np.asarray(im, np.float32), seed=1)
+
+
+def pillow_palms(n=256):
+    """tropical print for the lagoon: palm and monstera leaves on teal, with a few hibiscus flowers"""
+    im = Image.new('RGB', (n, n), (36, 120, 118)); d = ImageDraw.Draw(im)
+    rng = np.random.default_rng(91)
+    greens = [(40, 160, 90), (90, 200, 110), (20, 100, 70)]
+    for _ in range(9):                                            # palm fronds: a stem + leaflets
+        x, y = rng.uniform(0, n, 2); a = rng.uniform(0, 2 * math.pi); L = rng.uniform(70, 120)
+        col = greens[rng.integers(3)]
+        for t in np.linspace(0.1, 1, 9):
+            px, py = x + math.cos(a) * L * t, y + math.sin(a) * L * t
+            for s in (-1, 1):
+                b = a + s * 1.0
+                ln = 34 * (1 - t * 0.6)
+                d.line((px, py, px + math.cos(b) * ln, py + math.sin(b) * ln), fill=col, width=6)
+        d.line((x, y, x + math.cos(a) * L, y + math.sin(a) * L), fill=(20, 80, 50), width=3)
+    for _ in range(4):                                            # hibiscus
+        x, y = rng.uniform(20, n - 20, 2)
+        for k in range(5):
+            b = k * 2 * math.pi / 5
+            d.ellipse((x + math.cos(b) * 12 - 11, y + math.sin(b) * 12 - 11, x + math.cos(b) * 12 + 11, y + math.sin(b) * 12 + 11),
+                      fill=(240, 70, 100))
+        d.ellipse((x - 5, y - 5, x + 5, y + 5), fill=(255, 220, 60))
+    _piping(d, n, (250, 236, 200))
+    return _weave(np.asarray(im, np.float32), seed=2)
+
+
+def pillow_tiedye(n=256):
+    """spiral tie-dye in pink, purple, orange and lime"""
+    x, y = TL.xy(n)
+    dx, dy = x - 0.5, y - 0.5
+    r = np.hypot(dx, dy); a = np.arctan2(dy, dx)
+    t = (a / (2 * math.pi) * 3 + r * 6 + 0.15 * np.sin(r * 40)) % 1.0
+    pal = np.array([(255, 80, 160), (150, 70, 220), (255, 150, 40), (170, 240, 60), (255, 80, 160)], np.float32)
+    idx = t * 4; i0 = np.floor(idx).astype(int); f = (idx - i0)[..., None]
+    c = pal[i0] * (1 - f) + pal[np.minimum(i0 + 1, 4)] * f
+    c *= (0.85 + 0.15 * np.cos(a * 12 + r * 30))[..., None]          # crinkle streaks
+    c = np.where((r < 0.05)[..., None], np.array((255, 255, 255), np.float32), c)
+    return _weave(c, k=0.08, seed=3)
+
+
+def pillow_chill(n=256):
+    """purple-and-green plaid with a stitched patch that says CHILL"""
+    x, y = TL.xy(n)
+    c = np.zeros((n, n, 3), np.float32) + ML.C((90, 50, 140))
+    for (k, col, w) in ((4, (60, 30, 100), 0.18), (4, (120, 200, 90), 0.05), (8, (170, 130, 220), 0.025)):
+        sx = (np.abs((x * k) % 1 - 0.5) < w); sy = (np.abs((y * k) % 1 - 0.5) < w)
+        c = np.where((sx | sy)[..., None], c * 0.5 + ML.C(col) * 0.5, c)
+    im = Image.fromarray(np.uint8(np.clip(c, 0, 255))); d = ImageDraw.Draw(im)
+    d.rounded_rectangle((34, 88, n - 34, 168), 14, fill=(250, 236, 200), outline=(60, 30, 100), width=4)
+    for xx in range(44, n - 40, 10):                               # stitching
+        d.line((xx, 96, xx + 5, 96), fill=(150, 90, 200), width=2); d.line((xx, 160, xx + 5, 160), fill=(150, 90, 200), width=2)
+    f = ML.font(52, serif=False); tw = d.textlength('CHILL', font=f)
+    d.text(((n - tw) / 2, 100), 'CHILL', font=f, fill=(90, 50, 140))
+    _piping(d, n, (120, 200, 90))
+    return _weave(np.asarray(im, np.float32), seed=4)
 
 
 def pizza_box_tex(n=256):
