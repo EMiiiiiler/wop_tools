@@ -1,0 +1,59 @@
+{
+ "map": "wop_padlagoon",
+ "ns": "padlagoon",
+ "longname": "Couch Lock Lagoon",
+ "generator": "build_padlagoon.py",
+ "bounds": [
+  -2048,
+  -1792,
+  2048,
+  1792
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Couch Lock Lagoon",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1950,-1750,1700,135,-28",
+   "overview_nw:-1950,1700,1700,-45,-28",
+   "couch:0,-300,500,90,-6",
+   "pool:-1100,-900,120,40,-4",
+   "island:0,-460,400,90,-6",
+   "slide_top:1550,1500,720,270,-15",
+   "slide:1700,-900,300,110,-2",
+   "bong:-900,-1100,300,180,8",
+   "shelf:-1800,-1500,1300,90,-10",
+   "tent:900,-1200,200,0,4",
+   "tent_in:1650,-1440,150,0,10",
+   "crawl:0,800,40,90,2",
+   "underwater:-200,-900,-120,80,5",
+   "vault:0,-330,-1530,90,2",
+   "sideboard:-1300,160,700,180,-8"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "couch",
+   "slide",
+   "bong"
+  ]
+ }
+}
