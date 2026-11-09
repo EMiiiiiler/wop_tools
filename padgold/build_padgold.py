@@ -147,7 +147,7 @@ def hut_texfn(x0, y0, x1, y1, z0, H, front='n', fac=None, side='wood', roof='tin
 # ------------------------------------------------------------------------------------------------ models
 def models():
     GM.materials(TX, {k: (v[3], v[4]) for k, v in BLD.items()} | {'cabin': ('RIVER QUEEN', 'white'),
-                                                                     'dredge': ('GOLD DREDGE', 'grey')})
+                                                                     'dredge': ('GOLD DREDGE', 'grey'), 'chapel': ('CHAPEL', 'white')})
     GM.model_textures(TX)
     ML.save('tower', GM.water_tower(R_TANK, R_CAT, Z_CAT, Z_TOP, R_CAP, Z_CAP, LEG_R))
     ML.save('smokestack', GM.smokestack())
@@ -175,6 +175,7 @@ def models():
     ML.save('hitch', GM.hitching_rail())
     for i in range(3): ML.save(f'nuggets{i}', GM.nugget_pile(seed=i))
     ML.save('flume_bents', GM.flume_trestle(FLUME_BENTS))
+    ML.save('pews', GM.pews(L=120)); ML.save('belfry', GM.belfry()); ML.save('sluice', GM.sluice())
     ML.save_iqm('carts', GM.ore_carts(CART_R, CART_N, 384 - CART_O))
     ML.save_iqm('sternwheel', GM.stern_wheel(110, 160))
     ML.save_iqm('windwheel', GM.windmill_wheel())
@@ -254,8 +255,9 @@ def water():
     x0, y0, x1, y1 = LAKE
     lake_steps = K.stairs16(x0, -200, x0 + 448, 200, LAKE_F, 0, 'w', {'top': tx('boardwalk'), 'side': tx('timber')})
     K.keep_clear(x0 - 112, -200, x0, 200, 0)
-    cut = list(lake_steps) + steamer_hull_brushes() + [pier_brush()]
+    cut = list(lake_steps) + steamer_hull_brushes() + [pier_brush()] + lake_rocks()
     K.water_box((x0, y0, LAKE_F), (x1, y1, WTOP), tx('water'), cutters=cut)
+    K.add(*lake_rocks())
     K.speaker((x0 + x1) / 2, 300, 16, 'ambient/water_rippling')
     # plunge pool: 16u stair out on its south side
     px0, py0, px1, py1 = PLUNGE
@@ -267,6 +269,22 @@ def water():
     cx0, cy0, cx1, cy1 = CREEK
     K.water_box((cx0, cy0, CREEK_F), (cx1, cy1, CREEK_TOP), tx('creek'), cutters=[dredge_hull()])
     K.speaker(-700, 600, 16, 'ambient/water_flowing')
+
+
+LAKE_ROCKS = [(1380, -590, 95, 70, 1), (2070, -600, 85, 90, 2), (2080, 450, 90, 60, 3)]
+
+
+def lake_rocks():
+    """sandstone outcrops standing on the lake floor (sightline cover across the water; not item spots)"""
+    out = []
+    for (x, y, r, top, seed) in LAKE_ROCKS:
+        g = np.random.default_rng(seed)
+        bot = [(x + r * 1.15 * math.cos(a) * g.uniform(0.85, 1.1), y + r * 1.15 * math.sin(a) * g.uniform(0.85, 1.1), LAKE_F)
+               for a in np.linspace(0, 2 * math.pi, 9, endpoint=False)]
+        tp = [(x + r * 0.7 * math.cos(a + 0.3), y + r * 0.7 * math.sin(a + 0.3), top + g.uniform(-12, 12))
+              for a in np.linspace(0, 2 * math.pi, 7, endpoint=False)]
+        out.append(hull(bot + tp, {'top': tx('rock'), 'side': tx('strata'), 'bot': CAULK}))
+    return out
 
 
 def pier_brush():
@@ -759,6 +777,59 @@ def vault():
 
 
 # ------------------------------------------------------------------------------------------------ items
+CHAPEL = (-560, -380, -240, 80, 224)
+
+
+def chapel():
+    """walk-in chapel in the plaza (door south, windows east/west), belfry on the north end of the roof, pad onto
+    the roof from the south; breaks the long plaza diagonals"""
+    x0, y0, x1, y1, H = CHAPEL
+    dc = (x0 + x1) / 2
+    op = {'s': [(dc - 48, dc + 48, 16, 144)], 'n': [(dc - 40, dc + 40, 16, 128)],
+          'e': [(-260, -180, 64, 150), (-60, 20, 64, 150)], 'w': [(-260, -180, 64, 150), (-60, 20, 64, 150)]}
+    bs = hut_brushes(x0, y0, x1, y1, 0, H, op)
+    K.solid_piece('chapel', bs, hut_texfn(x0, y0, x1, y1, 0, H, front='s', fac='fac_chapel', side='side_chapel', roof='shingle'),
+                  hidden=bs)
+    K.keep_clear(dc - 80, y0 - 120, dc + 80, y0, 0); K.keep_clear(dc - 80, y1, dc + 80, y1 + 120, 0)
+    K.route('chapel', (dc, y0 - 80, 0), (dc, y1 + 80, 0))
+    K.custom(ML.PLACE['pews'], dc - 70, y0 + 80, 16, boxes=[((-64, 0, 0), (64, 246, 52))])
+    K.custom(ML.PLACE['pews'], dc + 70, y0 + 80, 16, boxes=[((-64, 0, 0), (64, 246, 52))])
+    K.custom(ML.PLACE['belfry'], dc, y1 - 60, H + 16, boxes=[((-36, -36, 0), (36, 36, 128))])
+    K.light(dc, (y0 + y1) / 2, 150, 380, '1 0.9 0.75')
+    K.jumppad(dc, y0 - 300, 0, land=(dc, (y0 + y1) / 2 - 40, H + 16), apex=H + 16 + 150, name='pad_chapel',
+              edges=[(dc, y0, H + 16)])
+
+
+def cover():
+    """sightline cover at the sightlines --hot cells: sluice box by the creek, supplies stored under the water tower,
+    clutter in the back alley and along the street edge"""
+    K.custom(ML.PLACE['sluice'], 330, 790, 0, boxes=[((-210, -44, 0), (210, 44, 110))])
+    K.custom(ML.PLACE['crates'], -230, 1130, 0, boxes=CRATES, angle=20)          # stored under the tank
+    K.custom(ML.PLACE['barrels'], -80, 1240, 0, cyls=[(28, 24, 54, 0, 144)])
+    K.custom(ML.PLACE['hay3'], -330, 1040, 0, boxes=[((-48, -28, 0), (68, 28, 120))], angle=70)
+    for x in (-1000, -150, 700, 1350, 1950):
+        K.prop(ML.PLACE['crates_s'] if x % 2 else ML.PLACE['barrels'], x, -1975, 0,
+               boxes=CRATES_S if x % 2 else (), cyls=() if x % 2 else [(28, 24, 54, 0, 144)], search=60)
+    K.prop(ML.PLACE['crates'], 1650, 920, 0, boxes=CRATES, search=120)
+    K.prop(ML.PLACE['barrels'], -600, 940, 0, cyls=[(28, 24, 54, 0, 144)], search=120)
+    for x in (-1700, -380, 600, 1640):
+        K.prop(ML.PLACE['barrels'], x, -1300, 0, cyls=[(28, 24, 54, 0, 144)], search=100)
+    for (x, y) in ((40, 250), (-850, -420), (560, 820), (-1050, 1300), (1250, 400)):
+        K.prop(ML.PLACE['hay3'] if x < 0 else ML.PLACE['crates'], x, y, 0,
+               boxes=[((-48, -28, 0), (68, 28, 120))] if x < 0 else CRATES, search=140)
+
+
+def fill_lights():
+    """lights.png dark spots: building fronts inside, under the stair tower and flume, the lake floor"""
+    for name, (x0, x1, H, *_rest) in BLD.items():
+        K.light((x0 + x1) / 2, -1580, 90, 240, '1 0.85 0.6')
+        K.light(x0 + 70, -1800, 90, 200, '1 0.85 0.6')
+        K.light(x1 - 70, -1800, 90, 200, '1 0.85 0.6')
+    for (x, y, z, v) in ((420, 1300, 120, 300), (700, 1250, 120, 260), (220, 1440, 120, 260), (-1408, 576, 140, 260),
+                         (2050, 150, -120, 300), (1750, 500, -120, 260), (1750, -500, -120, 260), (-1976, -1615, 100, 260)):
+        K.light(x, y, z, v)
+
+
 def items():
     tx0, ty0 = TWR
     zr = DECK + CAB_H + 16
@@ -766,10 +837,10 @@ def items():
     K.weapon('betty', 1800, (WH[1] + WH[3]) / 2, zr + 144, marker='black')
     K.weapon('balloony', CARTS[0], CARTS[1], MESA[4], marker='orange')
     K.weapon('pumper', PIT[0] + 90, (PIT[1] + PIT[3]) / 2, PIT_F, marker='green')
-    K.weapon('splasher', 2050, 350, LAKE_F, marker='blue')
+    K.weapon('splasher', 2000, 250, LAKE_F, marker='blue')
     K.weapon('boaster', -1220, -1740, 16, marker='orange')
     K.weapon('bubbleg', 120, -1720, 16, marker='green')
-    ammo = {'imperius': [(tx0 + 352, ty0, Z_CAT), ((TUN_N[0] + TUN_N[2]) / 2, 760, 0), (2050, -1960, 0)],
+    ammo = {'imperius': [(tx0 + 352, ty0, Z_CAT), ((TUN_N[0] + TUN_N[2]) / 2, 760, 0), (2070, -1960, 0)],
             'betty': [(1800, -360, DECK), (1650, 1150, 0), (-1900, -1750, 160)],
             'balloony': [(-1600, 600, MESA[4]), (-1440, 400, MESA[4]), (-900, 1500, 0), (250, -1720, 240)],
             'pumper': [(-1740, 0, 0), (-2000, 380, 0), (1350, -1650, 16), (-1100, 300, 0)],
@@ -785,7 +856,7 @@ def items():
     K.item('item_speedy', 620, -1820, 16)
     K.item('item_jumper', -1000, -1440, 144)
     K.item('holdable_boomies', -1900, 650, MESA[4])
-    K.station(0, -260, 0, ang=90); K.station(1250, -1290, 0, ang=270)
+    K.station(150, -450, 0, ang=90); K.station(1250, -1290, 0, ang=270)
     for (x, y, a) in ((-1800, -1200, 0), (-900, -1250, 90), (0, -1150, 90), (900, -1150, 90), (1800, -1150, 180),
                       (-1100, -400, 45), (200, -500, 90), (1000, -100, 180), (-500, 900, 270), (600, 1000, 180),
                       (-1600, 1600, 315), (1300, 1800, 225), (-2000, 1000, 0), (2100, 1100, 180), (-100, 1900, 270),
@@ -809,8 +880,8 @@ if __name__ == '__main__':
     GM.brush_textures(TX)
     flume_plan()
     models()                          # every MD3 (and its shaders) BEFORE the shader file is written
-    shell(); water(); mesa(); street(); tower(); flume(); steamer(); dredge(); geysers(); windmill(); vault()
-    props(); items(); sounds()
+    shell(); water(); mesa(); street(); tower(); flume(); steamer(); dredge(); geysers(); windmill(); vault(); chapel()
+    props(); cover(); items(); fill_lights(); sounds()
     K.fix_items()
     shader()
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))

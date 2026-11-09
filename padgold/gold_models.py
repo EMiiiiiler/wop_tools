@@ -637,3 +637,38 @@ def pier_piles(L, W, z0, z1, step=128):
             revolve(t, [(10, z0), (10, z1), (7, z1 + 6), (0.1, z1 + 8)], n=10, u_tiles=1, cx=x, cy=y)
             revolve(ir, [(11, z1 - 40), (11.5, z1 - 34), (11, z1 - 28)], n=10, cx=x, cy=y)
     return X
+
+
+def pews(n=4, L=150, gap=72):
+    X = ML.Model(); w = M_(X, 'wood_d')
+    for i in range(n):
+        y = i * gap
+        rbox(w, (-L / 2, y, 16), (L / 2, y + 28, 22), r=1, k=1, tile=64)
+        rbox(w, (-L / 2, y + 24, 22), (L / 2, y + 30, 52), r=1, k=1, tile=64)
+        for s in (-1, 1): rbox(w, (s * L / 2 - 4, y, 0), (s * L / 2 + 4, y + 30, 22), r=1, k=1, tile=32)
+    return X
+
+
+def belfry(h=120):
+    """little open bell frame for the chapel roof"""
+    X = ML.Model(); w = M_(X, 'white'); g = M_(X, 'brass'); sh = M_(X, 'shingle')
+    for sx in (-30, 30):
+        for sy in (-30, 30):
+            rbox(w, (sx - 5, sy - 5, 0), (sx + 5, sy + 5, h), r=1, k=1, tile=64)
+    prism(sh, [(-42, -42), (42, -42), (42, 42), (-42, 42)], h, h + 8)
+    revolve(sh, [(44, h + 8), (0.1, h + 60)], n=4, a0=45, a1=405)
+    revolve(g, [(4, h - 10), (14, h - 30), (20, h - 52), (0.1, h - 52)], n=12)
+    return X
+
+
+def sluice(L=420):
+    """gold sluice box on trestles: long riffled trough with a water stage (local: along x)"""
+    X = ML.Model(); w = M_(X, 'wood'); t = M_(X, 'timber')
+    for x in np.linspace(-L / 2 + 20, L / 2 - 20, 4):
+        for sy in (-30, 30):
+            rbox(t, (x - 6, sy - 6, 0), (x + 6, sy + 6, 70 + 10 * x / L), r=1, k=1, tile=64)
+    rbox(w, (-L / 2, -40, 70), (L / 2, 40, 80), r=1, k=1, tile=64)
+    for s in (-1, 1): rbox(w, (-L / 2, s * 40 - 4, 80), (L / 2, s * 40 + 4, 110), r=1, k=1, tile=64)
+    M_(X, 'water_m').poly([(-L / 2, -36, 92), (L / 2, -36, 92), (L / 2, 36, 92), (-L / 2, 36, 92)], (0, 0, 1),
+                           [(0, 0), (6, 0), (6, 1), (0, 1)])
+    return X
