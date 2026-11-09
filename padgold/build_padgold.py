@@ -79,7 +79,7 @@ CARTS = (-1900, 200); CART_R = 300; CART_N = 5; CART_O = 430
 SH_X = (1660, 1940); SH_Y = (-440, 460); SH_BOW = 600; DECK = 48
 CABIN = (1720, -260, 1880, 140); CAB_H = 160; WH = (1752, -252, 1848, -120)
 
-DREDGE = (-320, 0)                                     # x range, spans the creek
+DREDGE = (-360, 40)                                     # x range, spans the creek
 VAULT = (-384, -320, 384, 320, -1600)                  # the Mother Lode (sealed, below the town)
 
 LIGHT_Z = {}
@@ -391,7 +391,7 @@ def building(name, x0, x1, H, dc, dw, dtop):
     K.solid_piece('b_' + name, bs + extra, texf, hidden=bs + extra)
     K.keep_clear(dc - dw / 2 - 32, BW_Y1, dc + dw / 2 + 32, BW_Y1 + 120, 0)
     K.keep_clear(dc - dw / 2, y1 - 120, dc + dw / 2, y1 - WALL, 16)
-    K.route(f'{name}_door', (dc, BW_Y1 + 64, 0), (dc, y1 - 100, 16))
+    K.route(f'{name}_door', (dc, BW_Y1 + 64, 0), (dc, y1 - 60, 16))
     K.light((x0 + x1) / 2, (y0 + y1) / 2, min(H - 40, 200), 420, '1 0.85 0.6')
     if x1 - x0 > 500: K.light((x0 + x1) / 2 + (x1 - x0) / 4, -1800, 120, 260, '1 0.85 0.6')
     interior(name, x0, x1, H, dc)
@@ -620,6 +620,8 @@ def steamer():
     K.solid_piece('steamer_aft', [a], hull_tex, hidden=[a, b])
     K.solid_piece('steamer_fore', [b], hull_tex, hidden=[a, b])
     K.add(pier_brush())
+    ML.save('piles', GM.pier_piles(SH_X[0] - LAKE[0], 120, LAKE_F, 32))
+    K.custom(ML.PLACE['piles'], LAKE[0], -360, 0, occupy=False)
     K.add(box((LAKE[0] - 32, -420, 0), (LAKE[0], -300, 16), {'top': tx('boardwalk'), 'side': tx('timber'), 'bot': CAULK}))
     K.reserve(((LAKE[0] - 32, -420, 0), (SH_X[0], -300, 32)))
     K.keep_clear(LAKE[0] - 140, -420, LAKE[0] - 32, -300, 0)
@@ -640,7 +642,7 @@ def steamer():
     K.solid_piece('wheelhouse', bs, hut_texfn(w0, wy0, w1, wy1, zr, 128, front='n', fac=None, side='white', roof='floor'), hidden=bs)
     for sx in (1736, 1864):
         K.custom(ML.PLACE['smokestack'], sx, 0, zr, cyls=[(0, 0, 20, 0, 300)])
-    K.jumppad(1800, 70, zr, land=(1800, (wy0 + wy1) / 2, zr + 144), apex=zr + 144 + 120, name='pad_wheelhouse',
+    K.jumppad(1800, 20, zr, land=(1800, (wy0 + wy1) / 2, zr + 144), apex=zr + 144 + 120, name='pad_wheelhouse',
               edges=[(1800, wy1, zr + 144)])
     K.reserve(((SH_X[0], SH_Y[0], LAKE_F), (SH_X[1], SH_BOW, DECK)), ((cx0, cy0, DECK), (cx1, cy1, zr)))
     K.keep_clear(dc - 60, SH_Y[0] + 20, dc + 60, cy0, DECK)
@@ -660,13 +662,16 @@ def dredge():
         return TX['hull'], (lambda p: ((p[0] + p[1]) / 256.0, (DECK - p[2]) / 120.0))
     K.solid_piece('dredge_hull', [h], hull_tex)
     x0, x1 = DREDGE
-    cy0, cy1 = CREEK[1] + 40, CREEK[3] - 40
-    bs = hut_brushes(x0 + 40, cy0, x1 - 40, cy1, DECK, 144, {'e': [(570, 630, DECK, DECK + 112)], 'w': [(570, 630, DECK, DECK + 112)],
+    cy0, cy1 = CREEK[1] + 60, CREEK[3] - 60
+    bs = hut_brushes(x0 + 90, cy0, x1 - 90, cy1, DECK, 144, {'e': [(570, 630, DECK, DECK + 112)], 'w': [(570, 630, DECK, DECK + 112)],
                                                              'n': [(-200, -120, DECK + 50, DECK + 100)]}, floor=False)
-    K.solid_piece('dredge_cabin', bs, hut_texfn(x0 + 40, cy0, x1 - 40, cy1, DECK, 144, front='s', fac='fac_dredge', side='side_dredge',
+    K.solid_piece('dredge_cabin', bs, hut_texfn(x0 + 90, cy0, x1 - 90, cy1, DECK, 144, front='s', fac='fac_dredge', side='side_dredge',
                                                  roof='tin'), hidden=bs)
-    K.stairs16(-200, CREEK[3], -104, CREEK[3] + 96, 0, DECK, 's', {'top': tx('planks'), 'side': tx('planks_d')}, route='dredge_n')
-    K.stairs16(-200, CREEK[1] - 96, -104, CREEK[1], 0, DECK, 'n', {'top': tx('planks'), 'side': tx('planks_d')}, route='dredge_s')
+    K.stairs16(-200, CREEK[3], -104, CREEK[3] + 96, 0, DECK, 's', {'top': tx('planks'), 'side': tx('planks_d')})
+    K.stairs16(-200, CREEK[1] - 96, -104, CREEK[1], 0, DECK, 'n', {'top': tx('planks'), 'side': tx('planks_d')})
+    K.route('dredge_n', (-152, CREEK[3] + 150, 0), (-152, cy1 + 30, DECK))
+    K.route('dredge_s', (-152, CREEK[1] - 150, 0), (-152, cy0 - 30, DECK))
+    K.route('dredge_cabin', (x0 + 45, 600, DECK), (x1 - 45, 600, DECK))
     K.reserve(((x0, CREEK[1] - 96, -16), (x1, CREEK[3] + 96, DECK + 160)))
     K.jumppad(-160, CREEK[1] - 300, 0, land=(-160, (cy0 + cy1) / 2, DECK + 160), apex=DECK + 160 + 150, name='pad_dredge',
               edges=[(-160, cy0, DECK + 160)])
@@ -765,15 +770,15 @@ def items():
     K.weapon('boaster', -1220, -1740, 16, marker='orange')
     K.weapon('bubbleg', 120, -1720, 16, marker='green')
     ammo = {'imperius': [(tx0 + 352, ty0, Z_CAT), ((TUN_N[0] + TUN_N[2]) / 2, 760, 0), (2050, -1960, 0)],
-            'betty': [(1800, -360, DECK), (1300, 1250, 0), (-1900, -1750, 160)],
-            'balloony': [(-1600, 600, MESA[4]), (-1440, 400, MESA[4]), (-900, 1500, 0), (400, -1720, 240)],
+            'betty': [(1800, -360, DECK), (1650, 1150, 0), (-1900, -1750, 160)],
+            'balloony': [(-1600, 600, MESA[4]), (-1440, 400, MESA[4]), (-900, 1500, 0), (250, -1720, 240)],
             'pumper': [(-1740, 0, 0), (-2000, 380, 0), (1350, -1650, 16), (-1100, 300, 0)],
-            'splasher': [(1000, 1150, PLUNGE_F), (1250, 0, 0), (FL_XS[0] - 120, 1550, 0), (-560, -1800, 16)],
+            'splasher': [(1000, 1150, PLUNGE_F), (900, -100, 0), (FL_XS[0] - 120, 1550, 0), (-560, -1800, 16)],
             'boaster': [(-1120, -1580, 144), (-1120, -1430, 144), (700, -1600, 16), (-400, 1400, 0)],
             'bubbleg': [(250, -1800, 16), (-160, 600, DECK + 160), (1920, -1600, 16), (-1600, 1300, 0), (600, 400, 0)]}
     for w, spots in ammo.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
-    for (x, y) in ((0, -400), (-1500, 1100), (1500, 500)): K.ammo('nipper', x, y, 0)
+    for (x, y) in ((0, -400), (-1500, 1100), (950, 560)): K.ammo('nipper', x, y, 0)
     K.item('item_armor_padshield', -160, 600, DECK + 160)
     K.item('item_armor_shard', -380, -1800, 16); K.item('item_armor_shard', -2100, -1650, 160)
     K.item('holdable_floater', -488, -1720, 272)

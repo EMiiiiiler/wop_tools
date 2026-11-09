@@ -626,3 +626,14 @@ def desert_sky(out_dir, ns):
         c = np.where((el < 0)[..., None], C((176, 132, 92)), c)
         return c
     return SK.write_cube(out_dir, ns, 'desert', colour)
+
+
+def pier_piles(L, W, z0, z1, step=128):
+    """timber piles along both sides of a pier (local: pier runs along x from 0 to L, width W centred on y=0)"""
+    X = ML.Model(); t = M_(X, 'timber'); ir = M_(X, 'iron')
+    for x in np.arange(32, L - 16, step):
+        for s in (-1, 1):
+            y = s * (W / 2 + 10)
+            revolve(t, [(10, z0), (10, z1), (7, z1 + 6), (0.1, z1 + 8)], n=10, u_tiles=1, cx=x, cy=y)
+            revolve(ir, [(11, z1 - 40), (11.5, z1 - 34), (11, z1 - 28)], n=10, cx=x, cy=y)
+    return X
