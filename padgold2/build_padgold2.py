@@ -486,6 +486,9 @@ def tower():
     rl = 230
     zl = Z_TOP + (R_TANK + 6 - rl) / (R_TANK + 6 - R_CAP) * (Z_CAP - Z_TOP)
     K.jumppad(tx0 - 376, ty0, Z_CAT, land=(tx0 - rl, ty0, zl), apex=Z_CAP + 170, name='pad_cap', edges=[(tx0 - R_TANK - 6, ty0, Z_TOP)])
+    # second way onto the cap straight from the yard west of the tower (bots ignored the two-pad chain to the Betty)
+    K.jumppad(tx0 - 630, ty0, 0, land=(tx0 - 48, ty0, Z_CAP), apex=Z_CAP + 190, name='pad_cap_yard',
+              edges=[(tx0 - R_CAT, ty0, Z_CAT), (tx0 - R_TANK - 6, ty0, Z_TOP)])
     stair_tower()
 
 
