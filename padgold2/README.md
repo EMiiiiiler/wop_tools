@@ -4,7 +4,7 @@ Reimagining of `padgold/`. Status: **quick preview only** (gen + lint clean, -me
 light, bspc, bot match or package yet - that is the full build, to be done once the user is happy with the layout.
 
 Preview: `wopbuild.py padgold2 preview`, then publish `out/quick.html` to
-https://claude.ai/artifact/ (same URL each round; see the PR / project note for the link).
+https://claude.ai/artifact/TUyaMiR8jxdoSAA7pi3yfa (same URL each round).
 
 ## The idea
 The dam at the head of the gulch has let go. **Main Street is the river**, and every ride is a piece of the mining
