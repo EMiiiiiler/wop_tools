@@ -543,3 +543,29 @@ def test_quick_preview_renders_unlit_meta_bsp(tmp_path):
     rc, o = run(os.path.join('preview', 'bsp2scene.py'), mp[:-4] + '.bsp', page, '--vfs', str(tmp_path), '--unlit', '--compact',
                 '--threeurl', 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')
     assert rc == 0 and os.path.exists(page) and '0 lightmaps' in o, o[-800:]
+
+
+def test_round_pool_water_stair_wedge_current_and_flume():
+    """padlagoon: a round pool is one prism carved by the steps' wedge (a bounding-box cutter left a dry stairwell in
+    the surface); currents and flumes come from the kit"""
+    from wopmap import prism, ngon
+    K = MapKit('wop_t', 't', 'T', (-1024, -1024, 1024, 1024))
+    w = K.stair_wedge(-160, -800, 160, -416, -192, 0, 's')
+    mn, mx = w.bounds()
+    assert mn[2] == -192 and mx[2] >= 0                                   # contains the top step
+    steps = stairs(-160, -800, 160, -416, -192, 0, 's', 't/x', step_h=16)
+    assert all(not carve(s, [w]) for s in steps)                          # every step lies inside the wedge
+    pieces = K.water_box(None, None, 't/water', cutters=[w], brush=prism(ngon(0, 0, 800, 16), -192, -16, 't/water'))
+    assert len(pieces) > 1 and K.spots['water'][0]['depth'] == 176
+    tops = [f for p in pieces for f in p.faces if f.tex == 't/water']
+    assert tops and all(f.n[2] > 0.9 for f in tops)                       # only the surface is drawn
+    # water still stands over the low steps (the old box cutter removed the whole flight's column)
+    pt = np.array([0.0, -500.0, -30.0])                                   # over the third step, under the surface
+    assert any(np.all(p.bounds()[0] <= pt) and np.all(pt <= p.bounds()[1]) for p in pieces)
+    K.current((-80, 300, -180), (80, 460, -16), 135, name='whirl')
+    cls = [e['classname'] for e in K.M.ents]
+    assert 'trigger_multiple' in cls and 'target_push' in cls
+    n0 = len(K.M.world)
+    K.flume([(0, 0, 640), (0, -400, 520), (200, -800, 400)], 't/slick', 't/side', supports=[(1, 0)])
+    assert len(K.M.world) - n0 == 2 * 4 + 1 and K.spots['flumes'][0]['half_width'] == 96
+    assert not K.free(0, -200, 40, 500, 700)                              # props stay off the slide

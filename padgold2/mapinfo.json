@@ -1,0 +1,59 @@
+{
+ "map": "wop_padgold2",
+ "ns": "padgold2",
+ "longname": "Gold Rush Gulch: Flood Day",
+ "generator": "build_padgold2.py",
+ "bounds": [
+  -2304,
+  -2048,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "enforce": false
+ },
+ "preview": {
+  "title": "Gold Rush Gulch: Flood Day",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1900,-2000,1700,125,-33",
+   "dam:0,-300,420,90,5",
+   "street:0,-1450,120,90,0",
+   "crest:0,1640,700,270,-25",
+   "mesa:-1250,-450,620,160,-18",
+   "lake:1050,-1750,260,35,-5",
+   "tower:900,-250,420,50,5",
+   "pan:-1050,-1000,260,225,-20"
+  ]
+ },
+ "levelshots": {
+  "cover": "dam",
+  "shots": [
+   "dam",
+   "street",
+   "overview"
+  ]
+ },
+ "hull": [
+  -2816,
+  -2560,
+  2816,
+  2560
+ ]
+}

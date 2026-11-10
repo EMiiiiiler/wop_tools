@@ -1,0 +1,67 @@
+{
+ "map": "wop_padlagoon",
+ "ns": "padlagoon",
+ "longname": "Couch Lock Lagoon",
+ "generator": "build_padlagoon.py",
+ "bounds": [
+  -2048,
+  -1792,
+  2048,
+  1792
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "enforce": false
+ },
+ "preview": {
+  "title": "Couch Lock Lagoon",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:3000,-3000,2600,135,-30",
+   "overview_nw:-1950,1700,2000,-45,-30",
+   "falls:0,150,340,90,-2",
+   "tub:-1250,1090,600,0,-22",
+   "cave:0,1150,34,270,2",
+   "flume_top:-1830,-1490,1290,-6,-16",
+   "flume:150,-1050,160,250,22",
+   "slip:1550,1480,730,270,-16",
+   "bong:-900,-900,520,200,10",
+   "pool_w:-1300,-250,220,0,-8",
+   "island:-700,-1000,260,50,-2",
+   "stack:-300,-900,300,220,-10",
+   "tent:1000,-1000,220,-30,6",
+   "sideboard:-1200,160,700,180,-6",
+   "underwater:-300,-700,-120,60,8",
+   "vault:0,-330,-4330,90,2"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "falls",
+   "flume_top",
+   "bong"
+  ]
+ },
+ "hull": [
+  -4500,
+  -8000,
+  7000,
+  2400
+ ]
+}

@@ -497,18 +497,86 @@ class MapKit:
                            else self.botclip_edge(edge, a, edge, b, z, width, height))
         return out
 
-    def water_box(self, mn, mx, tex, nodraw_tex=None, cutters=()):
+    def water_box(self, mn, mx, tex, nodraw_tex=None, cutters=(), brush=None):
         """the water recipe: ONE water box, CSG-carved by everything inside it (water must not overlap solids), only the
         top surface drawn, every internal face nodraw water (q3map2 only culls exactly coincident faces). Depth <= 48
-        does not drown; deeper water needs 16u steps or a ramp out (lint_map 'water'). Returns the pieces."""
+        does not drown; deeper water needs 16u steps or a ramp out (lint_map 'water'). Returns the pieces.
+        brush = any convex brush (a round pool: wopmap.prism(ngon(...))) used instead of the box; mn/mx are then
+        taken from its bounds. Stairs into the water: cut them with K.stair_wedge(), not their bounding box (a box
+        leaves a dry stairwell in the surface)."""
         nd = nodraw_tex or tex + '_nd'
-        wb = box(mn, mx, tex)
+        if brush is not None:
+            b0, b1 = brush.bounds(); mn, mx = [float(v) for v in b0], [float(v) for v in b1]
+        wb = brush if brush is not None else box(mn, mx, tex)
         pieces = wopmap.carve(wb, list(cutters)) if cutters else [wb]
         for p in pieces:
             for f in p.faces: f.tex = tex if f.n[2] > 0.9 and abs(f.d - mx[2]) < 0.5 else nd
             self.add(p)
         self.spots.setdefault('water', []).append(dict(mn=list(mn), mx=list(mx), depth=mx[2] - mn[2]))
         return pieces
+
+    @staticmethod
+    def stair_wedge(x0, y0, x1, y1, z0, ztop, run_dir, step_h=16):
+        """water cutter for a stairs16 flight: the convex wedge that just contains the steps (bottom at z0, slope along
+        the nosings), so the water surface meets the stair at the right tread instead of leaving a dry box."""
+        n = int(round((ztop - z0) / step_h))
+        zt = z0 + step_h * (n + 1)                 # the nosing line carried to the top end
+        pts = []
+        for (x, y) in ((x0, y0), (x1, y0), (x0, y1), (x1, y1)):
+            low = {'n': y == y0, 's': y == y1, 'e': x == x0, 'w': x == x1}[run_dir]
+            pts += [(x, y, z0), (x, y, z0 + step_h if low else zt)]
+        return hull(pts, CAULK)
+
+    def current(self, mn, mx, yaw, speed=200, wait=0.4, name='current', pitch=0, brush=None):
+        """a water current (lazy river, whirlpool): trigger_multiple -> target_push along `yaw`. target_push REPLACES
+        the player's velocity, so keep zones short (~160u), pulsed (wait 0.3-0.5) and off the exits; bspc knows
+        nothing about them, so no item may depend on one. pitch > 0 pushes downward (Q3 angles): a slide push along a
+        slope (padgold2 spillway); brush = a trigger-textured hull to use instead of the box (a sloped zone that sits on
+        a ramp instead of cutting into it)."""
+        name = self.uniq(name)
+        c = [(a + b) / 2 for a, b in zip(mn, mx)]
+        self.M.ent('trigger_multiple', brushes=[brush or box(mn, mx, TRIG)], target=name, wait=wait)
+        self.M.ent('target_push', (round(c[0]), round(c[1]), round(mx[2] + 40)), targetname=name,
+                   angles=f'{pitch:g} {yaw:g} 0', speed=speed)
+        self.spots.setdefault('currents', []).append(dict(mn=list(mn), mx=list(mx), yaw=yaw, pitch=pitch, speed=speed))
+
+    def flume(self, path, top_tex, side_tex, half_width=96, wall=40, thick=16, wall_thick=16, supports=(),
+              support_tex=None, keep=120):
+        """open water slide along `path` [(x, y, z)...] (high -> low): mitred floor segments (two triangles each, so
+        a banked turn stays planar) with low side walls. top_tex should be a slick shader (SH.slick): gravity then
+        carries the rider. supports = [(node index, floor z)] posts down to a floor. Keeps props off its footprint.
+        Bots do not ride slides: give the top another way down."""
+        P = [np.array(p, float) for p in path]
+        n = len(P); hw, wt, wh, ft = half_width, wall_thick, wall, thick
+        dirs = [(P[i + 1][:2] - P[i][:2]) / np.linalg.norm(P[i + 1][:2] - P[i][:2]) for i in range(n - 1)]
+        perps = [np.array([-d[1], d[0]]) for d in dirs]
+        J = []
+        for k in range(n):
+            mm = perps[0] if k == 0 else perps[-1] if k == n - 1 else (perps[k - 1] + perps[k]) / np.linalg.norm(perps[k - 1] + perps[k])
+            J.append((mm, 1.0 / max(0.5, float(mm @ perps[min(k, n - 2)]))))
+        e = lambda c, mm, f, off: c[:2] + mm * off * f
+        tt = {'top': top_tex, 'side': side_tex, 'bot': side_tex}
+        for i in range(n - 1):
+            (ma, fa), (mb, fb) = J[i], J[i + 1]
+            ca, cb = P[i], P[i + 1]; za, zb = ca[2], cb[2]
+            La, Ra, Lb, Rb = e(ca, ma, fa, hw), e(ca, ma, fa, -hw), e(cb, mb, fb, hw), e(cb, mb, fb, -hw)
+            for (p1, p2, p3, z1, z2, z3) in ((La, Ra, Lb, za, za, zb), (Ra, Rb, Lb, za, zb, zb)):
+                pts = [(p1[0], p1[1], z1), (p2[0], p2[1], z2), (p3[0], p3[1], z3),
+                       (p1[0], p1[1], z1 - ft), (p2[0], p2[1], z2 - ft), (p3[0], p3[1], z3 - ft)]
+                self.add(hull(pts, tt, round_pts=False))
+            for sgn in (1, -1):
+                ia, ib = e(ca, ma, fa, sgn * hw), e(cb, mb, fb, sgn * hw)
+                oa, ob = e(ca, ma, fa, sgn * (hw + wt)), e(cb, mb, fb, sgn * (hw + wt))
+                pw = []
+                for (p, zz) in ((ia, za), (ib, zb), (oa, za), (ob, zb)):
+                    pw += [(p[0], p[1], zz - ft), (p[0], p[1], zz + wh)]
+                self.add(hull(pw, side_tex, round_pts=False))
+            self.occupy(min(ca[0], cb[0]) - keep, min(ca[1], cb[1]) - keep, max(ca[0], cb[0]) + keep,
+                        max(ca[1], cb[1]) + keep, min(za, zb) - ft, max(za, zb) + wh + 56)
+        for (k, fz) in supports:
+            x, y, z = path[k]
+            self.add(box((x - 20, y - 20, fz), (x + 20, y + 20, z - ft - 30), support_tex or side_tex))
+        self.spots.setdefault('flumes', []).append(dict(path=[list(map(float, p)) for p in path], half_width=hw))
 
     def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None):
         """big architecture built ONCE as convex brushes and used twice: the visible faces become a custom MD3

@@ -1,0 +1,56 @@
+{
+ "map": "wop_padgold",
+ "ns": "padgold",
+ "longname": "Gold Rush Gulch",
+ "generator": "build_padgold.py",
+ "bounds": [
+  -2304,
+  -2048,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Gold Rush Gulch",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:2000,-1900,1500,135,-30",
+   "street:-1900,-1000,140,0,0",
+   "tower:600,600,500,135,-10",
+   "mine:-1600,-800,200,120,0",
+   "steamer:1000,-200,300,0,-5",
+   "mesa:-1500,200,700,180,-20"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "street",
+   "tower",
+   "overview"
+  ]
+ },
+ "hull": [
+  -2816,
+  -2560,
+  2816,
+  2560
+ ]
+}
