@@ -77,7 +77,8 @@ Built in the full build:
 - `pad_cap_yard`: second pad from the yard west of the tower straight onto the cap (Betty 0 -> 22-32 pickups; the
   floor -> catwalk -> cap chain alone got none).
 - Pumper moved from the pit floor to the chamber floor beside the pit (-1880, 160): four runs with it on the pit floor,
-  a stair step or the pit rim gave 0 pickups and the bots did not even enter the mine (target_score probes), although
+  or a stair step gave 0 pickups (the pit rim 12 in one run, 0 in the next) and the bots did not even enter the mine
+  (target_score probes), although
   bspc links the pit both ways (routes, reach list, cluster portals all valid). A pumper ammo now sits in the pit.
 - Siding seed uses zlib.crc32 (stable between runs) in `padgold/gold_models.py`.
 
