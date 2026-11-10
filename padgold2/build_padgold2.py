@@ -116,6 +116,7 @@ def models():
     ML.save('liftframe', G2.lift_frame(128, 520))
     ML.save('panrim', G2.pan_rim(300))
     ML.save('tram_bents', G2.tram_bents(TRAM, MESA[4] - 18))
+    ML.save('damvalve', G2.dam_valve()); ML.save('sluicegate', G2.sluice_gate()); ML.save('deckgear', G2.deck_gear())
     ML.save_iqm('carts', GM.ore_carts(CART_R, CART_N, MESA[4] - CART_O))
     ML.save_iqm('sternwheel', GM.stern_wheel(110, 160))
     ML.save_iqm('windwheel', GM.windmill_wheel())
@@ -201,6 +202,11 @@ def dam():
         if n[2] < -0.7: return None
         return TX['dam'], ML.planar_uv(n, 384)
     K.solid_piece('dam', wall, dam_tex)
+    for vx in (-630, 630):                                                        # penstock valves between the buttresses
+        K.custom(ML.PLACE['damvalve'], vx, y0, 0, boxes=[((-46, -156, 0), (46, -64, 64)), ((-22, -64, 70), (22, 0, 114)),
+                                                          ((-14, -32, 114), (14, 0, 520))])
+    K.light(0, y0 - 300, 300, 300, '1 0.88 0.72')                                 # the dam face is on the shade side
+    for vx in (-630, 630): K.light(vx, y0 - 220, 160, 260, '1 0.88 0.72')
     # reservoir: solid to its floor, water out to the sky wall, one 16u step back up to the crest
     K.add(box((x0, y1, 0), (x1, HY1, RES_F), {'top': tx('lakebed'), 'side': tx('strata'), 'bot': CAULK}))
     step = box((x0, y1, RES_F), (x1, y1 + 32, RES_F + 16), {'top': tx('pool_wall'), 'side': tx('pool_wall'), 'bot': CAULK})
@@ -224,6 +230,8 @@ def dam():
         K.add(hull([(x, y, z) for x in (a, b) for (y, zt) in ((sy0, 0), (sy1, CREST)) for z in (0, zt + 28)],
                    {'top': tx('timber'), 'side': tx('pool_wall'), 'bot': CAULK}, round_pts=False))
     K.reserve(((sx0 - 24, sy0, 0), (sx1 + 24, sy1, CREST)))
+    K.custom(ML.PLACE['sluicegate'], 0, sy1, CREST, boxes=[((s * 236 - 12, 4, 0), (s * 236 + 12, 28, 280)) for s in (-1, 1)] +
+             [((-248, 2, 280), (248, 30, 300)), ((-224, 8, 170), (224, 24, 262))])
     K.route('crest', (-600, 1728, CREST), (600, 1728, CREST))
     K.speaker(0, 1000, 200, 'ambient/water_flowing')
     # the slide push: three sloped zones lying on the ramp (not cut into it), none at the crest lip or the pool edge
@@ -562,6 +570,7 @@ def steamer():
     K.jumppad(900, -1180, 0, land=(1800, cy1 - 70, zr), apex=zr + 260, name='pad_shore_deck', edges=[(cx0, cy1 - 70, zr)])
     K.reserve(((SH_X[0], SH_Y[0], LAKE_F), (SH_X[1], SH_BOW, DECK)), ((cx0, cy0, DECK), (cx1, cy1, zr)))
     K.light(dc, (cy0 + cy1) / 2, DECK + 120, 300, '1 0.85 0.6')
+    K.custom(ML.PLACE['deckgear'], 1720, -1590, DECK, cyls=[(0, 0, 26, 0, 58), (170, -50, 12, 0, 32), (170, 40, 12, 0, 32)])
     K.rotating_model2(ML.IQM['sternwheel'], (1800, SH_Y[0] - 128, 64), 40, axis='x')
 
 
@@ -600,6 +609,27 @@ def dressing():
         K.catalog(f'pad_westernset/tombstone{i % 3 + 1}.md3', x, y, 0, scale=0.9, angle=270 + rng.uniform(-10, 10))
 
 
+def fill():
+    """fill lights for the shade sides (sun in the west-south-west): east faces of the mesa and the tramway, the west
+    boardwalk under the awnings, behind the east row, under the water tower and flume, the canyon edges, the lake bed"""
+    c = '1 0.88 0.72'
+    for y in (-600, -330, 330, 620, 850): K.light(-1320, y, 130, 320, c)                 # mesa east face (lift at y 36..164)
+    K.light(-1220, 100, 130, 260, c)
+    for y in (1050, 1350): K.light(-1960, y, 140, 300, c)                                # east of the tramway
+    K.light(-2060, 1000, 140, 280, c)
+    for y in (-1900, -1600, -1300, -1000): K.light(-2230, y, 150, 300, c)                # west canyon edge, south
+    K.light(-2230, 1840, CREST + 120, 300, c)                                            # west abutment corner
+    for y in (-1000, -600, -150): K.light(-352, y, 100, 220, c)                          # west boardwalk under the awnings
+    K.light(-460, -1065, 236, 260, '1 0.85 0.6')                                         # saloon gallery
+    for y in (-512, 64): K.light(850, y, 130, 280, c)                                    # behind the east row
+    for (x, y) in ((1900, 300), (2010, 620), (2220, 860), (2220, 420), (1800, 900)): K.light(x, y, 150, 300, c)   # under the tower / flume
+    K.light(1860, 620, CREST + 90, 260, c)                                               # catwalk under the tank
+    for y in (1150, 1450): K.light(300, y, 160, 280, c)                                  # east of the spillway
+    K.light(230, 1770, CREST + 110, 240, c)                                              # crest beside the gatehouse
+    for (x, y) in ((2100, -1200), (2100, -1700), (1150, -880), (2150, -700)): K.light(x, y, -100, 300, '0.8 0.95 1')   # lake bed
+    for y in (-1200, -800): K.light(2240, y, 150, 280, c)                                # east shore
+
+
 def vault():
     x0, y0, x1, y1, z = VAULT
     t = {'side': tx('gold_rock'), 'top': tx('gold_rock'), 'bot': tx('gold_rock')}
@@ -614,6 +644,7 @@ def vault():
     K.ammo('imperius', -200, -100, z); K.ammo('betty', 200, -100, z)
     K.teleporter((-48, y0 + 16, z), (48, y0 + 80, z + 96), dest=(-1050, -620, 0), angle=0, name='vault_exit')
     K.light(0, 0, z + 220, 600, '1 0.85 0.5')
+    for (lx, ly) in ((-240, -180), (240, -180), (-240, 180), (240, 180)): K.light(lx, ly, z + 160, 260, '1 0.85 0.5')
 
 
 # ------------------------------------------------------------------------------------------------ loot
@@ -627,17 +658,17 @@ def items():
     K.weapon('boaster', -590, -1250, 16, marker='orange')                         # saloon
     K.weapon('bubbleg', 620, -1144, 16, marker='green')                           # general store
     ammo = {'imperius': [(600, 1728, CREST), (-1880, 780, 0), (TWR[0] + 352, TWR[1], Z_CAT)],
-            'betty': [(1800, -1650, DECK), (1700, 900, 0), (-1880, -500, 0), (2064, 800, flume_z(800))],
+            'betty': [(1800, -1650, DECK), (1700, 900, 0), (-1880, -500, 0), (2064, 800, flume_z(800) + 6)],
             'balloony': [(-1500, 700, MESA[4]), (-2120, 1700, CREST), (-900, 1100, 0), (-600, -1100, 336)],
             'pumper': [(-1880, 100, 0), (-1100, 250, 0), (520, -640, 16), (-2100, -1300, 0)],
-            'splasher': [(-250, 250, 0), (250, -900, 0), (1000, -1250, 0), (-250, -1000, 0)],
+            'splasher': [(-250, 250, 0), (282, -900, 0), (1000, -1250, 0), (-280, -988, 0)],
             'boaster': [(-470, -1120, 144), (-250, -1300, 0), (520, 68, 16), (-600, 88, 16)],
-            'bubbleg': [(250, -300, 0), (-250, -500, 0), (1300, 200, 0), (-1500, -900, 0), (850, -1050, 0)]}
+            'bubbleg': [(282, -300, 0), (-250, -500, 0), (1300, 200, 0), (-1500, -900, 0), (850, -1050, 0)]}
     for w, spots in ammo.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
     for (x, y) in ((-1000, -700), (700, 1000), (1300, -350)): K.ammo('nipper', x, y, 0)
     K.item('item_armor_padshield', 1800, (WH[1] + WH[3]) / 2, zr + 144)            # wheelhouse roof
-    K.item('item_armor_shard', -680, -400, 16); K.item('item_armor_shard', 2064, 0, flume_z(0))
+    K.item('item_armor_shard', -680, -400, 16); K.item("item_armor_shard", 2064, 0, flume_z(0) + 6)
     K.item('holdable_floater', -620, -500, 272)                                    # bank roof
     K.item('item_speedy', (PAN[0] + PAN[2]) / 2, (PAN[1] + PAN[3]) / 2, 4)     # middle of the gold pan
     K.item('item_jumper', 1400, -900, LAKE_F)                                      # lake bottom
@@ -665,7 +696,7 @@ def shader():
 if __name__ == '__main__':
     GM.brush_textures(TX)
     models()
-    shell(); dam(); water(); town(); mesa(); tower(); flume(); steamer(); geysers(); dressing(); vault()
+    shell(); dam(); water(); town(); mesa(); tower(); flume(); steamer(); geysers(); dressing(); fill(); vault()
     items(); sounds()
     K.fix_items()
     shader()
