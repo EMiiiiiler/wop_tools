@@ -656,7 +656,7 @@ def items():
     K.weapon('imperius', 0, 1760, CREST + GATE_H + 16, marker='purple')           # top of the map: gatehouse roof
     K.weapon('betty', TWR[0], TWR[1], Z_CAP, marker='black')                      # water-tower cap
     K.weapon('balloony', CARTS[0], CARTS[1], MESA[4], marker='orange')            # inside the ore-cart carousel
-    K.weapon('pumper', -1990, 300, 0, marker='green')        # mine pit rim (bots never took it from the pit floor)
+    K.weapon('pumper', -1880, 160, 0, marker='green')        # mine chamber by the pit (bots never took it from the pit floor or rim)
     K.weapon('splasher', 0, 560, PLUNGE_F, marker='blue')                         # bottom of the plunge pool
     K.weapon('boaster', -590, -1250, 16, marker='orange')                         # saloon
     K.weapon('bubbleg', 620, -1144, 16, marker='green')                           # general store
