@@ -3,6 +3,7 @@
 Everything is procedural (woplib.texlib / woplib.models / meshlib). The geometry constants shared with the builder
 (water tower, carts, steamer) come in as arguments so the weapclip collision always matches the meshes.
 """
+import zlib
 import math
 import numpy as np
 from woplib import models as ML, texlib as TL
@@ -189,7 +190,7 @@ def materials(TX, facades):
     m('bars', TL.metal((50, 50, 52), n=64), shade=60)
     for key, (text, col) in facades.items():
         m('fac_' + key, facade(text, PAINT[col]), shade=20)
-        m('side_' + key, siding(PAINT[col], n=256, seed=hash(key) % 97), shade=20)
+        m('side_' + key, siding(PAINT[col], n=256, seed=zlib.crc32(key.encode()) % 97), shade=20)
 
 
 # ================================================================================================= small builders

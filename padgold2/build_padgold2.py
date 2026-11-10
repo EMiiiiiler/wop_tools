@@ -16,7 +16,7 @@ while not os.path.exists(os.path.join(ROOT, 'wopmap.py')): ROOT = os.path.dirnam
 sys.path.insert(0, ROOT); sys.path.insert(0, os.path.join(ROOT, 'padgold')); sys.path.insert(0, HERE)
 import wopmap
 from wopmap import box, cyl, hull, carve, sub_rects, sign_box
-from woplib.kit import MapKit, CAULK, WCLIP, CLIP
+from woplib.kit import MapKit, CAULK, WCLIP, CLIP, TRIG
 from woplib import models as ML, shaders as SH, texlib as TL, huts
 import gold_models as GM
 import gold2_models as G2
@@ -45,9 +45,11 @@ DAM = (-768, 1600, 768, 1856)                         # dam wall; abutments carr
 RES_F, RES_W = 544, 564                               # reservoir behind the dam: floor, water top (open to the horizon)
 GATE = (-144, 1664, 144, 1856); GATE_H = 144          # gatehouse on the crest (Imperius on its roof)
 SPILL = (-192, 800, 192, 1600)                        # spillway slide: crest -> plunge pool (35.8 deg)
+SPILL_PUSH = [(1300, 1440), (1060, 1200), (880, 980)]; SPILL_SPEED = 520     # slide push zones (y ranges) on the spillway
 PLUNGE = (-320, 400, 320, 800); PLUNGE_F = -160
 WTOP = -8
 RIV1 = (-192, -1912, 192, 400); RIV2 = (192, -1912, 1100, -1528); RIV_F = -32; KERB = 32    # Main Street river + east leg
+RIV1_PUSH = [(0, 160), (-660, -500), (-1260, -1100)]; RIV2_PUSH = [(420, 580), (760, 900)]; RIV_SPEED = 170
 LAKE = (1100, -1960, 2200, -500); LAKE_F = -224
 PAN = (-1800, -1750, -1200, -1150); PAN_F = -16       # giant gold pan (octagonal splash pool)
 FRONT, DEPTH, BW = 400, 400, 96                       # building fronts at x = +-400, 400 deep, 96u boardwalk
@@ -224,6 +226,12 @@ def dam():
     K.reserve(((sx0 - 24, sy0, 0), (sx1 + 24, sy1, CREST)))
     K.route('crest', (-600, 1728, CREST), (600, 1728, CREST))
     K.speaker(0, 1000, 200, 'ambient/water_flowing')
+    # the slide push: three sloped zones lying on the ramp (not cut into it), none at the crest lip or the pool edge
+    deg = math.degrees(math.atan2(CREST, sy1 - sy0))
+    zs = lambda y: CREST * (y - sy0) / (sy1 - sy0)
+    for k, (ya, yb) in enumerate(SPILL_PUSH):
+        K.current((sx0, ya, zs(ya)), (sx1, yb, zs(yb) + 64), 270, speed=SPILL_SPEED, wait=0.3, name=f'spill{k}', pitch=deg,
+                  brush=hull([(x, y, zs(y) + dz) for x in (sx0, sx1) for y in (ya, yb) for dz in (2, 64)], TRIG, round_pts=False))
 
 
 # ------------------------------------------------------------------------------------------------ water
@@ -244,6 +252,11 @@ def water():
     K.water_box((RIV1[0], RIV1[1], RIV_F), (RIV1[2], RIV1[3], WTOP), tx('creek'), cutters=k1)
     K.water_box((RIV2[0], RIV2[1], RIV_F), (RIV2[2], RIV2[3], WTOP), tx('creek'), cutters=k2)
     for y in (200, -600, -1400): K.speaker(0, y, 16, 'ambient/water_flowing')
+    # gentle downstream current: short zones in mid-channel, >= 64u off both kerb steps, none near the weir or the lake
+    for k, (ya, yb) in enumerate(RIV1_PUSH):
+        K.current((-96, ya, RIV_F + 4), (96, yb, WTOP), 270, speed=RIV_SPEED, wait=0.4, name=f'riv1_{k}')
+    for k, (xa, xb) in enumerate(RIV2_PUSH):
+        K.current((xa, RIV2[1] + 96, RIV_F + 4), (xb, RIV2[3] - 96, WTOP), 0, speed=RIV_SPEED, wait=0.4, name=f'riv2_{k}')
     # lake: steps out on the west shore; steamer hull, pier and rocks stand on the lake floor
     x0, y0, x1, y1 = LAKE
     ls = K.stairs16(x0, -1500, x0 + 448, -1300, LAKE_F, 0, 'w', {'top': tx('boardwalk'), 'side': tx('timber')})

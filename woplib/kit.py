@@ -527,16 +527,18 @@ class MapKit:
             pts += [(x, y, z0), (x, y, z0 + step_h if low else zt)]
         return hull(pts, CAULK)
 
-    def current(self, mn, mx, yaw, speed=200, wait=0.4, name='current'):
+    def current(self, mn, mx, yaw, speed=200, wait=0.4, name='current', pitch=0, brush=None):
         """a water current (lazy river, whirlpool): trigger_multiple -> target_push along `yaw`. target_push REPLACES
         the player's velocity, so keep zones short (~160u), pulsed (wait 0.3-0.5) and off the exits; bspc knows
-        nothing about them, so no item may depend on one."""
+        nothing about them, so no item may depend on one. pitch > 0 pushes downward (Q3 angles): a slide push along a
+        slope (padgold2 spillway); brush = a trigger-textured hull to use instead of the box (a sloped zone that sits on
+        a ramp instead of cutting into it)."""
         name = self.uniq(name)
         c = [(a + b) / 2 for a, b in zip(mn, mx)]
-        self.M.ent('trigger_multiple', brushes=[box(mn, mx, TRIG)], target=name, wait=wait)
+        self.M.ent('trigger_multiple', brushes=[brush or box(mn, mx, TRIG)], target=name, wait=wait)
         self.M.ent('target_push', (round(c[0]), round(c[1]), round(mx[2] + 40)), targetname=name,
-                   angles=f'0 {yaw:g} 0', speed=speed)
-        self.spots.setdefault('currents', []).append(dict(mn=list(mn), mx=list(mx), yaw=yaw, speed=speed))
+                   angles=f'{pitch:g} {yaw:g} 0', speed=speed)
+        self.spots.setdefault('currents', []).append(dict(mn=list(mn), mx=list(mx), yaw=yaw, pitch=pitch, speed=speed))
 
     def flume(self, path, top_tex, side_tex, half_width=96, wall=40, thick=16, wall_thick=16, supports=(),
               support_tex=None, keep=120):
