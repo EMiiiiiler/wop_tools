@@ -1,0 +1,18 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padgold2
+crest:              -600,1728,576 > 600,1728,576
+saloon_door:        -264,-1120,0 > -470,-1120,16
+saloon_stair:       -700,-1010,16 > -470,-904,144
+bank_door:          -264,-488,0 > -470,-488,16
+sheriff_door:       -264,88,0 > -470,88,16
+store_door:         264,-1144,0 > 470,-1144,16
+smith_door:         264,-520,0 > 470,-520,16
+assay_door:         264,68,0 > 470,68,16
+mine_through:       -1880,-800,0 > -1880,1000,0
+mine_pit:           -2140,-110,0 > -2060,220,-128
+tramway:            -2120,836,384 > -2120,1664,576
+tower_bridge:       1500,850,576 > 1500,1680,576
+dam_stairs:         956,1236,0 > 948,1680,576
+flume_walk:         2064,-360,68 > 2064,1680,576
+pier:               1004,-1040,0 > 1700,-1040,48
+steamer_stairs:     1700,-1060,48 > 1800,-1200,224
