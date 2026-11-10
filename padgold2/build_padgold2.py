@@ -656,14 +656,14 @@ def items():
     K.weapon('imperius', 0, 1760, CREST + GATE_H + 16, marker='purple')           # top of the map: gatehouse roof
     K.weapon('betty', TWR[0], TWR[1], Z_CAP, marker='black')                      # water-tower cap
     K.weapon('balloony', CARTS[0], CARTS[1], MESA[4], marker='orange')            # inside the ore-cart carousel
-    K.weapon('pumper', PIT[2] - 40, PIT[3] - 60, PIT_F, marker='green')           # mine pit
+    K.weapon('pumper', -1990, 300, 0, marker='green')        # mine pit rim (bots never took it from the pit floor)
     K.weapon('splasher', 0, 560, PLUNGE_F, marker='blue')                         # bottom of the plunge pool
     K.weapon('boaster', -590, -1250, 16, marker='orange')                         # saloon
     K.weapon('bubbleg', 620, -1144, 16, marker='green')                           # general store
     ammo = {'imperius': [(600, 1728, CREST), (-1880, 780, 0), (TWR[0] + 352, TWR[1], Z_CAT)],
             'betty': [(1800, -1650, DECK), (1700, 900, 0), (-1880, -500, 0), (2064, 800, flume_z(800) + 6)],
             'balloony': [(-1500, 700, MESA[4]), (-2120, 1700, CREST), (-900, 1100, 0), (-600, -1100, 336)],
-            'pumper': [(-1880, 100, 0), (-1100, 250, 0), (520, -640, 16), (-2100, -1300, 0)],
+            'pumper': [(PIT[2] - 40, PIT[3] - 60, PIT_F), (-1100, 250, 0), (520, -640, 16), (-2100, -1300, 0)],
             'splasher': [(-250, 250, 0), (282, -900, 0), (1000, -1250, 0), (-280, -988, 0)],
             'boaster': [(-470, -1120, 144), (-250, -1300, 0), (520, 68, 16), (-600, 88, 16)],
             'bubbleg': [(282, -300, 0), (-250, -500, 0), (1300, 200, 0), (-1500, -900, 0), (850, -1050, 0)]}
