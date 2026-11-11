@@ -577,6 +577,241 @@ class MapKit:
         self.reserve(((hx0, wy0, hz0), (hx1, wy1, hz1)))
         return out
 
+    # ------------------------------------------------------------------ slides, tube lifts, wire cages (padhamster)
+    def slide(self, pts, hw, wall_h, floor_tex, roof=False, floor_t=16, wall_t=8, wall_tex=WCLIP):
+        """slide / flume collision along a polyline pts [(x, y, z)...] (z = slide floor), promoted from the
+        moosefalls/padaztec/padpirate/padspace copies: floor wedges (two triangles per segment, floor_t thick, floor_tex:
+        a slick shader slides you down; keep walkable stretches <= 40 deg), side walls wall_tex, wall_h high, and an
+        optional roof. Mitred at the bends. The visible tube is a separate MD3 (models.glass_tube). Returns brushes."""
+        P = [np.array(p, float) for p in pts]
+        n = len(P)
+        perps = []
+        for i in range(n - 1):
+            d = P[i + 1][:2] - P[i][:2]; d /= np.linalg.norm(d); perps.append(np.array([-d[1], d[0]]))
+        jl = []
+        for k in range(n):
+            m = perps[0] if k == 0 else perps[-1] if k == n - 1 else (perps[k - 1] + perps[k])
+            m = m / np.linalg.norm(m)
+            jl.append((m, 1.0 / max(0.5, float(m @ perps[min(k, n - 2)]))))
+        out = []
+
+        def edge(c, m, f, off): return c[:2] + m * off * f
+        for i in range(n - 1):
+            (ma, fa), (mb, fb) = jl[i], jl[i + 1]
+            ca, cb = P[i], P[i + 1]
+            za, zb = ca[2], cb[2]
+            La, Ra = edge(ca, ma, fa, hw), edge(ca, ma, fa, -hw)
+            Lb, Rb = edge(cb, mb, fb, hw), edge(cb, mb, fb, -hw)
+            for p1, p2, p3, z1, z2, z3 in ((La, Ra, Lb, za, za, zb), (Ra, Rb, Lb, za, zb, zb)):
+                out.append(hull([(p1[0], p1[1], z1), (p2[0], p2[1], z2), (p3[0], p3[1], z3), (p1[0], p1[1], z1 - floor_t),
+                                 (p2[0], p2[1], z2 - floor_t), (p3[0], p3[1], z3 - floor_t)], floor_tex, round_pts=False))
+            for side in (1, -1):
+                ia, ib = edge(ca, ma, fa, side * hw), edge(cb, mb, fb, side * hw)
+                oa, ob = edge(ca, ma, fa, side * (hw + wall_t)), edge(cb, mb, fb, side * (hw + wall_t))
+                pw = []
+                for (p, zz) in ((ia, za), (ib, zb), (oa, za), (ob, zb)):
+                    pw += [(p[0], p[1], zz - floor_t), (p[0], p[1], zz + wall_h)]
+                out.append(hull(pw, wall_tex, round_pts=False))
+            if roof:
+                oLa, oRa = edge(ca, ma, fa, hw + wall_t), edge(ca, ma, fa, -hw - wall_t)
+                oLb, oRb = edge(cb, mb, fb, hw + wall_t), edge(cb, mb, fb, -hw - wall_t)
+                for p1, p2, p3, z1, z2, z3 in ((oLa, oRa, oLb, za, za, zb), (oRa, oRb, oLb, za, zb, zb)):
+                    out.append(hull([(p1[0], p1[1], z1 + wall_h), (p2[0], p2[1], z2 + wall_h), (p3[0], p3[1], z3 + wall_h),
+                                     (p1[0], p1[1], z1 + wall_h + 6), (p2[0], p2[1], z2 + wall_h + 6),
+                                     (p3[0], p3[1], z3 + wall_h + 6)], wall_tex, round_pts=False))
+        self.add(out)
+        for b in out:
+            mn, mx = b.bounds(); self.occupy(mn[0], mn[1], mx[0], mx[1], mn[2], mx[2])
+        self.spots.setdefault('slides', []).append(dict(pts=[list(map(float, p)) for p in P], hw=hw))
+        return out
+
+    def tube_lift(self, x, y, z, land, apex, name, glass_sh, ring_sh=None, top=None, r=60, arc=False, mouth=None, **pad):
+        """the 'suction pipe': a jump pad (K.jumppad, so bspc links it like any pad) inside a glass tube MD3, never a
+        ladder (bots don't climb ladders). arc=False: a vertical tube from the pad up to `top` (a lift up through a hole
+        in the floor above: give that floor a collar so nobody drops back in); arc=True: the tube follows the real
+        flight until it comes down to 150u over the landing. mouth = shader for a bell mouth ring at the pad. Returns
+        the pad plan (dict from padmath.plan)."""
+        from . import models as ML
+        P = self.jumppad(x, y, z, land, apex, name, **pad)
+        o = P['origin']
+        if arc:
+            pts = padmath.arc(o, P['target'], land[2], dt=0.02)
+            path = [np.array([x, y, z + 6.0]), np.array([x, y, z + 6.0 + r])]     # vertical foot on the pad disc
+            for i, p in enumerate(pts[1:]):
+                if p[2] < land[2] + 150 and p[2] < pts[i][2]: break
+                if p[2] > z + 6 + 2 * r: path.append(np.array(p, float))
+            path = path[:2] + path[2::3] + ([path[-1]] if len(path) > 5 else [])
+        else:
+            path = [np.array([x, y, z + 6.0]), np.array([x, y, float(top)])]
+        X = ML.Model()
+        c = np.array([x, y, z], float)
+        rel = [p - c for p in path]
+        ML.glass_tube(X, rel, r, glass_sh, ring_sh)
+        if mouth: ML.lathe(X.mesh(mouth), [(r + 28, 0), (r + 22, 10), (r + 8, 26), (r + 4, 40)], 24)
+        place = ML.save(name + '_tube', X)
+        self.custom(place, x, y, z, lit=False, occupy=False)
+        return P
+
+    def cage_box(self, name, mn, mx, wire_sh, rim_sh=None, floor_sh=None, sides='nsew', clip_sides=None, doors=(),
+                 rim=40, clip_t=8, roof=False, tile=64.0, door_len=120):
+        """rectangular wire cage: a plastic tray (floor_sh at mn z when given, rim `rim` high in rim_sh) and wire above
+        it up to mx z (alpha MD3 surfaces, nonsolid). Collision: the rim is common/weapclip, the wire is common/clip, so
+        players can't walk through the bars but can shoot through them. sides = which sides get wire ('n' = +y ...),
+        clip_sides = which need collision (default `sides`; leave out the sides against a wall or a shelf panel).
+        doors = [(side, a, b)]: an open gap through rim and wire (a..b along x for n/s, along y for e/w); the door's wire
+        panel lies flat on the floor outside (door_len long). roof=True draws a wire roof. Returns the misc_model."""
+        from . import models as ML
+        (x0, y0, z0), (x1, y1, z1) = mn, mx
+        clip_sides = sides if clip_sides is None else clip_sides
+        X = ML.Model()
+        W = X.mesh(wire_sh)
+        span = {'n': (x0, x1), 's': (x0, x1), 'e': (y0, y1), 'w': (y0, y1)}
+
+        def segs(s):
+            lo, hi = span[s]
+            cut = sorted((max(lo, a), min(hi, b)) for (ds, a, b) in doors if ds == s)
+            out, p = [], lo
+            for a, b in cut:
+                if a > p: out.append((p, a))
+                p = max(p, b)
+            if p < hi: out.append((p, hi))
+            return [(a, b) for a, b in out if b - a > 1]
+
+        def pt(s, u, zz, inset=0.0):
+            if s == 'n': return (u, y1 - inset, zz)
+            if s == 's': return (u, y0 + inset, zz)
+            if s == 'e': return (x1 - inset, u, zz)
+            return (x0 + inset, u, zz)
+        nrm = {'n': (0, 1, 0), 's': (0, -1, 0), 'e': (1, 0, 0), 'w': (-1, 0, 0)}
+        for s in 'nsew':
+            for a, b in segs(s):
+                if s in sides:      # wire panel above the rim
+                    q = [pt(s, a, z0 + rim), pt(s, b, z0 + rim), pt(s, b, z1), pt(s, a, z1)]
+                    W.poly(q, nrm[s], [(a / tile, -(z0 + rim) / tile), (b / tile, -(z0 + rim) / tile), (b / tile, -z1 / tile),
+                                       (a / tile, -z1 / tile)])
+                if rim_sh and rim > 0:   # tray rim: outer, inner and top faces
+                    R = X.mesh(rim_sh)
+                    t = clip_t
+                    R.quad(pt(s, a, z0), pt(s, b, z0), pt(s, b, z0 + rim), pt(s, a, z0 + rim), tile=128, n=nrm[s])
+                    inn = tuple(-v for v in nrm[s])
+                    R.quad(pt(s, a, z0, t), pt(s, b, z0, t), pt(s, b, z0 + rim, t), pt(s, a, z0 + rim, t), tile=128, n=inn)
+                    R.quad(pt(s, a, z0 + rim), pt(s, b, z0 + rim), pt(s, b, z0 + rim, t), pt(s, a, z0 + rim, t), tile=128,
+                           n=(0, 0, 1))
+                    for u in (a, b):        # end caps at doors / corners
+                        if u not in span[s]:
+                            R.quad(pt(s, u, z0), pt(s, u, z0, t), pt(s, u, z0 + rim, t), pt(s, u, z0 + rim), tile=128)
+                if s in clip_sides:
+                    lo = [pt(s, a, 0, 0), pt(s, b, 0, clip_t)]
+                    bx0, bx1 = min(lo[0][0], lo[1][0]), max(lo[0][0], lo[1][0])
+                    by0, by1 = min(lo[0][1], lo[1][1]), max(lo[0][1], lo[1][1])
+                    if bx1 - bx0 < 1 or by1 - by0 < 1: continue
+                    if rim > 0: self.add(box((bx0, by0, z0), (bx1, by1, z0 + rim), WCLIP))
+                    self.add(box((bx0, by0, z0 + rim), (bx1, by1, z1), CLIP))
+                    self.occupy(bx0, by0, bx1, by1, z0, z1)
+            for (ds, a, b) in doors:          # open door panel lying flat outside
+                if ds != s: continue
+                o = tuple(v * (door_len) for v in nrm[s])
+                p0, p1 = pt(s, a + 4, z0 + 1), pt(s, b - 4, z0 + 1)
+                q = [p0, p1, tuple(p1[k] + o[k] for k in range(3)), tuple(p0[k] + o[k] for k in range(3))]
+                W.poly(q, (0, 0, 1), [(0, 0), ((b - a) / tile, 0), ((b - a) / tile, door_len / tile), (0, door_len / tile)])
+        if floor_sh:
+            X.mesh(floor_sh).poly([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)], (0, 0, 1),
+                                  [(x0 / 256, -y0 / 256), (x1 / 256, -y0 / 256), (x1 / 256, -y1 / 256), (x0 / 256, -y1 / 256)])
+        if roof:
+            W.poly([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], (0, 0, -1),
+                   [(x0 / tile, y0 / tile), (x1 / tile, y0 / tile), (x1 / tile, y1 / tile), (x0 / tile, y1 / tile)])
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        X.shift((cx, cy, z0))
+        self.spots.setdefault('cages', []).append(dict(name=name, mn=list(mn), mx=list(mx), doors=[list(d) for d in doors]))
+        return self._cage_models(name, X, wire_sh, cx, cy, z0)
+
+    def _cage_models(self, name, X, wire_sh, cx, cy, z0):
+        """alpha wire (vertex lit, lit=False) and the lightmapped tray/rim/roof go into two MD3s: name_wire, name"""
+        from . import models as ML
+        Wm = ML.Model(); Wm.m[wire_sh] = X.m.pop(wire_sh)
+        self.custom(ML.save(name + '_wire', Wm), cx, cy, z0, lit=False, occupy=False)
+        if any(len(m) for m in X.m.values()):
+            return self.custom(ML.save(name, X), cx, cy, z0, occupy=False)
+
+    def cage_round(self, name, c, r, z0, z1, wire_sh, rim_sh=None, floor_sh=None, roof_sh=None, n=16, door=None,
+                   rim=16, clip_t=8, roof_t=16, tile=64.0):
+        """round wire cage (bird cage) on a surface at z0: tray (floor_sh, rim_sh), wire cylinder to z1 (alpha MD3), a
+        flat walkable roof slab (roof_sh, z1 .. z1 + roof_t, weapclip) so the top is a clear firing spot. Collision: n
+        thin common/clip wall segments (shots fly through), weapclip rim segments, both skipped inside the door window
+        door = (angle_deg, width). The door's wire panel stands open outside, hinged at one jamb. Returns the misc_model."""
+        from . import models as ML
+        cx, cy = c
+        X = ML.Model()
+        W = X.mesh(wire_sh)
+        nw = max(24, n * 2)
+        dA = None if door is None else (door[0], math.degrees(door[1] / r) / 2)
+
+        def in_door(a):
+            return dA is not None and abs((a - dA[0] + 180) % 360 - 180) < dA[1]
+        angs = np.linspace(0, 360, nw + 1)
+        for k in range(nw):
+            a0, a1 = angs[k], angs[k + 1]
+            if in_door((a0 + a1) / 2): continue
+            p = [(r * math.cos(math.radians(a)), r * math.sin(math.radians(a))) for a in (a0, a1)]
+            am = math.radians((a0 + a1) / 2)
+            u0, u1 = math.radians(a0) * r / tile, math.radians(a1) * r / tile
+            W.poly([(p[0][0], p[0][1], rim), (p[1][0], p[1][1], rim), (p[1][0], p[1][1], z1 - z0), (p[0][0], p[0][1], z1 - z0)],
+                   (math.cos(am), math.sin(am), 0), [(u0, -rim / tile), (u1, -rim / tile), (u1, -(z1 - z0) / tile), (u0, -(z1 - z0) / tile)])
+            if rim_sh and rim > 0:
+                R = X.mesh(rim_sh)
+                q = [(r * math.cos(math.radians(a)), r * math.sin(math.radians(a))) for a in (a0, a1)]
+                qi = [((r - clip_t) * math.cos(math.radians(a)), (r - clip_t) * math.sin(math.radians(a))) for a in (a0, a1)]
+                R.quad((q[0][0], q[0][1], 0), (q[1][0], q[1][1], 0), (q[1][0], q[1][1], rim), (q[0][0], q[0][1], rim), tile=64,
+                       n=(math.cos(am), math.sin(am), 0))
+                R.quad((qi[0][0], qi[0][1], 0), (qi[1][0], qi[1][1], 0), (qi[1][0], qi[1][1], rim), (qi[0][0], qi[0][1], rim),
+                       tile=64, n=(-math.cos(am), -math.sin(am), 0))
+                R.quad((q[0][0], q[0][1], rim), (q[1][0], q[1][1], rim), (qi[1][0], qi[1][1], rim), (qi[0][0], qi[0][1], rim),
+                       tile=64, n=(0, 0, 1))
+        if floor_sh:
+            from meshlib import disc
+            disc(X.mesh(floor_sh), r - clip_t, 1.0, up=True, n=nw, uvscale=256)   # 1u up: no z-fight with the stand
+        if roof_sh:
+            from meshlib import disc
+            Rf = X.mesh(roof_sh)
+            ro = r + 12
+            disc(Rf, ro, z1 - z0 + roof_t, up=True, n=nw, uvscale=256)
+            disc(Rf, ro, z1 - z0, up=False, n=nw, uvscale=256)
+            for k in range(nw):
+                a0, a1 = math.radians(angs[k]), math.radians(angs[k + 1])
+                am = (a0 + a1) / 2
+                Rf.quad((ro * math.cos(a0), ro * math.sin(a0), z1 - z0), (ro * math.cos(a1), ro * math.sin(a1), z1 - z0),
+                        (ro * math.cos(a1), ro * math.sin(a1), z1 - z0 + roof_t), (ro * math.cos(a0), ro * math.sin(a0), z1 - z0 + roof_t),
+                        tile=64, n=(math.cos(am), math.sin(am), 0))
+        if dA is not None:                    # open door panel, hinged at the jamb, swung out 100 degrees
+            aj = math.radians(dA[0] + dA[1])
+            hx, hy = r * math.cos(aj), r * math.sin(aj)
+            t = np.array([-math.sin(aj), math.cos(aj)]); out = np.array([math.cos(aj), math.sin(aj)])
+            dvec = out * 0.98 + t * 0.17
+            dvec /= np.linalg.norm(dvec)
+            dw = door[1]; dh = min(z1 - z0 - rim, dw * 1.6)
+            e = (hx + dvec[0] * dw, hy + dvec[1] * dw)
+            nn = (-dvec[1], dvec[0], 0)
+            W.poly([(hx, hy, 0.5), (e[0], e[1], 0.5), (e[0], e[1], dh), (hx, hy, dh)], nn,
+                   [(0, 0), (dw / tile, 0), (dw / tile, -dh / tile), (0, -dh / tile)])
+        e = self._cage_models(name, X, wire_sh, cx, cy, z0)
+        # collision
+        ca = np.linspace(0, 360, n + 1)
+        for k in range(n):
+            a0, a1 = ca[k], ca[k + 1]
+            if in_door((a0 + a1) / 2): continue
+            pts = []
+            for a in (a0, a1):
+                for rr in (r - clip_t, r):
+                    pts.append((cx + rr * math.cos(math.radians(a)), cy + rr * math.sin(math.radians(a))))
+            if rim > 0: self.add(hull([(p[0], p[1], z0) for p in pts] + [(p[0], p[1], z0 + rim) for p in pts], WCLIP, round_pts=False))
+            self.add(hull([(p[0], p[1], z0 + rim) for p in pts] + [(p[0], p[1], z1) for p in pts], CLIP, round_pts=False))
+            self.occupy(min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts), z0, z1)
+        if roof_sh:      # the roof slab (the inside stays free for props and pickups)
+            self.add(cyl(round(cx), round(cy), r + 12, z1, z1 + roof_t, WCLIP, n))
+            self.occupy_r(cx, cy, r + 12, z1, z1 + roof_t)
+        self.spots.setdefault('cages', []).append(dict(name=name, c=[cx, cy], r=r, z0=z0, z1=z1, door=list(door or [])))
+        return e
+
     def crawl(self, mn, mx):
         """declare an intended crouch-only space (lint_map's headroom check skips it)"""
         self.spots['crawl'].append([list(mn), list(mx)])

@@ -543,3 +543,37 @@ def test_quick_preview_renders_unlit_meta_bsp(tmp_path):
     rc, o = run(os.path.join('preview', 'bsp2scene.py'), mp[:-4] + '.bsp', page, '--vfs', str(tmp_path), '--unlit', '--compact',
                 '--threeurl', 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js')
     assert rc == 0 and os.path.exists(page) and '0 lightmaps' in o, o[-800:]
+
+
+# ------------------------------------------------------------------------------------------------ padhamster additions
+def test_rotor_ring_round_a_static_centre_is_fine(tmp_path):
+    """a ball rolling round a cat tree sweeps an annulus: statics inside its hole are fine, ones on the ring warn"""
+    def extra(K, hit):
+        K.ent('func_rotating', brushes=[K._origin_brush((0, 0, 64)), box((600, -40, 8), (680, 40, 88), WCLIP)], speed=10)
+        K.add(box((-200, -200, 0), (200, 200, 300), 't/wall'))
+        if hit: K.add(box((-40, 600, 0), (40, 680, 100), 't/wall'))
+    for hit in (False, True):
+        mp, _ = room(tmp_path / str(hit), extra=lambda K: extra(K, hit))
+        rc, o = lint(mp, 'rotors')
+        assert ('sweeps into' in o) == hit, o
+
+
+def test_cage_box_wire_is_clip_rim_is_weapclip_doors_open(tmp_path):
+    ML.configure('t', str(tmp_path))
+    ML.T('w', ML.fill(32, (200, 200, 200)), alpha=np.full((32, 32), 255.0)); ML.T('r', ML.fill(32, (90, 160, 230)))
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    K.cage_box('cage', (-400, 0, 0), (400, 300, 300), ML.S('w', 'alpha'), rim_sh=ML.S('r', 'lm'), clip_sides='s',
+               doors=[('s', -50, 50)], rim=40)
+    clips = [b for b in K.M.world if b.textures() == {'common/clip'}]
+    rims = [b for b in K.M.world if b.textures() == {'common/weapclip'}]
+    assert len(clips) == 2 and len(rims) == 2                        # front wall split by the door
+    assert all(b.bounds()[1][0] <= -50 or b.bounds()[0][0] >= 50 for b in clips + rims)
+    assert os.path.exists(tmp_path / 'models' / 't' / 'cage_wire.md3') and os.path.exists(tmp_path / 'models' / 't' / 'cage.md3')
+    assert K.free(0, 150, 20, 0, 56)                                 # the inside stays free for props
+
+
+def test_slide_builds_floor_walls_and_reserves(tmp_path):
+    K = MapKit('wop_t', 't', 'T', (-2000, -2000, 2000, 2000))
+    bs = K.slide([(0, 1000, 800), (0, 0, 16), (0, -200, 16)], 48, 64, 't/slide')
+    assert sum('t/slide' in b.textures() for b in bs) == 4 and sum(b.textures() == {'common/weapclip'} for b in bs) == 4
+    assert not K.free(0, 500, 20, 400, 500)
