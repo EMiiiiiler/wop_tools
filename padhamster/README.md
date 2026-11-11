@@ -54,5 +54,18 @@ Files: `hm_layout.py` (all coordinates), `hm_models.py` (textures + custom MD3/I
   `models.glass_tube()`. lint `rotors` understands annular sweeps (a ring round a static centre). bsp2scene: model2 and BSP
   surfaces sharing a shader no longer crash the page (and model2-only groups draw all their triangles).
 
-## Checks
-Quick preview stage only (see the build report); full build not run yet.
+## Changes after the approved preview (forced by checks)
+- Sightlines (13.8 % at first): second walk-in cubby and two sisal drums under the cat tree platforms, two display
+  gondolas, food boxes/cans/sacks in the middle band and under the shelf unit, plant pots under the sill -> 3.9 %.
+- Bots skipped Balloony and Betty in a run: direct floor pads onto the cat tree top and onto the slide deck; Betty moved
+  next to the lift B arrival in the penthouse. Boaster was never taken in the 48u crouch tube: the tube is now 64u high.
+- Lift holes 112u half size with a 48u collar (bspc's flight hit the 96u collar); food boxes moved out from under the
+  burrow pad's arc; under-counter Bubble G ammo moved to the reachable floor compartment.
+- Catalog gummy bear and bonsais swapped for flower_yellow (q3map2 UV error / degenerate triangles in those models).
+- Looks: pet carrier with seam band, latches, vent louvres, door frame, folded handle and an open grille door; bird cage
+  with a domed top (`cage_round(dome=)`) under a smaller flat standing cap.
+
+## Checks (final build, report.md DONE)
+gen PASS, lint PASS (0 warnings), compile PASS (1 portal, final light -bounce 2 116 s), aas PASS (18 routes, every pad
+linked), lights PASS (median 104, dark 0.6 %, bright 3.2 %), sight PASS (3.9 % at floor level), bots PASS (63 kills, every
+weapon and the vault items taken, no environmental deaths), render PASS (walk-through 4.5 MB), package PASS (pk3 3.3 MB).
