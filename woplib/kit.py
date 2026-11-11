@@ -734,33 +734,51 @@ class MapKit:
             return self.custom(ML.save(name, X), cx, cy, z0, occupy=False)
 
     def cage_round(self, name, c, r, z0, z1, wire_sh, rim_sh=None, floor_sh=None, roof_sh=None, n=16, door=None,
-                   rim=16, clip_t=8, roof_t=16, tile=64.0):
-        """round wire cage (bird cage) on a surface at z0: tray (floor_sh, rim_sh), wire cylinder to z1 (alpha MD3), a
-        flat walkable roof slab (roof_sh, z1 .. z1 + roof_t, weapclip) so the top is a clear firing spot. Collision: n
-        thin common/clip wall segments (shots fly through), weapclip rim segments, both skipped inside the door window
+                   rim=16, clip_t=8, roof_t=16, tile=64.0, dome=None, rib_sh=None):
+        """round wire cage (bird cage) on a surface at z0: tray (floor_sh, rim_sh), wire cylinder (alpha MD3) and a flat
+        walkable roof cap (roof_sh, z1 .. z1 + roof_t, weapclip) so the top is a clear firing spot. dome = (zd, r_top):
+        the wire runs straight up to zd, then curves in to r_top at z1 (a domed bird-cage top under a smaller cap of
+        radius r_top + 14); rib_sh draws metal ribs up the dome. Collision: n thin common/clip wall segments (shots fly
+        through; a second ring at the dome's mid radius), weapclip rim segments, skipped inside the door window
         door = (angle_deg, width). The door's wire panel stands open outside, hinged at one jamb. Returns the misc_model."""
         from . import models as ML
+        from meshlib import disc, tube
         cx, cy = c
         X = ML.Model()
         W = X.mesh(wire_sh)
         nw = max(24, n * 2)
         dA = None if door is None else (door[0], math.degrees(door[1] / r) / 2)
+        zd, rt = (dome if dome else (z1, r))
+        H, HD = z1 - z0, zd - z0
 
         def in_door(a):
             return dA is not None and abs((a - dA[0] + 180) % 360 - 180) < dA[1]
+        # dome profile (r, z) from the top of the straight wall to the cap: a quarter-ellipse
+        prof = [(r, HD)] + ([(rt + (r - rt) * math.cos(t), HD + (H - HD) * math.sin(t))
+                             for t in np.linspace(0, math.pi / 2, 7)[1:]] if dome else [])
         angs = np.linspace(0, 360, nw + 1)
         for k in range(nw):
             a0, a1 = angs[k], angs[k + 1]
-            if in_door((a0 + a1) / 2): continue
-            p = [(r * math.cos(math.radians(a)), r * math.sin(math.radians(a))) for a in (a0, a1)]
+            ca0, sa0, ca1, sa1 = (math.cos(math.radians(a0)), math.sin(math.radians(a0)), math.cos(math.radians(a1)),
+                                  math.sin(math.radians(a1)))
             am = math.radians((a0 + a1) / 2)
             u0, u1 = math.radians(a0) * r / tile, math.radians(a1) * r / tile
-            W.poly([(p[0][0], p[0][1], rim), (p[1][0], p[1][1], rim), (p[1][0], p[1][1], z1 - z0), (p[0][0], p[0][1], z1 - z0)],
-                   (math.cos(am), math.sin(am), 0), [(u0, -rim / tile), (u1, -rim / tile), (u1, -(z1 - z0) / tile), (u0, -(z1 - z0) / tile)])
-            if rim_sh and rim > 0:
+            door_here = in_door((a0 + a1) / 2)
+            if not door_here:
+                W.poly([(r * ca0, r * sa0, rim), (r * ca1, r * sa1, rim), (r * ca1, r * sa1, HD), (r * ca0, r * sa0, HD)],
+                       (math.cos(am), math.sin(am), 0), [(u0, -rim / tile), (u1, -rim / tile), (u1, -HD / tile), (u0, -HD / tile)])
+            elif HD - rim > 300:                 # wire over the door opening above a 300u doorway
+                zt = rim + 300
+                W.poly([(r * ca0, r * sa0, zt), (r * ca1, r * sa1, zt), (r * ca1, r * sa1, HD), (r * ca0, r * sa0, HD)],
+                       (math.cos(am), math.sin(am), 0), [(u0, -zt / tile), (u1, -zt / tile), (u1, -HD / tile), (u0, -HD / tile)])
+            for (ra, za), (rb, zb) in zip(prof, prof[1:]):          # dome band
+                nz = (ra - rb); nr = (zb - za); ln = math.hypot(nz, nr); nz /= ln; nr /= ln
+                W.poly([(ra * ca0, ra * sa0, za), (ra * ca1, ra * sa1, za), (rb * ca1, rb * sa1, zb), (rb * ca0, rb * sa0, zb)],
+                       (nr * math.cos(am), nr * math.sin(am), nz), [(u0, -za / tile), (u1, -za / tile), (u1, -zb / tile), (u0, -zb / tile)])
+            if rim_sh and rim > 0 and not door_here:
                 R = X.mesh(rim_sh)
-                q = [(r * math.cos(math.radians(a)), r * math.sin(math.radians(a))) for a in (a0, a1)]
-                qi = [((r - clip_t) * math.cos(math.radians(a)), (r - clip_t) * math.sin(math.radians(a))) for a in (a0, a1)]
+                q = [(r * ca0, r * sa0), (r * ca1, r * sa1)]
+                qi = [((r - clip_t) * ca0, (r - clip_t) * sa0), ((r - clip_t) * ca1, (r - clip_t) * sa1)]
                 R.quad((q[0][0], q[0][1], 0), (q[1][0], q[1][1], 0), (q[1][0], q[1][1], rim), (q[0][0], q[0][1], rim), tile=64,
                        n=(math.cos(am), math.sin(am), 0))
                 R.quad((qi[0][0], qi[0][1], 0), (qi[1][0], qi[1][1], 0), (qi[1][0], qi[1][1], rim), (qi[0][0], qi[0][1], rim),
@@ -768,48 +786,55 @@ class MapKit:
                 R.quad((q[0][0], q[0][1], rim), (q[1][0], q[1][1], rim), (qi[1][0], qi[1][1], rim), (qi[0][0], qi[0][1], rim),
                        tile=64, n=(0, 0, 1))
         if floor_sh:
-            from meshlib import disc
             disc(X.mesh(floor_sh), r - clip_t, 1.0, up=True, n=nw, uvscale=256)   # 1u up: no z-fight with the stand
+        ro = (rt if dome else r) + 14
         if roof_sh:
-            from meshlib import disc
-            Rf = X.mesh(roof_sh)
-            ro = r + 12
-            disc(Rf, ro, z1 - z0 + roof_t, up=True, n=nw, uvscale=256)
-            disc(Rf, ro, z1 - z0, up=False, n=nw, uvscale=256)
-            for k in range(nw):
-                a0, a1 = math.radians(angs[k]), math.radians(angs[k + 1])
-                am = (a0 + a1) / 2
-                Rf.quad((ro * math.cos(a0), ro * math.sin(a0), z1 - z0), (ro * math.cos(a1), ro * math.sin(a1), z1 - z0),
-                        (ro * math.cos(a1), ro * math.sin(a1), z1 - z0 + roof_t), (ro * math.cos(a0), ro * math.sin(a0), z1 - z0 + roof_t),
-                        tile=64, n=(math.cos(am), math.sin(am), 0))
+            # cap: flat top (the standing area), rounded edge, a collar band where the wire meets it
+            ML.lathe(X.mesh(roof_sh), [(ro - 10, H), (ro, H + 3), (ro + 2, H + roof_t / 2), (ro, H + roof_t - 3),
+                                       (ro - 8, H + roof_t)], nw)
+            disc(X.mesh(roof_sh), ro - 8, H + roof_t, up=True, n=nw, uvscale=256)
+            disc(X.mesh(roof_sh), ro - 10, H, up=False, n=nw, uvscale=256)
+            ML.lathe(X.mesh(roof_sh), [(r + 4, HD - 18), (r + 6, HD - 10), (r + 6, HD), (r + 2, HD + 6)], nw)   # band
+        if rib_sh:
+            for k in range(8):
+                a = 2 * math.pi * k / 8 + 0.2
+                if dA is not None and in_door(math.degrees(a)): continue
+                pts = [(rr * math.cos(a), rr * math.sin(a), zz) for rr, zz in [(r, rim)] + prof]
+                tube(X.mesh(rib_sh), pts, 3, nseg=6, caps=(False, False))
         if dA is not None:                    # open door panel, hinged at the jamb, swung out 100 degrees
             aj = math.radians(dA[0] + dA[1])
             hx, hy = r * math.cos(aj), r * math.sin(aj)
             t = np.array([-math.sin(aj), math.cos(aj)]); out = np.array([math.cos(aj), math.sin(aj)])
             dvec = out * 0.98 + t * 0.17
             dvec /= np.linalg.norm(dvec)
-            dw = door[1]; dh = min(z1 - z0 - rim, dw * 1.6)
+            dw = door[1]; dh = min(HD - rim, 300)
             e = (hx + dvec[0] * dw, hy + dvec[1] * dw)
             nn = (-dvec[1], dvec[0], 0)
             W.poly([(hx, hy, 0.5), (e[0], e[1], 0.5), (e[0], e[1], dh), (hx, hy, dh)], nn,
                    [(0, 0), (dw / tile, 0), (dw / tile, -dh / tile), (0, -dh / tile)])
         e = self._cage_models(name, X, wire_sh, cx, cy, z0)
-        # collision
+        # collision: wall ring (and a dome ring at the mid radius), rim, roof cap
         ca = np.linspace(0, 360, n + 1)
+        rings = [(r, z0 + rim, zd)] + ([((r + rt) / 2 + clip_t / 2, zd, z1)] if dome else [])
         for k in range(n):
             a0, a1 = ca[k], ca[k + 1]
-            if in_door((a0 + a1) / 2): continue
-            pts = []
-            for a in (a0, a1):
-                for rr in (r - clip_t, r):
-                    pts.append((cx + rr * math.cos(math.radians(a)), cy + rr * math.sin(math.radians(a))))
-            if rim > 0: self.add(hull([(p[0], p[1], z0) for p in pts] + [(p[0], p[1], z0 + rim) for p in pts], WCLIP, round_pts=False))
-            self.add(hull([(p[0], p[1], z0 + rim) for p in pts] + [(p[0], p[1], z1) for p in pts], CLIP, round_pts=False))
-            self.occupy(min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts), z0, z1)
-        if roof_sh:      # the roof slab (the inside stays free for props and pickups)
-            self.add(cyl(round(cx), round(cy), r + 12, z1, z1 + roof_t, WCLIP, n))
-            self.occupy_r(cx, cy, r + 12, z1, z1 + roof_t)
-        self.spots.setdefault('cages', []).append(dict(name=name, c=[cx, cy], r=r, z0=z0, z1=z1, door=list(door or [])))
+            dk = in_door((a0 + a1) / 2)
+            for ri, (rr0, za, zb) in enumerate(rings):
+                if dk and ri == 0: za = max(za, z0 + rim + 300)
+                if zb - za < 8: continue
+                pts = [(cx + rr * math.cos(math.radians(a)), cy + rr * math.sin(math.radians(a)))
+                       for a in (a0, a1) for rr in (rr0 - clip_t, rr0)]
+                self.add(hull([(p[0], p[1], za) for p in pts] + [(p[0], p[1], zb) for p in pts], CLIP, round_pts=False))
+                self.occupy(min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts), za, zb)
+            if rim > 0 and not dk:
+                pts = [(cx + rr * math.cos(math.radians(a)), cy + rr * math.sin(math.radians(a)))
+                       for a in (a0, a1) for rr in (r - clip_t, r)]
+                self.add(hull([(p[0], p[1], z0) for p in pts] + [(p[0], p[1], z0 + rim) for p in pts], WCLIP, round_pts=False))
+        if roof_sh:      # the roof cap (the inside stays free for props and pickups)
+            self.add(cyl(round(cx), round(cy), ro, z1, z1 + roof_t, WCLIP, n))
+            self.occupy_r(cx, cy, ro, z1, z1 + roof_t)
+        self.spots.setdefault('cages', []).append(dict(name=name, c=[cx, cy], r=r, z0=z0, z1=z1, door=list(door or []),
+                                                       dome=list(dome or [])))
         return e
 
     def crawl(self, mn, mx):

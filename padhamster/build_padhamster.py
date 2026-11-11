@@ -155,7 +155,8 @@ def cages():
     for (a, b), Lz in ((((-1600, -1440)), LV[0]), ((200, 360), LV[0]), ((-400, -240), LV[1]), ((160, 320), LV[1]),
                        ((-1640, -1480), LV[2]), ((200, 360), LV[2])):
         K.keep_clear(a - 16, CY0, b + 16, CY0 + 112, Lz)
-        K.route(f'door_{Lz}_{a}', ((a + b) / 2, SY0 + 64, Lz), ((a + b) / 2, CY0 + 120, Lz))
+        xi = (a + b) / 2 if abs((a + b) / 2 - LIFT_B[0]) > HOLE + 80 else a + 40     # clear of the lift collar
+        K.route(f'door_{Lz}_{a}', ((a + b) / 2, SY0 + 64, Lz), (xi, CY0 + 120, Lz))
 
 
 def lifts():
@@ -166,7 +167,7 @@ def lifts():
                 ceiling=LV[2] - BT, edges=[(ax - HOLE - 8, ay, LV[1] + COLLAR_H)])
     collar(ax, ay, LV[1])
     bx, by = LIFT_B
-    K.tube_lift(bx, by, LV[1], (bx + 230, by, LV[2]), 1680, 'lift_b', g, r, top=LV[2] + COLLAR_H, r=64, mouth=r,
+    K.tube_lift(bx, by, LV[1], (bx + 230, by, LV[2]), 1685, 'lift_b', g, r, top=LV[2] + COLLAR_H, r=64, mouth=r,
                 ceiling=LV[3] - BT, edges=[(bx + HOLE + 8, by, LV[2] + COLLAR_H)])
     collar(bx, by, LV[2])
     K.light(ax, ay, LV[0] + 300, 250, '0.8 0.9 1'); K.light(bx, by, LV[1] + 300, 250, '0.8 0.9 1')
@@ -176,7 +177,6 @@ def burrow():
     z = LV[0]
     x0, x1, ty = TUNNEL
     place('tunnel', (x0 + x1) / 2, ty, z)
-    K.crawl((x0, ty - 44, z), (x1, ty + 44, z + 48))
     K.keep_clear(x0 - 96, ty - 48, x0, ty + 48, z); K.keep_clear(x1, ty - 48, x1 + 96, ty + 48, z)
     K.route('tunnel', (x0 - 64, ty, z), (x1 + 64, ty, z))
     nx, ny = NEST_C
@@ -334,16 +334,25 @@ def cat_tree():
           box((cx0 + t, cy0, 16), (o0, cy0 + t, P1_Z - 16), 'x/x'), box((o1, cy0, 16), (cx1 - t, cy0 + t, P1_Z - 16), 'x/x'),
           box((o0, cy0, 240), (o1, cy0 + t, P1_Z - 16), 'x/x'),
           box((p1[0], p1[1], P1_Z - 16), (p1[2], p1[3], P1_Z), 'x/x'),
+          # second cubby under platform 2 (walk in from the north): floor-level cover in the middle of the room
+          box((48, 48, 16), (72, 368, 320), 'x/x'), box((344, 48, 16), (368, 368, 320), 'x/x'),
+          box((72, 48, 16), (344, 72, 320), 'x/x'),
+          box((72, 344, 16), (140, 368, 320), 'x/x'), box((276, 344, 16), (344, 368, 320), 'x/x'),
+          box((140, 344, 220), (276, 368, 320), 'x/x'), box((48, 48, 320), (368, 368, 336), 'x/x'),
           box((p2[0], p2[1], P2_Z - 32), (p2[2], p2[3], P2_Z), 'x/x'),
           box((p3[0], p3[1], P3_Z - 32), (p3[2], p3[3], P3_Z), 'x/x')]
     K.solid_piece('cat_tree', B, tf('carpet', 'carpet2', tile=128))
     ax, ay, ar = POST_A; bx, by, br = POST_B
-    K.custom(ML.PLACE['post_a'], ax, ay, 16, cyls=[(0, 0, ar - 4, 0, P2_Z - 32 - 16)])
+    K.custom(ML.PLACE['post_a2'], ax, ay, 336, cyls=[(0, 0, ar - 4, 0, P2_Z - 32 - 336)])
     K.custom(ML.PLACE['post_b'], bx, by, P1_Z, cyls=[(0, 0, br - 4, 0, P3_Z - 32 - P1_Z)])
     K.keep_clear(o0 - 16, cy0 - 112, o1 + 16, cy0 + 120, 16)
     K.route('cubby', ((o0 + o1) / 2, cy0 - 100, 16), ((o0 + o1) / 2, cy0 + 110, 16))
+    K.keep_clear(140, 368, 276, 480, 16)
+    K.route('cubby2', (208, 470, 16), (208, 250, 16))
     K.light(-200, -200, 200, 220, '1 0.92 0.8')
-    K.catalog('pad_ball/pad_softball.md3', 300, -300, 16, clip=False)
+    for (x, y) in ((220, -220), (-220, 220)):              # sisal scratching drums in the open quadrants
+        K.custom(ML.PLACE['drum'], x, y, 16, cyls=[(0, 0, 116, 0, 300)])
+    K.catalog('pad_ball/pad_softball.md3', 330, -380, 16, clip=False)
 
 
 def ball_loop():
@@ -373,26 +382,36 @@ def bird_tower():
     K.route('cabinet_in', (x0 - 90, (d0 + d1) / 2, 0), (x0 + 110, (d0 + d1) / 2, 0))
     cx, cy = BIRD_C
     K.cage_round('bird_cage', (cx, cy), BIRD_R, z, BIRD_TOP, M_['wire'], rim_sh=M_['tray_mint'], floor_sh=M_['hay'],
-                 roof_sh=M_['tray_mint'], n=16, door=(180, 150), rim=16)
+                 roof_sh=M_['tray_mint'], n=16, door=(180, 150), rim=16,
+                 dome=(1220, 140), rib_sh=M_['chrome'])
     K.keep_clear(x0, cy - 90, cx - BIRD_R + 40, cy + 90, z)
     K.route('bird_door', (x0 + 60, cy, z), (cx - 60, cy, z))
     K.pendulum_model2(f'models/{NS}/perch_bird.md3', (cx + 40, cy, BIRD_TOP - 20), 20, 360)
     K.timer_sound(cx, cy, z + 300, 'animal/blackbird', 'bird_song', 14, 8)
     K.light(cx, cy, z + 500, 300, '1 0.97 0.85')
-    K.catalog('pad_ddmix/plants/bonsai2.md3', x1 - 120, y0 + 130, z, scale=0.5, angle=0)
+    K.catalog('pad_ddmix/plants/flower_yellow.md3', x1 - 120, y0 + 130, z, scale=0.5, angle=30)
 
 
 # ------------------------------------------------------------------------------------------------ pet carrier + bed
 def carrier():
+    """walk-in pet carrier: cream base and blue top shell split at the seam (wall brushes cut at SEAM so each half takes
+    its colour), a trim MD3 (seam band, latches, vent louvres, door frame, folded handle) and the open grille door"""
     x0, y0, x1, y1 = CARRIER; z = CARRIER_Z; t = 24
     d0, d1 = -1448, -1256
-    cb = [box((x0, y0, 0), (x0 + t, y1, z - t), 'x/x'), box((x0 + t, y0, 0), (x1, y0 + t, z - t), 'x/x'),
-          box((x0 + t, y1 - t, 0), (x1, y1, z - t), 'x/x'),
-          box((x1 - t, y0 + t, 0), (x1, d0, z - t), 'x/x'), box((x1 - t, d1, 0), (x1, y1 - t, z - t), 'x/x'),
-          box((x1 - t, d0, 256), (x1, d1, z - t), 'x/x'),
-          box((x0, y0, z - t), (x1, y1, z), 'x/x')]
-    K.solid_piece('carrier', cb, tf('carrier_top', 'carrier'))
-    K.custom(ML.PLACE['grille_door'], x1 + 2, d1, 0, angle=80, occupy=False)
+    SEAM = 260
+    walls = [((x0, y0), (x0 + t, y1)), ((x0 + t, y0), (x1, y0 + t)), ((x0 + t, y1 - t), (x1, y1)),
+             ((x1 - t, y0 + t), (x1, d0)), ((x1 - t, d1), (x1, y1 - t))]
+    cb = []
+    for (a, b) in walls:
+        cb += [box((a[0], a[1], 0), (b[0], b[1], SEAM), 'x/x'), box((a[0], a[1], SEAM), (b[0], b[1], z - t), 'x/x')]
+    cb += [box((x1 - t, d0, 256), (x1, d1, SEAM), 'x/x'), box((x1 - t, d0, SEAM), (x1, d1, z - t), 'x/x'),
+           box((x0, y0, z - t), (x1, y1, z), 'x/x')]
+
+    def f(c, n, poly):
+        return (M_['carrier_top'] if c[2] > SEAM else M_['carrier']), ML.planar_uv(n, 256)
+    K.solid_piece('carrier', cb, f)
+    K.custom(ML.PLACE['carrier_trim'], (x0 + x1) / 2, (y0 + y1) / 2, 0, occupy=False)
+    K.custom(ML.PLACE['grille_door'], x1 + 2, d1, 0, angle=-80, lit=False, occupy=False)
     K.keep_clear(x1, d0 - 16, x1 + 140, d1 + 230, 0)
     K.route('carrier_in', (x1 + 100, (d0 + d1) / 2, 0), (x1 - 120, (d0 + d1) / 2, 0))
     K.light((x0 + x1) / 2, (y0 + y1) / 2, 300, 250, '1 0.95 0.85')
@@ -416,7 +435,7 @@ def window():
     x0, y0, x1, y1 = SILL
     K.solid_piece('sill', [box((x0, y0, SILL_Z - 32), (x1, y1, SILL_Z), 'x/x')], tf('white', 'white'))
     place('basket', -700, -1680, SILL_Z, 0); place('basket', 650, -1680, SILL_Z, 90)
-    K.catalog('pad_ddmix/plants/bonsai.md3', -300, -1700, SILL_Z, scale=0.6, angle=0)
+    K.catalog('pad_ddmix/plants/flower_yellow.md3', -300, -1690, SILL_Z, scale=0.6, angle=0)
     K.catalog('pad_ddmix/plants/cane2.md3', 950, -1720, SILL_Z, angle=0)
     K.keep_clear(-200, -1792, 300, -1600, SILL_Z)
     K.timer_sound(0, -1750, 1300, 'animal/dog_bark2', 'dog', 40, 25, volume=0.4)
@@ -431,17 +450,28 @@ def props():
     prop('food_boxes', -900, -1100, 0, 110)
     prop('can_pyramid', 1000, 300, 0, 0)
     prop('sign_board', 300, -1300, 0, 10)
+    prop('gondola', -980, 420, 0, 90)                       # display gondolas: cover in the open middle band
+    prop('gondola', 980, -480, 0, 90)
+    prop('food_boxes', -380, -1000, 0, 0)
+    prop('can_pyramid', 40, 960, 0, 0)
+    prop('sack_pile', -540, 900, 0, 30)
+    prop('can_pyramid', 160, -960, 0, 10)
+    prop('hamster_plush', 560, 880, 0, 230)
+    prop('food_boxes', -900, 1480, 0, 0)                    # stock stored under the shelf unit
+    prop('food_boxes', 250, 1520, 0, 180)
     prop('hamster_plush', 1050, -200, 0, 150)
-    prop('food_boxes', 300, 1050, 0, 0)
+    prop('food_boxes', 700, 1000, 0, 0)
     K.catalog('pad_ddmix/padshop/cardboard_standup.md3', 1100, -1500, 0, angle=120)
     K.catalog('pad_ducks/pad_duck.md3', -1100, 300, 0, angle=60)
     K.catalog('pad_ddmix/plants/flower_yellow.md3', 1900, -500, 0, angle=0)
     K.catalog('pad_ddmix/plants/fern.md3', 1800, 200, 0, scale=0.5, angle=0)
-    K.catalog('gummybears/redbear.md3', -300, -1100, 0, angle=70)
+    K.catalog('pad_ddmix/plants/flower_yellow.md3', -300, -1100, 0, scale=0.7, angle=70)
     K.catalog('padmousetrap/padjumptrap.md3', -400, 1100, 0, angle=0, clip=False)
     K.catalog('pad_ball/pad_basketball.md3', 1200, -600, 0)
     K.catalog('pad_ddmix/backyard/tire.md3', -1000, -350, 0, angle=0)
     K.catalog('pad_tins/carrots_tl.md3', -1200, 1100, 0, angle=40)
+    for (x, y) in ((-650, -1620), (480, -1620)):             # pots along the window wall, under the sill
+        K.catalog('pad_ddmix/plants/flower_yellow.md3', x, y, 0, scale=0.8, angle=x % 90)
     for (x, y) in ((-1300, 1300), (-200, 1300)):              # under the shelf unit
         K.catalog('pad_tins/pad_milk_s.md3', x, y, 0, clip=False)
     for (x, y, a) in ((600, -900, 20), (-500, 700, 120), (900, 800, 200)):
@@ -464,10 +494,16 @@ def pads():
                 ceiling=ZC, edges=[(1880, MIDSHELF[1], MID_Z)])
     K.tube_lift(1500, 1696, MID_Z, (420, 1450, LV[3]), 1930, 'lift_top', g, r, arc=True, mouth=r,
                 ceiling=ZC, edges=[(SX1, 1560, LV[3])])
+    # second routes onto the two reward spots bots skipped in the first bot runs (Balloony on top of the cat tree, Betty
+    # in the penthouse): a floor pad straight onto platform 3 and a floor pad onto the slide deck next to the penthouse
+    K.jumppad(-560, -150, 0, land=(-200, -200, P3_Z), apex=1450, name='pad_tree_top', ceiling=ZC,
+              edges=[(-400, -170, P1_Z), (-328, -190, P3_Z)])
+    K.jumppad(-1450, 650, 0, land=(-1800, 1136, LV[2]), apex=1650, name='pad_deck', ceiling=ZC,
+              edges=[(-1725, 1056, LV[2])])
     K.jumppad(1000, -1000, 0, land=(1320, -1020, CAB_Z), apex=CAB_Z + 200, name='pad_cabinet', edges=[(CAB[0], -1010, CAB_Z)])
     K.jumppad(1320, -1560, CAB_Z, land=(1600, -1300, BIRD_TOP + 16), apex=BIRD_TOP + 220, name='pad_birdroof', ceiling=ZC,
-              edges=[(1440, -1430, BIRD_TOP + 16)])
-    K.jumppad(-1000, -1500, 0, land=(-1480, -1350, CARRIER_Z), apex=CARRIER_Z + 200, name='pad_carrier',
+              edges=[(1491, -1389, BIRD_TOP + 16)])
+    K.jumppad(-1000, -1500, 0, land=(-1480, -1350, CARRIER_Z), apex=CARRIER_Z + 280, name='pad_carrier',
               edges=[(CARRIER[2], -1380, CARRIER_Z)])
     K.jumppad(0, -1250, 0, land=(0, -1690, SILL_Z), apex=SILL_Z + 150, name='pad_sill', edges=[(0, SILL[3], SILL_Z)])
 
@@ -475,7 +511,7 @@ def pads():
 # ------------------------------------------------------------------------------------------------ loot, spawns
 def items():
     K.weapon('imperius', -300, 1752, LV[3], marker='purple')
-    K.weapon('betty', -600, 1640, LV[2], marker='black')
+    K.weapon('betty', -1180, 1650, LV[2], marker='black')
     K.weapon('balloony', -120, -290, P3_Z, marker='orange')
     K.weapon('pumper', 1560, -1300, CAB_Z, marker='green')
     K.weapon('splasher', 1360, 1250, COUNTER_Z, marker='blue')
@@ -487,7 +523,7 @@ def items():
             'pumper': [(1300, -1250, 120), (1500, 500, 0), (-1056, 1700, LV[1]), (-1300, 700, 0)],
             'splasher': [(1640, 1090, COUNTER_Z + 8), (-500, -1400, 0), (500, 1200, LV[0]), (1800, -1000, 0)],
             'boaster': [(-1460, 1730, LV[0]), (-1150, 0, 0), (700, 600, 0), (1500, 1250, 0)],
-            'bubbleg': [(-1500, -140, 0), (-400, -1600, 0), (1300, 1000, 260), (1100, -900, 0)]}
+            'bubbleg': [(-1500, -140, 0), (-400, -1600, 0), (1300, 1100, 0), (1100, -900, 0)]}
     for w, spots in ammo.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
     K.ammo('nipper', 0, 1000, 0); K.ammo('nipper', 1400, -200, 0); K.ammo('nipper', -900, -700, 0)
@@ -517,6 +553,16 @@ def lights_sounds():
     K.light(-500, 1000, 400, 500); K.light(-500, 1000, 1200, 500)      # the cage wall front
     K.light(-800, 1300, 300, 400, '1 0.95 0.85')                     # under the shelf
     K.speaker(1640, 1200, COUNTER_Z + 300, 'machine/clock_ticking')
+    for x in (-1450, -900, -350, 250):                            # over the bottle shelf (above the light grid)
+        K.light(x, 1500, 1960, 420)
+    K.light(-1820, 1140, 1640, 300)                               # slide deck
+    K.light(1600, 1250, 120, 200, '1 0.95 0.85')                  # under the counter
+    K.light(1600, -1280, 160, 260, '1 0.95 0.85')                 # inside the cabinet
+    K.light(-1800, 1100, 250, 260, '1 0.95 0.85')                 # behind the sack stairs
+    K.light(BIRD_C[0], BIRD_C[1], 1800, 500)                      # over the bird cage roof (above the light grid)
+    K.light(850, 1700, 1350, 300)                                 # west end of the mid shelf
+    K.light(-1950, 1350, 300, 220, '1 0.95 0.85')                 # behind the sacks, north
+    K.light(-1950, -150, 250, 220, '1 0.95 0.85')                 # beside the slide foot
 
 
 def shader():

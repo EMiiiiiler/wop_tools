@@ -17,8 +17,8 @@ IX0, IX1 = SX0 + SPW, SX1 - SPW  # inside the side panels
 # ---- tube lifts inside the cages (pad up through a hole in the board above, collar round the hole)
 LIFT_A = (480, 1584)             # burrow -> wheel
 LIFT_B = (-1440, 1584)           # wheel -> penthouse
-HOLE = 96                        # half size of the hole
-COLLAR_H = 56
+HOLE = 112                        # half size of the hole
+COLLAR_H = 48
 
 # ---- burrow cage contents
 TUNNEL = (-1000, -600, 1520)     # x0, x1, centre y of the cardboard crawl tube

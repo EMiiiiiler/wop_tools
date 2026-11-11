@@ -6,6 +6,24 @@
 set -x
 S=${1:-/root/src}; L=$HOME/local; mkdir -p $S $L; cd $S
 J=$(nproc)
+# A session that is killed mid-compile leaves empty/truncated .o files that make/cmake treat as up to date; the link then
+# fails much later (wopbspc: "unzip.c: undefined reference to crc32" from an empty zlib crc32.c.o). Drop every object
+# file that is not a complete ELF, and the libraries built from them, before (re)building.
+python3 - "$S" <<'PYEOF'
+import os, sys
+S = sys.argv[1]
+for root in (os.path.join(S, 'wopbuild'), os.path.join(S, 'nrc'), os.path.join(S, 'ljt'), os.path.join(S, 'lx')):
+    for d, _, fs in os.walk(root):
+        for f in fs:
+            if not f.endswith(('.o', '.a')): continue
+            p = os.path.join(d, f)
+            with open(p, 'rb') as h: hd = h.read(8)
+            if (f.endswith('.o') and hd[:4] != b'\x7fELF') or (f.endswith('.a') and hd != b'!<arch>\n'):
+                print('removing broken', p); os.remove(p)
+                if f.endswith('.o'):                       # and the archive that may already contain it
+                    for a in os.listdir(os.path.dirname(os.path.dirname(d))) if os.path.isdir(os.path.dirname(os.path.dirname(d))) else []:
+                        if a.endswith('.a'): os.remove(os.path.join(os.path.dirname(os.path.dirname(d)), a))
+PYEOF
 [ -f $L/lib/libjpeg.a ] || {
   git clone --depth 1 https://github.com/libjpeg-turbo/libjpeg-turbo.git
   cmake -S libjpeg-turbo -B ljt -DCMAKE_INSTALL_PREFIX=$L -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_SHARED=OFF \

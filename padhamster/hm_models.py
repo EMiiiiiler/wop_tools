@@ -180,6 +180,8 @@ def materials():
     m('sisal', TL.stripes((200, 170, 110), (170, 140, 86), 24, vertical=False, soft=0.5), shade=80)
     m('carrier', TL.solid((236, 226, 204), 3, 40), shade=30)
     m('carrier_top', TL.solid((80, 140, 210), 3, 41), shade=30)
+    m('vent', TL.solid((40, 60, 90), 2, 48, 64), shade=30, tag='v')
+    m('latch', TL.solid((250, 250, 250), 2, 49, 64), shade=40, tag='l')
     m('burlap', TL.fabric((196, 160, 110), weave=96), shade=60)
     m('burlap_label', burlap_label(), shade=60)
     m('cardboard', TL.fabric((190, 150, 100), weave=12) + TL.N3(256, 0.6, 3, 4), shade=60)
@@ -216,7 +218,7 @@ def materials():
 def all_models():
     hamster_wheel(); wheel_stand(); tunnel(); nest(); hopper(); bowl(); bottle(); hammock(); chew_blocks()
     cat_posts(); perch_bird(); grille_door(); pet_bed(); till(); treat_jar(); sacks_deco(); ball_iqm(); mobile_iqm()
-    sign_board(); food_boxes(); can_pyramid(); basket(); hamster_plush(); shavings_humps()
+    sign_board(); food_boxes(); can_pyramid(); basket(); hamster_plush(); shavings_humps(); carrier_trim(); gondola(); drum(); gondola()
 
 
 def hamster_wheel():
@@ -250,11 +252,11 @@ def wheel_stand():
 
 
 def tunnel():
-    """half-buried cardboard tube along x (length from layout), flat on the floor, crouch-only inside (48u)"""
+    """half-buried cardboard tube along x (length from layout), flat on the floor, 64u clear inside"""
     x0, x1, _ = L.TUNNEL
     Ln = x1 - x0
     X = ML.Model(); cb = M_['cardboard']
-    ro, ri, zc = 64.0, 54.0, 8.0
+    ro, ri, zc = 76.0, 66.0, 8.0
 
     def arc(r):
         a0 = -math.asin(zc / r); pts = []
@@ -275,8 +277,8 @@ def tunnel():
             q = [(xx, Ao[i][0], Ao[i][1]), (xx, Ao[i + 1][0], Ao[i + 1][1]), (xx, Ai[i + 1][0], Ai[i + 1][1]), (xx, Ai[i][0], Ai[i][1])]
             X.mesh(cb).poly(q, (nx, 0, 0), [(q_[1] / 64, -q_[2] / 64) for q_ in q])
     ML.save('tunnel', X)
-    coll('tunnel', boxes=[((-Ln / 2, 44, 0), (Ln / 2, 62, 64)), ((-Ln / 2, -62, 0), (Ln / 2, -44, 64)),
-                          ((-Ln / 2, -44, 48), (Ln / 2, 44, 64))])
+    coll('tunnel', boxes=[((-Ln / 2, 44, 0), (Ln / 2, 72, 80)), ((-Ln / 2, -72, 0), (Ln / 2, -44, 80)),
+                          ((-Ln / 2, -44, 64), (Ln / 2, 44, 80))])
 
 
 def nest():
@@ -355,7 +357,7 @@ def chew_blocks():
 
 def cat_posts():
     """sisal-wrapped posts of the cat tree (the slabs and cubby are solid_piece brushes in the generator)"""
-    for name, (r, h) in (('post_a', (L.POST_A[2], L.P2_Z - 32 - 16)), ('post_b', (L.POST_B[2], L.P3_Z - 32 - L.P1_Z))):
+    for name, (r, h) in (('post_a2', (L.POST_A[2], L.P2_Z - 32 - 336)), ('post_b', (L.POST_B[2], L.P3_Z - 32 - L.P1_Z))):
         X = ML.Model()
         revolve(X.mesh(M_['sisal']), [(r, 0), (r, h)], n=20, u_tiles=2, vlen=64)
         revolve(X.mesh(M_['carpet']), [(r + 14, 0), (r + 14, 8), (r, 12)], n=20)
@@ -531,3 +533,76 @@ def shavings_humps():
         x, y = rng.uniform(-300, 300), rng.uniform(-120, 120)
         ellipsoid(X.mesh(M_['shavings']), (x, y, 0), rng.uniform(60, 120), rng.uniform(40, 80), 10, nu=12, nv=4, flat_bottom=0.0)
     ML.save('humps', X)
+
+
+def carrier_trim():
+    """the pet carrier's detail (model space: centre of the carrier footprint, floor z 0): a ribbed seam band round the
+    shell, four clip latches, vent louvres on both long sides, a chrome frame round the door (+x face) and the handle
+    folded flat on the roof (12u: you step over it, it never blocks a shot). Sizes match hm_layout.CARRIER."""
+    x0, y0, x1, y1 = L.CARRIER
+    hx, hy = (x1 - x0) / 2, (y1 - y0) / 2
+    d0, d1 = -1448 - (y0 + y1) / 2, -1256 - (y0 + y1) / 2
+    X = ML.Model(); top, base, ch, vent, lat = M_['carrier_top'], M_['carrier'], M_['chrome'], M_['vent'], M_['latch']
+    zs, o = 260, 6
+    # seam band (two ribs) round the outside, broken at the door
+    for zz, mat in ((zs - 14, base), (zs + 2, top)):
+        rbox(X.mesh(mat), (-hx - o, -hy - o, zz), (hx + o, -hy, zz + 12), r=3, k=2, tile=64)
+        rbox(X.mesh(mat), (-hx - o, hy, zz), (hx + o, hy + o, zz + 12), r=3, k=2, tile=64)
+        rbox(X.mesh(mat), (-hx - o, -hy, zz), (-hx, hy, zz + 12), r=3, k=2, tile=64)
+        rbox(X.mesh(mat), (hx, -hy, zz), (hx + o, d0, zz + 12), r=3, k=2, tile=64)
+        rbox(X.mesh(mat), (hx, d1, zz), (hx + o, hy, zz + 12), r=3, k=2, tile=64)
+    # latches over the seam
+    for sx in (-hx * 0.55, hx * 0.55):
+        for sy in (-1, 1):
+            yy = sy * (hy + o)
+            rbox(X.mesh(lat), (sx - 22, min(yy, yy + sy * 10), zs - 30), (sx + 22, max(yy, yy + sy * 10), zs + 30), r=4, k=2, tile=64)
+    # vent louvres (upper shell, both long sides)
+    for sy in (-1, 1):
+        for k in range(6):
+            xx = -hx * 0.7 + k * hx * 0.28
+            yy = sy * hy
+            rbox(X.mesh(vent), (xx - 14, min(yy, yy + sy * 4), zs + 60), (xx + 14, max(yy, yy + sy * 4), zs + 200), r=3, k=2, tile=64)
+    # door frame
+    fr = [(hx + 3, d0, 2), (hx + 3, d0, 258), (hx + 3, d1, 258), (hx + 3, d1, 2)]
+    tube(X.mesh(ch), fr + [fr[0]], 5, nseg=8, caps=(False, False))
+    # handle folded flat on the roof
+    H = L.CARRIER_Z
+    for sy in (-60, 60):
+        rbox(X.mesh(top), (-30, sy - 14, H), (30, sy + 14, H + 10), r=3, k=2, tile=64)
+    tube(X.mesh(ch), [(-120, -60, H + 6), (-120, 60, H + 6), (120, 60, H + 6), (120, -60, H + 6)], 5, nseg=8, caps=(True, True))
+    ML.save('carrier_trim', X)
+
+
+def gondola():
+    """double-sided shop display gondola (512 long along x, 112 deep, 320 high): white frame, three shelves each side
+    stocked with food boxes, cans and seed bags; doubles as cover in the open middle of the shop"""
+    X = ML.Model(); w, st = M_['white'], M_['steel']
+    Lx, D, H = 256, 56, 320
+    rbox(X.mesh(w), (-Lx, -8, 0), (Lx, 8, H), r=3, k=2, tile=128)              # back panel
+    for sx in (-Lx, Lx - 12):
+        rbox(X.mesh(st), (sx, -D, 0), (sx + 12, D, H + 10), r=2, k=2, tile=64)   # uprights
+    rng = np.random.default_rng(5)
+    for zz in (8, 112, 216):
+        for sy in (-1, 1):
+            rbox(X.mesh(w), (-Lx + 12, min(0, sy * D), zz - 8), (Lx - 12, max(0, sy * D), zz), r=2, k=2, tile=128)
+            x = -Lx + 24
+            while x < Lx - 60:
+                k = rng.integers(3); wdt = (48, 40, 44)[k]
+                y0, y1 = (8, D - 6) if sy > 0 else (-D + 6, -8)
+                if k == 0: rbox(X.mesh(M_['box_a' if rng.random() < 0.5 else 'box_b']), (x, y0, zz), (x + wdt, y1, zz + 84), r=2, k=2, tile=96)
+                elif k == 1: revolve(X.mesh(M_['can']), [(18, zz), (20, zz + 4), (20, zz + 60), (0, zz + 62)], n=12, cx=x + 20, cy=(y0 + y1) / 2)
+                else:
+                    def inflate(xx, yy, z, n): return 3 * max(0.0, n[2]) + 1
+                    rbox(X.mesh(M_['burlap']), (x, y0, zz), (x + wdt, y1, zz + 70), r=12, k=3, tile=96, inflate=inflate)
+                x += wdt + 6
+    ML.save('gondola', X)
+    coll('gondola', boxes=[((-Lx, -D + 2, 0), (Lx, D - 2, H))])
+
+
+def drum():
+    """sisal-wrapped scratching drum (cat tree base), carpet lid with a scratched rim"""
+    X = ML.Model()
+    revolve(X.mesh(M_['sisal']), [(120, 0), (120, 290)], n=28, u_tiles=4, vlen=64)
+    ML.lathe(X.mesh(M_['carpet']), [(126, 290), (128, 296), (120, 304), (0, 306)], 28)
+    ML.lathe(X.mesh(M_['carpet']), [(128, 0), (128, 12), (120, 14)], 28)
+    ML.save('drum', X)
