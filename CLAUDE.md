@@ -256,3 +256,24 @@ Tools and standing rules for building World of Padman (WoP) maps.
   with one big brush under the slabs: every column gets a 48u "crouch slot" and lint headroom runs for minutes.
 - Parked cars: hug the kerb (<= 30u) or the gutter strip is a long sightline; cars across a driveway look wrong, so
   block a driveway mouth with flanking verge cabinets, footpath bins and an inorganic-collection couch instead.
+- `setup_cloud.sh` interrupted mid-build left a 0-byte `zlib/crc32.c.o`; cmake took it as up to date and wopbspc failed to
+  link much later ("unzip.c: undefined reference to crc32"). The script now deletes non-ELF `.o` / broken `.a` files
+  before building, so just re-run it.
+- q3map2 "ERROR: FindInvalidDataProcess fails on mesh uvcoords" = catalog `gummybears/*bear.md3` (every UV identical);
+  "Found 1 degenerated primitives" = catalog `bonsai.md3` / `bonsai2.md3`. Harmless but they hide real errors: use other
+  props (padhamster).
+- Lights must sit ABOVE every high walkable top: a `K.light_grid` at 1300 left the 1760 bottle shelf and the 1500 bird
+  cage roof black (light_check red cells at those z) until lights at 1800-1960 went over them.
+- Lift up through a hole in a floor (`K.tube_lift(top=...)` + collar): bspc's 10 % faster horizontal flight hit the collar
+  with an 96u half-hole; 112u half-hole, 48u collar, landing ~220u out and apex = ceiling - 40 linked (padhamster).
+- `K.jumppad` reserves the pad and the landing but not the flight path: a 330u food-box stack under the arc made bspc land
+  on it (pad_aas FAIL 336u off). Keep tall props out from under every arc.
+- Bots took Balloony / Betty in one bot run and 0 times in the next when each sat behind a two-pad or two-lift chain; a
+  direct floor pad onto the reward (cat tree top, slide deck at 1440: apex 1650, ~500u hop, t 2.69 s, bspc linked) gave
+  6-16 pickups per run. A floor pad CAN reach 1440 when the horizontal hop is short.
+- Bots never picked up a weapon inside a 48u crouch-only tube (0 in 3 min); the 64u-high tube got 17 pickups.
+- Open quadrants under a raised centrepiece (cat tree platforms on posts) let eye-level rays straight through it: a
+  second cubby and two scratching drums under the platforms took sight from 13.8 % to 3.9 %. A ring mover (ball loop
+  round the tree) keeps a whole annulus prop-free, so plan cover outside it.
+- Wire cages: `K.cage_box()` / `K.cage_round(dome=...)` (alpha wire as its own unlit MD3 + common/clip, weapclip rims,
+  open doors). An aas_check route end inside a lift collar reports NO AREA, not a broken door.

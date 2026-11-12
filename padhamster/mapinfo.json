@@ -1,0 +1,57 @@
+{
+ "map": "wop_padhamster",
+ "ns": "padhamster",
+ "longname": "PadHamster",
+ "generator": "build_padhamster.py",
+ "bounds": [
+  -2048,
+  -1792,
+  2048,
+  1792
+ ],
+ "arena_types": "ffa lps team ft",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "PadHamster",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1900,-1700,1900,135,-30",
+   "cage_wall:-400,-300,1000,90,-5",
+   "burrow:-1400,1300,560,20,-8",
+   "wheel_cage:-700,1300,1050,15,-6",
+   "penthouse:-1200,1290,1520,10,-6",
+   "counter:900,500,800,45,-15",
+   "cat_tree:-900,-900,700,45,-10",
+   "bird_cage:900,-800,1100,315,-12",
+   "bird_inside:1500,-1280,760,0,5",
+   "pet_carrier:-900,-900,400,225,-12",
+   "bottle_shelf:600,1300,1850,180,-10",
+   "feed_corner:-1200,-300,600,120,-10",
+   "vault:0,-330,-1460,90,2"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "cage_wall",
+   "cat_tree",
+   "counter"
+  ]
+ }
+}

@@ -432,6 +432,30 @@ def carved_shell(Mo, Mi, Mj, rows, n, thick, polys, face_angle, Rr, deform=None,
     return Po, Pi
 
 
+def glass_tube(X, path, r, glass_sh, ring_sh=None, ring_every=256.0, nseg=20, ring_r=None, vlen=400.0):
+    """open glass tube along a polyline (suction pipes, tube lifts, slide tubes) with metal rings every ring_every
+    units and at both ends. glass_sh: a 'glass' kind shader (nonsolid, two-sided); ring_sh: 'lms' or 'lm'."""
+    from meshlib import tube
+    path = [np.asarray(p, float) for p in path]
+    path = [p for i, p in enumerate(path) if i == 0 or np.linalg.norm(p - path[i - 1]) > 1.0]   # no repeated points
+    tube(X.mesh(glass_sh), path, r, nseg=nseg, caps=(False, False), vlen=vlen)
+    if not ring_sh: return X
+    rr = ring_r or r + 6
+    L = np.concatenate([[0], np.cumsum([np.linalg.norm(path[i + 1] - path[i]) for i in range(len(path) - 1)])])
+    marks = [0.0] + list(np.arange(ring_every, L[-1] - ring_every * 0.4, ring_every)) + [L[-1]]
+    for s in marks:
+        i = min(int(np.searchsorted(L, s, side='right')) - 1, len(path) - 2)
+        f = (s - L[i]) / max(1e-6, L[i + 1] - L[i])
+        p = path[i] + (path[i + 1] - path[i]) * f
+        d = path[i + 1] - path[i]; d = d / np.linalg.norm(d)
+        a = p - d * 6 if s > 0 else p
+        b = p + d * 6 if s < L[-1] else p
+        if s == 0: b = p + d * 12
+        if s == L[-1]: a = p - d * 12
+        tube(X.mesh(ring_sh), [a, b], rr, nseg=nseg)
+    return X
+
+
 def pip(poly, x, y):
     """point in polygon (list of (x, y))"""
     inside = False

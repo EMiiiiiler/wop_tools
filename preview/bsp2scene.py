@@ -363,7 +363,7 @@ def main():
             g['pos'].append(v.astype(np.float32)); g['uv'].append(srf['st'].astype(np.float32))
             g['uv2'].append(np.zeros((len(v), 2), np.float32))
             g['col'].append(unlit_shade((np.asarray(srf['normals'], np.float32) @ R)) if a.unlit else np.full((len(v), 3), 118, np.float32))
-            g['idx'].append(srf['tris'][:, ::-1].astype(np.int64) + g['n']); g['n'] += len(v)
+            g['idx'].append(np.asarray(srf['tris'], np.int64).reshape(-1, 3)[:, ::-1].reshape(-1) + g['n']); g['n'] += len(v)
         nent_models += 1
 
     blob = io.BytesIO(); meta = []; tex_cache = {}; textures = {}

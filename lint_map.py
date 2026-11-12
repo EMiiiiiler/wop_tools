@@ -584,12 +584,15 @@ def check_rotors(ents, BR):
         c = (ob[0]['mn'] + ob[0]['mx']) / 2
         sf = int(e['kv'].get('spawnflags', '0'))
         ax = 0 if sf & 4 else (1 if sf & 8 else 2)
-        R = 0.0; lo, hi = 1e9, -1e9
+        R = 0.0; lo, hi = 1e9, -1e9; Rin = 1e9
         for b in parts:
             V = verts(b['P']) - c
             o = [k for k in range(3) if k != ax]
             R = max(R, float(np.max(np.hypot(V[:, o[0]], V[:, o[1]]))))
             lo = min(lo, V[:, ax].min()); hi = max(hi, V[:, ax].max())
+            # inner radius of the swept ring (a ball rolling round a cat tree sweeps an annulus, not a disc)
+            a0, a1 = V[:, o[0]].min(), V[:, o[0]].max(); b0, b1 = V[:, o[1]].min(), V[:, o[1]].max()
+            Rin = min(Rin, float(np.hypot(max(a0, 0, -a1), max(b0, 0, -b1))))
         for s in statics:
             if s['ei'] == ei: continue
             V = verts(s['P']) - c
@@ -597,6 +600,7 @@ def check_rotors(ents, BR):
             if V[:, ax].max() <= lo + 1 or V[:, ax].min() >= hi - 1: continue
             # nearest distance of the static brush to the axis (approximate with its vertices / bounds)
             dmin = np.min(np.hypot(V[:, o[0]], V[:, o[1]]))
+            if np.max(np.hypot(V[:, o[0]], V[:, o[1]])) < Rin - 1: continue     # wholly inside the ring's hole
             inside_axis = np.all(V[:, o[0]].min() < 0 < V[:, o[0]].max()) and (V[:, o[1]].min() < 0 < V[:, o[1]].max())
             if dmin < R - 1 or inside_axis:
                 warn('rotors', f'ent{ei} func_rotating (r {R:.0f}) sweeps into static ent{s["ei"]}/b{s["bi"]} {s["texs"][0]} '

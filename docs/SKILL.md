@@ -125,6 +125,10 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | user: "looks boring" / "plain box" (lint `boxes`) | brush blocks for buildings/furniture | custom MD3 (`K.solid_piece` keeps the same collision) + props + lights; the most frequent play-test complaint |
 | user: "too busy" | props piled into an open space to push sightlines down | clear it back to a few natural pieces; review with `preview` before building |
 | user: "too dark" (lights WARN, red on lights.png) | shade side of a house, secret rooms, under roofs; sunny maps are bimodal | fill lights at the listed coordinates; `K.light_grid` over big rooms |
+| lights: a high top (shelf, cage roof) dark while the floor is fine | the light grid hangs below that top | lights above every high walkable top |
+| aas: pad lands 300u+ off / on an object | a tall prop under the flight path (K.jumppad only reserves pad + landing) | move the prop off the arc |
+| bots: reward weapon 0 pickups in some runs | it sits behind a two-pad / two-lift chain | add a direct pad from the floor or a busy route |
+| setup: wopbspc link error "undefined reference to crc32" | an interrupted build left an empty .o | re-run setup_cloud.sh (it drops broken objects) |
 | washed-out white floors (lights bright %) | too many overlapping point lights, strong sun on pale textures | fewer/weaker lights (raw 128 = neutral), darker floor texture |
 | user: "secret too obvious" | visible entrance | hide it (underwater tunnel, fireplace, coffin, flour bin, drain) |
 | aas TRAP on a high shelf/tray whose only drop is > 1000u | bspc traces walk-offs only 1000u down | an exit over a lower drop (botclip gap) or a pad (padfridge freezer) |
@@ -202,7 +206,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   player box: pad landings > hurt radius + 15 away.
 - Water: structures stand on the pool floor (bots drown under big low ceilings) or botclip under them; aas_check
   routes can't start in wadeable water; items on islets 16u above deep water are unreachable.
-- Crawl spaces (64u) work (`K.crawl()` to tell lint it is intended). `func_plat` elevators work (`K.elevator`).
+- Crawl spaces (64u) work (`K.crawl()` to tell lint it is intended); bots ignored a weapon in a 48u crouch-only tube.
+  `func_plat` elevators work (`K.elevator`).
 - Spiral stairs with ~15-degree treads in a small tower (r < 120) give bspc broken links: add a lift pad.
 - Playable area smaller than the sky hull (streets): mapinfo `bounds` = playable rectangle, `hull` = sky box, the edge
   closed with `common/clip` (solid for bspc), gates flush with the playable side; aas_check prints OUT OF BOUNDS.
@@ -309,7 +314,8 @@ animal/bird_owl1 cricket_chirp1 dog_bark2 kitten_meow blackbird.
 
 ## 14. "Deluxe" features the user likes
 Movers (rotating/swinging/orbiting decor), a hidden secret room, an alternative way up (tractor beam, bubble lift,
-suction pipe = trigger_push with a glass tube MD3 along `padmath.arc`), ambient + timed + triggered sounds, neon,
+suction pipe = `K.tube_lift` (trigger_push in a glass tube MD3, vertical through a hole or along the flight)), wire cages
+(`K.cage_box` / `K.cage_round`), slides (`K.slide`), ambient + timed + triggered sounds, neon,
 animated externalmodels, cloud layer (`SH.sky(cloud=...)`), levelshots, the phone walk-through. "Make it twice as
 awesome" went best as a second connected area (balcony, frost deck, wave hall) keeping the old layout. Real-world
 reference photos (a driveway, a street) are welcome: match the look (materials, trim, lanterns) but keep it uncluttered.
