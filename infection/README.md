@@ -10,19 +10,37 @@ client, menus, HUD, maps and bots keep working and friends who join your server 
 - Everybody else spawns as a survivor and has `g_inf_prepTime` seconds (default 120) to collect weapons and find a
   place to defend.
 - Then the infected are released. They only have the Punchy: one punch kills an unarmoured survivor. They cannot pick
-  up weapons, ammo or holdables (power-ups and armour are allowed), run a little faster and start with armour.
+  up weapons, ammo or holdables (power-ups and armour are allowed).
 - A survivor who dies, however it happens, respawns as infected.
+- **First infected are strong, converts are weak.** The infected a round starts with run faster, reach further and
+  have armour; survivors who get infected only get a slightly longer reach. Rounds build up to a last stand.
 - The round ends when everyone is infected (infected win) or after `g_inf_roundTime` seconds (default 300; the
-  survivors win and each one alive gets bonus points). A new round starts 6 seconds later with new infected.
+  survivors win and each one alive gets bonus points). A new round starts 6 seconds later.
 - The team scores count rounds won; `pointlimit` is the number of rounds to win the map.
-- Bots work: infected bots hunt the survivor they can reach fastest.
+
+## Playing with bots
+- **Your role**: `g_inf_humanRole` 0 = random, 1 = you always start as a survivor, 2 = you always start infected.
+  When every human starts infected the preparation is cut to `g_inf_infectedPrepTime` (30 s).
+- **Survivor bots defend.** `g_inf_botHoldLead` (30) seconds before the release they stop collecting. Two of them
+  (`g_inf_botEscort`) come and find you, and every other survivor bot that sees you joins (`g_inf_botJoinOnSight`):
+  they stand in a loose ring round you, follow when you move, watch for the infected and do not chase them. Bots that
+  never see you hold the map's best spots in groups of three (health stations, armour, power-ups, weapons; high ground
+  preferred).
+- **Hiding works.** Infected bots only know where a survivor fired a weapon, was seen by one of them, or was "pinged"
+  (every `g_inf_pingInterval` = 15 s all survivors are revealed once). A bot that reaches the place and finds nobody
+  forgets it and searches on. `g_inf_botAwareness 0` gives them back perfect knowledge.
+- **Difficulty follows you** (`g_inf_adaptive 1`): one level up after a round you win (you survive, or as infected you
+  get everyone), one down after a round you lose, from -4 to 6, kept in `g_inf_level` between sessions. As a survivor
+  each level gives the infected 3 % speed and 15 armour, and every second level one more infected at the start. When
+  you play infected it works the other way round: higher levels give the survivors 20 armour each, lower levels
+  strengthen your side.
 
 ## Install and play
 1. Copy the `infection` folder next to the `wop` folder of your World of Padman install (so you have
    `<WoP>/wop` and `<WoP>/infection/zz_infection.pk3`).
 2. Start WoP with `+set fs_game infection +exec infection.cfg +map <mapname>`, e.g.
    `wop.x86_64 +set fs_game infection +exec infection.cfg +map wop_padgarage`.
-   Your own maps in `wop/` are found as usual.
+   Your own maps in `wop/` are found as usual; any map with bot support works, nothing to rebuild.
 3. Join with the normal team menu (any choice works; the mode assigns the team).
 
 `infection.cfg` holds every setting with a comment. `g_infection 0` turns the mode off (plain WoP).
@@ -33,17 +51,28 @@ client, menus, HUD, maps and bots keep working and friends who join your server 
 | `g_inf_prepTime` | 120 | seconds before the infected are released |
 | `g_inf_roundTime` | 300 | seconds the survivors must hold out (0 = no limit) |
 | `g_inf_startInfected` | 0 | infected at round start (0 = 1, or 2 with six or more players) |
+| `g_inf_humanRole` | 0 | 0 random, 1 humans always survivors, 2 humans always infected |
+| `g_inf_infectedPrepTime` | 30 | preparation when every human starts infected (-1 = full time) |
 | `g_inf_meleeDamage` | 100 | damage of an infected punch |
-| `g_inf_meleeRange` | 64 | reach of an infected punch (normal 32) |
-| `g_inf_infectedSpeed` | 1.15 | speed factor of the infected (on top of the Punchy's 1.3) |
-| `g_inf_infectedArmor` | 100 | armour the infected spawn with |
+| `g_inf_meleeRange` / `g_inf_convertedRange` | 64 / 48 | punch reach of first infected / converts (normal 32) |
+| `g_inf_infectedSpeed` / `g_inf_convertedSpeed` | 1.15 / 1.0 | speed factor (on top of the Punchy's 1.3) |
+| `g_inf_infectedArmor` / `g_inf_convertedArmor` | 100 / 0 | spawn armour |
 | `g_inf_surviveBonus` | 5 | points per survivor alive at the end |
+| `g_inf_botHoldLead` | 30 | seconds before the release at which survivor bots take positions |
+| `g_inf_botEscort` | 2 | bots that seek out each human survivor |
+| `g_inf_botJoinOnSight` | 1 | other survivor bots join a human they see |
+| `g_inf_botAwareness` | 1 | 1 = infected bots know only fired/seen/pinged positions, 0 = always |
+| `g_inf_pingInterval` | 15 | seconds between pings (0 = never) |
+| `g_inf_adaptive` | 1 | difficulty follows the human players |
+| `g_inf_level` | 0 | current difficulty level (-4..6) |
+| `g_inf_debugHuman` | -1 | test only: treat this bot client as a human |
 
 ## Build from source
 `./build_mod.sh <WoP source checkout>` applies `src/infection.patch` + `src/g_infection.c` (made against the commit in
 `src/WOP_COMMIT`), builds `qagame.qvm` with the repo's own q3lcc/q3asm and writes `dist/infection/` and
 `dist/wop_infection_mod.zip`. `test_mod.sh <WoP source checkout>` runs a short bot match on the dedicated server and
-checks the round flow in `games.log`.
+checks the round flow, the hold positions and the pickups in `games.log`. The human-only rules are tested with a
+stand-in: `EXTRA='set g_inf_debugHuman 0;set g_inf_humanRole 1' ./test_mod.sh <src>` (role, escorts, joins, level).
 
 The game code is GPL-2.0 like WoP's; the patch and the new file are inside the pk3 (`src/`).
 
@@ -53,9 +82,12 @@ The game code is GPL-2.0 like WoP's; the patch and the new file are inside the p
 - Hooks: `G_RunFrame` (round logic), `player_die` (infect), `G_Respawn` (team switch before the spawn), `SetTeam` (team
   requests), `ClientSpawn` (loadout), `Touch_Item` (pickups), `CheckGauntletAttack` (damage, reach), `ClientThink`
   (speed), `AddScore` (team score = rounds), `CheckTournament` (no warm-up), `G_CheckMinimumPlayers` (bots as one pool).
-- Bots: `BotInfectionHuntGoal` in `ai_dmnet.c`; `BotChooseWeapon` falls back to the Punchy when the weapon weights
+- Bots (`ai_dmnet.c`): `BotInfectionHuntGoal` (infected go to the nearest known survivor position),
+  `BotInfectionHoldGoal` (survivors escort a human or hold a spot; returns "stand" when in position);
+  `BotWantsToChase`/`BotWantsToRetreat` in `ai_dmq3.c`; `BotChooseWeapon` falls back to the Punchy when the weapon weights
   return nothing (stock code left weapon 0 selected: "weapon number (0) out of range").
 
 ## Not checked
 Only the dedicated server with bots was tested here (no graphical client): the centre-screen messages, sounds and the
-view of a waiting infected have not been seen on a real client.
+view of a waiting infected have not been seen on a real client. The human rules (role, escort, join on sight, level)
+were tested with a bot standing in as the human (`g_inf_debugHuman`), not with a real player.

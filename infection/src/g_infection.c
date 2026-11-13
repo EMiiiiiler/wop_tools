@@ -36,6 +36,33 @@ static int infRound;
 static qboolean infLastAnnounced;
 static infRole_t infRole[MAX_CLIENTS];
 static qboolean infWasFirst[MAX_CLIENTS]; // picked as first infected in the previous round
+static qboolean infAlpha[MAX_CLIENTS];	  // first infected of this round: they get the speed, armour and reach buffs
+
+static vec3_t infKnownPos[MAX_CLIENTS];	  // where the infected bots last heard or saw a survivor
+static int infKnownTime[MAX_CLIENTS];	  // 0 = they have no idea
+static int infNextPing;
+static int infThreat;					  // adaptive difficulty of this round: > 0 stronger infected, < 0 stronger survivors
+static qboolean infHumanInfected;		  // a human started this round as infected
+
+#define INF_LEVEL_MIN -4
+#define INF_LEVEL_MAX 6
+
+#define INF_PICK_ANY 0
+#define INF_PICK_BOTS 1
+#define INF_PICK_HUMANS 2
+
+static qboolean INF_IsBot(int clientNum) {
+	// g_inf_debugHuman <client>: treat that bot as a human, to test the human rules on a dedicated server
+	if (clientNum == g_inf_debugHuman.integer)
+		return qfalse;
+	return (g_entities[clientNum].r.svFlags & SVF_BOT) ? qtrue : qfalse;
+}
+
+qboolean INF_IsHumanPlayer(int clientNum) {
+	return INF_IsBot(clientNum) ? qfalse : qtrue;
+}
+
+void INF_Reveal(int clientNum);
 
 qboolean G_Infection(void) {
 	return (g_infection.integer && g_gametype.integer == GT_TEAM) ? qtrue : qfalse;
@@ -130,6 +157,7 @@ static void INF_SyncRoles(void) {
 			if (cl->pers.connected == CON_DISCONNECTED) {
 				infRole[i] = IR_NONE;
 				infWasFirst[i] = qfalse;
+				infAlpha[i] = qfalse;
 			}
 			continue;
 		}
@@ -163,7 +191,10 @@ static void INF_SyncRoles(void) {
 	}
 }
 
-static int INF_PickRandom(infRole_t role, qboolean avoidLast) {
+/*
+Random client with the given role. prefer: bots or humans first (g_inf_humanRole), falling back to anybody.
+*/
+static int INF_PickRandom(infRole_t role, qboolean avoidLast, int prefer) {
 	int i, n = 0, candidates[MAX_CLIENTS];
 
 	for (i = 0; i < level.maxclients; i++) {
@@ -171,11 +202,53 @@ static int INF_PickRandom(infRole_t role, qboolean avoidLast) {
 			continue;
 		if (avoidLast && infWasFirst[i])
 			continue;
+		if (prefer == INF_PICK_BOTS && !INF_IsBot(i))
+			continue;
+		if (prefer == INF_PICK_HUMANS && INF_IsBot(i))
+			continue;
 		candidates[n++] = i;
 	}
-	if (!n)
-		return avoidLast ? INF_PickRandom(role, qfalse) : -1;
-	return candidates[rand() % n];
+	if (n)
+		return candidates[rand() % n];
+	if (avoidLast)
+		return INF_PickRandom(role, qfalse, prefer);
+	if (prefer != INF_PICK_ANY)
+		return INF_PickRandom(role, qfalse, INF_PICK_ANY);
+	return -1;
+}
+
+/*
+g_inf_humanRole: 0 = humans are picked like everybody else, 1 = humans always start as survivors,
+2 = humans always start as infected
+*/
+static int INF_FirstPickPreference(void) {
+	if (g_inf_humanRole.integer == 1)
+		return INF_PICK_BOTS;
+	if (g_inf_humanRole.integer == 2)
+		return INF_PICK_HUMANS;
+	return INF_PICK_ANY;
+}
+
+static int INF_CountHumans(infRole_t role) {
+	int i, n = 0;
+
+	for (i = 0; i < level.maxclients; i++) {
+		if (infRole[i] == role && !INF_IsBot(i))
+			n++;
+	}
+	return n;
+}
+
+/*
+The preparation is shortened when no human is left among the survivors (nobody wants to watch bots shop)
+*/
+static int INF_PrepTime(void) {
+	int prep = g_inf_prepTime.integer;
+
+	if (g_inf_infectedPrepTime.integer >= 0 && g_inf_infectedPrepTime.integer < prep && INF_CountHumans(IR_WAITING) &&
+		!INF_CountHumans(IR_SURVIVOR))
+		prep = g_inf_infectedPrepTime.integer;
+	return prep;
 }
 
 static void INF_Abort(void) {
@@ -197,6 +270,7 @@ static void INF_StartRound(void) {
 	players = INF_NumPlayers();
 	for (i = 0; i < level.maxclients; i++) {
 		picked[i] = qfalse;
+		infAlpha[i] = qfalse;
 		if (infRole[i] != IR_NONE)
 			infRole[i] = IR_SURVIVOR;
 	}
@@ -204,15 +278,41 @@ static void INF_StartRound(void) {
 	n = g_inf_startInfected.integer;
 	if (n <= 0)
 		n = (players >= 6) ? 2 : 1;
-	if (n > players - 1)
-		n = players - 1;
 
-	while (n-- > 0) {
-		int c = INF_PickRandom(IR_SURVIVOR, qtrue);
+	infThreat = 0;
+	infHumanInfected = qfalse;
+	for (i = 0; i < n && i < players - 1; i++) {
+		int c, prefer = INF_FirstPickPreference();
+
+		// once the round is set up as "humans survive", the extra infected are bots
+		if (i > 0 && !infHumanInfected && prefer == INF_PICK_ANY && INF_CountHumans(IR_SURVIVOR))
+			prefer = INF_PICK_BOTS;
+		// "always infected" beats "not twice in a row" for humans
+		c = INF_PickRandom(IR_SURVIVOR, g_inf_humanRole.integer != 2, prefer);
 		if (c < 0)
 			break;
 		infRole[c] = IR_WAITING;
+		infAlpha[c] = qtrue;
 		picked[c] = qtrue;
+
+		if (i == 0) {
+			// adaptive difficulty: the level works for whichever side the humans are on
+			infHumanInfected = INF_IsBot(c) ? qfalse : qtrue;
+			if (g_inf_adaptive.integer && (infHumanInfected || INF_CountHumans(IR_SURVIVOR))) {
+				int lvl = g_inf_level.integer;
+				if (lvl < INF_LEVEL_MIN)
+					lvl = INF_LEVEL_MIN;
+				if (lvl > INF_LEVEL_MAX)
+					lvl = INF_LEVEL_MAX;
+				infThreat = infHumanInfected ? -lvl : lvl;
+				// every two levels of threat bring one more infected, up to half of the players
+				if (infThreat > 0) {
+					n += infThreat / 2;
+					if (n > players / 2)
+						n = players / 2;
+				}
+			}
+		}
 	}
 
 	for (i = 0; i < level.maxclients; i++) {
@@ -226,8 +326,12 @@ static void INF_StartRound(void) {
 	infRound++;
 	infLastAnnounced = qfalse;
 	INF_SetState(INF_PREP);
-	INF_Print(va("^3Infection round %i^7: the infected arrive in ^3%i^7 seconds.", infRound, g_inf_prepTime.integer));
+	INF_Print(va("^3Infection round %i^7: the infected arrive in ^3%i^7 seconds.", infRound, INF_PrepTime()));
 	G_LogPrintf("InfectionRound: %i start, %i players\n", infRound, players);
+	if (g_inf_adaptive.integer && (infHumanInfected || INF_CountHumans(IR_SURVIVOR))) {
+		INF_Print(va("Difficulty level ^3%i^7.", g_inf_level.integer));
+		G_LogPrintf("InfectionLevel: %i threat %i\n", g_inf_level.integer, infThreat);
+	}
 }
 
 static void INF_Release(void) {
@@ -235,17 +339,22 @@ static void INF_Release(void) {
 
 	if (!INF_Count(IR_WAITING)) {
 		// the picked infected left during the preparation
-		int c = INF_PickRandom(IR_SURVIVOR, qfalse);
-		if (c >= 0)
+		int c = INF_PickRandom(IR_SURVIVOR, qfalse, g_inf_humanRole.integer == 1 ? INF_PICK_BOTS : INF_PICK_ANY);
+		if (c >= 0) {
 			infRole[c] = IR_WAITING;
+			infAlpha[c] = qtrue;
+		}
 	}
 
 	INF_SetState(INF_HUNT);
+	memset(infKnownTime, 0, sizeof(infKnownTime));
+	infNextPing = level.time + g_inf_pingInterval.integer * 1000;
 	for (i = 0; i < level.maxclients; i++) {
 		if (infRole[i] != IR_WAITING)
 			continue;
 		infRole[i] = IR_INFECTED;
 		INF_MoveClient(g_entities + i, TEAM_RED);
+		G_LogPrintf("InfectionFirst: %i\n", i);
 		INF_Print(va("%s ^7is ^1INFECTED^7.", level.clients[i].pers.netname));
 		INF_CenterPrint(i, "You are ^1INFECTED^7!\nPunch the survivors.");
 	}
@@ -272,6 +381,19 @@ static void INF_EndRound(team_t winner) {
 	} else {
 		trap_SendServerCommand(-1, "cp \"^1Everyone is infected!\n\"");
 	}
+	if (g_inf_adaptive.integer && (infHumanInfected || INF_CountHumans(IR_SURVIVOR) || INF_CountHumans(IR_INFECTED))) {
+		// the humans did well: infected humans wiped the survivors, or a human survivor lived to the end
+		qboolean humansWon = infHumanInfected ? (winner == TEAM_RED) : (INF_CountHumans(IR_SURVIVOR) > 0);
+		int lvl = g_inf_level.integer + (humansWon ? 1 : -1);
+
+		if (lvl < INF_LEVEL_MIN)
+			lvl = INF_LEVEL_MIN;
+		if (lvl > INF_LEVEL_MAX)
+			lvl = INF_LEVEL_MAX;
+		trap_Cvar_Set("g_inf_level", va("%i", lvl));
+		trap_Cvar_Update(&g_inf_level);
+		INF_Print(va("Next round: difficulty level ^3%i^7.", lvl));
+	}
 	INF_GlobalSound(INF_SND_END);
 	CalculateRanks();
 	SendScoreboardMessageToAllClients();
@@ -281,7 +403,7 @@ static void INF_EndRound(team_t winner) {
 
 static void INF_RunPrep(void) {
 	int i, sec;
-	int remaining = g_inf_prepTime.integer * 1000 - (level.time - infStateTime);
+	int remaining = INF_PrepTime() * 1000 - (level.time - infStateTime);
 
 	if (remaining <= 0) {
 		INF_Release();
@@ -317,10 +439,11 @@ static void INF_RunHunt(void) {
 
 	if (!INF_Count(IR_INFECTED)) {
 		// every infected left the game
-		int c = INF_PickRandom(IR_SURVIVOR, qfalse);
+		int c = INF_PickRandom(IR_SURVIVOR, qfalse, g_inf_humanRole.integer == 1 ? INF_PICK_BOTS : INF_PICK_ANY);
 		if (c < 0)
 			return;
 		infRole[c] = IR_INFECTED;
+		infAlpha[c] = qtrue;
 		INF_MoveClient(g_entities + c, TEAM_RED);
 		INF_Print(va("%s ^7is ^1INFECTED^7.", level.clients[c].pers.netname));
 		INF_CenterPrint(c, "You are ^1INFECTED^7!\nPunch the survivors.");
@@ -342,8 +465,19 @@ static void INF_RunHunt(void) {
 		}
 	}
 
+	if (g_inf_pingInterval.integer > 0 && level.time >= infNextPing) {
+		// now and then the infected sense where everybody is
+		int i;
+
+		infNextPing = level.time + g_inf_pingInterval.integer * 1000;
+		for (i = 0; i < level.maxclients; i++) {
+			if (infRole[i] == IR_SURVIVOR)
+				INF_Reveal(i);
+		}
+	}
+
 	if (survivors == 1 && !infLastAnnounced && INF_NumPlayers() > 2) {
-		int c = INF_PickRandom(IR_SURVIVOR, qfalse);
+		int c = INF_PickRandom(IR_SURVIVOR, qfalse, INF_PICK_ANY);
 		infLastAnnounced = qtrue;
 		trap_SendServerCommand(-1, va("cp \"%s ^7is the last Pad standing!\n\"", level.clients[c].pers.netname));
 		INF_GlobalSound(INF_SND_LAST);
@@ -383,6 +517,7 @@ void INF_RunFrame(void) {
 void INF_Init(void) {
 	memset(infRole, 0, sizeof(infRole));
 	memset(infWasFirst, 0, sizeof(infWasFirst));
+	memset(infAlpha, 0, sizeof(infAlpha));
 	infRound = 0;
 	infLastAnnounced = qfalse;
 	INF_SetState(INF_IDLE);
@@ -464,12 +599,72 @@ qboolean INF_FilterTeamRequest(gentity_t *ent, int *team) {
 The infected only have the Punchy
 */
 void INF_SetLoadout(gclient_t *client) {
-	if (!INF_IsInfected(client))
+	int armor;
+
+	if (!G_Infection())
 		return;
+	if (!INF_IsInfected(client)) {
+		// adaptive difficulty in favour of the survivors: they start with some armour
+		if (infThreat < 0 && client->sess.sessionTeam == TEAM_BLUE)
+			client->ps.stats[STAT_ARMOR] = -20 * infThreat;
+		return;
+	}
 	client->ps.stats[STAT_WEAPONS] = (1 << WP_PUNCHY);
 	client->ps.ammo[WP_NIPPER] = 0;
 	client->ps.ammo[WP_PUNCHY] = -1;
-	client->ps.stats[STAT_ARMOR] = g_inf_infectedArmor.integer;
+	armor = infAlpha[client - level.clients] ? g_inf_infectedArmor.integer : g_inf_convertedArmor.integer;
+	armor += 15 * infThreat;
+	client->ps.stats[STAT_ARMOR] = (armor > 0) ? armor : 0;
+}
+
+/*
+The first infected of a round are stronger than the survivors they convert, so a round builds up to a last stand
+*/
+float INF_SpeedScale(const gclient_t *client) {
+	float scale;
+
+	if (!INF_IsInfected(client))
+		return 1.0f;
+	scale = infAlpha[client - level.clients] ? g_inf_infectedSpeed.value : g_inf_convertedSpeed.value;
+	if (scale <= 0)
+		scale = 1.0f;
+	scale += 0.03f * infThreat;
+	return (scale > 0.8f) ? scale : 0.8f;
+}
+
+int INF_MeleeRange(const gclient_t *client) {
+	int range;
+
+	if (!INF_IsInfected(client))
+		return 32;
+	range = infAlpha[client - level.clients] ? g_inf_meleeRange.integer : g_inf_convertedRange.integer;
+	return (range > 32) ? range : 32;
+}
+
+/*
+For the bots: 0 while the survivors still collect, else the round number (bots take up their positions
+g_inf_botHoldLead seconds before the release and keep them during the hunt)
+*/
+int INF_HoldRound(void) {
+	if (!G_Infection())
+		return 0;
+	if (infState == INF_HUNT)
+		return infRound;
+	if (infState == INF_PREP) {
+		int prep = INF_PrepTime();
+		int lead = g_inf_botHoldLead.integer;
+
+		if (lead > prep / 2)
+			lead = prep / 2;
+		if (prep * 1000 - (level.time - infStateTime) <= lead * 1000)
+			return infRound;
+	}
+	return 0;
+}
+
+qboolean INF_IsSurvivor(int clientNum) {
+	return (G_Infection() && clientNum >= 0 && clientNum < MAX_CLIENTS && infRole[clientNum] == IR_SURVIVOR) ? qtrue
+																										   : qfalse;
 }
 
 qboolean INF_CanPickup(const gentity_t *other, const gitem_t *item) {
@@ -492,4 +687,44 @@ int INF_CountWaitingHumans(void) {
 			n++;
 	}
 	return n;
+}
+
+/*
+What the infected bots know (g_inf_botAwareness 1): a survivor gives its position away by firing, by being
+seen, and every g_inf_pingInterval seconds. A bot that arrives and finds nobody forgets the position again.
+With g_inf_botAwareness 0 they always know where everybody is.
+*/
+void INF_Reveal(int clientNum) {
+	if (clientNum < 0 || clientNum >= MAX_CLIENTS || !g_entities[clientNum].client)
+		return;
+	VectorCopy(g_entities[clientNum].client->ps.origin, infKnownPos[clientNum]);
+	infKnownTime[clientNum] = level.time;
+}
+
+void INF_Noise(const gentity_t *ent) {
+	int clientNum;
+
+	if (!G_Infection() || infState != INF_HUNT || !ent->client)
+		return;
+	clientNum = ent->client - level.clients;
+	if (infRole[clientNum] == IR_SURVIVOR)
+		INF_Reveal(clientNum);
+}
+
+qboolean INF_KnownPosition(int clientNum, vec3_t out) {
+	if (!INF_IsSurvivor(clientNum) || g_entities[clientNum].health <= 0)
+		return qfalse;
+	if (!g_inf_botAwareness.integer) {
+		VectorCopy(g_entities[clientNum].client->ps.origin, out);
+		return qtrue;
+	}
+	if (!infKnownTime[clientNum])
+		return qfalse;
+	VectorCopy(infKnownPos[clientNum], out);
+	return qtrue;
+}
+
+void INF_ForgetPosition(int clientNum) {
+	if (clientNum >= 0 && clientNum < MAX_CLIENTS)
+		infKnownTime[clientNum] = 0;
 }
