@@ -756,3 +756,180 @@ index 12bc964..3e29151 100644
  	if (ent->client->ps.powerups[PW_PADPOWER]) {
  		s_quadFactor = g_quadfactor.value;
  	} else {
+diff --git a/code/ui/ui_atoms.c b/code/ui/ui_atoms.c
+index 2d883eb..d28165d 100644
+--- a/code/ui/ui_atoms.c
++++ b/code/ui/ui_atoms.c
+@@ -1110,6 +1110,12 @@ qboolean UI_ConsoleCommand(int realTime) {
+ 		UI_HelpMenu_f();
+ 		return qtrue;
+ 	}
++
++	// open the Create Game menu from the console (also used to screenshot it in tests)
++	if (Q_stricmp(cmd, "ui_creategame") == 0) {
++		UI_StartServerMenu(qtrue);
++		return qtrue;
++	}
+ 	return qfalse;
+ }
+ 
+diff --git a/code/ui/ui_startserver.c b/code/ui/ui_startserver.c
+index 8186656..1a998be 100644
+--- a/code/ui/ui_startserver.c
++++ b/code/ui/ui_startserver.c
+@@ -71,6 +71,8 @@ typedef struct {
+ 	menufield_s hostname;
+ 	menuradiobutton_s pure;
+ 	menufield_s startlives;
++	menulist_s infrole;	  // Infection: shown in place of "Friendly Fire"
++	menufield_s infprep;  // Infection: shown in place of "Start Lives"
+ 
+ 	menubitmap_s selectbots;
+ 
+@@ -97,10 +99,14 @@ static startserver_t s_startserver;
+ static const char *gametype_items[] = {GAMETYPE_NAME(GT_FFA), GAMETYPE_NAME(GT_TEAM), GAMETYPE_NAME(GT_SPRAYFFA),
+ 										GAMETYPE_NAME(GT_SPRAY), GAMETYPE_NAME(GT_CTF), GAMETYPE_NAME(GT_1FCTF),
+ 										GAMETYPE_NAME(GT_BALLOON), GAMETYPE_NAME(GT_LPS), GAMETYPE_NAME(GT_CATCH),
+-										GAMETYPE_NAME(GT_FREEZETAG), NULL};
++										GAMETYPE_NAME(GT_FREEZETAG), "Infection", NULL};
++
++// Infection (the last entry) is Free For All Team with g_infection 1
++#define INFECTION_ITEM 10
++#define UI_IsInfectionSelected() (s_startserver.gametype.curvalue == INFECTION_ITEM)
+ 
+ static int gametype_remap[] = {GT_FFA, GT_TEAM, GT_SPRAYFFA, GT_SPRAY, GT_CTF, GT_1FCTF,
+-								GT_BALLOON, GT_LPS, GT_CATCH, GT_FREEZETAG};
++								GT_BALLOON, GT_LPS, GT_CATCH, GT_FREEZETAG, GT_TEAM};
+ // NOTE: Maps g_gametype to gametype_items. Make sure these are defined for all GT_MAX_GAME_TYPE-1 gametypes
+ //       and remap to something reasonable for gametypes that do not have an entry in gametype_items.
+ static int gametype_remap2[] = {0, 0, 0, 2, 7, 8, 1, 7, 4, 5, 3, 6};
+@@ -316,8 +322,9 @@ static void UI_StartServer_GametypeEvent(void *ptr, int event) {
+ 
+ 	trap_Cvar_Set("g_gametype", va("%i", gametype_remap[s_startserver.gametype.curvalue]));
+ 	trap_Cvar_Set("ui_createGametype", va("%i", gametype_remap[s_startserver.gametype.curvalue]));
++	trap_Cvar_Set("ui_createInfection", UI_IsInfectionSelected() ? "1" : "0");
+ 
+-	if (gametype_remap[s_startserver.gametype.curvalue] >= GT_TEAM)
++	if (gametype_remap[s_startserver.gametype.curvalue] >= GT_TEAM && !UI_IsInfectionSelected())
+ 		s_startserver.friendlyfire.generic.flags &= ~QMF_GRAYED;
+ 	else
+ 		s_startserver.friendlyfire.generic.flags |= QMF_GRAYED;
+@@ -327,6 +334,19 @@ static void UI_StartServer_GametypeEvent(void *ptr, int event) {
+ 	else
+ 		s_startserver.startlives.generic.flags |= QMF_GRAYED;
+ 
++	// Infection swaps the two rows it has no use for against its own options
++	if (UI_IsInfectionSelected()) {
++		s_startserver.friendlyfire.generic.flags |= (QMF_HIDDEN | QMF_INACTIVE);
++		s_startserver.startlives.generic.flags |= (QMF_HIDDEN | QMF_INACTIVE);
++		s_startserver.infrole.generic.flags &= ~(QMF_HIDDEN | QMF_INACTIVE);
++		s_startserver.infprep.generic.flags &= ~(QMF_HIDDEN | QMF_INACTIVE);
++	} else {
++		s_startserver.friendlyfire.generic.flags &= ~(QMF_HIDDEN | QMF_INACTIVE);
++		s_startserver.startlives.generic.flags &= ~(QMF_HIDDEN | QMF_INACTIVE);
++		s_startserver.infrole.generic.flags |= (QMF_HIDDEN | QMF_INACTIVE);
++		s_startserver.infprep.generic.flags |= (QMF_HIDDEN | QMF_INACTIVE);
++	}
++
+ 	count = UI_GetNumArenas();
+ 	s_startserver.nummaps = 0;
+ 	matchbits = 1 << gametype_remap[s_startserver.gametype.curvalue];
+@@ -334,6 +354,10 @@ static void UI_StartServer_GametypeEvent(void *ptr, int event) {
+ 	if (gametype_remap[s_startserver.gametype.curvalue] == GT_FFA) {
+ 		matchbits |= (1 << GT_SINGLE_PLAYER);
+ 	}
++	// infection also runs on maps without team spawn points
++	if (UI_IsInfectionSelected()) {
++		matchbits |= (1 << GT_FFA);
++	}
+ 
+ 	for (i = 0; i < count; i++) {
+ 		info = UI_GetArenaInfoByNumber(i);
+@@ -483,6 +507,19 @@ static void UI_StartServer_MenuEvent(void *ptr, int event) {
+ 			trap_Cvar_SetValue("g_LPS_startlives", Com_Clamp(1, lifelimit, lifelimit));
+ 			trap_Cvar_SetValue("g_friendlyfire", friendlyfire);
+ 			trap_Cvar_SetValue("g_instaPad", instapad);
++			trap_Cvar_SetValue("g_infection", UI_IsInfectionSelected() ? 1 : 0);
++			if (UI_IsInfectionSelected()) {
++				int prep = atoi(s_startserver.infprep.field.buffer);
++
++				trap_Cvar_SetValue("g_inf_humanRole", s_startserver.infrole.curvalue);
++				trap_Cvar_SetValue("g_inf_prepTime", Com_Clamp(0, 600, prep));
++				// the mode assigns the teams; without picked bots it fills the game itself
++				trap_Cvar_SetValue("g_friendlyfire", 0);
++				trap_Cvar_SetValue("g_teamAutoJoin", 1);
++				trap_Cvar_SetValue("g_teamForceBalance", 0);
++				trap_Cvar_SetValue("g_doWarmup", 0);
++				trap_Cvar_SetValue("bot_minplayers", s_startserver.selectbotinfos[0].name[0] ? 0 : 8);
++			}
+ 			trap_Cvar_SetValue("sv_pure", pure);
+ 			trap_Cvar_Set("sv_hostname", s_startserver.hostname.field.buffer);
+ 
+@@ -632,6 +669,7 @@ UI_StartServer_MenuInit
+ */
+ 
+ static const char *dedicated_list[] = {"No", "LAN", "Internet", NULL};
++static const char *infrole_list[] = {"Random", "Survivor", "Infected", NULL};
+ 
+ static void UI_StartServer_MenuInit(void) {
+ 	int i;
+@@ -670,6 +708,8 @@ static void UI_StartServer_MenuInit(void) {
+ 	s_startserver.gametype.generic.ownerdraw = UI_StartServer_GameTypeDraw;
+ 	s_startserver.gametype.curvalue = gametype_remap2[(int)Com_Clamp(
+ 		0, (sizeof(gametype_remap2) / sizeof(gametype_remap[0]) - 1), trap_Cvar_VariableValue("ui_createGametype"))];
++	if (trap_Cvar_VariableValue("ui_createInfection"))
++		s_startserver.gametype.curvalue = INFECTION_ITEM;
+ 
+ 	for (i = 0; i < MAX_MAPSPERPAGE; i++) {
+ 		x = (i % MAX_MAPCOLS) * (128 + 24) + GRID_XPOS;
+@@ -740,6 +780,15 @@ static void UI_StartServer_MenuInit(void) {
+ 	s_startserver.friendlyfire.generic.name = "Friendly Fire:";
+ 
+ 	y += BIGCHAR_HEIGHT + 2;
++	// same row as "Friendly Fire", only visible for Infection
++	s_startserver.infrole.generic.type = MTYPE_SPINCONTROL;
++	s_startserver.infrole.generic.flags = QMF_SMALLFONT | QMF_HIDDEN | QMF_INACTIVE;
++	s_startserver.infrole.generic.x = OPTIONS_XPOS;
++	s_startserver.infrole.generic.y = s_startserver.friendlyfire.generic.y;
++	s_startserver.infrole.generic.name = "Your Role:";
++	s_startserver.infrole.itemnames = infrole_list;
++	s_startserver.infrole.curvalue = (int)Com_Clamp(0, 2, trap_Cvar_VariableValue("g_inf_humanRole"));
++
+ 	s_startserver.instapad.generic.type = MTYPE_RADIOBUTTON;
+ 	s_startserver.instapad.generic.flags = QMF_SMALLFONT;
+ 	s_startserver.instapad.generic.x = OPTIONS_XPOS;
+@@ -800,6 +849,15 @@ static void UI_StartServer_MenuInit(void) {
+ 	s_startserver.startlives.field.widthInChars = 3;
+ 	s_startserver.startlives.field.maxchars = 3;
+ 
++	// same row as "Start Lives", only visible for Infection
++	s_startserver.infprep.generic.type = MTYPE_FIELD;
++	s_startserver.infprep.generic.name = "Prep Time:";
++	s_startserver.infprep.generic.flags = QMF_NUMBERSONLY | QMF_SMALLFONT | QMF_HIDDEN | QMF_INACTIVE;
++	s_startserver.infprep.generic.x = OPTIONS_XPOS;
++	s_startserver.infprep.generic.y = y;
++	s_startserver.infprep.field.widthInChars = 3;
++	s_startserver.infprep.field.maxchars = 3;
++
+ 	s_startserver.selectbots.generic.type = MTYPE_BITMAP;
+ 	s_startserver.selectbots.generic.name = SELECTBOTS0;
+ 	s_startserver.selectbots.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+@@ -850,6 +908,8 @@ static void UI_StartServer_MenuInit(void) {
+ 	Menu_AddItem(&s_startserver.menu, &s_startserver.timelimit);
+ 	Menu_AddItem(&s_startserver.menu, &s_startserver.maxclients);
+ 	Menu_AddItem(&s_startserver.menu, &s_startserver.startlives);
++	Menu_AddItem(&s_startserver.menu, &s_startserver.infrole);
++	Menu_AddItem(&s_startserver.menu, &s_startserver.infprep);
+ 	Menu_AddItem(&s_startserver.menu, &s_startserver.selectbots);
+ 
+ 	Menu_AddItem(&s_startserver.menu, &s_startserver.fight);
+@@ -863,6 +923,9 @@ static void UI_StartServer_MenuInit(void) {
+ 			   sizeof(s_startserver.fraglimit.field.buffer));
+ 	Q_strncpyz(s_startserver.maxclients.field.buffer, UI_Cvar_VariableString("sv_maxclients"),
+ 			   sizeof(s_startserver.maxclients.field.buffer));
++	Q_strncpyz(s_startserver.infprep.field.buffer,
++			   trap_Cvar_VariableValue("g_inf_prepTime") > 0 ? UI_Cvar_VariableString("g_inf_prepTime") : "120",
++			   sizeof(s_startserver.infprep.field.buffer));
+ 	Q_strncpyz(s_startserver.startlives.field.buffer, UI_Cvar_VariableString("ui_lps_startlives"),
+ 			   sizeof(s_startserver.startlives.field.buffer));
+ 

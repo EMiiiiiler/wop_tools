@@ -1,7 +1,7 @@
 # Infection for World of Padman
 
-A Halo-style Infection mode. It is a server-side mod: only the game logic (`qagame.qvm`) changes, so the stock WoP
-client, menus, HUD, maps and bots keep working and friends who join your server need nothing extra.
+A Halo-style Infection mode. The mode itself is server-side (`qagame.qvm`), so the stock WoP HUD, maps and bots keep
+working and friends who join your server need nothing extra. A patched menu (`ui.qvm`) adds it to Create Game.
 
 ## Rules
 - Two teams: **survivors** (Blue Noses) and **infected** (Red Pads).
@@ -38,12 +38,20 @@ client, menus, HUD, maps and bots keep working and friends who join your server 
 ## Install and play
 1. Copy the `infection` folder next to the `wop` folder of your World of Padman install (so you have
    `<WoP>/wop` and `<WoP>/infection/zz_infection.pk3`).
-2. Start WoP with `+set fs_game infection +exec infection.cfg +map <mapname>`, e.g.
-   `wop.x86_64 +set fs_game infection +exec infection.cfg +map wop_padgarage`.
-   Your own maps in `wop/` are found as usual; any map with bot support works, nothing to rebuild.
-3. Join with the normal team menu (any choice works; the mode assigns the team).
+2. Start WoP, open **Mods** in the main menu and pick **Infection** (or start WoP with `+set fs_game infection`).
+3. **Create Game**: the game type list has a new last entry, **Infection**. With it selected the options show
+   **Your Role** (Random / Survivor / Infected) and **Prep Time** in place of Friendly Fire and Start Lives. Point Limit
+   is the number of rounds to win. Every map made for Free For All or team play is listed. Pick bots with Select Bots,
+   or pick none and the game fills up to 8 players by itself. Press Fight.
+4. In the game join with the normal team menu if asked (any choice works; the mode assigns the team).
 
-`infection.cfg` holds every setting with a comment. `g_infection 0` turns the mode off (plain WoP).
+Without the menu: `wop.x86_64 +set fs_game infection +exec infection.cfg +map <mapname>`.
+
+The menu entry is a patched `ui.qvm` inside the same pk3, so it only exists while the Infection mod is loaded; plain
+WoP is untouched. Any map with bot support works, nothing to rebuild.
+
+`infection_settings.cfg` holds the fine tuning with a comment per line and is loaded automatically (`autoexec.cfg`);
+`infection.cfg` is for starting from the command line. Other game types still work inside the mod.
 
 | cvar | default | meaning |
 |---|---|---|
@@ -76,7 +84,13 @@ stand-in: `EXTRA='set g_inf_debugHuman 0;set g_inf_humanRole 1' ./test_mod.sh <s
 
 The game code is GPL-2.0 like WoP's; the patch and the new file are inside the pk3 (`src/`).
 
+`client_shot.sh <WoP source> <outdir> <client args>` runs the real client headless (Xvfb + software GL) and
+screenshots a menu; the Create Game screen was checked this way (`+ui_creategame` opens it from the console).
+
 ## How it is wired (for later changes)
+- Menu (`ui_startserver.c`): "Infection" is an extra entry of `gametype_items` mapped to `GT_TEAM`; on Fight it sets
+  `g_infection`, `g_inf_humanRole`, `g_inf_prepTime`, auto-join and `bot_minplayers`. The two extra rows share the
+  positions of Friendly Fire / Start Lives and are hidden for other game types. `ui_createInfection` remembers it.
 - `g_infection.c`: round state machine (IDLE, PREP, HUNT, END), a role per client (survivor, waiting, infected) and
   `INF_SyncRoles()` which keeps teams equal to roles every frame.
 - Hooks: `G_RunFrame` (round logic), `player_die` (infect), `G_Respawn` (team switch before the spawn), `SetTeam` (team
@@ -88,6 +102,11 @@ The game code is GPL-2.0 like WoP's; the patch and the new file are inside the p
   return nothing (stock code left weapon 0 selected: "weapon number (0) out of range").
 
 ## Not checked
-Only the dedicated server with bots was tested here (no graphical client): the centre-screen messages, sounds and the
-view of a waiting infected have not been seen on a real client. The human rules (role, escort, join on sight, level)
-were tested with a bot standing in as the human (`g_inf_debugHuman`), not with a real player.
+- Seen on the real client (headless): the Create Game screen with the Infection entry and its two rows, and that picking
+  the mod at run time loads the menu and `autoexec.cfg`. Not exercised: pressing Fight from the menu (no input device),
+  the Mods menu list itself, and everything in a running game (centre-screen messages, sounds, the view of a waiting
+  infected).
+- The human rules (role, escort, join on sight, level) were tested with a bot standing in as the human
+  (`g_inf_debugHuman`), not with a real player.
+- Both QVMs are built from WoP source at the commit in `src/WOP_COMMIT` (version 1.7.1 in the source); an older
+  installed WoP may not match.
