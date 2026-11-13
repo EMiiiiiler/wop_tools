@@ -286,6 +286,20 @@ class Build:
             if not f.endswith('.bsp'): os.remove(f)
         mb = os.path.getsize(page) / 1e6
         notes = 'LEAK: the map is not sealed (the full compile will fail)\n' if leak else ''
+        # self-review before showing the user: the same page with three.js inlined, shot from the mapinfo cameras
+        three = os.environ.get('THREE')
+        if three and os.path.exists(three) and pv.get('shots') and not os.environ.get('QUICK_NOSHOTS'):
+            local = os.path.join(self.out, 'quick_local.html'); sdir = os.path.join(self.out, 'quick_shots')
+            k = cmd.index('--threeurl')
+            self.run(cmd[:3] + [local] + cmd[4:k] + ['--three', three] + cmd[k + 2:], log='quick_render_local.log')
+            shutil.rmtree(sdir, ignore_errors=True)
+            self.run([PY, os.path.join(HERE, 'preview', 'shoot.py'), local, sdir] + list(pv['shots']), log='quick_shoot.log', timeout=1800)
+            pngs = sorted(glob.glob(os.path.join(sdir, '*.png')))
+            if pngs:
+                self.run([PY, os.path.join(HERE, 'preview', 'montage.py'), os.path.join(self.out, 'quick_review.png')] + pngs +
+                         ['--title', f'{self.info["longname"]} - quick preview'], log='quick_montage.log')
+                notes += f'{len(pngs)} quick screenshots: quick_review.png\n'
+            if os.path.exists(local): os.remove(local)
         return self.set('quick', 'WARN' if leak else 'PASS', seconds=round(t + t2), page_mb=round(mb, 1),
                         details=notes + f'{page}\n' + o2[-600:])
 
