@@ -1,0 +1,54 @@
+{
+ "map": "wop_paddive",
+ "ns": "paddive",
+ "longname": "Pad Deep Dive",
+ "generator": "build_paddive.py",
+ "bounds": [
+  -2048,
+  -1984,
+  2048,
+  1792
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Pad Deep Dive",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "front:0,-1900,420,90,-12",
+   "plaza:-700,-1500,80,50,5",
+   "lobby:0,120,90,90,0",
+   "gallery:-450,420,330,35,-15",
+   "cascade_e:1700,-1500,330,125,-12",
+   "top_terrace:1380,820,330,215,-10",
+   "roof:-860,640,700,0,-12",
+   "moat:420,-860,-10,90,-5",
+   "back:0,1740,300,270,-10",
+   "overview:1900,-1900,1100,135,-30"
+  ]
+ },
+ "levelshots": {
+  "cover": "front",
+  "shots": [
+   "front",
+   "cascade_e",
+   "lobby"
+  ]
+ }
+}

@@ -1,0 +1,15 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_paddive
+tier_b_e:           1050,-56,192 > 1050,168,256
+tier_c_e:           1060,-726,128 > 1060,-502,192
+tier_d_e:           1060,-1336,64 > 1060,-1112,128
+tier_plaza_e:       564,-1400,0 > 788,-1400,64
+tier_b_w:           -1050,-56,192 > -1050,168,256
+tier_c_w:           -1060,-726,128 > -1060,-502,192
+tier_d_w:           -1060,-1336,64 > -1060,-1112,128
+tier_plaza_w:       -564,-1400,0 > -788,-1400,64
+door_s:             0,-80,0 > 0,88,0
+door_n:             0,1360,0 > 0,1192,0
+door_e:             720,640,256 > 490,640,256
+door_w:             -720,640,256 > -490,640,256
+gallery_stairs:     -304,1100,0 > 304,1100,256
