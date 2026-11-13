@@ -14,6 +14,8 @@ working and friends who join your server need nothing extra. A patched menu (`ui
 - A survivor who dies, however it happens, respawns as infected.
 - **First infected are strong, converts are weak.** The infected a round starts with run faster, reach further and
   have armour; survivors who get infected only get a slightly longer reach. Rounds build up to a last stand.
+- **You can tell them apart by shape.** Every infected wears the same character (`g_inf_infectedModel`, MonsterPad by
+  default, in the red team skin). A survivor who picked that character plays as `g_inf_survivorModel` (PadMan) instead.
 - The round ends when everyone is infected (infected win) or after `g_inf_roundTime` seconds (default 300; the
   survivors win and each one alive gets bonus points). A new round starts 6 seconds later.
 - The team scores count rounds won; `pointlimit` is the number of rounds to win the map.
@@ -66,6 +68,8 @@ WoP is untouched. Any map with bot support works, nothing to rebuild.
 | `g_inf_infectedSpeed` / `g_inf_convertedSpeed` | 1.15 / 1.0 | speed factor (on top of the Punchy's 1.3) |
 | `g_inf_infectedArmor` / `g_inf_convertedArmor` | 100 / 0 | spawn armour |
 | `g_inf_surviveBonus` | 5 | points per survivor alive at the end |
+| `g_inf_infectedModel` | monsterpad | character of every infected ("" = own models); `name` or `name/skin` |
+| `g_inf_survivorModel` | padman | replacement for survivors who picked the infected character |
 | `g_inf_botHoldLead` | 30 | seconds before the release at which survivor bots take positions |
 | `g_inf_botEscort` | 2 | bots that seek out each human survivor |
 | `g_inf_botJoinOnSight` | 1 | other survivor bots join a human they see |
@@ -93,6 +97,7 @@ screenshots a menu; the Create Game screen was checked this way (`+ui_creategame
   positions of Friendly Fire / Start Lives and are hidden for other game types. `ui_createInfection` remembers it.
 - `g_infection.c`: round state machine (IDLE, PREP, HUNT, END), a role per client (survivor, waiting, infected) and
   `INF_SyncRoles()` which keeps teams equal to roles every frame.
+- Models: `INF_ForceModel` in `ClientUserinfoChanged` rewrites the model/head model the server publishes.
 - Hooks: `G_RunFrame` (round logic), `player_die` (infect), `G_Respawn` (team switch before the spawn), `SetTeam` (team
   requests), `ClientSpawn` (loadout), `Touch_Item` (pickups), `CheckGauntletAttack` (damage, reach), `ClientThink`
   (speed), `AddScore` (team score = rounds), `CheckTournament` (no warm-up), `G_CheckMinimumPlayers` (bots as one pool).

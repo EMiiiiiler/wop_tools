@@ -479,7 +479,7 @@ index cd59d84..ab7df81 100644
  			minplayers = (g_maxclients.integer / 2) - 1;
  		}
 diff --git a/code/game/g_client.c b/code/game/g_client.c
-index bc66292..92c60c6 100644
+index bc66292..4949cb8 100644
 --- a/code/game/g_client.c
 +++ b/code/game/g_client.c
 @@ -605,6 +605,7 @@ void G_Respawn(gentity_t *ent) {
@@ -490,7 +490,17 @@ index bc66292..92c60c6 100644
  	ClientSpawn(ent);
  
  	// add a teleportation effect
-@@ -1095,7 +1096,7 @@ void ClientBegin(int clientNum) {
+@@ -824,6 +825,9 @@ void ClientUserinfoChanged(int clientNum) {
+ 		Q_strncpyz(headModel, Info_ValueForKey(userinfo, "headmodel"), sizeof(headModel));
+ 	}
+ 
++	// infection: one model for all infected, and no survivor may wear it
++	INF_ForceModel(client, model, sizeof(model), headModel, sizeof(headModel));
++
+ 	// XMAS: optional hat selection forwarded to all clients via configstring
+ 	Q_strncpyz(hat, Info_ValueForKey(userinfo, "hat"), sizeof(hat));
+ 
+@@ -1095,7 +1099,7 @@ void ClientBegin(int clientNum) {
  															: EV_PLAYER_TELEPORT_BLUE_IN);
  		tent->s.clientNum = ent->s.clientNum;
  
@@ -499,7 +509,7 @@ index bc66292..92c60c6 100644
  			trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", client->pers.netname));
  		}
  	}
-@@ -1276,6 +1277,8 @@ void ClientSpawn(gentity_t *ent) {
+@@ -1276,6 +1280,8 @@ void ClientSpawn(gentity_t *ent) {
  		client->ps.stats[STAT_WEAPONS] |= (1 << WP_SPRAYPISTOL);
  	}
  
@@ -561,10 +571,10 @@ index 7403521..2d3f21d 100644
  	result = BG_CanItemBeGrabbed(g_gametype.integer, &ent->s, &other->client->ps, level.time);
  	if (result != PICKUP_OK) {
 diff --git a/code/game/g_local.h b/code/game/g_local.h
-index f699a8e..132963b 100644
+index f699a8e..69f4c5a 100644
 --- a/code/game/g_local.h
 +++ b/code/game/g_local.h
-@@ -786,6 +786,29 @@ void G_InitSessionData(gclient_t *client, char *userinfo);
+@@ -786,6 +786,30 @@ void G_InitSessionData(gclient_t *client, char *userinfo);
  void G_InitWorldSession(void);
  void G_WriteSessionData(void);
  
@@ -586,6 +596,7 @@ index f699a8e..132963b 100644
 +int INF_HoldRound(void);
 +qboolean INF_IsSurvivor(int clientNum);
 +qboolean INF_IsHumanPlayer(int clientNum);
++void INF_ForceModel(const gclient_t *client, char *model, int modelSize, char *headModel, int headModelSize);
 +void INF_Reveal(int clientNum);
 +void INF_Noise(const gentity_t *ent);
 +qboolean INF_KnownPosition(int clientNum, vec3_t out);
@@ -594,7 +605,7 @@ index f699a8e..132963b 100644
  //
  //	g_freezetag
  //
-@@ -956,6 +979,28 @@ extern vmCvar_t g_ft_numRounds;
+@@ -956,6 +980,30 @@ extern vmCvar_t g_ft_numRounds;
  extern vmCvar_t g_ft_playAllRounds;
  extern vmCvar_t g_ft_lateJoinTime;
  extern vmCvar_t g_ft_debug;
@@ -616,6 +627,8 @@ index f699a8e..132963b 100644
 +extern vmCvar_t g_inf_botEscort;
 +extern vmCvar_t g_inf_botJoinOnSight;
 +extern vmCvar_t g_inf_debugHuman;
++extern vmCvar_t g_inf_infectedModel;
++extern vmCvar_t g_inf_survivorModel;
 +extern vmCvar_t g_inf_adaptive;
 +extern vmCvar_t g_inf_level;
 +extern vmCvar_t g_inf_botAwareness;
@@ -624,10 +637,10 @@ index f699a8e..132963b 100644
  // instapad
  extern vmCvar_t g_instaPad;
 diff --git a/code/game/g_main.c b/code/game/g_main.c
-index 5b5c67d..29d1567 100644
+index 5b5c67d..158c69b 100644
 --- a/code/game/g_main.c
 +++ b/code/game/g_main.c
-@@ -97,6 +97,28 @@ vmCvar_t g_ft_numRounds;
+@@ -97,6 +97,30 @@ vmCvar_t g_ft_numRounds;
  vmCvar_t g_ft_playAllRounds;
  vmCvar_t g_ft_lateJoinTime;
  vmCvar_t g_ft_debug;
@@ -649,6 +662,8 @@ index 5b5c67d..29d1567 100644
 +vmCvar_t g_inf_botEscort;
 +vmCvar_t g_inf_botJoinOnSight;
 +vmCvar_t g_inf_debugHuman;
++vmCvar_t g_inf_infectedModel;
++vmCvar_t g_inf_survivorModel;
 +vmCvar_t g_inf_adaptive;
 +vmCvar_t g_inf_level;
 +vmCvar_t g_inf_botAwareness;
@@ -656,7 +671,7 @@ index 5b5c67d..29d1567 100644
  
  // instapad
  vmCvar_t g_instaPad;
-@@ -200,6 +222,29 @@ static cvarTable_t gameCvarTable[] = {
+@@ -200,6 +224,31 @@ static cvarTable_t gameCvarTable[] = {
  	{&g_ft_lateJoinTime, "g_FT_lateJoinTime", "30", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qfalse},
  	{&g_ft_debug, "g_FT_debug", "0", 0, 0, qfalse},
  
@@ -678,6 +693,8 @@ index 5b5c67d..29d1567 100644
 +	{&g_inf_botEscort, "g_inf_botEscort", "2", CVAR_ARCHIVE, 0, qtrue},
 +	{&g_inf_botJoinOnSight, "g_inf_botJoinOnSight", "1", CVAR_ARCHIVE, 0, qtrue},
 +	{&g_inf_debugHuman, "g_inf_debugHuman", "-1", 0, 0, qfalse},
++	{&g_inf_infectedModel, "g_inf_infectedModel", "monsterpad", CVAR_ARCHIVE, 0, qfalse},
++	{&g_inf_survivorModel, "g_inf_survivorModel", "padman", CVAR_ARCHIVE, 0, qfalse},
 +	{&g_inf_adaptive, "g_inf_adaptive", "1", CVAR_ARCHIVE, 0, qtrue},
 +	{&g_inf_level, "g_inf_level", "0", CVAR_ARCHIVE, 0, qfalse},
 +	{&g_inf_botAwareness, "g_inf_botAwareness", "1", CVAR_ARCHIVE, 0, qtrue},
@@ -686,7 +703,7 @@ index 5b5c67d..29d1567 100644
  	{NULL, PLAYERINFO_TEAM, PLAYERINFO_NONE, (CVAR_SERVERINFO | CVAR_ROM), 0, qfalse},
  	{NULL, PLAYERINFO_BOT, PLAYERINFO_NONE, (CVAR_SERVERINFO | CVAR_ROM), 0, qfalse},
  
-@@ -484,6 +529,10 @@ static void G_InitGame(int levelTime, int randomSeed, int restart) {
+@@ -484,6 +533,10 @@ static void G_InitGame(int levelTime, int randomSeed, int restart) {
  		FT_InitFreezeTag();
  	}
  
@@ -697,7 +714,7 @@ index 5b5c67d..29d1567 100644
  	SaveRegisteredItems();
  
  	Com_Printf("-----------------------------------\n");
-@@ -1718,6 +1767,15 @@ Once a frame, check for changes in tournement player state
+@@ -1718,6 +1771,15 @@ Once a frame, check for changes in tournement player state
  =============
  */
  static void CheckTournament(void) {
@@ -713,7 +730,7 @@ index 5b5c67d..29d1567 100644
  	// check because we run 3 game frames before calling Connect and/or ClientBegin
  	// for clients on a map_restart
  	if (level.numPlayingClients == 0) {
-@@ -2391,6 +2449,9 @@ static void G_RunFrame(int levelTime) {
+@@ -2391,6 +2453,9 @@ static void G_RunFrame(int levelTime) {
  	// see if it is time to do a tournement restart
  	CheckTournament();
  

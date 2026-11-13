@@ -728,3 +728,37 @@ void INF_ForgetPosition(int clientNum) {
 	if (clientNum >= 0 && clientNum < MAX_CLIENTS)
 		infKnownTime[clientNum] = 0;
 }
+
+/*
+Player models: every infected wears g_inf_infectedModel, and a survivor who picked that model gets
+g_inf_survivorModel instead, so you can tell the two sides apart by their shape.
+Model strings are "name" or "name/skin"; only the name before the slash is compared.
+*/
+static qboolean INF_SameModel(const char *a, const char *b) {
+	while (*a && *a != '/' && *b && *b != '/') {
+		if (tolower(*a) != tolower(*b))
+			return qfalse;
+		a++;
+		b++;
+	}
+	return ((!*a || *a == '/') && (!*b || *b == '/')) ? qtrue : qfalse;
+}
+
+void INF_ForceModel(const gclient_t *client, char *model, int modelSize, char *headModel, int headModelSize) {
+	if (!G_Infection() || !g_inf_infectedModel.string[0])
+		return;
+
+	if (client->sess.sessionTeam == TEAM_RED) {
+		Q_strncpyz(model, g_inf_infectedModel.string, modelSize);
+		Q_strncpyz(headModel, g_inf_infectedModel.string, headModelSize);
+		return;
+	}
+
+	// survivors, and waiting infected / spectators who would otherwise show it on the scoreboard
+	if (!g_inf_survivorModel.string[0] || INF_SameModel(g_inf_survivorModel.string, g_inf_infectedModel.string))
+		return;
+	if (INF_SameModel(model, g_inf_infectedModel.string))
+		Q_strncpyz(model, g_inf_survivorModel.string, modelSize);
+	if (INF_SameModel(headModel, g_inf_infectedModel.string))
+		Q_strncpyz(headModel, g_inf_survivorModel.string, headModelSize);
+}

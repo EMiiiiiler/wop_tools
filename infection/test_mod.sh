@@ -24,7 +24,7 @@ echo "levels: $(grep 'InfectionLevel:' "$L" | awk '{print $3 "/" $5}' | tr '\n' 
 grep -E 'InfectionRound|InfectionRelease' "$L" | cut -c1-60
 echo "bot errors: $(grep -c 'Error' "$O/ded.log")  log: $L"
 # an infected player must never pick up a weapon/ammo/holdable: team is the \t\ field of the last userinfo line
-python3 - "$L" <<'PY' || rc=1
+python3 - "$L" "${INFMODEL:-monsterpad}" <<'PY' || rc=1
 import re, sys
 team = {}; bad = 0
 for line in open(sys.argv[1], errors='replace'):
@@ -33,7 +33,19 @@ for line in open(sys.argv[1], errors='replace'):
     m = re.search(r' Item: (\d+) (weapon_|ammo_|holdable_)', line)
     if m and team.get(m.group(1)) == '1': bad += 1
 print('pickups by infected:', bad)
-sys.exit(1 if bad else 0)
+# models: every infected (team 1) wears the infected model, no survivor (team 2) does
+want = (sys.argv[2] if len(sys.argv) > 2 else 'monsterpad').lower()
+wrong = shared = seen = 0
+for line in open(sys.argv[1], errors='replace'):
+    m = re.search(r'ClientUserinfoChanged: \d+ .*?\\t\\(\d)\\model\\([^\\/]*)[^\\]*\\hmodel\\([^\\/]*)', line)
+    if not m: continue
+    t, mdl, head = m.group(1), m.group(2).lower(), m.group(3).lower()
+    if t == '1':
+        seen += 1
+        if mdl != want or head != want: wrong += 1
+    elif t == '2' and (mdl == want or head == want): shared += 1
+print('infected model lines: %d  wrong model: %d  survivors wearing it: %d' % (seen, wrong, shared))
+sys.exit(1 if (bad or wrong or shared or not seen) else 0)
 PY
 [ $rc = 0 ] && echo "RESULT: OK" || echo "RESULT: FAIL"
 exit $rc
