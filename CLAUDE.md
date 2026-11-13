@@ -256,3 +256,8 @@ Tools and standing rules for building World of Padman (WoP) maps.
   with one big brush under the slabs: every column gets a 48u "crouch slot" and lint headroom runs for minutes.
 - Parked cars: hug the kerb (<= 30u) or the gutter strip is a long sightline; cars across a driveway look wrong, so
   block a driveway mouth with flanking verge cabinets, footpath bins and an inorganic-collection couch instead.
+- Water texture names must contain `water` (`water_deep`): `K.fix_items()` and the checkers class brushes by name, and a
+  water texture called `deep` made every underwater pickup "STUCK" (paddive).
+- A wave-shaped walkable roof (paddive): MD3 skin over 32u weapclip strips cut on a 4u grid (neighbours < 16u apart) is
+  walkable for bots, but a pad landing on the sloping strips ended MID-AIR in pad_aas; land pads on the flat crest/tips.
+  Round terraces that overlap: `pd_shape.lobe()` (circle clipped by flat chords for stairs) + carve lower tiers by higher.
