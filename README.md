@@ -20,6 +20,8 @@ Tools for building World of Padman maps with NetRadiant Custom (q3map2) and bspc
 - `templates/sample/` - reference map that passes every step (`wopbuild.py templates/sample all`).
 - `docs/SKILL.md` - the wop-mapping skill: process, definition of done, symptom -> fix table, all rules.
 - `tests/run.sh` - regression tests for woplib and the checkers.
+- `infection/` - *Infection* game mode mod (Halo style, server-side `qagame.qvm`): patch + `g_infection.c` for the WoP
+  source, `build_mod.sh` (build + package), `test_mod.sh` (bot match on wopded that checks the round flow), `infection.cfg`.
 - `data/custinfoparms.txt` - WoP footstep surfaceparms for `-custinfoparms`.
 
 ## Map building
