@@ -118,6 +118,7 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | bots: weapon 0 pickups | low bot weight on a pad-only / dead-end spot, or a pad in a cul-de-sac | swap with a heavier weapon, add a pad from a busy route, move it to a busier spot |
 | bots: many MOD_FALLING | bots strafe off deadly edges | 24u `K.botclip_edge` strips, flat bridges >= 320 wide, pickups >= 100u from edges |
 | bots: MOD_WATER | big low ceilings over water | stand structures on the pool floor or fill water under them with botclip |
+| bots never swim into a pool / never find an underwater secret (aas OK) | func_pendulum decoration (rocking floats) on the water | no movers on water bots must cross; prove it with `K.probe` visit counts (padwave: 0 visits with floats, 5-10 without) |
 | players stuck in water | sheer lip that needs a water jump | lint `water`: 16u steps into <= 44u deep water, or a teleporter |
 | item missing at its spot in game | dropped through `common/clip`/botclip/nonsolid at spawn | lint `items`; solid floor or `suspended=True` |
 | sight > 4 % | open floors, aligned doorways, spaces under tables/overhangs | props at `sight --hot` cells beside paths; one prop per bay in shelving tunnels |
@@ -211,7 +212,8 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 - Spiral stairs with ~15-degree treads in a small tower (r < 120) give bspc broken links: add a lift pad.
 - Playable area smaller than the sky hull (streets): mapinfo `bounds` = playable rectangle, `hull` = sky box, the edge
   closed with `common/clip` (solid for bspc), gates flush with the playable side; aas_check prints OUT OF BOUNDS.
-- Count route use with trigger_multiple -> target_score probes (`AddScore` lines) when a spot gets no visits.
+- Count route use with `K.probe(mn, mx, name)` (trigger_multiple -> target_score; botreport prints `== probes` visits per
+  probe) when a spot gets no visits. Diagnosis builds only (it scores points): build probes behind an env switch.
 
 ## 7. Jump pads (`K.jumppad`, `woplib.padmath`)
 - trigger_push + target_position; AimAtTarget aims from the trigger CENTRE and the target is the APEX. Players keep

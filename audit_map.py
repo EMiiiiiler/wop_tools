@@ -313,6 +313,9 @@ def main():
                         ok = True; break
                 if not ok: unsup += 1
             frac = unsup / max(1, len(ring))
+            # roof trusses / glazing that span from wall to wall carry the key `_structure 1` (K.custom(..., _structure=1)):
+            # they have no floor under them by design; the sink check below still applies
+            if kv.get('_structure'): frac = 0.0
             attached = False
             if frac > 0.2:
                 # wall- or ceiling-mounted (wreath, picture frame, hanging star): enough vertices touch a solid/clip

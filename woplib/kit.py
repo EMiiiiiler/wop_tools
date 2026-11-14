@@ -415,11 +415,32 @@ class MapKit:
         self.occupy(min(mn[0], smn[0]), min(mn[1], smn[1]), max(mx[0], smx[0]), max(mx[1], smx[1]), mn[2], max(mx[2], smx[2]))
         self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=list(dest)))
 
+    def probe(self, mn, mx, name):
+        """bot-test probe: trigger_multiple -> target_score, so every visit logs an `AddScore: <client> <n> ...` line that
+        botreport counts per probe (== probes); probe k (creation order) scores n = k + 2 (kills score 1). For diagnosis only: it gives players points, so build probes behind an
+        env switch (e.g. PROBES=1) and never ship them. Probes are listed in spots.json in creation order."""
+        name = self.uniq('probe_' + name)
+        n = len(self.spots.get('probes', [])) + 2
+        self.M.ent('trigger_multiple', brushes=[box(mn, mx, TRIG)], target=name, wait=1)
+        self.M.ent('target_score', (round((mn[0] + mx[0]) / 2), round((mn[1] + mx[1]) / 2), round(mx[2] + 8)), targetname=name,
+                   count=n)
+        self.spots.setdefault('probes', []).append(dict(name=name, mn=list(mn), mx=list(mx), score=n))
+        return name
+
     def hurt(self, mn, mx, dmg=5, **kw):
         """trigger_hurt. bspc makes it lava grown by the player box: keep pad landings > hurt radius + 15 away and use
         botclip strips along deadly edges (bots strafe off them)."""
         self.M.ent('trigger_hurt', brushes=[box(mn, mx, TRIG)], dmg=dmg, **kw)
         self.spots['hurt'].append(dict(mn=list(mn), mx=list(mx), dmg=dmg))
+
+    def current(self, mn, mx, yaw, speed, name, pitch=0, wait=0.5):
+        """water current / booster: trigger_multiple -> target_push with angles "pitch yaw 0" (pitch > 0 = down). It SETS
+        the player's velocity and plays the push sound, so keep zones short (<= 256u) and away from exit steps."""
+        name = self.uniq(name)
+        self.M.ent('trigger_multiple', brushes=[box(mn, mx, TRIG)], target=name, wait=wait)
+        self.M.ent('target_push', (round((mn[0] + mx[0]) / 2), round((mn[1] + mx[1]) / 2), round(mx[2] + 24)), targetname=name,
+                   angles=f'{pitch:g} {yaw:g} 0', speed=speed)
+        self.spots.setdefault('currents', []).append(dict(name=name, mn=list(mn), mx=list(mx), yaw=yaw, speed=speed))
 
     def botclip_edge(self, x0, y0, x1, y1, z, width=24, height=64):
         """24u botclip strip along a deadly drop (z = walk surface); leave gaps where bridges land"""
@@ -623,6 +644,54 @@ class MapKit:
         for b in out:
             mn, mx = b.bounds(); self.occupy(mn[0], mn[1], mx[0], mx[1], mn[2], mx[2])
         self.spots.setdefault('slides', []).append(dict(pts=[list(map(float, p)) for p in P], hw=hw))
+        return out
+
+    def slide_skirt(self, pts, hw, z0=0.0, floor_t=16, below=72, tex=WCLIP, skip=None):
+        """fill the crouch-only slot under the low end of a K.slide: a solid from the ground z0 up to the slide's
+        underside for every segment whose underside comes below z0 + `below` (lint headroom flagged those slots and
+        bots got wedged in them). skip(x, y) -> True leaves a segment out (over a pool). Returns the brushes."""
+        P = [np.array(p, float) for p in pts]
+        out = []
+        for a, b in zip(P[:-1], P[1:]):
+            if min(a[2], b[2]) - floor_t >= z0 + below or max(a[2], b[2]) - floor_t <= z0 + 2: continue
+            if skip and skip((a[0] + b[0]) / 2, (a[1] + b[1]) / 2): continue
+            d = b[:2] - a[:2]; d /= np.linalg.norm(d); s = np.array([-d[1], d[0]]) * hw
+            pts8 = []
+            for c in (a, b):
+                for sg in (1, -1):
+                    q = c[:2] + s * sg
+                    pts8 += [(q[0], q[1], z0), (q[0], q[1], max(z0 + 1, c[2] - floor_t - 2.0))]
+            out.append(hull(pts8, tex, round_pts=False))
+        self.add(out)
+        for bb in out:
+            mn, mx = bb.bounds(); self.occupy(mn[0], mn[1], mx[0], mx[1], mn[2], mx[2])
+        return out
+
+    def building(self, rect, z0, h, openings=(), wall_t=16, roof_t=16, tex='x/x', roof=True):
+        """brushes of a walk-in box building: four walls on `rect` (x0, y0, x1, y1) from z0 to z0 + h with openings
+        [(side, a, b, zlo, zhi)] (side n/s/e/w; a..b along x for n/s and along y for e/w; zlo/zhi above z0: a door is
+        (side, a, b, 0, 112), a window or serving hatch starts higher) and a flat roof slab you can stand on (no parapet:
+        clear line of fire). Feed the result to K.solid_piece (visual MD3 + collision) - returns the brush list."""
+        x0, y0, x1, y1 = rect; t = wall_t
+        out = []
+
+        def wall(side, lo, hi, zlo, zhi):
+            if hi - lo < 1 or zhi - zlo < 1: return
+            if side == 's': mn, mx = (lo, y0, zlo), (hi, y0 + t, zhi)
+            elif side == 'n': mn, mx = (lo, y1 - t, zlo), (hi, y1, zhi)
+            elif side == 'w': mn, mx = (x0, lo, zlo), (x0 + t, hi, zhi)
+            else: mn, mx = (x1 - t, lo, zlo), (x1, hi, zhi)
+            out.append(box(mn, mx, tex))
+        for side in 'nsew':
+            lo, hi = (x0, x1) if side in 'ns' else (y0 + t, y1 - t)
+            p = lo
+            for (_, a, b, zl, zh) in sorted(o for o in openings if o[0] == side):
+                assert lo <= a < b <= hi, f'opening {(side, a, b)} outside the wall {lo}..{hi}'
+                wall(side, p, a, z0, z0 + h)
+                wall(side, a, b, z0, z0 + zl); wall(side, a, b, z0 + zh, z0 + h)
+                p = b
+            wall(side, p, hi, z0, z0 + h)
+        if roof: out.append(box((x0, y0, z0 + h), (x1, y1, z0 + h + roof_t), tex))
         return out
 
     def tube_lift(self, x, y, z, land, apex, name, glass_sh, ring_sh=None, top=None, r=60, arc=False, mouth=None, **pad):
@@ -864,7 +933,9 @@ class MapKit:
 
     def pendulum_model2(self, model, pivot, swing_deg, reach, nodraw_tex=None, **kw):
         """gentle rocking decoration (floating ducks, hanging pans). The period comes from how far the brush reaches
-        below the pivot (`reach`); speed = swing in degrees. Never func_bobbing for decoration (bots try to ride it)."""
+        below the pivot (`reach`); speed = swing in degrees. Never func_bobbing for decoration (bots try to ride it).
+        Not on water bots must swim through: five rocking floats on padwave's wave pool kept bots out of the pool
+        entirely (0 visits in 4 matches, secret never found); without them bots swam in. Bot-test with K.probe."""
         c = [round(v) for v in pivot]
         nd = nodraw_tex or self.T('nodraw_ns')
         low = box((c[0] - 4, c[1] - 4, c[2] - reach), (c[0] + 4, c[1] + 4, c[2] - reach + 8), nd)

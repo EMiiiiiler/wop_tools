@@ -282,6 +282,22 @@ class Build:
         if pv.get('shots'): cmd += ['--views', ';'.join(pv['shots'])]
         rc2, o2, t2 = self.run(cmd, log='quick_render.log')
         if rc2: return self.set('quick', 'FAIL', details=o2[-3000:])
+        # the agent's own look before publishing: the same page with three.js inlined, shot from the mapinfo cameras
+        three = os.environ.get('THREE')
+        if three and os.path.exists(three) and pv.get('shots') and not os.environ.get('QUICK_NOSHOTS'):
+            local = os.path.join(self.out, 'quick_local.html')
+            lc = [c for c in cmd if c != page]
+            k = lc.index('--threeurl'); lc[k:k + 2] = ['--three', three]
+            lc.insert(lc.index(qm[:-4] + '.bsp') + 1, local)
+            self.run(lc, log='quick_render_local.log')
+            sdir = os.path.join(self.out, 'quick_shots'); shutil.rmtree(sdir, ignore_errors=True)
+            self.run([PY, os.path.join(HERE, 'preview', 'shoot.py'), local, sdir] + list(pv['shots']) + ['--size=960x540'],
+                     log='quick_shoot.log', timeout=1800)
+            pngs = sorted(glob.glob(os.path.join(sdir, '*.png')))
+            if pngs:
+                self.run([PY, os.path.join(HERE, 'preview', 'montage.py'), os.path.join(self.out, 'quick_review.png')] + pngs +
+                         ['--title', f'{self.info["longname"]} - quick preview'], log='quick_montage.log')
+            if os.path.exists(local): os.remove(local)
         for f in glob.glob(qm[:-4] + '.*'):
             if not f.endswith('.bsp'): os.remove(f)
         mb = os.path.getsize(page) / 1e6
