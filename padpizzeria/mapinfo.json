@@ -1,0 +1,65 @@
+{
+ "map": "wop_padpizzeria",
+ "ns": "padpizzeria",
+ "longname": "Padman's Pizza Joint",
+ "generator": "build_padpizzeria.py",
+ "bounds": [
+  -880,
+  -2700,
+  880,
+  3980
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Pizza Joint",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:700,-1900,1250,105,-22",
+   "entrance:0,-2400,150,90,0",
+   "aisle:0,-1700,300,90,-3",
+   "booths_w:200,-1100,500,160,-18",
+   "mural:-150,-160,700,180,-5",
+   "counter:150,1450,380,95,-6",
+   "shelf:100,2500,1050,90,-12",
+   "kitchen:-650,3050,600,40,-15",
+   "oven:-30,3020,300,90,0",
+   "sink:250,3300,750,30,-30",
+   "street:-300,-2600,350,60,5",
+   "awning:0,-2650,1550,90,-20",
+   "vault:0,-350,-1650,90,-5",
+   "under_table:-250,-600,60,180,0"
+  ],
+  "models_max": 64
+ },
+ "levelshots": {
+  "cover": "counter",
+  "shots": [
+   "booths_w",
+   "kitchen",
+   "overview"
+  ]
+ },
+ "hull": [
+  -880,
+  -3300,
+  880,
+  3980
+ ]
+}
