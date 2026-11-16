@@ -456,6 +456,55 @@ def glass_tube(X, path, r, glass_sh, ring_sh=None, ring_every=256.0, nseg=20, ri
     return X
 
 
+def spline(pts, sub=4):
+    """Catmull-Rom curve through control points [(x, y, z)...], `sub` samples per span (ends included). Use the SAME
+    sampled points for K.slide (collision) and flume()/glass_tube() (visual) so the two never drift apart."""
+    P = [np.asarray(p, float) for p in pts]
+    Q = [P[0]] + P + [P[-1]]
+    out = []
+    for i in range(1, len(Q) - 2):
+        p0, p1, p2, p3 = Q[i - 1], Q[i], Q[i + 1], Q[i + 2]
+        for t in np.linspace(0, 1, sub, endpoint=False):
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                              + (-p0 + 3 * p1 - 3 * p2 + p3) * t ** 3))
+    out.append(P[-1])
+    return out
+
+
+def flume(X, path, hw, wall_h, sh, wall_t=9.0, floor_t=18.0, vlen=256.0, lip=6.0):
+    """open-top water-slide channel (U section, closed underneath) swept along a path whose points are the slide FLOOR
+    centre line - the visual for K.slide(path, hw, wall_h, ...). The section stays level (no banking), exactly like the
+    collision: inner floor at the path height, inner walls at +-hw. Rounded rim `lip` wide on top of each wall."""
+    path = [np.asarray(p, float) for p in path]
+    n = len(path)
+    T = np.gradient(np.array(path), axis=0); T /= np.linalg.norm(T, axis=1, keepdims=True)
+    o, r = hw + wall_t, 14.0
+    sec = [(-hw, wall_h), (-hw, r), (-hw + r * 0.3, r * 0.3), (-hw + r, 0), (hw - r, 0), (hw - r * 0.3, r * 0.3), (hw, r),
+           (hw, wall_h), (hw + wall_t / 2, wall_h + lip), (o, wall_h), (o, 0), (o - r, -floor_t), (-o + r, -floor_t),
+           (-o, 0), (-o, wall_h), (-hw - wall_t / 2, wall_h + lip), (-hw, wall_h)]
+    sl = np.concatenate([[0], np.cumsum([math.hypot(sec[k + 1][0] - sec[k][0], sec[k + 1][1] - sec[k][1])
+                                         for k in range(len(sec) - 1)])])
+    L = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(np.array(path), axis=0), axis=1))])
+    P = np.zeros((n, len(sec), 3)); UV = np.zeros((n, len(sec), 2))
+    for i in range(n):
+        s = np.cross([0, 0, 1.0], T[i]); s /= max(1e-9, np.linalg.norm(s))
+        u = np.cross(T[i], s)
+        for j, (a, b) in enumerate(sec):
+            P[i, j] = path[i] + s * a + u * b
+            UV[i, j] = (sl[j] / vlen, L[i] / vlen)
+    N = grid_normals_safe(P)
+    k = sec.index((-hw + r, 0))
+    if N[n // 2, k] @ np.array([0, 0, 1.0]) < 0: N = -N            # the inner floor faces up
+    X.mesh(sh).grid(P, N, UV)
+    return X
+
+
+def grid_normals_safe(P):
+    du = np.gradient(P, axis=1); dv = np.gradient(P, axis=0)
+    N = np.cross(du, dv)
+    return N / np.maximum(np.linalg.norm(N, axis=2, keepdims=True), 1e-9)
+
+
 def pip(poly, x, y):
     """point in polygon (list of (x, y))"""
     inside = False

@@ -30,12 +30,14 @@ def main():
     ap.add_argument('--json', help='write the numbers here too')
     a = ap.parse_args()
     lines = open(a.log, errors='ignore').read().splitlines()
-    items = Counter(); kills = Counter(); mods = Counter(); scores = Counter()
+    items = Counter(); kills = Counter(); mods = Counter(); scores = Counter(); probe_hits = Counter()
     for l in lines:
         m = re.search(r'Item: \d+ (\S+)', l)
         if m: items[m.group(1)] += 1; continue
         m = re.search(r'Kill: \d+ \d+ \d+: .* by (\S+)', l)
         if m: mods[m.group(1)] += 1; continue
+        m = re.search(r'AddScore: \d+ (\d+) (\S+)', l)
+        if m and m.group(2) != 'kill': probe_hits[int(m.group(1))] += 1
         if 'AddScore:' in l or 'CTL' in l or 'captured' in l.lower():
             for w in ('Capture', 'capture', 'CAPTURE'):
                 if w in l: scores['captures'] += 1; break
@@ -66,6 +68,9 @@ def main():
     if total and not 10 <= rate <= 40: warns.append(f"kill rate {rate:.1f}/min per 10 bots (expected ~10-40: below = empty map, above = spawn camping or a tiny map)")
     if not total: fails.append('no kills logged: did the server load the map? (check ded.log for "Can\'t find map")')
     if scores: print(f'== CTL captures {scores["captures"]}')
+    if spots and spots.get('probes'):          # K.probe visit counters (diagnosis builds only)
+        print('== probes (trigger_multiple -> target_score visits)')
+        for pr in spots['probes']: print(f"   {pr['name']:28s} {probe_hits.get(pr.get('score', -1), 0):4d}")
     for w in warns: print('WARN', w)
     for f in fails: print('FAIL', f)
     print('RESULT:', 'OK' if not fails else f'{len(fails)} problem(s)')
