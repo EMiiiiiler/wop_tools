@@ -47,7 +47,7 @@ BACKC = (-480, 2730, X1, YB0)                   # back counter, top CZ
 SHELF = (-100, -100 + PM.SHELF_L, 900)          # menu shelf x0 x1 top (y YB0-260..YB0)
 SHELF_Y0 = YB0 - 260
 COOLER = (580, 1815)                            # cooler origin (x 550..880, y 1640..1990)
-ATM = (630, 2100)                               # ATM (x 570..880, y 1990..2210)
+ATM = (630, 2108)                               # ATM (x 558..880, y 1992..2224)
 OVEN = (-30, 3380)                              # oven front-centre: x -480..420, y 3380..3980
 OZ = PM.OVEN[2]
 SINK = (430, 3080, X1, YK)                      # sink counter, top PM.SINK_Z
@@ -206,7 +206,7 @@ def dining():
     """the arcade cabinet, gumball machine, high chair, wet-floor sign, pizza-box stack, the two ceiling fans"""
     place('arcade', -730, 1760, 0, angle=180)
     place('arcade2', -730, 1940, 0, angle=180)
-    place('gumball', 640, 2330, 0)
+    place('gumball', -770, 2120, 0)                    # in line with the arcade cabinets
     place('high_chair', -230, 1850, 0, angle=20)
     place('wet_sign', 260, 2080, 0, angle=15)
     for (fx, fy) in (FAN1, FAN2):

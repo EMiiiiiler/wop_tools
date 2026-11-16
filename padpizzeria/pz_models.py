@@ -436,6 +436,77 @@ def atm_tex(w=256, h=256):
     return arr(im)
 
 
+def can_tex(col, band, w=128, h=128, seed=0):
+    """a soda can label (wraps round the can): base colour, a white band and a wave stripe"""
+    c = np.zeros((h, w, 3), np.float32) + C(col)
+    im, d = draw(c)
+    d.rectangle((0, 44, w, 84), fill=band)
+    for x in range(0, w, 8):
+        d.line((x, 64 + 8 * math.sin(x / 10 + seed), x + 8, 64 + 8 * math.sin((x + 8) / 10 + seed)), fill=col, width=5)
+    d.rectangle((0, 0, w, 8), fill=(200, 200, 204)); d.rectangle((0, h - 8, w, h), fill=(200, 200, 204))
+    return arr(im)
+
+
+def bottle_tex(col, w=64, h=128):
+    c = np.zeros((h, w, 3), np.float32) + C(col)
+    im, d = draw(c)
+    d.rectangle((0, 70, w, 104), fill=(244, 236, 214)); d.rectangle((0, 82, w, 90), fill=(196, 30, 30))
+    return arr(im)
+
+
+def cooler_head(w=512, h=128):
+    c = np.zeros((h, w, 3), np.float32) + C((250, 246, 236))
+    im, d = draw(c)
+    d.rectangle((0, 0, w - 1, h - 1), outline=(196, 24, 30), width=10)
+    f = ML.font(64); t = 'ICE COLD DRINKS'; tw = d.textlength(t, font=f)
+    d.text(((w - tw) / 2, 22), t, font=f, fill=(196, 24, 30))
+    return arr(im)
+
+
+def vent_tex(w=256, h=64):
+    c = np.zeros((h, w, 3), np.float32) + C((24, 24, 26))
+    for k in range(6):
+        c[6 + k * 10:10 + k * 10, 8:w - 8] = C((70, 72, 76))
+    return c
+
+
+def atm_screen(w=256, h=192):
+    c = np.zeros((h, w, 3), np.float32) + C((20, 70, 140))
+    im, d = draw(c)
+    d.rectangle((0, 0, w, 40), fill=(10, 40, 90))
+    d.text((14, 8), 'PADBANK', font=ML.font(24, serif=False), fill=(250, 210, 60))
+    d.text((40, 70), 'WELCOME', font=ML.font(36, serif=False), fill=(240, 248, 255))
+    d.text((34, 120), 'PLEASE INSERT CARD', font=ML.font(18, serif=False), fill=(180, 220, 255))
+    for k, txt in enumerate(('ENGLISH', 'ESPANOL')):
+        d.rectangle((10 + k * 128, 156, 118 + k * 128, 182), fill=(30, 110, 200)); d.text((22 + k * 128, 160), txt, font=ML.font(16, serif=False), fill=(255, 255, 255))
+    return arr(im)
+
+
+def atm_head(w=512, h=128):
+    c = np.zeros((h, w, 3), np.float32) + C((20, 70, 150))
+    im, d = draw(c)
+    f = ML.font(70, serif=False); t = 'ATM  24 HR'; tw = d.textlength(t, font=f)
+    d.text(((w - tw) / 2, 20), t, font=f, fill=(250, 250, 250))
+    return arr(im)
+
+
+def atm_side(w=128, h=256):
+    c = np.zeros((h, w, 3), np.float32) + C((150, 156, 164))
+    im, d = draw(c)
+    d.rectangle((0, 30, w, 54), fill=(20, 70, 150)); d.rectangle((0, 58, w, 66), fill=(250, 200, 50))
+    f = ML.font(26, serif=False); t = 'CASH'; tw = d.textlength(t, font=f)
+    d.text(((w - tw) / 2, 100), t, font=f, fill=(20, 70, 150))
+    d.ellipse((34, 150, 94, 210), outline=(20, 70, 150), width=6); d.text((52, 160), '$', font=ML.font(36), fill=(20, 70, 150))
+    return arr(im)
+
+
+def keys_tex(w=128, h=128):
+    c = np.zeros((h, w, 3), np.float32) + C((50, 52, 56))
+    im, d = draw(c)
+    d.rectangle((6, 6, w - 7, h - 7), outline=(120, 124, 130), width=3)
+    return arr(im)
+
+
 def register_tex(w=128, h=64):
     c = np.zeros((h, w, 3), np.float32) + C((40, 40, 44))
     im, d = draw(c)
@@ -521,6 +592,26 @@ def materials():
     m('register', register_tex(), shade=30)
     m('atm', atm_tex(), shade=30)
     m('cooler', cooler_tex(), 'glow')
+    m('cooler_glow', TL.solid((236, 244, 250), 1, 102, 64), 'glow')
+    m('cooler_head', cooler_head(), 'glow')
+    m('vent', vent_tex(), shade=30)
+    for i, (k, col, band) in enumerate((('can_red', (200, 30, 36), (250, 250, 250)), ('can_blue', (30, 80, 190), (230, 236, 250)),
+                                        ('can_green', (40, 150, 70), (250, 240, 120)), ('can_yellow', (240, 190, 30), (60, 40, 20)),
+                                        ('can_orange', (240, 120, 30), (250, 250, 250)))):
+        m(k, can_tex(col, band, seed=i), 'lms', v=0.2, shade=60)
+    m('bottle_green', bottle_tex((40, 120, 60)), 'lms', v=0.2, shade=60)
+    m('bottle_brown', bottle_tex((110, 60, 24)), 'lms', v=0.2, shade=60)
+    m('bottle_clear', bottle_tex((200, 220, 214)), 'lms', v=0.25, shade=60)
+    m('atm_body', TL.metal((168, 172, 180)), 'lms', v=0.12, shade=40)
+    m('atm_screen', atm_screen(), 'glow')
+    m('atm_head', atm_head(), 'glow')
+    m('atm_side', atm_side(), shade=30)
+    m('atm_keys', keys_tex(), shade=40)
+    m('key', TL.solid((200, 202, 206), 1, 103, 32), shade=60)
+    m('key_red', TL.solid((210, 40, 40), 1, 104, 32), shade=60)
+    m('key_yellow', TL.solid((240, 200, 40), 1, 105, 32), shade=60)
+    m('key_green', TL.solid((50, 180, 70), 1, 106, 32), shade=60)
+    m('led_green', TL.solid((80, 255, 120), 1, 107, 16), 'glow')
     m('cooler_body', TL.solid((220, 34, 40), 2, 72, 64), shade=30)
     m('arcade', arcade_art(), shade=30)
     m('arcade_body', TL.solid((40, 30, 80), 2, 73, 64), shade=30)
@@ -776,30 +867,142 @@ def menu_shelf():
 
 
 def cooler():
-    """glass-door soda cooler: x 0..d (wall at x = d), y -w/2..w/2, glowing shelves behind the glass"""
+    """glass-door soda cooler, fully modelled: rounded red cabinet with a lit header, a framed glass door you see
+    real shelves of cans and bottles through, a lit liner, chrome handle and hinges, a vent grille and levelling feet.
+    x 0..d (wall at x = d, door at x ~ 0), y -w/2..w/2. The top stays flat at h (a pickup sits on it)."""
     d, w, h = COOLER
     X = ML.Model()
-    bx(X, 'cooler_body', (0, -w / 2, 0), (d, w / 2, h), r=8, k=2, faces='nstb')
-    bx(X, 'cooler_body', (0, -w / 2, h - 140), (6, w / 2, h), r=2, faces='w')
-    bx(X, 'cooler_body', (0, -w / 2, 0), (6, w / 2, 80), r=2, faces='w')
-    pic(X.mesh(M_['cooler']), (-1, 0, (80 + h - 140) / 2), (-1, 0, 0), w - 40, h - 220)
-    bx(X, 'chrome', (-30, w / 2 - 50, 300), (-6, w / 2 - 34, 700), r=6)               # handle
-    pic(X.mesh(M_['soda']), (-1, 0, h - 70), (-1, 0, 0), w - 30, 110)
+    hw = w / 2
+    base, head = 110, h - 150                          # cavity z range
+    # cabinet shell: sides, back, top, header block and base block (rounded outer edges)
+    bx(X, 'cooler_body', (0, -hw, 0), (d, -hw + 20, h), r=8, k=2, faces='nswtb')
+    bx(X, 'cooler_body', (0, hw - 20, 0), (d, hw, h), r=8, k=2, faces='nswtb')
+    bx(X, 'cooler_body', (d - 20, -hw, 0), (d, hw, h), r=4, faces='tb')
+    bx(X, 'cooler_body', (0, -hw + 20, head), (d - 20, hw - 20, h), r=4, faces='wtb')
+    bx(X, 'cooler_body', (0, -hw + 20, 30), (d - 20, hw - 20, base), r=4, faces='wt')
+    # lit liner (back + sides + ceiling of the cavity)
+    L = X.mesh(M_['cooler_glow'])
+    L.quad((d - 21, -hw + 20, base), (d - 21, hw - 20, base), (d - 21, hw - 20, head), (d - 21, -hw + 20, head), n=(-1, 0, 0))
+    L.quad((20, -hw + 21, base), (d - 20, -hw + 21, base), (d - 20, -hw + 21, head), (20, -hw + 21, head), n=(0, 1, 0))
+    L.quad((d - 20, hw - 21, base), (20, hw - 21, base), (20, hw - 21, head), (d - 20, hw - 21, head), n=(0, -1, 0))
+    L.quad((20, -hw + 20, head - 1), (20, hw - 20, head - 1), (d - 20, hw - 20, head - 1), (d - 20, -hw + 20, head - 1), n=(0, 0, -1))
+    bx(X, 'steel', (20, -hw + 20, base), (d - 20, hw - 20, base + 6), r=1, faces='t')
+    # four wire shelves of cans and bottles
+    rng = np.random.default_rng(101)
+    cans = ['can_red', 'can_blue', 'can_green', 'can_yellow', 'can_orange']
+    nsh = 4
+    sh_h = (head - base) / nsh
+    for k in range(nsh):
+        z = base + 6 + k * sh_h
+        if k:
+            bx(X, 'chrome', (30, -hw + 22, z - 6), (d - 24, hw - 22, z), r=1)
+            tube(X.mesh(M_['chrome']), [(32, -hw + 24, z + 10), (32, hw - 24, z + 10)], [3, 3], nseg=6)
+        bottles = k == nsh - 1
+        for row in range(2):
+            x = 70 + row * 90
+            y = -hw + 50
+            while y < hw - 45:
+                if bottles:
+                    col = ['bottle_green', 'bottle_brown', 'bottle_clear'][int(rng.integers(0, 3))]
+                    revolve(X.mesh(M_[col]), [(19, z), (19, z + 70), (15, z + 88), (7, z + 104), (7, z + 118), (0, z + 120)],
+                            n=10, cx=x, cy=y)
+                    y += 46
+                else:
+                    col = cans[int(rng.integers(0, len(cans)))]
+                    stack = 2 if sh_h > 150 and rng.random() < 0.6 else 1
+                    for j in range(stack):
+                        z0 = z + j * 62
+                        revolve(X.mesh(M_[col]), [(19, z0), (21, z0 + 6), (21, z0 + 54), (17, z0 + 60)], n=10, cx=x, cy=y)
+                        disc(X.mesh(M_['lid']), 17, z0 + 60, n=10, cx=x, cy=y)
+                    y += 46
+    # the door: chrome-edged black frame round a glass pane, hinges, long handle
+    fz0, fz1 = base - 6, head + 6
+    for (a, c) in (((4, -hw + 6, fz0), (22, -hw + 34, fz1)), ((4, hw - 34, fz0), (22, hw - 6, fz1)),
+                   ((4, -hw + 6, fz0), (22, hw - 6, fz0 + 30)), ((4, -hw + 6, fz1 - 30), (22, hw - 6, fz1))):
+        bx(X, 'black', a, c, r=4)
+    X.mesh(M_['glass']).quad((12, -hw + 34, fz0 + 30), (12, hw - 34, fz0 + 30), (12, hw - 34, fz1 - 30), (12, -hw + 34, fz1 - 30),
+                             n=(-1, 0, 0))
+    for z in (fz0 + 40, fz1 - 60):
+        cylz(X, 'chrome', 10, -hw + 14, 8, z, z + 40, n=8, bot=True)
+    tube(X.mesh(M_['chrome']), [(4, hw - 52, 330), (-24, hw - 52, 340), (-24, hw - 52, 690), (4, hw - 52, 700)], [7, 7, 7, 7], nseg=8)
+    # lit header sign and a black vent grille at the bottom
+    bx(X, 'black', (-4, -hw + 14, head + 16), (2, hw - 14, h - 14), r=3)
+    pic(X.mesh(M_['cooler_head']), (-5, 0, (head + h) / 2), (-1, 0, 0), w - 40, h - head - 40)
+    bx(X, 'black', (-2, -hw + 24, 40), (2, hw - 24, base - 14), r=2, faces='w')
+    pic(X.mesh(M_['vent']), (-3, 0, (40 + base - 14) / 2), (-1, 0, 0), w - 56, base - 60)
+    for y in (-hw + 24, hw - 24):
+        for x in (24, d - 24):
+            cylz(X, 'black', x, y, 12, 0, 30, n=8)
     ML.save('cooler', X)
-    coll('cooler', [((-30, -w / 2, 0), (d, w / 2, h))])
+    coll('cooler', [((-30, -hw, 0), (d, hw, h))])
 
 
 def atm():
+    """free-standing lobby ATM, fully modelled: plinth, rounded body, lit header, privacy hood round a tilted screen,
+    card and receipt slots with status lights, a sloped console with raised keys, the cash dispenser, a deposit
+    slot, a camera dome and branded side panels. x 0..d (wall at x = d, front at x = 0), flat top at h."""
     d, w, h = ATM
+    hw = w / 2
     X = ML.Model()
-    bx(X, 'steel_dark', (0, -w / 2, 0), (d, w / 2, h), r=8, k=2)
-    P = X.mesh(M_['atm'])
-    P.poly([(-1, w / 2 - 15, h - 80), (-1, -w / 2 + 15, h - 80), (-60, -w / 2 + 15, h - 330), (-60, w / 2 - 15, h - 330)],
-           (-0.97, 0, 0.24), [(0, 0), (1, 0), (1, 1), (0, 1)])
-    bx(X, 'steel_dark', (-60, -w / 2, 0), (0, w / 2, h - 330), r=6)
-    bx(X, 'black', (-20, -w / 2 + 10, h - 70), (0, w / 2 - 10, h - 10), r=2)
+    bx(X, 'black', (-70, -hw - 6, 0), (d, hw + 6, 40), r=4)                               # plinth
+    bx(X, 'atm_body', (0, -hw, 40), (d, hw, h), r=14, k=3, faces='nsetb')
+    bx(X, 'atm_body', (0, -hw, 40), (12, hw, h), r=6, faces='w')
+    pic(X.mesh(M_['atm_side']), (d / 2, -hw - 1, 420), (0, -1, 0), d - 40, 560)
+    pic(X.mesh(M_['atm_side']), (d / 2, hw + 1, 420), (0, 1, 0), d - 40, 560)
+    # lit header
+    bx(X, 'black', (-8, -hw + 10, h - 90), (0, hw - 10, h - 14), r=3)
+    pic(X.mesh(M_['atm_head']), (-9, 0, h - 52), (-1, 0, 0), w - 34, 66)
+    # privacy hood: two side wings + a top lip round the screen bay
+    z0, z1 = 470, 660
+    for s in (-1, 1):
+        y0, y1 = sorted((s * (hw - 4), s * (hw - 18)))
+        X.mesh(M_['atm_body']).poly([(0, y0, z0), (0, y0, z1), (-46, y0, z1), (-18, y0, z0)][::(-1 if s > 0 else 1)],
+                                    (0, -s, 0), [(0, 0), (0, 1), (1, 1), (1, 0)][::(-1 if s > 0 else 1)])
+    bx(X, 'atm_body', (-48, -hw + 4, z1 - 14), (0, hw - 4, z1), r=3)
+    # tilted screen in a black bezel
+    bx(X, 'black', (-4, -hw + 22, z0 + 10), (2, hw - 22, z1 - 18), r=3)
+    S = X.mesh(M_['atm_screen'])
+    S.poly([(-6, hw - 34, z1 - 30), (-6, -hw + 34, z1 - 30), (-20, -hw + 34, z0 + 24), (-20, hw - 34, z0 + 24)],
+           (-0.99, 0, 0.1), [(0, 0), (1, 0), (1, 1), (0, 1)])
+    # card slot + receipt slot with lights
+    bx(X, 'chrome', (-14, -70, 438), (0, -20, 456), r=3); bx(X, 'black', (-15, -64, 445), (-13, -26, 449), r=0)
+    bx(X, 'led_green', (-15, -12, 442), (-13, -4, 452), r=0)
+    bx(X, 'chrome', (-14, 20, 438), (0, 76, 456), r=3); bx(X, 'black', (-15, 26, 445), (-13, 70, 449), r=0)
+    # sloped console with raised keys
+    cz0, cz1 = 360, 420
+    C = X.mesh(M_['atm_keys'])
+    C.poly([(-70, hw - 14, cz0), (-70, -hw + 14, cz0), (0, -hw + 14, cz1), (0, hw - 14, cz1)], (-0.65, 0, 0.76),
+           [(0, 1), (1, 1), (1, 0), (0, 0)])
+    bx(X, 'atm_body', (-72, -hw + 8, cz0 - 50), (0, hw - 8, cz0), r=4)
+    for s in (-1, 1):
+        y0, y1 = sorted((s * (hw - 8), s * (hw - 14)))
+        X.mesh(M_['atm_body']).poly([(-72, y0, cz0), (0, y0, cz1), (0, y0, cz0)][::(1 if s < 0 else -1)], (0, s, 0),
+                                    [(0, 1), (1, 0), (1, 1)][::(1 if s < 0 else -1)])
+    slope = math.atan2(cz1 - cz0, 70)
+    keycols = ['key'] * 12 + ['key_red', 'key_yellow', 'key_green']
+    for i in range(4):
+        for j in range(3):
+            t = 0.2 + i * 0.18
+            kx, kz = -70 + 70 * t, cz0 + (cz1 - cz0) * t
+            ky = -60 + j * 30
+            Y = ML.Model()
+            bx(Y, 'key', (-9, -11, 0), (9, 11, 6), r=2)
+            X.add_model(Y, R=np.array([[math.cos(slope), 0, -math.sin(slope)], [0, 1, 0], [math.sin(slope), 0, math.cos(slope)]]),
+                        t=(kx, ky, kz + 1))
+    for i, col in enumerate(('key_red', 'key_yellow', 'key_green')):
+        t = 0.2 + i * 0.24
+        Y = ML.Model()
+        bx(Y, col, (-10, -16, 0), (10, 16, 6), r=2)
+        X.add_model(Y, R=np.array([[math.cos(slope), 0, -math.sin(slope)], [0, 1, 0], [math.sin(slope), 0, math.cos(slope)]]),
+                    t=(-70 + 70 * t, 50, cz0 + (cz1 - cz0) * t + 1))
+    # cash dispenser + deposit slot
+    bx(X, 'chrome', (-16, -76, 250), (0, 76, 300), r=6)
+    bx(X, 'black', (-18, -64, 266), (-15, 64, 284), r=0)
+    bx(X, 'chrome', (-10, -50, 160), (0, 50, 186), r=4); bx(X, 'black', (-12, -40, 170), (-9, 40, 176), r=0)
+    # camera dome
+    sphere(X.mesh(M_['black']), (-10, 0, h - 112), 12, nu=8, nv=6)
     ML.save('atm', X)
-    coll('atm', [((-60, -w / 2, 0), (d, w / 2, h))])
+    coll('atm', [((-72, -hw - 6, 0), (d, hw + 6, h))])
 
 
 def arcade(name='arcade', art='arcade', body='arcade_body'):
