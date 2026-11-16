@@ -1,7 +1,7 @@
 # On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
 # name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padpizzeria
 staff_w:            -700,2300,0 > -200,2620,0
-staff_e:            600,2350,0 > 600,2620,0
-oven_mouth:         -30,2960,0 > -30,3630,200
+staff_e:            460,2280,0 > 600,2620,0
+oven_mouth:         -30,3022,0 > -30,3630,200
 front_door:         0,-2142,0 > 0,-1810,0
 kitchen_door:       -690,2780,0 > -690,3112,0

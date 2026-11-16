@@ -28,7 +28,7 @@ YF, YFO = -1960, -1992                          # front wall: inner face, outer 
 YB0, YB1 = 2930, 2962                           # back wall (counter side / kitchen side)
 YR = -3300                                      # far side of the road (sky)
 ZC, ZSKY = 1400, 2200
-K = MapKit(MAP, NS, LONG, (X0, YP, X1, YK), worldspawn={'_ambient': '40', '_color': '1 0.95 0.88'})
+K = MapKit(MAP, NS, LONG, (X0, YP, X1, YK), worldspawn={'_ambient': '50', '_color': '1 0.95 0.88'})
 T = K.T
 ML.configure(NS, OUT); SH.configure(NS, MAP, LONG)
 
@@ -114,9 +114,10 @@ def shell():
           box((X1, YR - 32, -48), (X1 + 32, YFO, ZSKY), tex6(w=S), detail=False),
           box((X0, YR - 32, -48), (X1, YR, ZSKY), tex6(n=S), detail=False),
           box((X0 - 32, YR - 32, ZSKY), (X1 + 32, YFO, ZSKY + 32), tex6(bot=S), detail=False))
-    K.add(sign_box((X0, YR, -16), (X1, YR + 8, 1600), T('across'), 1024, 512, facing='n', edge=T('across')))
-    K.add(sign_box((X0, YR + 8, -16), (X0 + 8, YP - 200, 1600), T('across'), 1024, 512, facing='e', edge=T('across')))
-    K.add(sign_box((X1 - 8, YR + 8, -16), (X1, YP - 200, 1600), T('across'), 1024, 512, facing='w', edge=T('across')))
+    K.add(sign_box((X0 + 8, YR, -16), (X1 - 8, YR + 8, ZSKY), T('across'), 1024, 512, facing='n', edge=T('across')))
+    for (y0, y1, z0) in ((YR + 8, YP - 16, -16), (YP, YFO, 0)):          # side backdrops (road part, sidewalk part)
+        K.add(sign_box((X0, y0, z0), (X0 + 8, y1, ZSKY), T('across'), 1024, 512, facing='e', edge=T('across')))
+        K.add(sign_box((X1 - 8, y0, z0), (X1, y1, ZSKY), T('across'), 1024, 512, facing='w', edge=T('across')))
     # front wall: two window panes either side of the door (inside plaster, outside brick facade, jambs stone)
     wz0, wz1 = WZ; dx0, dx1, dz = DOOR
     fw = lambda mn, mx, **j: K.add(box(mn, mx, tex6(n=T('plaster'), s=T('facade'), **j), detail=False))
@@ -203,7 +204,7 @@ def counter_area():
     place('atm', *ATM, 0)
     K.catalog('pad_ddmix/plants/bonsai.md3', 760, YB0 - 90, CZ, scale=0.55, nudge=False)
     K.route('staff_w', (-700, 2300, 0), (-200, 2620, 0))
-    K.route('staff_e', (600, 2350, 0), (600, 2620, 0))
+    K.route('staff_e', (460, 2280, 0), (600, 2620, 0))
 
 
 def dining():
@@ -226,7 +227,7 @@ def kitchen():
     deco('peel', ox, oy - 330, 0)
     K.ramp(ox - 150, oy - 330, ox + 150, oy, 0, PM.OVEN_CH[0], 'n', WCLIP)
     K.occupy(ox - 150, oy - 330, ox + 150, oy, 0, PM.OVEN_CH[0])
-    K.route('oven_mouth', (ox, oy - 420, 0), (ox, oy + 250, PM.OVEN_CH[0]))
+    K.route('oven_mouth', (ox, YB1 + 60, 0), (ox, oy + 250, PM.OVEN_CH[0]))
     place('prep_table', *PREP, 0, angle=90)
     sink()
 
@@ -296,7 +297,7 @@ def pads():
       edges=[(550, COOLER[1], PM.COOLER[2])])
     J(-300, 3110, 0, land=(-200, 3700, OZ), apex=OZ + 270, name='pad_oven', ceiling=ZC, edges=[(-230, OVEN[1], OZ)])
     # the sink counter is reached by walking off the oven top's east edge (no floor pad clears the oven)
-    J(-450, -2560, 0, land=(-450, YFO - 170, PM.AWN_Z), apex=PM.AWN_Z + 180, name='pad_awning', ceiling=ZSKY,
+    J(-450, -2600, 0, land=(-450, YFO - 90, PM.AWN_Z), apex=PM.AWN_Z + 260, name='pad_awning', ceiling=ZSKY,
       edges=[(-450, YFO - PM.AWN_D, PM.AWN_Z)])
 
 
@@ -335,13 +336,12 @@ def items():
 
 
 def lights_sounds():
-    K.light_grid(X0, YF, X1, YB0, 1320, 600, 1500, color='1 0.97 0.9')
-    K.light_grid(X0, YB1, X1, YK, 1320, 600, 1500, color='1 0.98 0.94')
+    K.light_grid(X0, YF, X1, YB0, 1320, 600, 1900, color='1 0.97 0.9')
+    K.light_grid(X0, YB1, X1, YK, 1320, 600, 1000, color='1 0.98 0.94')
     for y in TABLES:                                    # under the booth tables
         for x in (-640, 640): K.light(x, y, 220, 160, '1 0.9 0.78')
     K.light(OVEN[0], 3700, 320, 300, '1 0.6 0.3')          # inside the oven
     K.light(660, 3430, 520, 260, '0.9 0.95 1')             # over the sink
-    K.light(260, 2830, 1150, 260, '1 0.92 0.8')            # menu shelf
     K.light(-700, 2550, 700, 300, '1 0.92 0.8')            # the corner by the kitchen door
     K.speaker(*FAN1, 1200, 'machine/fan_pc'); K.speaker(*FAN2, 1200, 'machine/fan_pc')
     K.speaker(730, COOLER[1], 500, 'machine/freezer')
