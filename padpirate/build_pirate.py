@@ -60,6 +60,7 @@ JUMPPADS = []
 ROUTES = []
 KEEP_OUT = []
 NOGO = []
+CANNONS = []                     # (x, y, z, angle) of every cannon, for the XL Cannon Show
 SX, SY = L.SHIP
 
 
@@ -116,6 +117,7 @@ def lbox(x, y, z, ang, mn, mx, tex=WCLIP):
 
 
 def furn(name, x, y, z, ang=0, boxes=(), mul=1.0, lit=True, **kw):
+    if name == 'cannon': CANNONS.append((x, y, z, ang))
     e = custom(name, x, y, z, ang, lit=lit, mul=mul, **kw)
     for (mn, mx) in boxes:
         lbox(x, y, z, ang, [v * mul for v in mn], [v * mul for v in mx])
@@ -336,14 +338,18 @@ def sea_and_cliff():
     clip all round the playable edge; distant palms on the cliff shelf"""
     H = L.SKY; X1, Y1 = L.HX, L.HY; bw, bh = L.BANK_W, L.BANK_H
     sea = {'top': T('sea'), 'side': CAULK, 'bot': CAULK}
-    for r in sub_rects((H['x0'], H['y0'], H['x1'], Y1), [(-X1, -Y1, X1, Y1)]):
+    import pp_xl
+    for r in sub_rects((H['x0'], H['y0'], H['x1'], Y1), [(-X1, -Y1, X1, Y1), pp_xl.ISLE]):
         A(box((r[0], r[1], H['z0']), (r[2], r[3], L.SEA_Z), sea))
     bt = {'top': T('bank'), 'side': T('bank'), 'bot': CAULK}
     A(hull([(x, Y1, z) for x in (H['x0'], H['x1']) for z in (H['z0'], 0)] + [(x, Y1 + bw, z) for x in (H['x0'], H['x1']) for z in (H['z0'], bh)],
            bt, round_pts=False))
     A(box((H['x0'], Y1 + bw, H['z0']), (H['x1'], H['y1'], bh), {'top': T('bank'), 'side': CAULK, 'bot': CAULK}))
+    A(box((-X1, Y1 - 16, 0), (X1, Y1, H['z1']), CLIP))
+    import pp_xl                                       # XL: the south clip has a gap where the Long Pier leaves
+    for (a, b) in ((-X1, pp_xl.PIER[0]), (pp_xl.PIER[2], X1)):
+        A(box((a, -Y1, 0), (b, -Y1 + 16, H['z1']), CLIP))
     for s in (-1, 1):
-        A(box((-X1, s * Y1 - (16 if s > 0 else 0), 0), (X1, s * Y1 + (0 if s > 0 else 16), H['z1']), CLIP))
         A(box((s * X1 - (16 if s > 0 else 0), -Y1 + 16, 0), (s * X1 + (0 if s > 0 else 16), Y1 - 16, H['z1']), CLIP))
     rng = np.random.default_rng(42)
     for i in range(22):
@@ -358,7 +364,7 @@ def sea_and_cliff():
         x = -X1 + 200 + i * (2 * X1 - 400) / 9
         mdl_c('pad_ddmix/plants/fern.md3', x + rng.uniform(-60, 60), Y1 + bw + 40, bh, rng.uniform(0.35, 0.5), rng.uniform(0, 360))
     # palm islets out in the sea (decor beyond the clip)
-    for (x, y, r) in ((-2650, -1500, 120), (2700, -400, 150), (2600, -2400, 110), (-2700, 600, 100), (900, -2380, 110), (-1300, -2480, 100)):
+    for (x, y, r) in ((-2650, -1500, 120), (2700, -400, 150), (2600, -2400, 110), (-2700, 600, 100), (900, -2380, 110), (-1300, -2380, 90)):
         A(cyl(x, y, r, L.SEA_Z, L.SEA_Z + 28, {'top': T('sand'), 'side': T('sand'), 'bot': CAULK}, 12))
         custom('palm_b' if x > 0 else 'palm_a', x, y, L.SEA_Z + 28, int(x) % 360, lit=False)
 
@@ -522,7 +528,7 @@ def ship():
     pxn, pyn = SX + L.PAD_NEST[0], SY + L.PAD_NEST[1]
     jumppad(pxn, pyn, L.QD_Z, (SX - 72, SY, L.NEST_Z), 760, 'pad_nest')
     weapon('imperius', SX - 10, SY - 75, L.NEST_Z, 'purple')
-    jumppad(SX + 72, SY - 20, L.NEST_Z, (300, -1950, 0), 760, 'pad_nest_fling')
+    jumppad(SX + 72, SY - 20, L.NEST_Z, (300, -1950, 0), 840, 'pad_nest_fling')
     jumppad(SX, -560, 0, (SX, SY + 66, L.NEST_Z), 800, 'pad_nest_jetty')         # second way up, from the north jetty
     trigger_sound((SX - 104, SY - 36, L.NEST_Z + 2), (SX - 34, SY + 36, L.NEST_Z + 70), 'sound/world/human/applause.ogg', 'nest_cheer', 15, volume=0.6)
     trigger_sound((SX - 30, SY + 40, L.NEST_Z + 2), (SX + 30, SY + 104, L.NEST_Z + 70), 'sound/world/human/applause.ogg', 'nest_cheer2', 15, volume=0.6)
@@ -586,7 +592,7 @@ def skull_rock():
     a0 = math.radians(st0[0] - 12)
     route('skull_stair', (cx + 230 * math.cos(a0), cy + 230 * math.sin(a0), 0), (cx, cy - 330, L.BALC_Z))
     # centre pad up the shaft onto the crown, fling pad from the crown down to the plaza
-    jumppad(cx, cy, 0, (cx, cy + 124, L.CROWN_Z), 900, 'pad_crown')
+    jumppad(cx, cy, 0, (cx, cy + 124, L.CROWN_Z), 960, 'pad_crown')
     weapon('betty', cx - 120, cy - 20, L.CROWN_Z, 'purple')
     item('ammo_betty', cx + 120, cy + 10, L.CROWN_Z)
     jumppad(cx + 10, cy - 136, L.CROWN_Z, (cx - 60, cy - 830, 0), 760, 'pad_crown_fling')
@@ -1008,8 +1014,11 @@ def gulls():
 def decor():
     rng = np.random.default_rng(7)
     # main sign on the south promenade
-    A(sign_box((-400, -1996, 100), (400, -1992, 300), T('sign_main'), 1024, 256, back=CAULK, facing='n'))
-    A(box((-416, -2024, 0), (416, -1996, 316), {'side': T('fort_stone'), 'top': T('coping'), 'bot': CAULK}))
+    # XL: the sign wall became the gateway to the Long Pier (opening x +-160, 120 high)
+    A(sign_box((-400, -1996, 130), (400, -1992, 300), T('sign_main'), 1024, 256, back=CAULK, facing='n'))
+    gw = {'side': T('fort_stone'), 'top': T('coping'), 'bot': T('fort_stone')}
+    for (a, b) in ((-416, -160), (160, 416)): A(box((a, -2024, 0), (b, -1996, 316), gw))
+    A(box((-160, -2024, 120), (160, -1996, 316), gw))
     NOGO.append((-460, -2048, 460, -1960))
     A(sign_box((L.SK[0] + 200, L.SK[1] - 476, 120), (L.SK[0] + 456, L.SK[1] - 472, 184), T('sign_skull'), 512, 128, back=CAULK, facing='s'))
     A(box((L.SK[0] + 192, L.SK[1] - 472, 0), (L.SK[0] + 464, L.SK[1] - 456, 192), {'side': T('planks'), 'top': T('planks'), 'bot': CAULK}))
@@ -1132,6 +1141,9 @@ def main():
     items_misc()
     decor(); blockers()
     lights_and_sound()
+    import pp_xl                                       # Skull Rock Bay XL: Smuggler's Isle (woplib kit on the same map)
+    pp_xl.setup(globals())
+    pp_xl.build(globals())
     if os.environ.get('DEBUG_TRIG'):                 # bot-test probes: AddScore lines in games.log (2 = quarterdeck, 3 = nest)
         for (mn, mx, sc, nm) in (((SX - 480, SY - 70, L.QD_Z + 2), (SX - 370, SY + 70, L.QD_Z + 60), 2, 'dbg_qd'),
                                  ((SX - 100, SY - 100, L.NEST_Z + 2), (SX + 100, SY + 30, L.NEST_Z + 60), 3, 'dbg_nest'),
@@ -1143,11 +1155,9 @@ def main():
             M.ent('trigger_multiple', brushes=[box(mn, mx, TRIG)], target=nm, wait=3)
     moved = fix_items()
     for mv in moved: print('moved', mv)
-    write_routes()
     TX.make_shader(); TX.make_arena()
     M.ent('info_player_intermission', (0, -1700, 700), angles='12 90 0')
-    os.makedirs(os.path.join(OUT, 'maps'), exist_ok=True)
-    open(os.path.join(OUT, 'maps', MAPNAME + '.map'), 'w').write(M.text(f"// {TX.LONGNAME} - generated by wop_tools/padpirate/build_pirate.py\n"))
+    pp_xl.finish(globals(), routes_path=os.path.join(HERE, 'routes.txt'))
     nbr = len(M.world) + sum(len(e['_brushes']) for e in M.ents)
     print(f'brushes {nbr}, entities {len(M.ents)}, models {len(M.models)}')
     for (nm, o, tg, land) in JUMPPADS:

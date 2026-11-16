@@ -22,7 +22,7 @@ import math
 import numpy as np
 
 HX, HY = 2304, 2048
-SKY = dict(x0=-2944, x1=2944, y0=-2688, y1=2944, z0=-896, z1=2304)
+SKY = dict(x0=-2944, x1=2944, y0=-5760, y1=2944, z0=-896, z1=2304)
 WATER = -16
 SLAB_BOT = -384
 SHALLOW = -64
