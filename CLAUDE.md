@@ -277,3 +277,6 @@ Tools and standing rules for building World of Padman (WoP) maps.
   round the tree) keeps a whole annulus prop-free, so plan cover outside it.
 - Wire cages: `K.cage_box()` / `K.cage_round(dome=...)` (alpha wire as its own unlit MD3 + common/clip, weapclip rims,
   open doors). An aas_check route end inside a lift collar reports NO AREA, not a broken door.
+- Game mode mods (`infection/`): server-side only (qagame.qvm in `<WoP>/infection/zz_*.pk3`, run with `+set fs_game infection`),
+  so stock clients work. `+set` on the command line is applied before `+exec` cfgs, which then override it. Lone melee bots
+  need a hunt goal (`BotInfectionHuntGoal`) and `BotChooseWeapon` must fall back to the Punchy, or they hold weapon 0 and never attack.
