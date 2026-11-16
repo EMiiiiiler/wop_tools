@@ -15,7 +15,7 @@ while not os.path.exists(os.path.join(ROOT, 'wopmap.py')): ROOT = os.path.dirnam
 sys.path.insert(0, ROOT)
 from wopmap import box, cyl, hull, sub_rects, sign_box
 from woplib.kit import MapKit, CAULK, WCLIP
-from woplib import models as ML, shaders as SH, texlib as TL
+from woplib import models as ML, shaders as SH, texlib as TL, shopbits as SB
 from meshlib import Mesh, revolve, rbox, tube, ellipsoid, sphere, arc_path, rot_z, rot_axis
 
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
@@ -40,7 +40,13 @@ TERR = (1344, 1216, X1, Y1); TERR_Z = 128
 SHACK = (1824, 1392, 2192, 1696); SHACK_H = 208
 SHOP = (X0, -160, -1888, 352); SHOP_H = 224
 GUARD = (1760, -1216, 2016, -960); GUARD_Z = 160; HUT_H = 128
-VAULT_C = (0, 0); VAULT_Z = -1280
+# Shark Reef: aquarium tank under the deep end, tunnel from a stairwell by the dive tower, fake wall into the pump room
+TANK = (-1376, -1808, 288, -1424); TANK_Z = (-608, -176)
+TUN_Y, TUN_Z, TUN_R = -1616, -360, 96                 # tunnel axis (y, z) and glass radius; walk floor -432
+TUN_FLOOR = -432; TUN_IN = (-1680, -1552)             # tunnel interior y
+SHAFT_HOLE = (-2208, -1680, -1952, -1552)             # opening in the hall deck over the stairwell
+VAULT = (304, -1808, 816, -1424); VAULT_Z = TUN_FLOOR  # the pump room (secret), beside the tank
+WAVE_PERIOD = 45                                       # Wave Machine show: siren + glow + foam every 45 s
 # Volcano Bay (the annex north of the hall, through two arches in the north wall)
 AX0, AX1, AY0, AY1 = -1600, 1600, Y1 + 32, 3840
 ARCHES = ((-900, -644), (644, 900)); ARCH_H = 256; CLIFF_H = 896
@@ -53,6 +59,19 @@ DIVE = (-1920, -1408, -1664, -1152); DIVE_Z = (128, 256, 384)
 TIKI = (-1500, 2500, -1180, 2860); TIKI_H = 176
 YELLOW = [(1700, 1214, 128), (1700, 1120, 70), (1700, 1030, 36), (1700, 960, 28)]
 BLIMP_R, BLIMP_Z = 1120, 930
+# Thunder Canyon (open-sky gorge east of the hall and the bay): four stepped rapids pools, drops, rope bridge, cave
+CX0, CY0, CX1, CY1 = 2272, -1100, 3008, 3840
+CH = (2496, 2784)                                      # channel x; banks either side
+POOLS = [(2700, 3840, -8), (1500, 2700, -136), (300, 1500, -264), (-700, 300, -392)]   # (y0, y1, water surface)
+LANDING = (2272, 976, 2400, 1264); LEDGE = (2880, 976, 3008, 1264)                    # rope bridge ends, z 0
+NDOOR = (1056, 1184); SDOOR = (-880, -760)             # hall east wall doors (y)
+OVERLOOK = (2272, -1100, 3008, -700)                   # roof of the cave, z 0
+BTUN = (1840, 2080)                                    # rock tunnel bay -> canyon (y)
+# Mat Racer: four lanes down the bay's east side into a run-out pool
+MAT_X = (1164, 1268, 1372, 1476); MAT_HW = 36
+MAT_PROF = [(3688, 448), (3620, 446), (3450, 334), (3330, 300), (3230, 318), (3120, 262), (2950, 172), (2830, 150),
+            (2740, 162), (2640, 102), (2540, 46), (2470, 30)]
+MATPOOL = (1120, 2100, 1536, 2560); MATDECK = (1112, 3690, 1600, 3824, 448)
 HW, WALLH = 48, 56                                    # flume half width, wall height
 PURPLE = [(-448, 320, 768), (-448, 160, 716), (-400, 0, 668), (-256, -112, 622), (0, -160, 556), (400, -160, 470),
           (800, -160, 380), (1150, -128, 292), (1400, 0, 212), (1560, 180, 132), (1620, 330, 66), (1620, 430, 30)]
@@ -139,12 +158,72 @@ def fall_tex(n=128):
     return c, a
 
 
+def glow_tex(n=256):
+    """the grille's glow: the slats lit amber"""
+    x, y = ML.xy(n)
+    slat = ((y * 10) % 1 < 0.55) & (x > 0.06) & (x < 0.94) & (y > 0.06) & (y < 0.94)
+    return np.where(slat[..., None], ML.C((255, 170, 40)), ML.C((0, 0, 0))).astype(np.float32)
+
+
+def foam_tex(n=256):
+    x, y = ML.xy(n)
+    crest = np.clip(np.sin((y * 4 + 0.15 * np.sin(x * 2 * math.pi * 3)) * 2 * math.pi) * 1.6 - 0.6, 0, 1)
+    c = crest * np.clip(0.6 + ML.noise(n, 8, 21), 0, 1)
+    return np.repeat((c * 230)[..., None], 3, 2)
+
+
+def board_tex(c1, c2, n=128):
+    """surfboard deck: base colour, a stripe down the middle, darker rails"""
+    x, y = ML.xy(n)
+    c = np.zeros((n, n, 3), np.float32) + ML.C(c1)
+    c = np.where((np.abs(x - 0.5) < 0.09)[..., None], ML.C(c2), c)
+    c = np.where((np.abs(x - 0.5) < 0.012)[..., None], ML.C((40, 40, 40)), c)
+    c = np.where(((x < 0.07) | (x > 0.93))[..., None], c * 0.75, c)
+    return c + ML.N3(n, 1, 7, 3)
+
+
+def tiki_tex(n=256):
+    """carved tiki face on brown wood: brows, round eyes, a wide grin with teeth"""
+    x, y = ML.xy(n)
+    c = ML.lerp(ML.C((120, 78, 40)), ML.C((150, 100, 56)), ((y * 12) % 1)[..., None]) + ML.N3(n, 3, 51, 10)
+    dark = ML.C((40, 24, 12)); light = ML.C((236, 220, 180))
+    for ex in (0.3, 0.7):
+        d = np.hypot(x - ex, (y - 0.33) * 1.2)
+        c = np.where((d < 0.12)[..., None], light, c); c = np.where((d < 0.06)[..., None], dark, c)
+        c = np.where(((np.abs(y - 0.17) < 0.03) & (np.abs(x - ex) < 0.15))[..., None], dark, c)
+    nose = (np.abs(x - 0.5) < 0.06) & (y > 0.38) & (y < 0.6)
+    c = np.where(nose[..., None], c * 0.7, c)
+    mouth = (np.abs(x - 0.5) < 0.3) & (y > 0.68) & (y < 0.86)
+    c = np.where(mouth[..., None], dark, c)
+    teeth = mouth & (((x * 14) % 1) < 0.6) & (y < 0.75)
+    return np.where(teeth[..., None], light, c)
+
+
+def bamboo_tex(n=256):
+    """vertical bamboo poles with node rings"""
+    x, y = ML.xy(n)
+    k = (x * 8) % 1
+    shade = 0.75 + 0.25 * np.sin(k * math.pi)
+    c = ML.C((190, 160, 90)) * shade[..., None] + ML.N3(n, 2, 61, 6)
+    node = np.abs(((y * 3 + np.floor(x * 8) * 0.37) % 1) - 0.5) < 0.02
+    c = np.where(node[..., None], ML.C((120, 92, 46)), c)
+    return np.where((k < 0.04)[..., None], ML.C((80, 60, 30)), c)
+
+
+def flame_tex(n=64):
+    x, y = ML.xy(n)
+    d = np.hypot((x - 0.5) * 1.6, (y - 0.75) * 0.9)
+    f = np.clip(1 - d * 2.2, 0, 1) * np.clip(y * 1.3, 0, 1)
+    c = ML.lerp(ML.C((255, 80, 10)), ML.C((255, 230, 120)), (f ** 2)[..., None]) * f[..., None]
+    return c
+
+
 def textures():
     TX.add('deck', TL.tiles((226, 208, 172), (176, 160, 132), cols=4, rows=4, offset=0.5, grout_w=0.03))
     TX.add('pooltile', TL.tiles((120, 214, 226), (236, 246, 246), cols=8, rows=8, offset=0, grout_w=0.07), steps='splashsteps')
     TX.add('beach', TL.solid((232, 214, 160), 9, 13, 256), steps='sandsteps')
     TX.add('wall', wall_tex(), check_tile=False, scale=1.0)
-    TX.add('grille', grille_tex(), check_tile=False)
+    TX.add('grille', grille_tex(), 'raw', check_tile=False, shader=SH.lm_glow('grille', 'grille_glow', WAVE_PERIOD))
     TX.add('steel', TL.metal((236, 240, 244)), steps='latticesteps')
     TX.add('teal', TL.metal((40, 150, 150)))
     TX.add('grate', TL.tiles((214, 220, 224), (120, 128, 134), cols=8, rows=8, offset=0, grout_w=0.12), steps='latticesteps')
@@ -165,6 +244,18 @@ def textures():
     TX.add('sign_twist', TL.neon('TWISTER', (90, 150, 255), 512, 128), 'neon', rgb=(0.4, 0.6, 1.0), light=100, check_tile=False)
     TX.add('sign_tiki', TL.label('TIKI BAR', 512, 128, (96, 60, 30), (255, 220, 90), border=(255, 220, 90)), 'sign', check_tile=False)
     ML.save_img(TX.path('clouds'), cloud_tex())
+    # Wave Machine show: grilles glow and foam surges with the siren (shader pulse in step with a func_timer)
+    TX.add('grille_glow', glow_tex(), 'raw', shader='', check_tile=False)
+    TX.add('foam', foam_tex(), 'raw', shader='', check_tile=False)
+    TX.add('wavewater', TL.solid((120, 220, 236), 10, 11, 128), 'raw', check_tile=False,
+           shader=SH.wave_water('wavewater', foam='foam', period=WAVE_PERIOD))
+    TX.add('reefglass', TL.solid((150, 210, 230), 3, 7, 64), 'glass', rgb='0.08 0.12 0.14', shadow=False)
+    TX.add('reeffog', TL.solid((40, 110, 150), 2, 9, 64), 'fog', rgb=(0.10, 0.36, 0.52), dist=1300)
+    TX.add('fakewall', TL.solid((120, 214, 226), 2, 1, 64), 'raw', check_tile=False,
+           shader=SH.fake_wall('fakewall', f'textures/{NS}/pooltile'))
+    TX.add('sign_reef', TL.neon('SHARK REEF', (90, 220, 255), 512, 128), 'neon', rgb=(0.35, 0.85, 1.0), light=100, check_tile=False)
+    TX.add('sign_canyon', TL.neon('THUNDER CANYON', (255, 120, 60), 512, 128), 'neon', rgb=(1.0, 0.5, 0.25), light=110, check_tile=False)
+    TX.add('sign_mat', TL.neon('MAT RACER', (255, 230, 60), 512, 128), 'neon', rgb=(1.0, 0.9, 0.3), light=120, check_tile=False)
     TX.kit_defaults(pad_rgb=(255, 200, 60))
     # model materials
     m = TX.material
@@ -197,6 +288,32 @@ def textures():
     m('orange', TL.stripes((250, 110, 30), (255, 150, 60), 4, soft=0.6), 'lms', v=0.14)
     m('glass', TL.solid((150, 220, 240), 4, 3, 64), 'glass')
     m('chrome', TL.metal((200, 210, 220)), 'lms')
+    m('red', TL.stripes((220, 50, 50), (245, 90, 80), 4, soft=0.6), 'lms', v=0.14)
+    m('green', TL.stripes((50, 170, 80), (90, 210, 110), 4, soft=0.6), 'lms', v=0.14)
+    m('shark', TL.stripes((110, 124, 136), (150, 162, 172), 3, vertical=False, soft=0.8), 'dyn')
+    m('rope', TL.stripes((190, 160, 110), (150, 120, 80), 12, soft=0.5), shade=40)
+    # shop dressing (round 5)
+    m('canopy_b', TL.stripes((40, 150, 180), (250, 250, 245), 4), two=True, shade=60)
+    m('canopy_ban', TL.stripes((250, 210, 40), (250, 250, 240), 4), two=True, shade=60)
+    m('trim_w', TL.solid((246, 246, 242), 3, 31, 64), shade=30)
+    m('trim_y', TL.solid((250, 200, 50), 3, 32, 64), shade=30)
+    m('weather', TL.stripes((120, 205, 220), (98, 180, 198), 16, vertical=False, soft=0.15), shade=30)
+    m('bamboowall', bamboo_tex(), shade=30)
+    for k, (c1, c2) in dict(board_a=((250, 120, 40), (250, 250, 240)), board_b=((40, 160, 210), (250, 230, 80)),
+                            board_c=((230, 60, 120), (250, 250, 250)), board_d=((80, 200, 120), (30, 60, 140))).items():
+        m(k, board_tex(c1, c2), shade=50)
+    m('tikiface', tiki_tex(), shade=40)
+    m('flame', flame_tex(), 'add', wave='noise 0.85 0.15 0 7')
+    m('banana', TL.stripes((250, 214, 50), (236, 196, 40), 5, soft=0.8), shade=70)
+    m('banana_tip', TL.solid((90, 70, 30), 4, 41, 32), shade=50)
+    m('menu_ban', TL.label('SMOOTHIES', 256, 256, (30, 60, 40), (240, 240, 220), border=(160, 120, 70)))
+    m('menu_tiki', TL.label('MAI TAI', 256, 256, (60, 35, 20), (250, 220, 120), border=(160, 120, 70)))
+    m('lamp', TL.solid((255, 236, 180), 2, 42, 32), 'glow')
+    m('paper_r', TL.solid((240, 90, 60), 3, 43, 32), 'glow', wave='const 0.9')
+    m('paper_o', TL.solid((250, 170, 60), 3, 44, 32), 'glow')
+    m('fridge', TL.solid((236, 240, 244), 2, 45, 64), 'lms', v=0.1)
+    m('glassbottle', TL.solid((90, 170, 110), 2, 46, 32), 'lms', v=0.3)
+    m('beachsand', TL.solid((232, 214, 160), 9, 13, 64), shade=40)
     m('yellow', TL.stripes((250, 200, 40), (255, 226, 90), 4, soft=0.6), 'lms', v=0.14)
     m('sandrock', TL.stone((206, 178, 136), cells=12, vary=18), shade=40, steps='sandsteps')
     m('cliffm', TL.stone((150, 118, 92), cells=9, vary=24), shade=40)
@@ -289,6 +406,9 @@ def models():
     X = ML.Model()
     ellipsoid(X.mesh(M['rock']), (0, 0, 20), 70, 56, 64, nu=14, nv=10, bump=bump, flat_bottom=-20, u1=3, v1=2)
     ML.save('rock', X)
+    X = ML.Model()
+    ellipsoid(X.mesh(M['rock']), (0, 0, 40), 96, 80, 120, nu=16, nv=12, bump=bump, flat_bottom=-40, u1=4, v1=3)
+    ML.save('boulder', X)
 
     # ---- ice-cream cart (cover prop)
     X = ML.Model()
@@ -355,10 +475,13 @@ def post(X, x, y, z, z0=0):
 
 
 # ------------------------------------------------------------------------------------------------ structure
-def basin(rect, floor_z, tl, south_wall=True):
-    """structural tiled basin under a hole in the floor slab"""
+def basin(rect, floor_z, tl, south_wall=True, glass=None):
+    """structural tiled basin under a hole in the floor slab; glass = (x0, y0, x1, y1) floor panel you look through
+    (detail glass: the room under it must be sealed by its own structural walls)"""
     x0, y0, x1, y1 = rect
-    K.add(box((x0 - 16, y0 - 16, floor_z - 16), (x1 + 16, y1 + 16, floor_z), tl, detail=False))
+    for r in sub_rects((x0 - 16, y0 - 16, x1 + 16, y1 + 16), [glass] if glass else []):
+        K.add(box((r[0], r[1], floor_z - 16), (r[2], r[3], floor_z), tl, detail=False))
+    if glass: K.add(box((glass[0], glass[1], floor_z - 16), (glass[2], glass[3], floor_z), T('reefglass')))
     walls = [box((x0 - 16, y0, floor_z), (x0, y1, -32), tl, detail=False), box((x1, y0, floor_z), (x1 + 16, y1, -32), tl, detail=False),
              box((x0 - 16, y1, floor_z), (x1 + 16, y1 + 16, -32), tl, detail=False)]
     if south_wall: walls.append(box((x0 - 16, y0 - 16, floor_z), (x1 + 16, y0, -32), tl, detail=False))
@@ -366,8 +489,8 @@ def basin(rect, floor_z, tl, south_wall=True):
 
 
 def shell():
-    deck = {'top': T('deck'), 'side': T('pooltile'), 'bot': CAULK}
-    for r in sub_rects((X0 - 32, Y0 - 32, X1 + 32, Y1 + 32), [WAVE, LAGOON, PLUNGE]):                  # hall slab
+    deck = {'top': T('deck'), 'side': T('pooltile'), 'bot': T('steel')}
+    for r in sub_rects((X0 - 32, Y0 - 32, X1 + 32, Y1 + 32), [WAVE, LAGOON, PLUNGE, SHAFT_HOLE]):      # hall slab
         K.add(box((r[0], r[1], -32), (r[2], r[3], 0), deck, detail=False))
     # north wall: shared with Volcano Bay, two arches through it
     cut = [X0] + [v for a in ARCHES for v in a] + [X1]
@@ -381,8 +504,16 @@ def shell():
         K.route(f'arch_{a}', ((a + b) / 2, Y1 - 120, 0), ((a + b) / 2, AY0 + 120, 0))
     K.add(box((X0, Y1, WALL_H), (X1, Y1 + 32, ZTOP), dict({k: CAULK for k in ('e', 'w', 'top', 'bot')}, s=T('sky'), n=T('facade')),
               detail=False))
-    for (side, mn, mx) in (('e', (X0 - 32, Y0 - 32), (X0, Y1 + 32)), ('w', (X1, Y0 - 32), (X1 + 32, Y1 + 32)),
-                           ('n', (X0, Y0 - 32), (X1, Y0))):
+    # east wall: shared with Thunder Canyon, two doors through it
+    ew = lambda a, b, z0, z1, tex, **t: K.add(box((X1, a, z0), (X1 + 32, b, z1), dict(
+        {k: CAULK for k in ('top', 'bot')}, n=T('wall'), s=T('wall'), w=tex, e=T('facade') if z1 <= WALL_H else T('cliff'), **t), detail=False))
+    cut = [Y0 - 32, SDOOR[0], SDOOR[1], NDOOR[0], NDOOR[1], Y1 + 32]
+    for a, b in zip(cut[0::2], cut[1::2]): ew(a, b, 0, WALL_H, T('wall'))
+    for (a, b) in (SDOOR, NDOOR):
+        ew(a, b, 128, WALL_H, T('wall'), bot=T('wall'))
+        K.keep_clear(X1 - 128, a - 16, X1, b + 16, 0)
+    ew(Y0 - 32, Y1 + 32, WALL_H, ZTOP, T('sky'))
+    for (side, mn, mx) in (('e', (X0 - 32, Y0 - 32), (X0, Y1 + 32)), ('n', (X0, Y0 - 32), (X1, Y0))):
         for z0, z1, tex in ((0, WALL_H, T('wall')), (WALL_H, ZTOP, T('sky'))):
             t = dict({k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}, **{side: tex})
             K.add(box((mn[0], mn[1], z0), (mx[0], mx[1], z1), t, detail=False))
@@ -400,7 +531,7 @@ def wave_pool():
     (the secret) in the south wall under water"""
     x0, y0, x1, y1 = WAVE
     tl = {'top': T('pooltile'), 'side': T('pooltile'), 'bot': T('pooltile')}
-    basin(WAVE, WAVE_Z, tl, south_wall=False)
+    basin(WAVE, WAVE_Z, tl, south_wall=False, glass=(TANK[0], Y0 - 16, TANK[2], TANK[3]))
     # south wall below the deck: thick, with the intake recess in the middle
     rx0, rx1, rb, rz = -64, 64, -112, -40       # intake recess: sill at rb, top at rz (just under the surface: bots
                                                 # never dived to the deep floor, 0 probe visits in a 3-minute match)
@@ -416,16 +547,19 @@ def wave_pool():
     K.add(*isle)
     K.reserve(((x0, y0, WAVE_Z), (x1, y1, 0)))                        # nothing gets scattered into the pool
     drain = box((-1436, -1706, WAVE_Z), (-1364, -1634, WAVE_Z + 8), P_)              # the Drain Pipe's pad disc (dive_tower)
-    K.water_box((x0, y0, WAVE_Z), (x1, y1, WATER), T('water'), cutters=[ramp, drain] + isle)
+    K.water_box((x0, y0, WAVE_Z), (x1, y1, WATER), T('wavewater'), nodraw_tex=T('water_nd'), cutters=[ramp, drain] + isle)
     K.add(box((rx0, Y0 - 64, rb), (rx1, Y0, rz), T('water_nd')))
     K.spots.setdefault('water', []).append(dict(mn=[rx0, Y0 - 64, rb], mx=[rx1, Y0, rz], depth=0))
-    K.secret((rx0 + 8, Y0 - 56, rb + 4), (rx1 - 8, Y0 - 16, rz - 8), dest=(VAULT_C[0], VAULT_C[1] - 128, VAULT_Z), angle=90,
+    K.secret((rx0 + 8, Y0 - 56, rb + 4), (rx1 - 8, Y0 - 16, rz - 8), dest=(VAULT[0] + 120, TUN_Y, VAULT_Z), angle=0,
              name='intake', approach='n')
     # wave machine grilles on the south wall + the deep end sign
     for gx in (-1280, -768, -256, 256, 768, 1280):
         K.add(sign_box((gx - 112, Y0, 16), (gx + 112, Y0 + 6, 176), T('grille'), 256, 256, back=CAULK, facing='n', edge=T('steel')))
     K.add(sign_box((-128, Y0, 224), (128, Y0 + 6, 288), T('sign_deep'), 512, 128, back=CAULK, facing='n', edge=T('steel')))
     K.speaker(0, -900, 64, 'ambient/water_rippling'); K.speaker(0, -1600, 64, 'ambient/water_flowing')
+    # Wave Machine show: siren every WAVE_PERIOD s, in step with the grille glow and the foam surge (shader pulses)
+    K.timer_sound(0, Y0 + 64, 300, 'misc/alarm_buzzer', 'wave_siren', WAVE_PERIOD, 0)
+    K.timer_sound(0, -1100, 120, 'ambient/water_flowing', 'wave_surge', WAVE_PERIOD, 0)
     K.route('beach', (0, -380, 0), (530, -400, 0))                       # clear of the loop post (600, -310) and a ring (400, -360)
 
 
@@ -509,6 +643,7 @@ def terrace():
     br = K.building(SHACK, TERR_Z, SHACK_H, openings=[('w', 1480, 1592, 0, 120), ('s', 1904, 2112, 48, 136)])
     br.append(box((1904, sy0 + 16, TERR_Z), (2112, sy0 + 48, TERR_Z + 48), P_))             # counter behind the hatch
     K.solid_piece('banana_hut', br, TX.texfn('roofm', 'hutwall'))
+    banana_hut_dress()
     K.add(sign_box((1880, sy0 - 4, TERR_Z + 150), (2136, sy0, TERR_Z + 200), T('sign_snack'), 512, 128, back=CAULK, facing='s', edge=T('steel')))
     K.keep_clear(sx0 - 112, 1464, sx0 + 112, 1608, TERR_Z)
     K.route('hut_door', (sx0 - 90, 1536, TERR_Z), (sx0 + 110, 1536, TERR_Z))
@@ -525,7 +660,8 @@ def shop():
     x0, y0, x1, y1 = SHOP
     br = K.building(SHOP, 0, SHOP_H, openings=[('e', 32, 160, 0, 128), ('e', 208, 304, 48, 136)])
     br.append(box((x0 + 16, 200, 0), (x0 + 72, 320, 48), P_))                                # counter
-    K.solid_piece('surf_shop', br, TX.texfn('roofm', 'shopwall'))
+    K.solid_piece('surf_shop', br, TX.texfn('roofm', 'weather'))
+    surf_shop_dress()
     st = {'top': T('deck'), 'side': T('teal'), 'bot': T('teal')}
     STAIRS(x0, y0 - 128, x0 + 480, y0, 0, SHOP_H + 16, 'w', st)
     K.route('shop_roof', (x0 + 540, y0 - 64, 0), (x0 + 80, y0 + 96, SHOP_H + 16))     # top tread is in the corner: step north onto the roof
@@ -537,7 +673,7 @@ def shop():
     K.jumppad(x1 + 200, 440, 0, land=(x1 - 140, 240, SHOP_H + 16), apex=SHOP_H + 16 + 130, name='pad_shop',
               edges=[(x1, 300, SHOP_H + 16)])
     for i, m in enumerate(('pad_items/towelstack.md3', 'pad_items/towelstack_2.md3')):
-        K.model_on(m, x0 + 44, 232 + 56 * i, 48, scale=0.6, angle=90)
+        K.model_on(m, x0 + 44, 218 + 48 * i, 48, scale=0.6, angle=90)
 
 
 def guard():
@@ -560,20 +696,102 @@ def guard():
 
 
 def vault():
-    """sealed pump room below the world: the secret's loot and a teleporter back to the beach"""
-    x0, y0, x1, y1 = VAULT_C[0] - 256, VAULT_C[1] - 256, VAULT_C[0] + 256, VAULT_C[1] + 256; z = VAULT_Z
+    """the pump room (secret): beside the reef tank under the deep end, reached by the intake teleporter or through the
+    fake wall at the end of the Shark Reef tunnel; teleporter back to the beach. Its roof is the wave pool's floor."""
+    x0, y0, x1, y1 = VAULT; z = VAULT_Z
     t = {'side': T('pooltile'), 'top': T('grate'), 'bot': T('steel')}
-    K.add(box((x0 - 32, y0 - 32, z - 32), (x1 + 32, y1 + 32, z), t, detail=False),
-          box((x0 - 32, y0 - 32, z + 256), (x1 + 32, y1 + 32, z + 288), t, detail=False),
-          box((x0 - 32, y0 - 32, z), (x0, y1 + 32, z + 256), t, detail=False), box((x1, y0 - 32, z), (x1 + 32, y1 + 32, z + 256), t, detail=False),
-          box((x0, y0 - 32, z), (x1, y0, z + 256), t, detail=False), box((x0, y1, z), (x1, y1 + 32, z + 256), t, detail=False))
-    K.item('item_padpower', -128, 96, z); K.item('item_revival', 0, 160, z); K.item('holdable_killerducks', 128, 96, z)
-    K.item('item_armor_padshield', 0, 0, z)
-    K.teleporter((-48, y1 - 64, z), (48, y1, z + 96), dest=(0, -330, 0), angle=90, name='vault_exit')
-    K.light(0, 0, z + 200, 500, '0.6 0.9 1')
-    K.speaker(0, 0, z + 100, 'machine/mechanics')
-    for (x, y) in ((-190, -190), (190, -190)):
+    K.add(box((x0, y0 - 16, z - 32), (x1 + 32, y1 + 16, z), t, detail=False),
+          box((x1, y0 - 16, z), (x1 + 32, y1 + 16, TANK_Z[1]), t, detail=False),
+          box((x0 - 16, y0 - 16, z), (x1, y0, TANK_Z[1]), t, detail=False), box((x0 - 16, y1, z), (x1, y1 + 16, TANK_Z[1]), t, detail=False))
+    cy = (y0 + y1) / 2
+    K.item('item_padpower', 470, cy + 110, z); K.item('item_revival', 600, cy + 150, z); K.item('holdable_killerducks', 700, cy + 60, z)
+    K.item('item_armor_padshield', 560, cy - 120, z)
+    K.teleporter((x1 - 56, cy - 48, z), (x1 - 8, cy + 48, z + 96), dest=(0, -330, 0), angle=90, name='vault_exit')
+    K.light((x0 + x1) / 2, cy, z + 200, 450, '0.6 0.9 1')
+    K.speaker((x0 + x1) / 2, cy, z + 100, 'machine/mechanics')
+    for (x, y) in ((x1 - 170, y0 + 60), (x1 - 170, y1 - 60)):
         K.catalog('pad_bath/deocan1.md3', x, y, z, scale=1.0)
+
+
+def reef():
+    """Shark Reef: a sealed aquarium tank under the deep end (fog volume, glass ceiling = the pool floor, plants on the
+    bottom, sharks circling the tunnel on three func_rotating rings), the glass tunnel through it, and the stairwell
+    down from the west deck by the dive tower. The tunnel ends at a fake wall into the pump room."""
+    M = TX.mats
+    tx0, ty0, tx1, ty1 = TANK; zb, zt = TANK_Z
+    rock = {'side': T('cliff'), 'top': T('beach'), 'bot': CAULK}
+    iy0, iy1 = TUN_IN; tz1 = TUN_FLOOR + 128
+    # tank shell (structural): floor, south/north walls, west wall with the tunnel mouth, east wall with the fake wall gap
+    K.add(box((tx0 - 16, ty0 - 16, zb - 16), (tx1, ty1 + 16, zb), rock, detail=False),
+          box((tx0 - 16, ty0 - 16, zb), (tx1, ty0, zt), rock, detail=False), box((tx0 - 16, ty1, zb), (tx1, ty1 + 16, zt), rock, detail=False))
+    for (x0, x1) in ((tx0 - 16, tx0), (tx1, VAULT[0])):
+        K.add(box((x0, ty0, zb), (x1, iy0, zt), rock, detail=False), box((x0, iy1, zb), (x1, ty1, zt), rock, detail=False),
+              box((x0, iy0, zb), (x1, iy1, TUN_FLOOR), rock, detail=False), box((x0, iy0, tz1), (x1, iy1, zt), rock, detail=False))
+    K.fake_wall((tx1, iy0, TUN_FLOOR), (VAULT[0], iy1, tz1), T('fakewall'), 'pumproom_wall', 'e')
+    # tunnel: grate floor, weapclip walls + roof inside a round glass tube (MD3 in two halves: +-512u limit)
+    # glass arch from the floor edges (y +-84) to the crown at -275; collision inside it: walls to -330, roof strip
+    AW, ATOP = 84, TUN_FLOOR + 157
+    K.add(box((tx0, TUN_Y - AW + 4, TUN_FLOOR - 16), (tx1, TUN_Y + AW - 4, TUN_FLOOR), {'top': T('grate'), 'side': T('steel'), 'bot': T('steel')}),
+          box((tx0, iy0 - 8, TUN_FLOOR), (tx1, iy0, TUN_FLOOR + 102), WCLIP), box((tx0, iy1, TUN_FLOOR), (tx1, iy1 + 8, TUN_FLOOR + 102), WCLIP),
+          box((tx0, TUN_Y - 46, ATOP - 22), (tx1, TUN_Y + 46, ATOP - 14), WCLIP))
+    K.reserve(((tx0, TUN_Y - AW, TUN_FLOOR - 16), (tx1, TUN_Y + AW, ATOP)))
+    mid = (tx0 + tx1) / 2
+    for i, (a, b) in enumerate(((tx0, mid), (mid, tx1))):
+        X = ML.Model(); c = (a + b) / 2
+        ML.glass_arch(X, a - c, b - c, AW, 0, ATOP - TUN_FLOOR, M['glass'], M['chrome'])
+        K.custom(ML.save(f'reef_tube{i}', X), c, TUN_Y, TUN_FLOOR, lit=False, occupy=False, _structure=1)
+    # fog: four boxes round the tube (never inside it)
+    g = 12
+    for (mn, mx) in (((tx0, ty0, zb), (tx1, TUN_Y - AW - g, zt)), ((tx0, TUN_Y + AW + g, zb), (tx1, ty1, zt)),
+                     ((tx0, TUN_Y - AW - g, ATOP + g), (tx1, TUN_Y + AW + g, zt)),
+                     ((tx0, TUN_Y - AW - g, zb), (tx1, TUN_Y + AW + g, TUN_FLOOR - 16 - g))):
+        K.add(box(mn, mx, T('reeffog')))
+    # sharks: three rings round the tunnel axis, alternate directions
+    X = ML.Model()
+    R0 = 168
+    for k in range(3):
+        a = 2 * math.pi * k / 3
+        t = np.array([0, -math.sin(a), math.cos(a)]); r = np.array([0, math.cos(a), math.sin(a)]); xa = np.array([1.0, 0, 0])
+        Rm = np.stack([t, xa, r], 1)
+        c = r * R0
+        ellipsoid(X.mesh(M['shark']), c, 46, 13, 15, nu=12, nv=8, R=Rm)
+        sh = X.mesh(M['shark'])
+        for (pts) in (((8, 0, 10), (-14, 0, 10), (-10, 0, 34)), ((-40, 0, 0), (-62, 0, 20), (-60, 0, -16)),
+                      ((10, 6, -6), (-6, 6, -6), (-4, 26, -16)), ((10, -6, -6), (-6, -6, -6), (-4, -26, -16))):
+            P = [c + Rm @ np.array(q, float) for q in pts]
+            n = np.cross(P[1] - P[0], P[2] - P[0]); n /= np.linalg.norm(n)
+            sh.poly(P, n, [(0, 0), (1, 0), (0.5, 1)]); sh.poly(P[::-1], -n, [(0.5, 1), (1, 0), (0, 0)])
+    shark = ML.save('shark_ring', X)
+    assert abs(shark[2]) < 1e-6, 'model2 has no offset: keep the shark ring inside +-512u'
+    for i, x in enumerate((tx0 + 300, mid, tx1 - 300)):
+        K.rotating_model2(shark[0], (x, TUN_Y, TUN_Z), speed=14 + 4 * i, axis='x', reverse=bool(i % 2))
+    # reef floor: plants and rocks either side, blue light from below
+    for i, x in enumerate(range(tx0 + 120, tx1 - 60, 220)):
+        for y in (ty0 + 70, ty1 - 70):
+            K.catalog('pad_ddmix/plants/waterplant1a.md3' if (i + (y > TUN_Y)) % 2 else 'pad_ddmix/plants/waterplant1b.md3',
+                      x + (40 if y > TUN_Y else -40), y, zb, scale=0.55, clip=False, nudge=False)
+    for x in range(tx0 + 200, tx1, 420):
+        K.light(x, TUN_Y, tz1 - 20, 220, '0.6 0.9 1')
+        for y in (ty0 + 60, ty1 - 60): K.light(x + 100, y, zb + 120, 260, '0.3 0.7 1')
+    K.speaker(mid, TUN_Y, TUN_FLOOR + 64, 'machine/fishtank'); K.speaker(tx0 + 300, TUN_Y, TUN_FLOOR + 64, 'ambient/water_bubbling')
+    # stairwell: deck hole by the dive tower, a straight 16u flight down to the tunnel floor
+    hx0, hy0, hx1, hy1 = SHAFT_HOLE
+    sx1 = tx0 - 16
+    st = {'top': T('grate'), 'side': T('steel'), 'bot': T('steel')}
+    wall = {'side': T('pooltile'), 'top': T('pooltile'), 'bot': CAULK}
+    K.add(box((hx0 - 16, hy0 - 16, TUN_FLOOR - 32), (sx1, hy1 + 16, TUN_FLOOR), wall, detail=False),
+          box((hx0 - 16, hy0, TUN_FLOOR), (hx0, hy1, -32), wall, detail=False))
+    for (ya, yb) in ((hy0 - 16, hy0), (hy1, hy1 + 16)):
+        K.add(box((hx0 - 16, ya, TUN_FLOOR), (WAVE[0] - 16, yb, -32), wall, detail=False),
+              box((WAVE[0] - 16, ya, TUN_FLOOR), (sx1, yb, WAVE_Z - 16), wall, detail=False))
+    STAIRS(hx0, hy0, tx0 - 64, hy1, TUN_FLOOR, 0, 'w', st)
+    K.route('reef_stairs', (tx0 - 40, TUN_Y, TUN_FLOOR), (hx0 + 120, hy1 + 60, 0))          # the top is entered from the side
+    K.keep_clear(hx0, hy0 - 112, hx1 + 112, hy0, 0); K.keep_clear(hx1, hy0, hx1 + 112, hy1 + 112, 0)
+    K.route('reef_tunnel', (tx0 - 40, TUN_Y, TUN_FLOOR), (tx1 - 60, TUN_Y, TUN_FLOOR))
+    K.add(sign_box((tx0 - 20, iy0 + 4, tz1 + 8), (tx0 - 16, iy1 - 4, tz1 + 40), T('sign_reef'), 512, 128, back=CAULK, facing='w', edge=T('teal')))
+    for x in (hx0 + 200, hx0 + 500): K.light(x, TUN_Y, -120, 260, '0.7 0.9 1')
+    K.item('item_armor_shard', mid - 300, TUN_Y, TUN_FLOOR); K.item('item_armor_shard', mid + 300, TUN_Y, TUN_FLOOR)
+    K.weapon('betty', tx1 - 150, TUN_Y, TUN_FLOOR, marker='black')        # end of the reef tunnel, next to the fake wall
 
 
 # ------------------------------------------------------------------------------------------------ Volcano Bay
@@ -585,7 +803,7 @@ def river_rects():
 def bay_shell():
     """open-air annex: sand floor with the lazy-river ring cut out, rock cliffs, sky"""
     sand = {'top': T('beach'), 'side': T('pooltile'), 'bot': CAULK}
-    for r in sub_rects((AX0 - 32, AY0, AX1 + 32, AY1 + 32), river_rects()):
+    for r in sub_rects((AX0 - 32, AY0, AX1 + 32, AY1 + 32), river_rects() + [MATPOOL]):
         K.add(box((r[0], r[1], -32), (r[2], r[3], 0), sand, detail=False))
     ox0, oy0, ox1, oy1 = RIV_O; ix0, iy0, ix1, iy1 = RIV_I
     tl = {'top': T('pooltile'), 'side': T('pooltile'), 'bot': CAULK}
@@ -593,7 +811,11 @@ def bay_shell():
           box((ox0 - 16, oy0 - 16, SHALLOW), (ox0, oy1 + 16, -32), tl, detail=False), box((ox1, oy0 - 16, SHALLOW), (ox1 + 16, oy1 + 16, -32), tl, detail=False),
           box((ox0, oy0 - 16, SHALLOW), (ox1, oy0, -32), tl, detail=False), box((ox0, oy1, SHALLOW), (ox1, oy1 + 16, -32), tl, detail=False),
           box((ix0, iy0, SHALLOW), (ix1, iy1, -32), tl, detail=False))
-    for (side, mn, mx) in (('e', (AX0 - 32, AY0), (AX0, AY1 + 32)), ('w', (AX1, AY0), (AX1 + 32, AY1 + 32)), ('s', (AX0, AY1), (AX1, AY1 + 32))):
+    cl = dict({k: CAULK for k in ('e', 'top', 'bot')}, w=T('cliff'), n=T('cliff'), s=T('cliff'))
+    for (a, b, z0, z1) in ((AY0, BTUN[0], 0, CLIFF_H), (BTUN[1], AY1 + 32, 0, CLIFF_H), (BTUN[0], BTUN[1], 256, CLIFF_H)):
+        K.add(box((AX1, a, z0), (AX1 + 32, b, z1), dict(cl, bot=T('cliff')), detail=False))
+    K.add(box((AX1, AY0, CLIFF_H), (AX1 + 32, AY1 + 32, ZTOP), dict(cl, w=T('sky')), detail=False))
+    for (side, mn, mx) in (('e', (AX0 - 32, AY0), (AX0, AY1 + 32)), ('s', (AX0, AY1), (AX1, AY1 + 32))):
         for z0, z1, tex in ((0, CLIFF_H, T('cliff')), (CLIFF_H, ZTOP, T('sky'))):
             t = dict({k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}, **{side: tex})
             K.add(box((mn[0], mn[1], z0), (mx[0], mx[1], z1), t, detail=False))
@@ -661,7 +883,7 @@ def volcano():
     K.jumppad(cx + 60, cy - 200, Z[3], land=(cx + 60, cy - 60, Z[4]), apex=Z[4] + 96, name='pad_summit', edges=[(cx + 60, cy - A[4], Z[4])])
     K.jumppad(cx + 620, cy + 320, 0, land=(cx + 80, cy + 60, Z[4]), apex=Z[4] + 150, name='geyser_crater',
               edges=[(cx + A[4], cy + 70, Z[4])], light_rgb='0.5 0.8 1')
-    K.jumppad(1180, cy - 150, 0, land=(cx + 424, cy - 150, Z[1]), apex=Z[1] + 190, name='geyser_bay',
+    K.jumppad(1030, cy - 250, 0, land=(cx + 424, cy - 150, Z[1]), apex=Z[1] + 190, name='geyser_bay',
               edges=[(cx + A[1], cy - 150, Z[1])], light_rgb='0.5 0.8 1')
     K.trigger_sound((cx - 80, cy - 80, Z[4] + 4), (cx + 80, cy + 80, Z[4] + 76), 'human/applause', 'crater_applause', wait=20)
     # waterfall: sheets down the south faces (visual only)
@@ -725,7 +947,8 @@ def tiki():
     x0, y0, x1, y1 = TIKI
     br = K.building(TIKI, 0, TIKI_H, openings=[('e', y0 + 120, y0 + 232, 0, 120), ('s', x0 + 60, x1 - 60, 48, 136)])
     br.append(box((x0 + 60, y0 + 16, 0), (x1 - 60, y0 + 48, 48), P_))
-    K.solid_piece('tiki_bar', br, TX.texfn('thatch', 'bamboo'))
+    K.solid_piece('tiki_bar', br, TX.texfn('thatch', 'bamboowall'))
+    tiki_dress()
     STAIRS(x0, y1, x0 + 384, y1 + 128, 0, TIKI_H + 16, 'w', {'top': T('beach'), 'side': T('cliff'), 'bot': T('cliff')}, route='tiki_roof')
     K.keep_clear(x0 + 384, y1, x0 + 496, y1 + 128, 0); K.keep_clear(x1 - 112, y0 + 104, x1 + 112, y0 + 248, 0)
     K.route('tiki_door', (x1 + 90, y0 + 176, 0), (x1 - 110, y0 + 176, 0))
@@ -736,18 +959,131 @@ def tiki():
     K.model_on('pad_ddmix/padship/rumbottle1.md3', x0 + 250, y0 + 32, 48, scale=0.35)
 
 
+# ------------------------------------------------------------------------------------------------ shop dressing (woplib.shopbits)
+def surf_shop_dress():
+    """Surf Shop: blue awning over the door and window, white trims and fascia, boards leaning on the front and on a
+    rack round the side, a wall of boards and a hanging longboard inside, cash register, ceiling lamp"""
+    M = TX.mats
+    x0, y0, x1, y1 = SHOP; h = SHOP_H
+    D = SB.Dress(K, 'surf_shop_dress', ((x0 + x1) / 2, (y0 + y1) / 2, 0))
+    e = SB.Wall((x1, 0), 'e')
+    SB.awning(D, e, M['canopy_b'], M['steelw'], 16, 320, 146, depth=72, drop=22)
+    SB.frame(D, e, M['trim_w'], 32, 160, 0, 128)
+    SB.frame(D, e, M['trim_w'], 208, 304, 48, 136, sill=True)
+    SB.fascia(D, M['trim_w'], SHOP, 200, h, sides='new')
+    boards = ('board_a', 'board_b', 'board_c', 'board_d')
+    up = np.array([-0.17, 0, 1.0])
+    for i, y in enumerate((-130, -76, -22)):                       # leaning on the front, south of the door
+        SB.surfboard(D, M[boards[i]], (x1 + 36, y, 1), up, (1, 0, 0), length=176, width=44)
+    D.clip_box((x1 + 8, -156, 0), (x1 + 44, 6, 40))
+    for i, x in enumerate(range(x0 + 50, x1 - 20, 62)):             # rack on the north side
+        SB.surfboard(D, M[boards[(i + 1) % 4]], (x, y1 + 36, 1), (0, -0.17, 1.0), (0, 1, 0), length=180, width=44)
+    D.clip_box((x0 + 20, y1 + 6, 0), (x1 - 10, y1 + 46, 40))
+    rbox(D.mesh(M['trim_w']), (x0 + 22, y1 + 36, 30), (x1 - 12, y1 + 42, 36), r=1.5, k=1, tile=64)   # the rack's rail
+    for x in (x0 + 22, x1 - 18):
+        rbox(D.mesh(M['trim_w']), (x, y1 + 36, 0), (x + 6, y1 + 42, 40), r=1.5, k=1, tile=64)
+    # inside: a wall of boards on the west wall, a longboard hanging from the ceiling, till on the counter, lamp
+    for i, y in enumerate((-110, -60, -10, 40)):
+        SB.surfboard(D, M[boards[(i + 2) % 4]], (x0 + 16 + 30, y, 1), (-0.13, 0, 1.0), (1, 0, 0), length=170, width=40)
+    nose = SB.surfboard(D, M['board_b'], ((x0 + x1) / 2, -80, 196), (0, 1, 0), (0, 0, -1), length=230, width=50)
+    for yy in (-40, 110):
+        tube(D.mesh(M['steelw']), [((x0 + x1) / 2, yy, 199), ((x0 + x1) / 2, yy, h - 0.5)], 0.7, nseg=4, caps=(False, False))
+    rbox(D.mesh(M['wheel']), (x0 + 24, 292, 48), (x0 + 56, 318, 64), r=2, k=1, tile=32)          # till
+    rbox(D.mesh(M['wheel']), (x0 + 30, 297, 64), (x0 + 50, 313, 74), r=2, k=1, tile=32)
+    revolve(D.mesh(M['lamp']), [(14, h - 14), (18, h - 8), (8, h - 0.5)], n=12, cx=(x0 + x1) / 2, cy=y0 + 120)
+    # landmark: a giant board planted in a striped bucket on the promenade in front of the shop
+    gx, gy = x1 + 190, -70
+    revolve(D.mesh(M['ring_o']), [(30, 0), (34, 46), (36, 48), (31, 48)], n=16, cx=gx, cy=gy, vlen=48)
+    revolve(D.mesh(M['beachsand']), [(31, 44), (16, 47), (0, 48)], n=16, cx=gx, cy=gy)
+    SB.surfboard(D, M['board_a'], (gx, gy, 30), (0.04, 0, 1.0), (0.7, -0.7, 0), length=360, width=80, thick=10)
+    D.clip_cyl(gx, gy, 36, 0, 60); D.clip_cyl(gx, gy, 20, 60, 380)
+    D.finish()
+
+
+def banana_hut_dress():
+    """Banana Hut: giant banana arch over the door, yellow awning over the serving hatch with banana bunches, bar
+    stools, a SMOOTHIES board, fruit crates, trims; inside a fridge, a juicer and more bananas"""
+    M = TX.mats
+    x0, y0, x1, y1 = SHACK; z = TERR_Z; h = SHACK_H
+    D = SB.Dress(K, 'banana_hut_dress', ((x0 + x1) / 2, (y0 + y1) / 2, z))
+    s_ = SB.Wall((0, y0), 's'); w_ = SB.Wall((x0, 0), 'w')
+    for wl in (s_, w_): wl.p0[2] = z
+    SB.awning(D, s_, M['canopy_ban'], M['steelw'], 1890, 2126, 146, depth=90, drop=24)
+    SB.frame(D, s_, M['trim_y'], 1904, 2112, 48, 136, sill=True)
+    SB.frame(D, w_, M['trim_y'], -1592, -1480, 0, 120)
+    SB.fascia(D, M['trim_w'], SHACK, z + 182, z + h, sides='new')
+    for u in (1930, 2010, 2090):
+        SB.banana_bunch(D, M['banana'], M['banana_tip'], s_.at(70, u, 146 - 24 * 70 / 90 - 2), k=5, size=26)
+    # giant banana arch over the west door
+    # chord 212 between two plinths (z + 70), sagitta 130 -> apex z + 200 over the 120u door
+    chord, sag = 212.0, 130.0
+    bend = 2 * math.atan(sag / (chord / 2))
+    body, tips = SB.banana_mesh(chord, 24, bend, 28)
+    R = np.diag([-1.0, 1.0, -1.0])                                    # banana_mesh sags; turned over it arches
+    t = np.array([x0 - 30, (1480 + 1592) / 2, z + 70])
+    D.add(M['banana'], body, R, t); D.add(M['banana_tip'], tips, R, t)
+    for yy in (t[1] - chord / 2, t[1] + chord / 2):
+        SB.crate(D, M['planks'], (x0 - 50, yy - 20, z), (x0 - 10, yy + 20, z + 70))
+    for i, x in enumerate((1940, 2000, 2060, 2120)):
+        SB.stool(D, M['canopy_r'], M['steelw'], x, y0 - 64, z, h=30, r=12)
+    SB.sandwich_board(D, M['menu_ban'], M['planks'], x0 + 30, y0 - 50, z, facing=-90)
+    SB.crate(D, M['planks'], (x1 - 50, y0 - 70, z), (x1 - 4, y0 - 24, z + 34))
+    SB.crate(D, M['planks'], (x1 - 48, y0 - 68, z + 34), (x1 - 8, y0 - 28, z + 62))
+    SB.banana_bunch(D, M['banana'], M['banana_tip'], (x1 - 28, y0 - 48, z + 62), k=6, size=30, hang=False)
+    # inside
+    rbox(D.mesh(M['fridge']), (x1 - 74, y1 - 76, z), (x1 - 18, y1 - 18, z + 110), r=4, k=2, tile=64)
+    rbox(D.mesh(M['steelw']), (x1 - 76, y1 - 60, z + 40), (x1 - 74.5, y1 - 54, z + 90), r=0.5, k=1, tile=16)
+    D.clip_box((x1 - 76, y1 - 76, z), (x1 - 18, y1 - 18, z + 110))
+    revolve(D.mesh(M['plastic']), [(9, z + 48), (10, z + 60), (7, z + 76), (4, z + 78)], n=12, cx=1916, cy=y0 + 32, vlen=64)
+    for (xx, yy) in ((1900, 1600), (2000, 1650)):
+        SB.banana_bunch(D, M['banana'], M['banana_tip'], (xx, yy, z + h - 0.5), k=5, size=26)
+    revolve(D.mesh(M['lamp']), [(12, h - 12), (16, h - 7), (7, h - 0.5)], n=12, cx=(x0 + x1) / 2, cy=(y0 + y1) / 2 + 60)
+    D.finish()
+
+
+def tiki_dress():
+    """Tiki Bar: thatch eaves (not over the roof stairs), bamboo corner posts, carved totems by the door, tiki torches,
+    bamboo stools at the hatch, a MAI TAI board, a mask over the door; inside paper lanterns and a bottle shelf"""
+    M = TX.mats
+    x0, y0, x1, y1 = TIKI; h = TIKI_H
+    D = SB.Dress(K, 'tiki_bar_dress', ((x0 + x1) / 2, (y0 + y1) / 2, 0))
+    SB.thatch_skirt(D, M['thatch'], TIKI, h + 6, out=56, drop=42, sides='esw')
+    for (cx, cy) in ((x0 - 7, y0 - 7), (x1 + 7, y0 - 7), (x0 - 7, y1 + 7), (x1 + 7, y1 + 7)):
+        tube(D.mesh(M['bamboo']), [(cx, cy, 0), (cx, cy, h + 4)], 6, nseg=8)
+    e = SB.Wall((x1, 0), 'e'); s_ = SB.Wall((0, y0), 's')
+    SB.frame(D, e, M['bamboo'], y0 + 120, y0 + 232, 0, 120, width=7)
+    SB.frame(D, s_, M['bamboo'], x0 + 60, x1 - 60, 48, 136, width=7, sill=True)
+    rbox(D.mesh(M['tikiface']), e.at(0.5, y0 + 148, 126), e.at(5, y0 + 204, 166), r=1.5, k=1, tile=56)
+    for yy in (y0 + 84, y0 + 268):
+        SB.totem(D, M['tikiface'], M['planks'], x1 + 34, yy, 0, h=128, r=17, facing=0)
+    for (tx, ty) in ((x0 - 40, y0 - 40), (x1 + 40, y0 - 40), (x0 - 40, y1 + 20)):
+        SB.torch(D, M['bamboo'], M['coco'], M['flame'], tx, ty, 0, h=118)
+    for x in range(x0 + 80, x1 - 60, 60):
+        SB.stool(D, M['bamboo'], M['bamboo'], x, y0 - 50, 0, h=28, r=11)
+    SB.sandwich_board(D, M['menu_tiki'], M['bamboo'], x1 + 60, y0 - 60, 0, facing=0)
+    # inside
+    for i, (lx, ly) in enumerate(((x0 + 80, y0 + 120), (x0 + 170, y0 + 200), (x0 + 250, y0 + 120), (x0 + 120, y0 + 290))):
+        SB.lantern(D, M['paper_r' if i % 2 else 'paper_o'], M['rope'], lx, ly, h, drop=28 + 6 * i)
+    for k, zz in enumerate((60, 100)):
+        rbox(D.mesh(M['planks']), (x0 + 16.5, y0 + 150, zz - 4), (x0 + 40, y1 - 90, zz), r=1, k=1, tile=64)
+        for j, yy in enumerate(range(y0 + 162, y1 - 96, 22)):
+            revolve(D.mesh(M['glassbottle']), [(5, zz), (5.5, zz + 14), (2, zz + 20), (1.6, zz + 28), (0.1, zz + 28)], n=8,
+                    cx=x0 + 28, cy=yy)
+    D.finish()
+
+
 def bay_dressing():
-    for i, (x, y) in enumerate(((-1450, 1900), (-1100, 2250), (-1380, 3250), (-1150, 3600), (1380, 1990), (1150, 2300),
-                                (1450, 3300), (1100, 3620), (-420, 2250), (560, 3480), (-600, 3180), (600, 2620), (-1250, 2060))):
+    for i, (x, y) in enumerate(((-1450, 1900), (-1100, 2250), (-1380, 3250), (-1150, 3600), (1300, 1990), (1000, 2200),
+                                 (-420, 2250), (560, 3480), (-600, 3180), (600, 2620), (-1250, 2060))):
         K.prop(ML.PLACE['palm'], x, y, 0, cyls=[(0, 0, 15, 0, 300)], angle=(i * 83) % 360, lit=False)
     for i, (x, y, a) in enumerate(((-1300, 2200, 100), (-1300, 2300, 100), (1350, 3050, 270), (1350, 3150, 270), (1350, 3250, 270),
-                                   (-1350, 3400, 90), (-1350, 3500, 90), (1300, 2100, 250))):
+                                   (-1350, 3400, 90), (-1350, 3500, 90), (1250, 1900, 250))):
         K.prop(ML.PLACE['lounger_r' if i % 2 else 'lounger_b'], x, y, 0, boxes=[((-22, -62, 0), (22, 40, 30))], angle=a)
-    for i, (x, y) in enumerate(((-1380, 2250), (1420, 3150), (-1420, 3450), (1380, 2100))):
+    for i, (x, y) in enumerate(((-1380, 2250), (1420, 3150), (-1420, 3450), (1160, 1880))):
         K.prop(ML.PLACE['parasol_r' if i % 2 else 'parasol_y'], x, y, 0, cyls=[(0, 0, 6, 0, 150)], angle=0)
     for (x, y, a) in ((1250, 3450, 20), (-1100, 3050, 80), (1050, 1880, 0)):
         K.prop(ML.PLACE['cart'], x, y, 0, boxes=[((-58, -32, 0), (58, 32, 88))], angle=a)
-    for (x, y) in ((-1250, 1850), (1300, 2700), (-1050, 3350), (1480, 3600), (-1500, 2200)):
+    for (x, y) in ((-1250, 1850), (1300, 2700), (-1050, 3350), (1420, 3600), (-1500, 2200)):
         K.prop(ML.PLACE['rock'], x, y, 0, cyls=[(0, 0, 48, 0, 70)])
     # island rocks: only the corners between the volcano's octagon and the river have room (K.prop would nudge them out
     # over the water: the volcano occupies its whole bounding square)
@@ -755,15 +1091,15 @@ def bay_dressing():
         K.custom(ML.PLACE['rock'], VC[0] + dx, VC[1] + dy, 0, angle=a, cyls=[(0, 0, 48, 0, 70)])
     for i, (x, y) in enumerate(((-1000, 2100), (1050, 3200), (-1050, 2700), (1000, 2450), (1200, 2000))):
         K.prop(ML.PLACE['ring_o' if i % 2 else 'ring_g'], x, y, 0, cyls=[(0, 0, 56, 0, 30)], angle=0)
-    for (x, y) in ((-1540, 2000), (-1540, 3050), (1540, 2450), (1540, 3450), (-1540, 3700)):
+    for (x, y) in ((-1540, 2000), (-1540, 3050), (-1540, 3700)):
         K.catalog('pad_ddmix/trashcan/bush.md3', x, y, 0, scale=0.5, angle=90)
-    for (x, y) in ((-1400, 2380), (1400, 2880), (-300, 1850), (200, 1850), (-1200, 3720), (900, 3790), (-600, 3790)):
+    for (x, y) in ((-1400, 2380), (1060, 2780), (-300, 1850), (200, 1850), (-1200, 3720), (900, 3790), (-600, 3790)):
         K.catalog('pad_sunflower/pad_sunflower_l.md3', x, y, 0, scale=0.45, clip=False)
-    for (x, y) in ((1450, 2250), (-1100, 2560), (1100, 2900)):
+    for (x, y) in ((1050, 2040), (-1100, 2560), (1000, 2650)):
         K.catalog('pad_ddmix/plants/waterplant1b.md3', x, y, 0, scale=0.5, clip=False)
     for (x, y) in ((-1150, 1880), (1250, 3600), (-560, 2700)):
         K.catalog('pad_ducks/pad_duck.md3', x, y, 0, scale=0.3)
-    K.catalog('pad_statues/statue_super.md3', 1450, 2640, 0, scale=0.7, angle=180)
+    K.catalog('pad_statues/statue_super.md3', 1400, 1830, 0, scale=0.7, angle=180)
     K.timer_sound(VC[0], VC[1], 600, 'ambient/slime_bubbling', 'lava_bubbles', 12, 6)
     # fill lights: the hall wall shades the bay's south beach and the west cliff shades its west strip (light_check)
     for x in range(-1400, 1401, 400): K.light(x, 1900, 220, 380, '1 0.95 0.85')
@@ -814,9 +1150,9 @@ def bay_items():
     K.weapon('betty', cx, cy, TIER_Z[4] + 4, marker='black')
     K.weapon('boaster', TIKI[0] + 160, TIKI[1] + 250, 0, marker='orange')
     K.weapon('splasher', 0, 3648, SHALLOW, marker='blue')
-    K.weapon('bubbleg', 1300, 3000, 0, marker='green')
+    K.weapon('bubbleg', 1040, 2920, 0, marker='green')
     for w, (x, y, z) in (('betty', (cx - 379, cy + 379, TIER_Z[0])), ('boaster', (-1100, 3200, 0)), ('splasher', (-784, 2400, SHALLOW)),
-                         ('bubbleg', (1200, 2200, 0)), ('splasher', (cx - 300, cy - 300, TIER_Z[1])), ('pumper', (784, 3300, SHALLOW)),
+                         ('bubbleg', (1040, 2420, 0)), ('splasher', (cx - 300, cy - 300, TIER_Z[1])), ('pumper', (784, 3300, SHALLOW)),
                          ('balloony', (-1300, 3650, 0)), ('balloony', (cx - 536, cy - 100, TIER_Z[0]))):
         K.ammo(w, x, y, z)
     K.ammo('nipper', 0, 1880, 0); K.ammo('nipper', 1400, 3700, 0)
@@ -826,9 +1162,180 @@ def bay_items():
     K.item('item_climber', -1450, 3780, 0)
     for (x, y) in ((-600, 2080), (600, 2080), (784, 2700), (-784, 3350), (-500, 3648), (500, 3648)):
         K.item('item_armor_shard', x, y, SHALLOW)
-    K.station(1500, 3000, 0, ang=180)
+    K.station(1420, 2860, 0, ang=180)
     for (x, y, a) in ((-1300, 2000, 45), (1300, 1900, 135), (-1350, 3700, 315), (1350, 3720, 225), (0, 2260, 270), (-600, 3200, 0)):
         K.spawn(x, y, 0, a)
+
+
+# ------------------------------------------------------------------------------------------------ Thunder Canyon
+def fill(rect, z0, z1, tex, holes=()):
+    """detail solid(s) over rect from z0 to z1, leaving out the hole rects"""
+    for r in sub_rects(rect, list(holes)):
+        if r[2] - r[0] > 0.5 and r[3] - r[1] > 0.5: K.add(box((r[0], r[1], z0), (r[2], r[3], z1), tex))
+
+
+def canyon_shell():
+    """the gorge's structural box (cliffs to z 896 then sky, floor slab at -480), the rock tunnel from Volcano Bay and the
+    cut-outs for the hall doors (the hall's east wall is its west wall above the deck)"""
+    zb = -480
+    cl = lambda face: dict({k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}, **{face: T('cliff')})
+    sk = lambda face: dict({k: CAULK for k in ('n', 's', 'e', 'w', 'top', 'bot')}, **{face: T('sky')})
+    K.add(box((CX0, CY0, zb), (CX1, CY1, zb + 32), {'top': T('cliff'), 'side': CAULK, 'bot': CAULK}, detail=False))
+    # nothing may be nudged into the cliffs or the void between the bay and the gorge
+    K.reserve(((CX1, CY0 - 32, zb), (CX1 + 64, CY1 + 32, ZTOP)), ((CX0, CY0 - 64, zb), (CX1, CY0, ZTOP)), ((CX0, CY1, zb), (CX1, CY1 + 64, ZTOP)),
+              ((X1 - 16, CY0, zb), (CX0, CY1, ZTOP)), ((AX1, AY0, -200), (X1, BTUN[0], ZTOP)), ((AX1, BTUN[1], -200), (X1, CY1, ZTOP)),
+              ((AX1, AY0, 256), (X1, CY1, ZTOP)))
+    for (mn, mx, f) in (((CX1, CY0 - 32), (CX1 + 32, CY1 + 32), 'w'), ((CX0, CY0 - 32), (CX1, CY0), 'n'), ((CX0, CY1), (CX1, CY1 + 32), 's')):
+        K.add(box((mn[0], mn[1], zb), (mx[0], mx[1], CLIFF_H), cl(f), detail=False),
+              box((mn[0], mn[1], CLIFF_H), (mx[0], mx[1], ZTOP), sk(f), detail=False))
+    K.add(box((X1, CY0, zb), (X1 + 32, Y1 + 32, -32), cl('e'), detail=False))             # under the hall deck
+    # west wall north of the hall, with the tunnel mouth
+    w0 = Y1 + 32
+    jamb = {'n': T('cliff'), 's': T('cliff'), 'e': T('cliff'), 'top': T('cliff'), 'bot': T('cliff'), 'w': CAULK}
+    for (a, b, z0, z1) in ((w0, BTUN[0], zb, CLIFF_H), (BTUN[1], CY1 + 32, zb, CLIFF_H), (BTUN[0], BTUN[1], zb, -128), (BTUN[0], BTUN[1], 256, CLIFF_H)):
+        K.add(box((X1, a, z0), (X1 + 32, b, z1), jamb, detail=False))
+    K.add(box((X1, w0, CLIFF_H), (X1 + 32, CY1 + 32, ZTOP), sk('e'), detail=False))
+    K.add(box((CX0, CY0 - 32, ZTOP), (CX1 + 32, CY1 + 32, ZTOP + 32), {'bot': T('sky'), 'side': CAULK, 'top': CAULK}, detail=False))
+    # rock tunnel Volcano Bay -> canyon (ramp down 128 to the second pool's bank)
+    rk = {'side': T('cliff'), 'top': T('cliff'), 'bot': T('cliff')}
+    tx0, tx1 = AX1 + 32, X1
+    K.add(box((AX1, BTUN[0], -160), (tx0, BTUN[1], -32), rk, detail=False))           # seal under the bay deck
+    K.add(box((tx0, BTUN[0] - 32, -160), (tx1, BTUN[1] + 32, -128), rk, detail=False),
+          box((tx0, BTUN[0] - 32, -128), (tx1, BTUN[0], 256), rk, detail=False), box((tx0, BTUN[1], -128), (tx1, BTUN[1] + 32, 256), rk, detail=False),
+          box((tx0, BTUN[0] - 32, 256), (tx1, BTUN[1] + 32, 288), rk, detail=False))
+    RAMP(AX1 + 32, BTUN[0], CX0, BTUN[1], -128, 0, 'w', {'top': T('beach'), 'side': T('cliff'), 'bot': CAULK}, base=-128, route='canyon_tunnel')
+    K.keep_clear(AX1 - 112, BTUN[0], AX1, BTUN[1], 0); K.keep_clear(CX0, BTUN[0], CX0 + 112, BTUN[1], -128)
+    K.light((tx0 + tx1) / 2, (BTUN[0] + BTUN[1]) / 2, 200, 260, '1 0.8 0.6')
+    K.add(sign_box((AX1 - 4, BTUN[0] + 8, 270), (AX1, BTUN[1] - 8, 330), T('sign_canyon'), 512, 128, back=CAULK, facing='w', edge=T('teal')))
+
+
+def canyon():
+    """Thunder Canyon: four stepped rapids pools (40u deep, current jets push you downstream and over each drop),
+    16u step strips along both channel edges (climb out anywhere), banks stepping down with 16u flights, the rope
+    bridge high over pool 3 between the north hall door and a ledge, the cave behind the last waterfall under the
+    overlook (south hall door), waterfalls everywhere"""
+    M = TX.mats
+    sand = {'top': T('beach'), 'side': T('cliff'), 'bot': CAULK}
+    tl = {'top': T('pooltile'), 'side': T('pooltile'), 'bot': CAULK}
+    st = {'top': T('beach'), 'side': T('cliff'), 'bot': T('cliff')}
+    zb = -448
+    c0, c1 = CH
+    for i, (y0, y1, W) in enumerate(POOLS):
+        bed, bank = W - 40, W + 8
+        holes = [LANDING, LEDGE] if bank < 0 and i == 2 else []
+        fill((CX0, y0, c0, y1), zb, bank, sand, holes)
+        fill((c1, y0, CX1, y1), zb, bank, sand, holes)
+        fill((c0, y0, c1, y1), zb, bed, tl)
+        cut = STAIRS(c0, y0, c0 + 48, y1, bed, bank, 'w', tl) + STAIRS(c1 - 48, y0, c1, y1, bed, bank, 'e', tl)
+        K.reserve(((c0, y0, bed), (c1, y1, W + 200)))
+        K.water_box((c0 + 48, y0, bed), (c1 - 48, y1, W), T('water'), cutters=cut)
+        # jets: mid-pool and just before the lip
+        for k, (ya, yb) in enumerate(((y0 + (y1 - y0) * 0.55, y0 + (y1 - y0) * 0.55 + 200), (y0 + 40, y0 + 240))):
+            K.current((c0 + 64, ya, bed), (c1 - 64, yb, W), 270, 300, f'rapid{i}_{k}')
+        K.speaker((c0 + c1) / 2, (y0 + y1) / 2, W + 40, 'ambient/water_flowing')
+    for (L, z) in ((LANDING, 0), (LEDGE, 0)):
+        K.add(box((L[0], L[1], zb), (L[2], L[3], z), sand))
+    # bank flights at the drops and down from the bridge ends
+    flights = [(CX0, 2444, CX0 + 96, 2700, -128, 0), (CX1 - 96, 2444, CX1, 2700, -128, 0),
+               (c0 - 96, 1244, c0, 1500, -256, -128), (c1, 1244, c1 + 96, 1500, -256, -128),
+               (c0 - 96, 44, c0, 300, -384, -256), (CX1 - 96, 44, CX1, 300, -384, -256),
+               (CX0, 464, CX0 + 96, 976, -256, 0), (CX1 - 96, 464, CX1, 976, -256, 0)]
+    for k, (x0, y0, x1, y1, za, zt) in enumerate(flights):
+        STAIRS(x0, y0, x1, y1, za, zt, 'n', st, route=f'canyon_f{k}')
+        K.keep_clear(x0, y0 - 112, x1, y0, za)
+    STAIRS(CX0, -700, CX0 + 96, 36, -384, 0, 's', st, route='overlook_stairs')
+    K.keep_clear(CX0, 36, CX0 + 96, 148, -384)
+    # cave under the overlook, waterfall curtain in front of it
+    ox0, oy0, ox1, oy1 = OVERLOOK
+    K.add(box((ox0, oy0, zb), (ox1, oy1, -384), sand))
+    K.solid_piece('overlook', [box((ox0, oy0, -32), (ox1, oy1, 0), P_)], TX.texfn('sandrock', 'cliffm'))
+    K.botclip_rect(ox0, oy0, ox1, oy1, 0, sides='n', gaps=[('n', ox0, ox0 + 96)])
+    K.route('overlook_door', (X1 - 90, (SDOOR[0] + SDOOR[1]) / 2, 0), (X1 + 140, (SDOOR[0] + SDOOR[1]) / 2, 0))
+    K.light((ox0 + ox1) / 2, (oy0 + oy1) / 2, -180, 450, '1 0.85 0.7'); K.light(ox0 + 150, oy0 + 120, -200, 300)
+    K.light(ox1 - 150, oy0 + 120, -200, 300)
+    # waterfalls (one MD3): the source down the north cliff, every drop, and the curtain over the cave mouth
+    X = ML.Model(); f = X.mesh(M['fall'])
+    def sheet(y, za, zb_, x0=c0 + 48, x1=c1 - 48, sgn=-1):
+        f.poly([(x1, y, zb_), (x0, y, zb_), (x0, y, za), (x1, y, za)], (0, sgn, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+        f.poly([(x0, y, zb_), (x1, y, zb_), (x1, y, za), (x0, y, za)], (0, -sgn, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    sheet(CY1 - 2, 520, POOLS[0][2])
+    for (y0, y1, W), (_, _, Wn) in zip(POOLS[:-1], POOLS[1:]): sheet(y0 - 2, W, Wn)
+    sheet(oy1 + 3, -4, POOLS[-1][2], c0 - 20, c1 + 20)
+    K.custom(ML.save('canyon_falls', X), 0, 0, 0, lit=False, occupy=False, _structure=1)
+    K.speaker((c0 + c1) / 2, oy1 + 40, -300, 'ambient/water_flowing'); K.speaker((c0 + c1) / 2, CY1 - 60, 0, 'ambient/water_flowing')
+    # rope bridge over pool 3: flat collision, plank deck + sagging rope rails as an MD3
+    by0, by1 = LANDING[1] + 96, LANDING[3] - 96
+    bx0, bx1 = LANDING[2], LEDGE[0]
+    K.add(box((bx0, by0, -16), (bx1, by1, 0), WCLIP))
+    X = ML.Model()
+    for k in range(int((bx1 - bx0) / 24)):
+        xa = bx0 + 24 * k + 2
+        rbox(X.mesh(M['planks']), (xa - bx0 - 240, by0 - 4 - (by0 + by1) / 2, -14), (xa + 20 - bx0 - 240, by1 + 4 - (by0 + by1) / 2, 0), r=1.5, k=1, tile=64)
+    for sy in (-1, 1):
+        y = sy * ((by1 - by0) / 2 + 2)
+        for xp in (-240, 240):
+            tube(X.mesh(M['planks']), [(xp, y, -16), (xp, y, 64)], 5, nseg=6)
+        rope = [(-240 + 480 * t, y, 60 - 26 * math.sin(math.pi * t)) for t in np.linspace(0, 1, 17)]
+        tube(X.mesh(M['rope']), rope, 2.5, nseg=6, caps=(False, False))
+        for t in np.linspace(0.1, 0.9, 9):
+            tube(X.mesh(M['rope']), [(-240 + 480 * t, y, 60 - 26 * math.sin(math.pi * t)), (-240 + 480 * t, y, -2)], 1.2, nseg=4, caps=(False, False))
+    K.custom(ML.save('rope_bridge', X), (bx0 + bx1) / 2, (by0 + by1) / 2, 0, occupy=False)
+    K.reserve(((bx0, by0, -16), (bx1, by1, 96)))
+    K.botclip_rect(bx0, by0, bx1, by1, 0, sides='ns')
+    K.route('rope_bridge', (X1 - 90, (NDOOR[0] + NDOOR[1]) / 2, 0), (LEDGE[0] + 70, (by0 + by1) / 2, 0))
+    # boulders and palms on the banks (cover across the long gorge)
+    for (x, y, z) in ((2380, 3250, 0), (2900, 2950, 0), (2400, 2200, -128), (2890, 1850, -128), (2850, 400, -256),
+                      (2900, -200, -384), (2880, -1030, -384)):
+        K.prop(ML.PLACE['boulder'], x, y, z, cyls=[(0, 0, 92, 0, 150)], angle=(x * 3 + y) % 360)
+    for (x, y, z) in ((2950, 3200, 0), (2950, 1700, -128)):
+        K.catalog('pad_ddmix/trashcan/bush.md3', x, y, z, scale=0.5)
+    for (y0, y1, W) in POOLS:
+        for x in (CX0 + 110, CX1 - 110):
+            K.light(x, (y0 + y1) / 2, W + 260, 420, '1 0.9 0.75')
+    K.light((bx0 + bx1) / 2, (by0 + by1) / 2, 160, 300)
+
+
+def canyon_items():
+    K.weapon('balloony', (LANDING[2] + LEDGE[0]) / 2, (LANDING[1] + LANDING[3]) / 2, 0, marker='orange')   # middle of the rope bridge
+    K.weapon('pumper', (CH[0] + CH[1]) / 2, -1000, -384, marker='green')                                  # behind the waterfall
+    K.item('holdable_floater', 2350, 3760, 0)                 # far end of pool 1: away from the busy routes (secret fix)
+    K.ammo('imperius', LEDGE[0] + 64, LEDGE[1] + 60, 0)
+    K.ammo('pumper', 2400, -250, -384)
+    K.ammo('bubbleg', 2900, 2300, -128)
+    K.item('item_armor_shard', (CH[0] + CH[1]) / 2, 3300, POOLS[0][2] - 40)
+    K.item('item_armor_shard', (CH[0] + CH[1]) / 2, 2100, POOLS[1][2] - 40)
+    K.item('item_armor_padshield', 2900, -1000, -384)
+    for (x, y, z, a) in ((2900, 3400, 0, 270), (2380, 2350, -128, 270), (2930, 600, -256, 90), (2400, -1000, -384, 90)):
+        K.spawn(x, y, z, a)
+
+
+# ------------------------------------------------------------------------------------------------ Mat Racer
+def mat_racer():
+    """four racing lanes from a deck at z 448 down the bay's east side into a run-out pool. Up by the 16u flight along
+    the cliff or the pad from the river side; Imperius on the start deck."""
+    M = TX.mats
+    x0, y0, x1, y1, dz = MATDECK
+    br = [box((x0, y0, dz - 16), (x1, y1, dz), P_)]
+    for cx in (x0, (x0 + x1) / 2 - 12, x1 - 64):
+        for cy in (y0, y1 - 24):
+            br.append(box((cx, cy, 0), (cx + 24, cy + 24, dz - 16), P_))
+    K.solid_piece('mat_deck', br, TX.texfn('gratem', 'tealm'))
+    STAIRS(x1 - 64, 2794, x1, y0, 0, dz, 'n', {'top': T('grate'), 'side': T('teal'), 'bot': T('teal')}, route='mat_stairs')
+    K.keep_clear(x1 - 64, 2682, x1, 2794, 0)
+    for i, (lx, col) in enumerate(zip(MAT_X, ('red', 'blue', 'green', 'yellow'))):
+        pts = [tuple(np.round(p, 1)) for p in ML.spline([(lx, y, z) for (y, z) in MAT_PROF], 3)]
+        pts[0] = (lx, y0 - 2, dz); pts[1] = (lx, pts[1][1], dz - 1)
+        K.slide(pts, MAT_HW, 44, T('slick_nd'))
+        K.slide_skirt(pts, MAT_HW + 8, skip=lambda x, y: y < MATPOOL[3] + 8)
+        X = ML.Model(); ML.flume(X, pts, MAT_HW, 44, M[col])
+        o = np.array([float(lx), 3000.0, 0.0]); X.shift(o)
+        K.custom(ML.save(f'mat_lane{i}', X), float(o[0]), float(o[1]), 0, occupy=False)
+    K.add(sign_box((x0 + 40, AY1 - 6, dz + 120), (x1 - 80, AY1, dz + 184), T('sign_mat'), 512, 128, back=CAULK, facing='s', edge=T('teal')))
+    K.jumppad(990, 3760, 0, land=(1240, 3760, dz), apex=dz + 180, name='pad_mat', edges=[(x0, 3760, dz)])
+    K.light((x0 + x1) / 2, (y0 + y1) / 2, dz + 160, 350); K.light((x0 + x1) / 2, 3000, 420, 300)
+    K.weapon('imperius', 1340, 3770, dz, marker='purple')
+    K.trigger_sound((x0 + 8, y0 + 8, dz), (x1 - 72, y0 + 56, dz + 64), 'human/applause', 'mat_start', wait=15)
+    K.speaker(1330, 2300, 40, 'ambient/water_rippling')
 
 
 # ------------------------------------------------------------------------------------------------ dressing
@@ -885,6 +1392,9 @@ def dressing():
     # cover where the promenade's east-west sightlines cross in front of Twister Tower (sight --hot)
     K.custom(ML.PLACE['cart'], 0, 200, 0, angle=90, boxes=[((-58, -32, 0), (58, 32, 88))])
     K.custom(ML.PLACE['rock'], -520, 40, 0, angle=70, cyls=[(0, 0, 48, 0, 70)])
+    # round 4: the promenade in front of Twister Tower was still the main source of long rays (sight log)
+    K.prop(ML.PLACE['boulder'], 400, -150, 0, cyls=[(0, 0, 92, 0, 150)], angle=20)
+    K.prop(ML.PLACE['rock'], 380, 330, 0, cyls=[(0, 0, 48, 0, 70)], angle=110)
     K.catalog('pad_statues/statue_super.md3', -1960, -700, 0, scale=0.7, angle=0)
     K.timer_sound(0, 0, 900, 'human/applause', 'crowd', 45, 20)
 
@@ -893,7 +1403,7 @@ def items():
     cx, cy = (CORE[0] + CORE[2]) // 2, (CORE[1] + CORE[3]) // 2
     hut_top = TERR_Z + SHACK_H + 16; shop_top = SHOP_H + 16; guard_top = GUARD_Z + HUT_H + 16
     K.weapon('imperius', cx + 50, cy + 50, NEST_Z, marker='purple')
-    K.weapon('betty', -40, -1680, WAVE_Z, marker='black')                 # deep floor right in front of the secret intake
+    K.ammo('betty', -40, -1680, WAVE_Z)                                   # deep floor right in front of the secret intake
     K.weapon('balloony', 2040, 1560, hut_top, marker='orange')
     K.weapon('pumper', GUARD[0] + 128, GUARD[1] + 80, guard_top, marker='green')
     K.weapon('splasher', ISLE[0] - 20, ISLE[1] + 110, 6, marker='blue')
@@ -902,7 +1412,7 @@ def items():
     ammo = {'imperius': [(cx - 150, cy - 150, LV[2]), (2100, 1300, TERR_Z), (-1200, 1560, 0)],
             'betty': [(-620, -1560, WAVE_Z), (-2060, 250, 0), (1000, 1560, 0), (-300, 120, 0)],
             'balloony': [(1500, 1300, TERR_Z), (1900, 1650, TERR_Z), (300, 1650, 0)],
-            'pumper': [(GUARD[0] + 128, GUARD[1] + 80, GUARD_Z), (2100, -300, 0), (-2150, -1620, 0)],
+            'pumper': [(GUARD[0] + 128, GUARD[1] + 80, GUARD_Z), (2100, -300, 0), (-2150, -1250, 0)],
             'splasher': [(1700, 700, SHALLOW), (-1250, 1500, SHALLOW), (0, -700, -40), (-1700, -200, 0)],
             'boaster': [(cx + 150, cy - 100, LV[0]), (-1000, 400, 0), (900, 400, 0)],
             'bubbleg': [(-700, -150, 0), (1200, -330, 0), (-150, 1150, 0)]}
@@ -912,7 +1422,6 @@ def items():
     K.item('item_armor_padshield', SHOP[0] + 200, 96, 0)
     K.item('item_jumper', SHOP[0] + 150, 100, shop_top)
     K.item('item_speedy', cx - 150, cy + 150, LV[0])
-    K.item('holdable_floater', GUARD[0] + 128, GUARD[1] + 60, GUARD_Z)
     K.item('item_armor_padshield', 2000, 1560, TERR_Z)
     K.item('item_visionless', -1000, 1150, 0)
     for (x, y, z) in ((cx - 100, cy, LV[1]), (cx + 100, cy, LV[1]), (-1900, 100, shop_top), (1000, -900, -22), (-1000, -900, -22)):
@@ -932,18 +1441,24 @@ def shader():
 if __name__ == '__main__':
     textures()
     models()
-    shell(); wave_pool(); shallow_pool(LAGOON, 'ws'); shallow_pool(PLUNGE, 'en'); vault()
-    bay_shell(); river(); volcano(); tiki()
+    shell(); wave_pool(); shallow_pool(LAGOON, 'ws'); shallow_pool(PLUNGE, 'en'); vault(); reef()
+    bay_shell(); river(); volcano(); tiki(); shallow_pool(MATPOOL, 's'); mat_racer()
+    canyon_shell(); canyon()
     tower(); slides(); terrace(); shop(); guard(); dive_tower(); hall_extras()
-    dressing(); bay_dressing(); items(); bay_items()
+    dressing(); bay_dressing(); items(); bay_items(); canyon_items()
     if os.environ.get('PROBES'):                  # bot-test diagnosis build only (target_score gives points)
         K.probe((-96, -1690, -120), (96, -1640, -12), 'intake_front')
-        K.probe((-64, -220, VAULT_Z), (64, -40, VAULT_Z + 96), 'vault_arrival')
+        K.probe((VAULT[0] + 60, TUN_Y - 60, VAULT_Z), (VAULT[0] + 180, TUN_Y + 60, VAULT_Z + 96), 'vault_arrival')
         K.probe((150, 30, 0), (250, 130, 64), 'control_bubbleg')
         K.probe((-700, -1600, WAVE_Z), (-540, -1500, -60), 'deep_ammo')
         K.probe((-140, -1340, 6), (100, -1180, 70), 'island')
         K.probe((-400, -1100, -60), (400, -1000, 0), 'pool_mid_surface')
         K.probe((-400, -800, -60), (400, -700, 0), 'beach_shallows')
+        K.probe((-1000, TUN_IN[0], TUN_FLOOR), (-900, TUN_IN[1], TUN_FLOOR + 96), 'reef_tunnel')
+        K.probe((-2100, SHAFT_HOLE[1], -200), (-2000, SHAFT_HOLE[3], -100), 'reef_stairs')
+        K.probe((2560, -1060, -384), (2720, -940, -288), 'canyon_cave')
+        K.probe((2560, LANDING[1] + 100, 0), (2720, LANDING[3] - 100, 96), 'rope_bridge')
+        K.probe((1150, 3700, 448), (1550, 3800, 540), 'mat_deck')
     K.fix_items()
     shader()
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))

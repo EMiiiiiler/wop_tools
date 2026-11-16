@@ -415,6 +415,22 @@ class MapKit:
         self.occupy(min(mn[0], smn[0]), min(mn[1], smn[1]), max(mx[0], smx[0]), max(mx[1], smx[1]), mn[2], max(mx[2], smx[2]))
         self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=list(dest)))
 
+    def fake_wall(self, mn, mx, tex, name, side, sound='misc/secret_found'):
+        """secret walk-through wall: one brush in a gap of a real wall, drawn like the wall (tex = a SH.fake_wall shader,
+        nonsolid) so players and bots (bspc treats nonsolid as open) walk straight through. A secret_found trigger sits
+        just past it on `side` ('n'/'s'/'e'/'w' = the room behind). Logged in spots.json secrets for the review views."""
+        mn, mx = list(mn), list(mx)
+        self.add(box(mn, mx, tex))
+        ax, sg = {'n': (1, 1), 's': (1, -1), 'e': (0, 1), 'w': (0, -1)}[side]
+        smn, smx = list(mn), list(mx)
+        if sg > 0: smn[ax], smx[ax] = mx[ax], mx[ax] + 48
+        else: smn[ax], smx[ax] = mn[ax] - 48, mn[ax]
+        smx[2] = min(smx[2], smn[2] + 96)
+        self.trigger_sound(smn, smx, sound, name + '_snd', wait=2)
+        self.occupy(min(mn[0], smn[0]) - 48, min(mn[1], smn[1]) - 48, max(mx[0], smx[0]) + 48, max(mx[1], smx[1]) + 48, mn[2], mn[2] + 96)
+        c = [(a + b) / 2 for a, b in zip(smn, smx)]
+        self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=[c[0], c[1], mn[2]]))
+
     def probe(self, mn, mx, name):
         """bot-test probe: trigger_multiple -> target_score, so every visit logs an `AddScore: <client> <n> ...` line that
         botreport counts per probe (== probes); probe k (creation order) scores n = k + 2 (kills score 1). For diagnosis only: it gives players points, so build probes behind an
@@ -559,7 +575,32 @@ class MapKit:
             self.clipped(col, clip)
         else:
             self.reserve(*brushes)
+        self._pieces = getattr(self, '_pieces', []) + list(brushes)
         return e
+
+    def hide_faces_behind_pieces(self):
+        """caulk every visible brush face that lies flat against a solid_piece (stair flights against a terrace MD3, a
+        sign's back on an MD3 wall): the brush face and the MD3 face are coplanar and z-fight, which reads in game as
+        flickering 'see-through' patches (padwave volcano). Run by write(); returns the number of faces hidden."""
+        from . import models as ML
+        pieces = getattr(self, '_pieces', [])
+        if not pieces: return 0
+        idx = ML.solid_index(pieces)
+        ids = {id(b) for b in pieces}
+        n = 0
+        for b in self.M.world:
+            if id(b) in ids: continue
+            faces = None
+            for f in b.faces:
+                if not f.tex or f.tex.startswith('common/'): continue
+                if faces is None: faces = {tuple(np.round(nn, 6)): poly for nn, poly in ML.face_polys(b)}
+                poly = faces.get(tuple(np.round(f.n, 6)))
+                if poly is None: continue
+                c = poly.mean(0); nn = np.asarray(f.n, float)
+                smp = [c] + [c + (p - c) * 0.7 for p in poly]
+                if all(ML._inside_any(p + nn * 1.0, idx) for p in smp):
+                    f.tex = CAULK; n += 1
+        return n
 
     def sky_window(self, wall_mn, wall_mx, hole, inner_tex, sky_tex, jamb_tex=None, glass_tex=None, depth=256, face='n'):
         """a window through a STRUCTURAL hull wall with a sealed sky box behind it, so an indoor map shows the night sky
@@ -1014,6 +1055,8 @@ class MapKit:
     def write(self, out_dir, routes_path=None, header=''):
         """maps/<map>.map, maps/<map>.spots.json (items, pads, secrets, hurt zones, crawl spaces... for lint_map,
         botreport and wopbuild) and routes.txt (default next to the generator: pass routes_path)"""
+        hid = self.hide_faces_behind_pieces()
+        if hid: print(f'  hid {hid} brush face(s) flush against solid pieces (z-fighting)')
         for b in self.M.world + [bb for e in self.M.ents for bb in e['_brushes']]:
             for f in b.faces:
                 if not f.tex: raise ValueError(f'brush at {b.bounds()} has a face without a texture (texture dict keys: '

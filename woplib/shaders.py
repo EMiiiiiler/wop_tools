@@ -166,3 +166,49 @@ def write_arena(out_dir, types='ffa lps team ft syc_ffa', ents=None):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, 'w').write('{\n\tmap      "%s"\n\tlongname "%s"\n\ttype     "%s"\n}\n' % (CFG['map'], CFG['longname'], ' '.join(tt)))
     return path
+
+
+def timer_pulse(period, on_frac=0.11):
+    """rgbGen wave that is bright for the first `on_frac` of every `period` seconds and dark otherwise, in step with a
+    func_timer (spawnflags 1 = START_ON fires at map start, then every `wait` = period seconds; shader time starts with
+    the map too, so the two line up to a frame or so). Use it for 'show' effects a trigger cannot switch (Q3 has no
+    switchable lights or shaders): a siren on K.timer_sound + glowing grilles/foam on these stages."""
+    k = 1.0 / on_frac
+    return f'wave inversesawtooth {1 - k:g} {k:g} 0 {1.0 / period:.6f}'
+
+
+def lm_glow(name, glow, period, on_frac=0.11, image=None):
+    """lightmapped brush texture with an additive glow stage that pulses with K.timer_sound(wait=period, rnd=0).
+    `glow` = the glow image name (written with TX.add(..., 'raw', shader=''))."""
+    t = f'{td()}/{name}'
+    img = image or t
+    return (f'{t}\n{{\n\tqer_editorimage {img}\n\t{{\n\t\tmap $lightmap\n\t\trgbGen identity\n\t}}\n'
+            f'\t{{\n\t\tmap {img}\n\t\tblendFunc GL_DST_COLOR GL_ZERO\n\t\trgbGen identity\n\t}}\n'
+            f'\t{{\n\t\tmap {td()}/{glow}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen {timer_pulse(period, on_frac)}\n\t}}\n}}\n\n')
+
+
+def wave_water(name, rgb=(0.35, 0.8, 0.9), alpha=0.5, foam=None, period=45, on_frac=0.15, amp=6, wavelength=384,
+               tess=96, image=None):
+    """water surface with rolling swell (deformVertexes on a tessellated top face; the physical surface stays flat) and,
+    with foam = image name, an additive foam stage that surges in step with a func_timer every `period` s (wave machine
+    shows). Internal faces: reuse an existing <water>_nd shader as water_box(nodraw_tex=)."""
+    t = f'{td()}/{name}'
+    img = image or t
+    s = (f'{t}\n{{\n\tqer_editorimage {img}\n\tqer_trans 0.5\n\tsurfaceparm water\n\tsurfaceparm trans\n\tsurfaceparm nonsolid\n'
+         f'\tsurfaceparm nomarks\n\tsurfaceparm nolightmap\n\tcull none\n\tq3map_globalTexture\n\tq3map_tessSize {tess:g}\n'
+         f'\tdeformVertexes wave {wavelength:g} sin 0 {amp:g} 0 0.25\n'
+         f'\t{{\n\t\tmap {img}\n\t\tblendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA\n\t\trgbGen const ( {rgb[0]:g} {rgb[1]:g} {rgb[2]:g} )\n'
+         f'\t\talphaGen const {alpha:g}\n\t\ttcMod scroll 0.02 0.04\n\t\ttcMod turb 0 0.05 0 0.2\n\t}}\n')
+    if foam:
+        s += (f'\t{{\n\t\tmap {td()}/{foam}\n\t\tblendFunc GL_ONE GL_ONE\n\t\trgbGen {timer_pulse(period, on_frac)}\n'
+              f'\t\ttcMod scroll 0 0.35\n\t}}\n')
+    return s + '}\n\n'
+
+
+def fake_wall(name, image):
+    """looks like `image` (lightmapped) but you walk straight through it: surfaceparm nonsolid (bspc makes the AAS pass
+    through too, so bots use the secret). For K.fake_wall."""
+    t = f'{td()}/{name}'
+    return (f'{t}\n{{\n\tqer_editorimage {image}\n\tsurfaceparm nonsolid\n\tsurfaceparm nomarks\n'
+            f'\t{{\n\t\tmap $lightmap\n\t\trgbGen identity\n\t}}\n\t{{\n\t\tmap {image}\n\t\tblendFunc GL_DST_COLOR GL_ZERO\n'
+            f'\t\trgbGen identity\n\t}}\n}}\n\n')
