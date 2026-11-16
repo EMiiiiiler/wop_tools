@@ -415,6 +415,22 @@ class MapKit:
         self.occupy(min(mn[0], smn[0]), min(mn[1], smn[1]), max(mx[0], smx[0]), max(mx[1], smx[1]), mn[2], max(mx[2], smx[2]))
         self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=list(dest)))
 
+    def fake_wall(self, mn, mx, tex, name, side, sound='misc/secret_found'):
+        """secret walk-through wall: one brush in a gap of a real wall, drawn like the wall (tex = a SH.fake_wall shader,
+        nonsolid) so players and bots (bspc treats nonsolid as open) walk straight through. A secret_found trigger sits
+        just past it on `side` ('n'/'s'/'e'/'w' = the room behind). Logged in spots.json secrets for the review views."""
+        mn, mx = list(mn), list(mx)
+        self.add(box(mn, mx, tex))
+        ax, sg = {'n': (1, 1), 's': (1, -1), 'e': (0, 1), 'w': (0, -1)}[side]
+        smn, smx = list(mn), list(mx)
+        if sg > 0: smn[ax], smx[ax] = mx[ax], mx[ax] + 48
+        else: smn[ax], smx[ax] = mn[ax] - 48, mn[ax]
+        smx[2] = min(smx[2], smn[2] + 96)
+        self.trigger_sound(smn, smx, sound, name + '_snd', wait=2)
+        self.occupy(min(mn[0], smn[0]) - 48, min(mn[1], smn[1]) - 48, max(mx[0], smx[0]) + 48, max(mx[1], smx[1]) + 48, mn[2], mn[2] + 96)
+        c = [(a + b) / 2 for a, b in zip(smn, smx)]
+        self.spots['secrets'].append(dict(name=name, mn=mn, mx=mx, dest=[c[0], c[1], mn[2]]))
+
     def probe(self, mn, mx, name):
         """bot-test probe: trigger_multiple -> target_score, so every visit logs an `AddScore: <client> <n> ...` line that
         botreport counts per probe (== probes); probe k (creation order) scores n = k + 2 (kills score 1). For diagnosis only: it gives players points, so build probes behind an

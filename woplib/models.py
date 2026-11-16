@@ -614,3 +614,30 @@ def check_registry():
         if kind in ('alpha', 'dynalpha', 'flow') and not MTEX[im][2]:
             probs.append(f'{name}: kind {kind} needs an alpha image (.tga), {im} has none')
     return probs
+
+
+def glass_arch(X, x0, x1, half_w, floor_z, top_z, glass_sh, rib_sh=None, rib_every=210.0, nseg=16):
+    """walk-through glass tunnel (aquarium tunnels): a circular arch along x from x0 to x1 (model space, axis y = 0)
+    whose feet meet the floor at y = +-half_w, z = floor_z, and whose crown is at top_z. Nothing below the floor, so
+    the grate floor and the weapclip walls/roof inside it never cut the glass (audit 'model intersects solid'). Keep
+    the collision inside: walls at |y| <= half_w - 12 up to about mid-height, a roof strip near the crown.
+    Returns (R, zc) of the arch circle."""
+    h = top_z - floor_z
+    zc = top_z - (half_w ** 2 + h ** 2) / (2 * h)          # circle through (+-half_w, floor_z) and (0, top_z)
+    R = top_z - zc
+    p0 = math.asin(max(-1.0, min(1.0, (floor_z - zc) / R)))
+    ph = np.linspace(p0, math.pi - p0, nseg + 1)
+    xs = np.linspace(x0, x1, max(2, int(abs(x1 - x0) / 128) + 2))
+    P = np.zeros((len(xs), len(ph), 3)); N = np.zeros_like(P); UV = np.zeros((len(xs), len(ph), 2))
+    for i, x in enumerate(xs):
+        for j, a in enumerate(ph):
+            P[i, j] = (x, R * math.cos(a), zc + R * math.sin(a)); N[i, j] = (0, -math.cos(a), -math.sin(a))
+            UV[i, j] = (j / nseg, (x - x0) / 256.0)
+    X.mesh(glass_sh).grid(P, N, UV)
+    if rib_sh:
+        from meshlib import tube
+        n = max(1, int(abs(x1 - x0) / rib_every))
+        for x in np.linspace(x0, x1, n + 1):
+            tube(X.mesh(rib_sh), [np.array([x, R * math.cos(a) * 1.03, zc + R * math.sin(a) * 1.03]) for a in ph], 4,
+                 nseg=6, caps=(False, False))
+    return R, zc
