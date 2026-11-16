@@ -146,7 +146,7 @@ def walls():
     for i, y in enumerate(TABLES):
         K.add(sign_box((X1 - 4, y - 150, 760), (X1, y + 150, 1140), T(f'paint{i % 2}'), 256, 320, facing='w', edge=T('trim')))
         deco('frame_a', X1 - 4, y, 760, angle=180)
-    deco('flag_us', X1, 1660, 1000, angle=180, lit=False); deco('flag_it', X1, 1780, 1000, angle=180, lit=False)
+    deco('flag_us', X1, 2350, 1080, angle=180, lit=False); deco('flag_it', X1, 2480, 1080, angle=180, lit=False)
     sx0, sx1, sz = SHELF
     K.add(sign_box((sx0, YB0 - 6, 1050), (sx1, YB0, 1290), T('menu'), 1024, 256, facing='s', edge=T('trim')))
     K.add(sign_box((-460, YB0 - 6, 1100), (-180, YB0, 1170), T('pizzasign'), 512, 128, facing='s', edge=T('steel')))

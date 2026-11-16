@@ -358,42 +358,159 @@ def box_tex(w=256, h=256):
     return arr(im)
 
 
-def arcade_art(w=256, h=256):
-    """original marquee art: a pizza-slice rocket blasting tomatoes"""
-    c = np.zeros((h, w, 3), np.float32) + C((20, 20, 60))
+def _cab_pal(theme):
+    return {'blaster': dict(body=(36, 104, 206), trim=(250, 250, 250), accent=(250, 200, 40), hot=(230, 50, 40),
+                            dark=(24, 20, 60), title='PAD BLASTER'),
+            'racer': dict(body=(236, 120, 30), trim=(20, 20, 22), accent=(250, 230, 80), hot=(40, 120, 220),
+                          dark=(60, 20, 10), title='DOUGH RACER')}[theme]
+
+
+def _rocket(d, x, y, sc, P):
+    """the pizza-slice rocket (original): a cheese wedge with pepperoni and a flame"""
+    d.polygon([(x - 50 * sc, y), (x + 40 * sc, y - 30 * sc), (x + 40 * sc, y + 30 * sc)], fill=(244, 200, 90))
+    d.polygon([(x + 30 * sc, y - 30 * sc), (x + 46 * sc, y - 30 * sc), (x + 46 * sc, y + 30 * sc), (x + 30 * sc, y + 30 * sc)], fill=(200, 140, 70))
+    for (qx, qy) in ((-14, -4), (8, 10), (12, -14)):
+        d.ellipse((x + (qx - 6) * sc, y + (qy - 6) * sc, x + (qx + 6) * sc, y + (qy + 6) * sc), fill=(176, 40, 34))
+    d.polygon([(x + 46 * sc, y - 16 * sc), (x + 80 * sc, y), (x + 46 * sc, y + 16 * sc)], fill=(250, 140, 40))
+    d.polygon([(x + 46 * sc, y - 8 * sc), (x + 66 * sc, y), (x + 46 * sc, y + 8 * sc)], fill=(250, 240, 120))
+
+
+def _tomato(d, x, y, r):
+    d.ellipse((x - r, y - r, x + r, y + r), fill=(220, 40, 40))
+    d.polygon([(x - r * 0.5, y - r * 0.9), (x, y - r * 0.5), (x + r * 0.5, y - r * 0.9), (x, y - r * 1.2)], fill=(60, 160, 60))
+    d.ellipse((x - r * 0.45, y - r * 0.15, x - r * 0.15, y + r * 0.2), fill=(255, 255, 255))
+    d.ellipse((x + r * 0.15, y - r * 0.15, x + r * 0.45, y + r * 0.2), fill=(255, 255, 255))
+
+
+def _scooter(d, x, y, sc):
+    d.ellipse((x - 46 * sc, y + 10 * sc, x - 20 * sc, y + 36 * sc), fill=(20, 20, 20))
+    d.ellipse((x + 22 * sc, y + 10 * sc, x + 48 * sc, y + 36 * sc), fill=(20, 20, 20))
+    d.polygon([(x - 40 * sc, y + 14 * sc), (x + 34 * sc, y + 14 * sc), (x + 40 * sc, y - 20 * sc), (x + 26 * sc, y - 20 * sc),
+               (x + 18 * sc, y), (x - 30 * sc, y)], fill=(220, 40, 40))
+    d.rectangle((x - 36 * sc, y - 34 * sc, x - 6 * sc, y - 4 * sc), fill=(244, 240, 230))     # pizza box
+    d.ellipse((x - 4 * sc, y - 48 * sc, x + 18 * sc, y - 26 * sc), fill=(250, 210, 160))      # rider
+    d.rectangle((x - 2 * sc, y - 26 * sc, x + 16 * sc, y - 4 * sc), fill=(40, 90, 200))
+
+
+def marquee_tex(theme, w=512, h=128):
+    P = _cab_pal(theme)
+    c = np.zeros((h, w, 3), np.float32) + C(P['dark'])
     im, d = draw(c)
-    rng = np.random.default_rng(59)
-    for _ in range(40):
-        sx, sy = rng.integers(0, w), rng.integers(0, 180)
-        d.point((int(sx), int(sy)), fill=(250, 250, 250))
-    d.polygon([(40, 150), (150, 110), (150, 190)], fill=(244, 200, 90))
-    d.polygon([(132, 110), (150, 110), (150, 190), (132, 190)], fill=(210, 150, 80))
-    for (qx, qy) in ((110, 140), (120, 165), (95, 152)):
-        d.ellipse((qx - 7, qy - 7, qx + 7, qy + 7), fill=(176, 40, 34))
-    d.polygon([(150, 125), (180, 150), (150, 175)], fill=(250, 120, 40))
-    for k, (tx, ty) in enumerate(((200, 60), (226, 110), (196, 160))):
-        d.ellipse((tx - 16, ty - 16, tx + 16, ty + 16), fill=(220, 40, 40)); d.rectangle((tx - 4, ty - 22, tx + 4, ty - 14), fill=(60, 160, 60))
-    d.line((20, 150, 34, 150), fill=(250, 250, 120), width=4)
-    f = ML.font(30, serif=False); t = 'PAD BLASTER'; tw = d.textlength(t, font=f)
-    d.text(((w - tw) / 2, 206), t, font=f, fill=(250, 90, 200))
+    if theme == 'blaster':
+        rng = np.random.default_rng(111)
+        for _ in range(60):
+            sx, sy = rng.integers(0, w), rng.integers(0, h)
+            d.point((int(sx), int(sy)), fill=(250, 250, 250))
+        for k in range(5):
+            d.polygon([(0, 20 + k * 22), (w, k * 22 - 30), (w, k * 22 - 18), (0, 32 + k * 22)], fill=(60 + k * 20, 30, 120))
+        _rocket(d, 70, 64, 0.9, P); _tomato(d, 456, 46, 18); _tomato(d, 484, 92, 14)
+    else:
+        for k in range(0, w, 16):
+            d.rectangle((k, 0, k + 8, 10), fill=(250, 250, 250)); d.rectangle((k + 8, 10, k + 16, 20), fill=(250, 250, 250))
+            d.rectangle((k, h - 20, k + 8, h - 10), fill=(250, 250, 250)); d.rectangle((k + 8, h - 10, k + 16, h), fill=(250, 250, 250))
+        d.rectangle((0, 20, w, h - 20), fill=P['body'])
+        _scooter(d, 64, 70, 0.85)
+    t = P['title']
+    f = fit_font(d, t, w - 190, 64, serif=False)
+    l, tp, r, bt = d.textbbox((0, 0), t, font=f)
+    x0, y0 = (w - (r - l)) / 2 - l + 20, (h - (bt - tp)) / 2 - tp
+    for ox, oy in ((-3, 0), (3, 0), (0, -3), (0, 3), (3, 3)):
+        d.text((x0 + ox, y0 + oy), t, font=f, fill=P['hot'] if theme == 'blaster' else (60, 20, 10))
+    d.text((x0, y0), t, font=f, fill=P['accent'] if theme == 'blaster' else (250, 250, 250))
     return arr(im)
 
 
-def arcade_art2(w=256, h=256):
-    """original marquee art: a pizza-delivery scooter racing down a neon road"""
-    c = np.zeros((h, w, 3), np.float32) + C((60, 10, 40))
+def bezel_tex(theme, w=256, h=256):
+    """colourful frame round the screen (the centre is covered by the screen quad)"""
+    P = _cab_pal(theme)
+    c = np.zeros((h, w, 3), np.float32) + C((14, 14, 16))
     im, d = draw(c)
-    d.polygon([(0, 190), (w, 190), (170, 70), (86, 70)], fill=(40, 40, 50))
-    for k in range(5):
-        y = 80 + k * 24
-        d.line((128, y, 128, y + 10), fill=(250, 220, 60), width=3)
-    d.line((86, 70, 0, 190), fill=(255, 60, 200), width=4); d.line((170, 70, w, 190), fill=(60, 220, 255), width=4)
-    d.ellipse((70, 140, 100, 170), fill=(20, 20, 20)); d.ellipse((150, 140, 180, 170), fill=(20, 20, 20))
-    d.rectangle((84, 120, 168, 150), fill=(230, 40, 40)); d.rectangle((136, 96, 168, 122), fill=(244, 240, 230))
-    d.ellipse((90, 92, 116, 118), fill=(250, 210, 160))
-    f = ML.font(30, serif=False); t = 'DOUGH RACER'; tw = d.textlength(t, font=f)
-    d.text(((w - tw) / 2, 206), t, font=f, fill=(250, 220, 60))
+    if theme == 'blaster':
+        for k, col in enumerate((P['hot'], (250, 140, 40), (250, 250, 250), (250, 140, 40), P['hot'])):
+            d.rectangle((k * 6, k * 6, w - 1 - k * 6, h - 1 - k * 6), outline=col, width=6)
+        for (x, y) in ((22, 22), (w - 22, 22), (22, h - 22), (w - 22, h - 22)):
+            d.ellipse((x - 16, y - 16, x + 16, y + 16), fill=(250, 250, 250)); _tomato(d, x, y + 2, 11)
+        d.rectangle((40, 40, w - 41, h - 41), fill=(10, 10, 12))
+    else:
+        d.rectangle((0, 0, w - 1, h - 1), fill=(30, 110, 200))
+        for k in range(10):
+            d.polygon([(k * 30, h), (k * 30 + 12, h - 30), (k * 30 + 24, h)], fill=(60, 170, 70))
+        for (x, y) in ((24, 30), (w - 24, 30)):
+            d.ellipse((x - 14, y - 14, x + 14, y + 14), fill=(250, 220, 60))
+        d.rectangle((36, 36, w - 37, h - 37), fill=(10, 10, 12))
     return arr(im)
+
+
+def cp_tex(theme, w=256, h=128):
+    """control panel overlay: art, a ring for the joystick and one for the buttons, 'INSERT COIN'"""
+    P = _cab_pal(theme)
+    c = np.zeros((h, w, 3), np.float32) + C(P['body'] if theme == 'racer' else (40, 120, 220))
+    im, d = draw(c)
+    d.rectangle((0, 0, w - 1, h - 1), outline=(250, 250, 250), width=4)
+    if theme == 'blaster':
+        _rocket(d, 128, 36, 0.4, P)
+    else:
+        _scooter(d, 128, 40, 0.4)
+    f = ML.font(15, serif=False)
+    t = 'INSERT COIN  25c'
+    d.text(((w - d.textlength(t, font=f)) / 2, 104), t, font=f, fill=(250, 240, 120))
+    return arr(im)
+
+
+def side_tex(theme, w=128, h=512):
+    """side panel art (u = depth front -> back, v = top -> bottom)"""
+    P = _cab_pal(theme)
+    c = np.zeros((h, w, 3), np.float32) + C(P['body'])
+    im, d = draw(c)
+    if theme == 'blaster':
+        d.polygon([(0, 140), (w, 60), (w, 100), (0, 180)], fill=(250, 250, 250))
+        d.polygon([(0, 190), (w, 110), (w, 124), (0, 204)], fill=P['accent'])
+        _rocket(d, 56, 300, 0.6, P); _tomato(d, 90, 400, 16); _tomato(d, 40, 440, 12)
+        rng = np.random.default_rng(112)
+        for _ in range(30):
+            sx, sy = rng.integers(0, w), rng.integers(220, h)
+            d.point((int(sx), int(sy)), fill=(250, 250, 250))
+    else:
+        for k in range(0, w, 16):
+            for j in range(2):
+                d.rectangle((k + 8 * j, 120 + 8 * j, k + 8 + 8 * j, 128 + 8 * j), fill=(20, 20, 22))
+        d.rectangle((0, 150, w, 158), fill=(250, 250, 250))
+        _scooter(d, 64, 320, 0.7)
+        d.polygon([(0, 400), (w, 380), (w, 470), (0, 480)], fill=(60, 60, 70))
+        for k in range(4): d.rectangle((10 + k * 30, 430 - k * 5, 24 + k * 30, 436 - k * 5), fill=(250, 220, 60))
+    return arr(im)
+
+
+def game_screen(theme, w=128, h=128):
+    c = np.zeros((h, w, 3), np.float32) + C((6, 6, 16))
+    im, d = draw(c)
+    P = _cab_pal(theme)
+    if theme == 'blaster':
+        rng = np.random.default_rng(113)
+        for _ in range(30):
+            sx, sy = rng.integers(0, w), rng.integers(0, h)
+            d.point((int(sx), int(sy)), fill=(200, 200, 255))
+        for i in range(5):
+            for j in range(3):
+                _tomato(d, 16 + i * 24, 18 + j * 18, 6)
+        _rocket(d, 64, 110, 0.18, P)
+        d.text((4, 2), '1UP 004250', font=ML.font(10, serif=False), fill=(250, 250, 250))
+    else:
+        d.rectangle((0, 0, w, 50), fill=(40, 90, 200))
+        d.polygon([(54, 50), (74, 50), (128, h), (0, h)], fill=(70, 70, 76))
+        for k in range(4):
+            d.rectangle((62, 56 + k * 18, 66, 64 + k * 18), fill=(250, 250, 250))
+        _scooter(d, 64, 104, 0.25)
+        d.text((4, 2), 'TIME 42  LAP 2', font=ML.font(10, serif=False), fill=(250, 250, 250))
+    return arr(im)
+
+
+def grille_tex(n=64):
+    x, y = TL.xy(n)
+    r = np.hypot(x - 0.5, y - 0.5)
+    slot = ((x * 8) % 1 < 0.45) & (r < 0.42)
+    c = np.zeros((n, n, 3), np.float32) + C((24, 24, 26))
+    return np.where(slot[..., None], C((6, 6, 6)), np.where((r < 0.46)[..., None], C((40, 40, 44)), c))
 
 
 def screen_tex(w=128, h=128):
@@ -454,12 +571,20 @@ def bottle_tex(col, w=64, h=128):
     return arr(im)
 
 
-def cooler_head(w=512, h=128):
+def fit_font(d, text, max_w, size, serif=True, min_size=12):
+    """largest font (<= size) whose text fits max_w pixels"""
+    while size > min_size and d.textlength(text, font=ML.font(size, serif=serif)) > max_w:
+        size -= 2
+    return ML.font(size, serif=serif)
+
+
+def cooler_head(w=512, h=128, text='COLD DRINKS'):
     c = np.zeros((h, w, 3), np.float32) + C((250, 246, 236))
     im, d = draw(c)
     d.rectangle((0, 0, w - 1, h - 1), outline=(196, 24, 30), width=10)
-    f = ML.font(64); t = 'ICE COLD DRINKS'; tw = d.textlength(t, font=f)
-    d.text(((w - tw) / 2, 22), t, font=f, fill=(196, 24, 30))
+    f = fit_font(d, text, w - 60, 72)
+    l, t, r, b = d.textbbox((0, 0), text, font=f)
+    d.text(((w - (r - l)) / 2 - l, (h - (b - t)) / 2 - t), text, font=f, fill=(196, 24, 30))
     return arr(im)
 
 
@@ -613,10 +738,17 @@ def materials():
     m('key_green', TL.solid((50, 180, 70), 1, 106, 32), shade=60)
     m('led_green', TL.solid((80, 255, 120), 1, 107, 16), 'glow')
     m('cooler_body', TL.solid((220, 34, 40), 2, 72, 64), shade=30)
-    m('arcade', arcade_art(), shade=30)
-    m('arcade_body', TL.solid((40, 30, 80), 2, 73, 64), shade=30)
-    m('arcade2', arcade_art2(), shade=30)
-    m('arcade2_body', TL.solid((150, 20, 30), 2, 100, 64), shade=30)
+    for th in ('blaster', 'racer'):
+        P = _cab_pal(th)
+        m(f'marquee_{th}', marquee_tex(th), 'glow')
+        m(f'bezel_{th}', bezel_tex(th), shade=30)
+        m(f'cp_{th}', cp_tex(th), shade=30)
+        m(f'side_{th}', side_tex(th), shade=30)
+        m(f'trim_{th}', TL.solid(P['trim'], 1, 120, 32), 'lms', v=0.15, shade=40)
+        m(f'kick_{th}', TL.solid(P['body'], 2, 121, 64), shade=30)
+        m(f'screen_{th}', game_screen(th), 'flicker')
+    m('grille', grille_tex(), shade=30)
+    m('led_red', TL.solid((255, 70, 60), 1, 122, 16), 'glow')
     m('screen', screen_tex(), 'flicker')
     m('gum', TL.dots((240, 240, 240), (230, 60, 60), 8, r=0.3), shade=60)
     m('gumglass', TL.solid((200, 220, 230), 2, 74, 64), 'glass', c='0.12 0.13 0.15')
@@ -1005,21 +1137,91 @@ def atm():
     coll('atm', [((-72, -hw - 6, 0), (d, hw + 6, h))])
 
 
-def arcade(name='arcade', art='arcade', body='arcade_body'):
-    """upright arcade cabinet (front faces -x), 150 x 170 x 860"""
+ARC_PROFILE = [(-24, 860), (-24, 760), (45, 745), (15, 510), (-50, 470), (-50, 420), (-10, 400), (-10, 0), (150, 0), (150, 860)]
+ARC_PIECES = [[(-10, 0), (150, 0), (150, 400), (-10, 400)],
+              [(-10, 400), (150, 400), (150, 510), (15, 510), (-50, 470), (-50, 420)],
+              [(15, 510), (150, 510), (150, 745), (45, 745)],
+              [(45, 745), (150, 745), (150, 860), (-24, 860), (-24, 760)]]
+ARC_W = 87                      # half width over the side panels (inner face at ARC_W - 6)
+
+
+def arcade_cab(name, theme):
+    """classic upright arcade cabinet (front faces -x): painted side panels on the cabinet silhouette with T-molding
+    edges, lit marquee hood, tilted screen in an art bezel, sloped control panel with a joystick and buttons, kick
+    panel with a coin door and speaker grille. Footprint x -50..150, y -87..87, 860 tall."""
+    P = _cab_pal(theme)
     X = ML.Model()
-    bx(X, body, (0, -85, 0), (150, 85, 860), r=6, faces='nsetb')
-    bx(X, body, (60, -85, 0), (150, 85, 860), r=6, faces='w')
-    bx(X, body, (-10, -85, 0), (60, 85, 420), r=6, faces='w')
-    pic(X.mesh(M_[art]), (59, 0, 760), (-1, 0, 0), 160, 150)
-    pic(X.mesh(M_['screen']), (59, 0, 560), (-1, 0, 0.25), 140, 130)
-    bx(X, 'black', (-40, -85, 420), (60, 85, 450), r=4)
-    for (y, col) in ((-30, 'red_metal'), (20, 'yellow'), (45, 'chair_red')):
-        cylz(X, col, -10, y, 8, 450, 460, n=8)
-    cylz(X, 'black', -14, -50, 4, 450, 490, n=6)
-    sphere(X.mesh(M_['red_metal']), (-14, -50, 494), 9, nu=8, nv=6)
+    W, Wi = ARC_W, ARC_W - 6
+    xs = [p[0] for p in ARC_PROFILE]; zs = [p[1] for p in ARC_PROFILE]
+    x0, x1, z1 = min(xs), max(xs), max(zs)
+    side = M_[f'side_{theme}']
+    for sgn in (-1, 1):
+        S = X.mesh(side)
+        for piece in ARC_PIECES:
+            pts = [(x, sgn * W, z) for (x, z) in piece]
+            uvs = [(1 - (x - x0) / (x1 - x0) if sgn > 0 else (x - x0) / (x1 - x0), 1 - z / z1) for (x, z) in piece]
+            if sgn < 0:
+                pts, uvs = pts[::-1], uvs[::-1]
+            S.poly(pts, (0, sgn, 0), uvs)
+    # T-molding along the silhouette (the panel edges), both panels
+    Tm = X.mesh(M_[f'trim_{theme}'])
+    n = len(ARC_PROFILE)
+    for i in range(n):
+        (ax, az), (bx_, bz) = ARC_PROFILE[i], ARC_PROFILE[(i + 1) % n]
+        ex, ez = bx_ - ax, bz - az
+        L = math.hypot(ex, ez)
+        nx, nz = ez / L, -ex / L                     # outward normal (profile runs clockwise seen from +y)
+        for sgn in (-1, 1):
+            q = [(ax, sgn * Wi, az), (bx_, sgn * Wi, bz), (bx_, sgn * W, bz), (ax, sgn * W, az)]
+            if sgn < 0: q = q[::-1]
+            Tm.poly(q, (nx, 0, nz), [(0, 0), (L / 64, 0), (L / 64, 0.1), (0, 0.1)])
+    def front(a, b, mat, uv=((0, 0), (1, 0), (1, 1), (0, 1)), off=0.0, inset=0.0):
+        """quad across the cabinet between profile points a (top) and b (bottom), facing out of the profile"""
+        (ax, az), (bx_, bz) = a, b
+        ex, ez = bx_ - ax, bz - az
+        L = math.hypot(ex, ez)
+        nx, nz = -ez / L, ex / L
+        if nx > 0: nx, nz = -nx, -nz
+        o = (nx * off, nz * off)
+        y = Wi - inset
+        X.mesh(M_[mat]).poly([(ax + o[0], y, az + o[1]), (ax + o[0], -y, az + o[1]), (bx_ + o[0], -y, bz + o[1]), (bx_ + o[0], y, bz + o[1])],
+                             (nx, 0, nz), list(uv))
+    front((-24, 860), (-24, 760), f'marquee_{theme}')
+    front((-24, 760), (45, 745), 'black')
+    front((45, 745), (15, 510), f'bezel_{theme}')
+    # the screen inside the bezel (inset, 1u proud)
+    t0, t1 = 0.17, 0.83
+    pa = (45 + (15 - 45) * t0, 745 + (510 - 745) * t0); pb = (45 + (15 - 45) * t1, 745 + (510 - 745) * t1)
+    front(pa, pb, f'screen_{theme}', off=1.0, inset=Wi * 0.3)
+    front((15, 510), (-50, 470), f'cp_{theme}')
+    front((-50, 470), (-50, 420), 'black')
+    front((-50, 420), (-10, 400), 'black')
+    front((-10, 400), (-10, 0), f'kick_{theme}')
+    X.mesh(M_['black']).quad((x1, -Wi, z1), (x1, Wi, z1), (-24, Wi, z1), (-24, -Wi, z1), n=(0, 0, 1))
+    X.mesh(M_['black']).quad((x1, Wi, 0), (x1, -Wi, 0), (x1, -Wi, z1), (x1, Wi, z1), n=(1, 0, 0))
+    # joystick and buttons on the sloped panel
+    ang = math.atan2(510 - 470, 15 - (-50))          # panel rises towards the back
+    R = np.array([[math.cos(ang), 0, -math.sin(ang)], [0, 1, 0], [math.sin(ang), 0, math.cos(ang)]])
+    def on_cp(t, y):
+        return (15 + (-50 - 15) * t, y, 510 + (470 - 510) * t)
+    J = ML.Model()
+    cylz(J, 'black', 0, 0, 10, 0, 2, n=10)
+    cylz(J, 'chrome', 0, 0, 3, 2, 36, n=6, top=False)
+    sphere(J.mesh(M_['key_red' if theme == 'blaster' else 'key_yellow']), (0, 0, 42), 9, nu=10, nv=6)
+    X.add_model(J, R=R, t=on_cp(0.55, 42))
+    for i, col in enumerate(('key_red', 'key_yellow', 'key_green')):
+        B = ML.Model()
+        cylz(B, 'black', 0, 0, 9, 0, 2, n=10)
+        cylz(B, col, 0, 0, 7, 2, 6, n=10)
+        X.add_model(B, R=R, t=on_cp(0.45, -8 - i * 24))
+    # coin door (two lit coin buttons + return slots) and a speaker grille on the kick panel
+    bx(X, 'black', (-16, -38, 110), (-10, 38, 260), r=3)
+    for y in (-18, 18):
+        bx(X, 'led_red', (-19, y - 7, 210), (-16, y + 7, 236), r=1)
+        bx(X, 'chrome', (-19, y - 9, 140), (-16, y + 9, 156), r=1)
+    pic(X.mesh(M_['grille']), (-11, 0, 330), (-1, 0, 0), 70, 70)
     ML.save(name, X)
-    coll(name, [((-40, -85, 0), (150, 85, 860))])
+    coll(name, [((-50, -W, 0), (150, W, 860))])
 
 
 def gumball():
@@ -1413,7 +1615,7 @@ def all_models():
     counter(); display_case(); register(); soda_fountain()
     for k, (n, rot) in enumerate(((4, 0), (3, 20), (5, 8), (2, 35), (6, 4))):
         pizza_boxes(f'boxes{n}', n, rot, seed=k + 1)
-    menu_shelf(); cooler(); atm(); arcade(); arcade('arcade2', 'arcade2', 'arcade2_body'); gumball(); two_top(); chair(); high_chair(); ceiling_fan()
+    menu_shelf(); cooler(); atm(); arcade_cab('arcade', 'blaster'); arcade_cab('arcade2', 'racer'); gumball(); two_top(); chair(); high_chair(); ceiling_fan()
     oven(); peel(); prep_table(); mixer(); flour_sacks(); tomato_case(); can_rack(); sink_dress()
     plate_steps(12, 16, 32, 150)
     hydrant(); trash_basket(); newsbox(); street_lamp(); wet_sign(); flags()
