@@ -1,0 +1,65 @@
+{
+ "map": "wop_padpirate",
+ "ns": "padpirate",
+ "longname": "Skull Rock Bay",
+ "generator": "build_pirate.py",
+ "bounds": [
+  -2304,
+  -5120,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa syc_tp",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 5,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "enforce": false
+ },
+ "preview": {
+  "title": "Skull Rock Bay",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:0,-1900,700,90,-25",
+   "ship:600,-300,250,240,-10",
+   "skull:0,300,200,90,10",
+   "fort:-1200,500,200,140,5",
+   "quay:1300,-1300,120,30,0",
+   "pier:260,-2000,130,245,-6",
+   "isle:0,-2300,700,270,-30",
+   "port:0,-2620,120,270,0",
+   "fish:-1100,-2560,120,270,-5",
+   "loft:60,-2820,140,345,0",
+   "reef:-900,-2950,250,270,-15",
+   "wreck:-600,-4000,150,200,0",
+   "tunnel:-1400,-4100,-370,0,0",
+   "locker:60,-4100,-380,0,0",
+   "rapids:600,-3000,350,300,-12",
+   "cave:1040,-3050,60,270,0",
+   "plateau:700,-4500,560,300,-10",
+   "lighthouse:500,-4600,700,330,10",
+   "lh_top:900,-4900,1010,0,-15",
+   "cannons:-900,300,400,150,-10"
+  ]
+ },
+ "levelshots": {
+  "cover": "isle",
+  "shots": [
+   "ship",
+   "skull",
+   "lighthouse"
+  ]
+ }
+}
