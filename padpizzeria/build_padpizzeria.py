@@ -41,7 +41,6 @@ ROW_YC = {'end_s': -1920, 'd1': -1040, 'd2': -160, 'd3': 720, 'end_n': 1600}
 TABLES = (-1480, -600, 280, 1160)               # booth table centres (y)
 AISLE = 320                                     # booth rows end at x = +-320: one 640u aisle
 ROW_N = 1640                                    # rows end here
-PILLAR = (-600, 1780, -350, 2030)
 COUNTER = (-400, 2180)                          # counter origin: x -400..400 (+ round end to -565), y 2180..2510
 CZ = PM.COUNTER_Z
 BACKC = (-480, 2730, X1, YB0)                   # back counter, top CZ
@@ -152,10 +151,6 @@ def walls():
     K.add(sign_box((sx0, YB0 - 6, 1050), (sx1, YB0, 1290), T('menu'), 1024, 256, facing='s', edge=T('trim')))
     K.add(sign_box((-460, YB0 - 6, 1100), (-180, YB0, 1170), T('pizzasign'), 512, 128, facing='s', edge=T('steel')))
     K.add(sign_box((X0, 2600, 600), (X0 + 3, 2800, 900), T('poster'), 256, 384, facing='e', edge=T('trim')))
-    x0, y0, x1, y1 = PILLAR
-    K.add(box((x0, y0, 40), (x1, y1, ZC), {'side': T('whitetile'), 'top': CAULK, 'bot': CAULK}))
-    K.add(box((x0 - 8, y0 - 8, 0), (x1 + 8, y1 + 8, 40), {'side': T('trim'), 'top': T('trim'), 'bot': CAULK}))
-    K.reserve(((x0 - 8, y0 - 8, 0), (x1 + 8, y1 + 8, ZC)))
     for y in (-1500, -800, -100, 600, 1300, 2000, 2650):                 # fluorescent panels over the aisle
         K.add(box((-120, y - 240, ZC - 4), (120, y + 240, ZC), {'bot': T('fluor'), 'side': T('steel'), 'top': CAULK}))
     for x in (-450, 450):
@@ -210,6 +205,7 @@ def counter_area():
 def dining():
     """the arcade cabinet, gumball machine, high chair, wet-floor sign, pizza-box stack, the two ceiling fans"""
     place('arcade', -730, 1760, 0, angle=180)
+    place('arcade2', -730, 1940, 0, angle=180)
     place('gumball', 640, 2330, 0)
     place('high_chair', -230, 1850, 0, angle=20)
     place('wet_sign', 260, 2080, 0, angle=15)
@@ -326,7 +322,7 @@ def items():
     K.item('item_speedy', 300, 2340, CZ)
     K.item('item_jumper', 640, TABLES[3], 0)
     K.item('holdable_floater', -400, 3900, 0)
-    K.item('item_visionless', -730, 2050, 0)
+    K.item('item_visionless', -480, 1900, 0)
     K.station(-720, 2520, 0, ang=0)
     for (x, y, a) in ((-150, -1400, 90), (150, -900, 90), (-150, -300, 90), (150, 300, 270), (-150, 900, 270),
                       (150, 1350, 270), (-150, 1700, 270), (0, 2050, 0), (-700, 2280, 0), (700, 2450, 180),

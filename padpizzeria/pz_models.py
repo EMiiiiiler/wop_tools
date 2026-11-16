@@ -379,6 +379,23 @@ def arcade_art(w=256, h=256):
     return arr(im)
 
 
+def arcade_art2(w=256, h=256):
+    """original marquee art: a pizza-delivery scooter racing down a neon road"""
+    c = np.zeros((h, w, 3), np.float32) + C((60, 10, 40))
+    im, d = draw(c)
+    d.polygon([(0, 190), (w, 190), (170, 70), (86, 70)], fill=(40, 40, 50))
+    for k in range(5):
+        y = 80 + k * 24
+        d.line((128, y, 128, y + 10), fill=(250, 220, 60), width=3)
+    d.line((86, 70, 0, 190), fill=(255, 60, 200), width=4); d.line((170, 70, w, 190), fill=(60, 220, 255), width=4)
+    d.ellipse((70, 140, 100, 170), fill=(20, 20, 20)); d.ellipse((150, 140, 180, 170), fill=(20, 20, 20))
+    d.rectangle((84, 120, 168, 150), fill=(230, 40, 40)); d.rectangle((136, 96, 168, 122), fill=(244, 240, 230))
+    d.ellipse((90, 92, 116, 118), fill=(250, 210, 160))
+    f = ML.font(30, serif=False); t = 'DOUGH RACER'; tw = d.textlength(t, font=f)
+    d.text(((w - tw) / 2, 206), t, font=f, fill=(250, 220, 60))
+    return arr(im)
+
+
 def screen_tex(w=128, h=128):
     c = np.zeros((h, w, 3), np.float32) + C((10, 14, 30))
     im, d = draw(c)
@@ -507,6 +524,8 @@ def materials():
     m('cooler_body', TL.solid((220, 34, 40), 2, 72, 64), shade=30)
     m('arcade', arcade_art(), shade=30)
     m('arcade_body', TL.solid((40, 30, 80), 2, 73, 64), shade=30)
+    m('arcade2', arcade_art2(), shade=30)
+    m('arcade2_body', TL.solid((150, 20, 30), 2, 100, 64), shade=30)
     m('screen', screen_tex(), 'flicker')
     m('gum', TL.dots((240, 240, 240), (230, 60, 60), 8, r=0.3), shade=60)
     m('gumglass', TL.solid((200, 220, 230), 2, 74, 64), 'glass', c='0.12 0.13 0.15')
@@ -783,21 +802,21 @@ def atm():
     coll('atm', [((-60, -w / 2, 0), (d, w / 2, h))])
 
 
-def arcade():
+def arcade(name='arcade', art='arcade', body='arcade_body'):
     """upright arcade cabinet (front faces -x), 150 x 170 x 860"""
     X = ML.Model()
-    bx(X, 'arcade_body', (0, -85, 0), (150, 85, 860), r=6, faces='nsetb')
-    bx(X, 'arcade_body', (60, -85, 0), (150, 85, 860), r=6, faces='w')
-    bx(X, 'arcade_body', (-10, -85, 0), (60, 85, 420), r=6, faces='w')
-    pic(X.mesh(M_['arcade']), (59, 0, 760), (-1, 0, 0), 160, 150)
+    bx(X, body, (0, -85, 0), (150, 85, 860), r=6, faces='nsetb')
+    bx(X, body, (60, -85, 0), (150, 85, 860), r=6, faces='w')
+    bx(X, body, (-10, -85, 0), (60, 85, 420), r=6, faces='w')
+    pic(X.mesh(M_[art]), (59, 0, 760), (-1, 0, 0), 160, 150)
     pic(X.mesh(M_['screen']), (59, 0, 560), (-1, 0, 0.25), 140, 130)
     bx(X, 'black', (-40, -85, 420), (60, 85, 450), r=4)
     for (y, col) in ((-30, 'red_metal'), (20, 'yellow'), (45, 'chair_red')):
         cylz(X, col, -10, y, 8, 450, 460, n=8)
     cylz(X, 'black', -14, -50, 4, 450, 490, n=6)
     sphere(X.mesh(M_['red_metal']), (-14, -50, 494), 9, nu=8, nv=6)
-    ML.save('arcade', X)
-    coll('arcade', [((-40, -85, 0), (150, 85, 860))])
+    ML.save(name, X)
+    coll(name, [((-40, -85, 0), (150, 85, 860))])
 
 
 def gumball():
@@ -1191,7 +1210,7 @@ def all_models():
     counter(); display_case(); register(); soda_fountain()
     for k, (n, rot) in enumerate(((4, 0), (3, 20), (5, 8), (2, 35), (6, 4))):
         pizza_boxes(f'boxes{n}', n, rot, seed=k + 1)
-    menu_shelf(); cooler(); atm(); arcade(); gumball(); two_top(); chair(); high_chair(); ceiling_fan()
+    menu_shelf(); cooler(); atm(); arcade(); arcade('arcade2', 'arcade2', 'arcade2_body'); gumball(); two_top(); chair(); high_chair(); ceiling_fan()
     oven(); peel(); prep_table(); mixer(); flour_sacks(); tomato_case(); can_rack(); sink_dress()
     plate_steps(12, 16, 32, 150)
     hydrant(); trash_basket(); newsbox(); street_lamp(); wet_sign(); flags()
