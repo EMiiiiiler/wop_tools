@@ -1,0 +1,68 @@
+{
+ "map": "wop_padcakeshop",
+ "ns": "padcakeshop",
+ "longname": "Padman's Little Cake Shop",
+ "generator": "build_padcakeshop.py",
+ "bounds": [
+  -1920,
+  -2112,
+  1920,
+  1536
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Little Cake Shop",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1750,-1380,1500,140,-28",
+   "display:380,-520,520,100,-2",
+   "unit_top:780,150,1300,150,-15",
+   "counter:-500,-200,900,170,-12",
+   "table:380,-1040,720,150,-16",
+   "sack:-760,-1060,460,160,-8",
+   "floor_w:-150,-420,330,165,-10",
+   "floor_e:700,-900,420,35,-10",
+   "window:-700,-450,800,270,-8",
+   "bread:1000,400,800,0,-5",
+   "wall_shelves:-250,960,1250,45,-8",
+   "staff:-1720,-900,300,80,-2",
+   "street:1750,-2080,420,165,10",
+   "awning:900,-2050,1500,160,-12",
+   "vault:0,-380,-1200,90,2",
+   "behind_unit:1450,1250,500,180,-5",
+   "under_heads:-900,50,900,180,-8"
+  ],
+  "models_max": 64
+ },
+ "levelshots": {
+  "cover": "display",
+  "shots": [
+   "counter",
+   "table",
+   "overview"
+  ]
+ },
+ "hull": [
+  -1920,
+  -2560,
+  1920,
+  1536
+ ]
+}

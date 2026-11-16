@@ -1,0 +1,5 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padcakeshop
+unit_steps:         380,120,0 > 380,408,96
+bridge:             0,800,1008 > 0,1340,944
+cubby:              -1700,300,0 > -1330,760,16

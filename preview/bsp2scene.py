@@ -465,7 +465,8 @@ def main():
     if missing: print('no image for:', ', '.join(sorted(missing)[:40]))
 
 
-TEMPLATE = r'''<title>%%TITLE%%</title>
+TEMPLATE = r'''<!DOCTYPE html>
+<title>%%TITLE%%</title>
 <style>
 /* one-screen 3D viewer: full-bleed canvas, floating control panel */
 :root{--bg:#cfe3f2;--panel:rgba(250,252,255,.9);--fg:#13263a;--mut:#4a6077;--line:#b9cde0;--btn:#e7f0f8;--accent:#0f7ac9;--onaccent:#fff;
