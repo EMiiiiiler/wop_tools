@@ -714,13 +714,14 @@ def reef():
     for (ya, yb) in ((hy0 - 16, hy0), (hy1, hy1 + 16)):
         K.add(box((hx0 - 16, ya, TUN_FLOOR), (WAVE[0] - 16, yb, -32), wall, detail=False),
               box((WAVE[0] - 16, ya, TUN_FLOOR), (sx1, yb, WAVE_Z - 16), wall, detail=False))
-    STAIRS(hx0, hy0, tx0 - 64, hy1, TUN_FLOOR, 0, 'w', st, route='reef_stairs')
+    STAIRS(hx0, hy0, tx0 - 64, hy1, TUN_FLOOR, 0, 'w', st)
+    K.route('reef_stairs', (tx0 - 40, TUN_Y, TUN_FLOOR), (hx0 + 120, hy1 + 60, 0))          # the top is entered from the side
     K.keep_clear(hx0, hy0 - 112, hx1 + 112, hy0, 0); K.keep_clear(hx1, hy0, hx1 + 112, hy1 + 112, 0)
     K.route('reef_tunnel', (tx0 - 40, TUN_Y, TUN_FLOOR), (tx1 - 60, TUN_Y, TUN_FLOOR))
     K.add(sign_box((tx0 - 20, iy0 + 4, tz1 + 8), (tx0 - 16, iy1 - 4, tz1 + 40), T('sign_reef'), 512, 128, back=CAULK, facing='w', edge=T('teal')))
     for x in (hx0 + 200, hx0 + 500): K.light(x, TUN_Y, -120, 260, '0.7 0.9 1')
     K.item('item_armor_shard', mid - 300, TUN_Y, TUN_FLOOR); K.item('item_armor_shard', mid + 300, TUN_Y, TUN_FLOOR)
-    K.ammo('betty', mid, TUN_Y, TUN_FLOOR)
+    K.weapon('betty', tx1 - 150, TUN_Y, TUN_FLOOR, marker='black')        # end of the reef tunnel, next to the fake wall
 
 
 # ------------------------------------------------------------------------------------------------ Volcano Bay
@@ -1207,6 +1208,9 @@ def dressing():
     # cover where the promenade's east-west sightlines cross in front of Twister Tower (sight --hot)
     K.custom(ML.PLACE['cart'], 0, 200, 0, angle=90, boxes=[((-58, -32, 0), (58, 32, 88))])
     K.custom(ML.PLACE['rock'], -520, 40, 0, angle=70, cyls=[(0, 0, 48, 0, 70)])
+    # round 4: the promenade in front of Twister Tower was still the main source of long rays (sight log)
+    K.prop(ML.PLACE['boulder'], 400, -150, 0, cyls=[(0, 0, 92, 0, 150)], angle=20)
+    K.prop(ML.PLACE['rock'], 380, 330, 0, cyls=[(0, 0, 48, 0, 70)], angle=110)
     K.catalog('pad_statues/statue_super.md3', -1960, -700, 0, scale=0.7, angle=0)
     K.timer_sound(0, 0, 900, 'human/applause', 'crowd', 45, 20)
 
@@ -1215,7 +1219,7 @@ def items():
     cx, cy = (CORE[0] + CORE[2]) // 2, (CORE[1] + CORE[3]) // 2
     hut_top = TERR_Z + SHACK_H + 16; shop_top = SHOP_H + 16; guard_top = GUARD_Z + HUT_H + 16
     K.weapon('imperius', cx + 50, cy + 50, NEST_Z, marker='purple')
-    K.weapon('betty', -40, -1680, WAVE_Z, marker='black')                 # deep floor right in front of the secret intake
+    K.ammo('betty', -40, -1680, WAVE_Z)                                   # deep floor right in front of the secret intake
     K.weapon('balloony', 2040, 1560, hut_top, marker='orange')
     K.weapon('pumper', GUARD[0] + 128, GUARD[1] + 80, guard_top, marker='green')
     K.weapon('splasher', ISLE[0] - 20, ISLE[1] + 110, 6, marker='blue')
@@ -1266,6 +1270,11 @@ if __name__ == '__main__':
         K.probe((-140, -1340, 6), (100, -1180, 70), 'island')
         K.probe((-400, -1100, -60), (400, -1000, 0), 'pool_mid_surface')
         K.probe((-400, -800, -60), (400, -700, 0), 'beach_shallows')
+        K.probe((-1000, TUN_IN[0], TUN_FLOOR), (-900, TUN_IN[1], TUN_FLOOR + 96), 'reef_tunnel')
+        K.probe((-2100, SHAFT_HOLE[1], -200), (-2000, SHAFT_HOLE[3], -100), 'reef_stairs')
+        K.probe((2560, -1060, -384), (2720, -940, -288), 'canyon_cave')
+        K.probe((2560, LANDING[1] + 100, 0), (2720, LANDING[3] - 100, 96), 'rope_bridge')
+        K.probe((1150, 3700, 448), (1550, 3800, 540), 'mat_deck')
     K.fix_items()
     shader()
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))
