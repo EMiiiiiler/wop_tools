@@ -15,7 +15,7 @@ while not os.path.exists(os.path.join(ROOT, 'wopmap.py')): ROOT = os.path.dirnam
 sys.path.insert(0, ROOT)
 from wopmap import box, cyl, hull, sub_rects, sign_box
 from woplib.kit import MapKit, CAULK, WCLIP
-from woplib import models as ML, shaders as SH, texlib as TL
+from woplib import models as ML, shaders as SH, texlib as TL, shopbits as SB
 from meshlib import Mesh, revolve, rbox, tube, ellipsoid, sphere, arc_path, rot_z, rot_axis
 
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
@@ -172,6 +172,52 @@ def foam_tex(n=256):
     return np.repeat((c * 230)[..., None], 3, 2)
 
 
+def board_tex(c1, c2, n=128):
+    """surfboard deck: base colour, a stripe down the middle, darker rails"""
+    x, y = ML.xy(n)
+    c = np.zeros((n, n, 3), np.float32) + ML.C(c1)
+    c = np.where((np.abs(x - 0.5) < 0.09)[..., None], ML.C(c2), c)
+    c = np.where((np.abs(x - 0.5) < 0.012)[..., None], ML.C((40, 40, 40)), c)
+    c = np.where(((x < 0.07) | (x > 0.93))[..., None], c * 0.75, c)
+    return c + ML.N3(n, 1, 7, 3)
+
+
+def tiki_tex(n=256):
+    """carved tiki face on brown wood: brows, round eyes, a wide grin with teeth"""
+    x, y = ML.xy(n)
+    c = ML.lerp(ML.C((120, 78, 40)), ML.C((150, 100, 56)), ((y * 12) % 1)[..., None]) + ML.N3(n, 3, 51, 10)
+    dark = ML.C((40, 24, 12)); light = ML.C((236, 220, 180))
+    for ex in (0.3, 0.7):
+        d = np.hypot(x - ex, (y - 0.33) * 1.2)
+        c = np.where((d < 0.12)[..., None], light, c); c = np.where((d < 0.06)[..., None], dark, c)
+        c = np.where(((np.abs(y - 0.17) < 0.03) & (np.abs(x - ex) < 0.15))[..., None], dark, c)
+    nose = (np.abs(x - 0.5) < 0.06) & (y > 0.38) & (y < 0.6)
+    c = np.where(nose[..., None], c * 0.7, c)
+    mouth = (np.abs(x - 0.5) < 0.3) & (y > 0.68) & (y < 0.86)
+    c = np.where(mouth[..., None], dark, c)
+    teeth = mouth & (((x * 14) % 1) < 0.6) & (y < 0.75)
+    return np.where(teeth[..., None], light, c)
+
+
+def bamboo_tex(n=256):
+    """vertical bamboo poles with node rings"""
+    x, y = ML.xy(n)
+    k = (x * 8) % 1
+    shade = 0.75 + 0.25 * np.sin(k * math.pi)
+    c = ML.C((190, 160, 90)) * shade[..., None] + ML.N3(n, 2, 61, 6)
+    node = np.abs(((y * 3 + np.floor(x * 8) * 0.37) % 1) - 0.5) < 0.02
+    c = np.where(node[..., None], ML.C((120, 92, 46)), c)
+    return np.where((k < 0.04)[..., None], ML.C((80, 60, 30)), c)
+
+
+def flame_tex(n=64):
+    x, y = ML.xy(n)
+    d = np.hypot((x - 0.5) * 1.6, (y - 0.75) * 0.9)
+    f = np.clip(1 - d * 2.2, 0, 1) * np.clip(y * 1.3, 0, 1)
+    c = ML.lerp(ML.C((255, 80, 10)), ML.C((255, 230, 120)), (f ** 2)[..., None]) * f[..., None]
+    return c
+
+
 def textures():
     TX.add('deck', TL.tiles((226, 208, 172), (176, 160, 132), cols=4, rows=4, offset=0.5, grout_w=0.03))
     TX.add('pooltile', TL.tiles((120, 214, 226), (236, 246, 246), cols=8, rows=8, offset=0, grout_w=0.07), steps='splashsteps')
@@ -246,6 +292,28 @@ def textures():
     m('green', TL.stripes((50, 170, 80), (90, 210, 110), 4, soft=0.6), 'lms', v=0.14)
     m('shark', TL.stripes((110, 124, 136), (150, 162, 172), 3, vertical=False, soft=0.8), 'dyn')
     m('rope', TL.stripes((190, 160, 110), (150, 120, 80), 12, soft=0.5), shade=40)
+    # shop dressing (round 5)
+    m('canopy_b', TL.stripes((40, 150, 180), (250, 250, 245), 4), two=True, shade=60)
+    m('canopy_ban', TL.stripes((250, 210, 40), (250, 250, 240), 4), two=True, shade=60)
+    m('trim_w', TL.solid((246, 246, 242), 3, 31, 64), shade=30)
+    m('trim_y', TL.solid((250, 200, 50), 3, 32, 64), shade=30)
+    m('weather', TL.stripes((120, 205, 220), (98, 180, 198), 16, vertical=False, soft=0.15), shade=30)
+    m('bamboowall', bamboo_tex(), shade=30)
+    for k, (c1, c2) in dict(board_a=((250, 120, 40), (250, 250, 240)), board_b=((40, 160, 210), (250, 230, 80)),
+                            board_c=((230, 60, 120), (250, 250, 250)), board_d=((80, 200, 120), (30, 60, 140))).items():
+        m(k, board_tex(c1, c2), shade=50)
+    m('tikiface', tiki_tex(), shade=40)
+    m('flame', flame_tex(), 'add', wave='noise 0.85 0.15 0 7')
+    m('banana', TL.stripes((250, 214, 50), (236, 196, 40), 5, soft=0.8), shade=70)
+    m('banana_tip', TL.solid((90, 70, 30), 4, 41, 32), shade=50)
+    m('menu_ban', TL.label('SMOOTHIES', 256, 256, (30, 60, 40), (240, 240, 220), border=(160, 120, 70)))
+    m('menu_tiki', TL.label('MAI TAI', 256, 256, (60, 35, 20), (250, 220, 120), border=(160, 120, 70)))
+    m('lamp', TL.solid((255, 236, 180), 2, 42, 32), 'glow')
+    m('paper_r', TL.solid((240, 90, 60), 3, 43, 32), 'glow', wave='const 0.9')
+    m('paper_o', TL.solid((250, 170, 60), 3, 44, 32), 'glow')
+    m('fridge', TL.solid((236, 240, 244), 2, 45, 64), 'lms', v=0.1)
+    m('glassbottle', TL.solid((90, 170, 110), 2, 46, 32), 'lms', v=0.3)
+    m('beachsand', TL.solid((232, 214, 160), 9, 13, 64), shade=40)
     m('yellow', TL.stripes((250, 200, 40), (255, 226, 90), 4, soft=0.6), 'lms', v=0.14)
     m('sandrock', TL.stone((206, 178, 136), cells=12, vary=18), shade=40, steps='sandsteps')
     m('cliffm', TL.stone((150, 118, 92), cells=9, vary=24), shade=40)
@@ -575,6 +643,7 @@ def terrace():
     br = K.building(SHACK, TERR_Z, SHACK_H, openings=[('w', 1480, 1592, 0, 120), ('s', 1904, 2112, 48, 136)])
     br.append(box((1904, sy0 + 16, TERR_Z), (2112, sy0 + 48, TERR_Z + 48), P_))             # counter behind the hatch
     K.solid_piece('banana_hut', br, TX.texfn('roofm', 'hutwall'))
+    banana_hut_dress()
     K.add(sign_box((1880, sy0 - 4, TERR_Z + 150), (2136, sy0, TERR_Z + 200), T('sign_snack'), 512, 128, back=CAULK, facing='s', edge=T('steel')))
     K.keep_clear(sx0 - 112, 1464, sx0 + 112, 1608, TERR_Z)
     K.route('hut_door', (sx0 - 90, 1536, TERR_Z), (sx0 + 110, 1536, TERR_Z))
@@ -591,7 +660,8 @@ def shop():
     x0, y0, x1, y1 = SHOP
     br = K.building(SHOP, 0, SHOP_H, openings=[('e', 32, 160, 0, 128), ('e', 208, 304, 48, 136)])
     br.append(box((x0 + 16, 200, 0), (x0 + 72, 320, 48), P_))                                # counter
-    K.solid_piece('surf_shop', br, TX.texfn('roofm', 'shopwall'))
+    K.solid_piece('surf_shop', br, TX.texfn('roofm', 'weather'))
+    surf_shop_dress()
     st = {'top': T('deck'), 'side': T('teal'), 'bot': T('teal')}
     STAIRS(x0, y0 - 128, x0 + 480, y0, 0, SHOP_H + 16, 'w', st)
     K.route('shop_roof', (x0 + 540, y0 - 64, 0), (x0 + 80, y0 + 96, SHOP_H + 16))     # top tread is in the corner: step north onto the roof
@@ -603,7 +673,7 @@ def shop():
     K.jumppad(x1 + 200, 440, 0, land=(x1 - 140, 240, SHOP_H + 16), apex=SHOP_H + 16 + 130, name='pad_shop',
               edges=[(x1, 300, SHOP_H + 16)])
     for i, m in enumerate(('pad_items/towelstack.md3', 'pad_items/towelstack_2.md3')):
-        K.model_on(m, x0 + 44, 232 + 56 * i, 48, scale=0.6, angle=90)
+        K.model_on(m, x0 + 44, 218 + 48 * i, 48, scale=0.6, angle=90)
 
 
 def guard():
@@ -877,7 +947,8 @@ def tiki():
     x0, y0, x1, y1 = TIKI
     br = K.building(TIKI, 0, TIKI_H, openings=[('e', y0 + 120, y0 + 232, 0, 120), ('s', x0 + 60, x1 - 60, 48, 136)])
     br.append(box((x0 + 60, y0 + 16, 0), (x1 - 60, y0 + 48, 48), P_))
-    K.solid_piece('tiki_bar', br, TX.texfn('thatch', 'bamboo'))
+    K.solid_piece('tiki_bar', br, TX.texfn('thatch', 'bamboowall'))
+    tiki_dress()
     STAIRS(x0, y1, x0 + 384, y1 + 128, 0, TIKI_H + 16, 'w', {'top': T('beach'), 'side': T('cliff'), 'bot': T('cliff')}, route='tiki_roof')
     K.keep_clear(x0 + 384, y1, x0 + 496, y1 + 128, 0); K.keep_clear(x1 - 112, y0 + 104, x1 + 112, y0 + 248, 0)
     K.route('tiki_door', (x1 + 90, y0 + 176, 0), (x1 - 110, y0 + 176, 0))
@@ -886,6 +957,119 @@ def tiki():
     for i, cup in enumerate(('pad_cups/pad_cup01.md3', 'pad_cups/pad_cup04.md3', 'pad_cups/pad_cup08.md3')):
         K.model_on(cup, x0 + 100 + 50 * i, y0 + 32, 48, scale=0.25, angle=70 * i)
     K.model_on('pad_ddmix/padship/rumbottle1.md3', x0 + 250, y0 + 32, 48, scale=0.35)
+
+
+# ------------------------------------------------------------------------------------------------ shop dressing (woplib.shopbits)
+def surf_shop_dress():
+    """Surf Shop: blue awning over the door and window, white trims and fascia, boards leaning on the front and on a
+    rack round the side, a wall of boards and a hanging longboard inside, cash register, ceiling lamp"""
+    M = TX.mats
+    x0, y0, x1, y1 = SHOP; h = SHOP_H
+    D = SB.Dress(K, 'surf_shop_dress', ((x0 + x1) / 2, (y0 + y1) / 2, 0))
+    e = SB.Wall((x1, 0), 'e')
+    SB.awning(D, e, M['canopy_b'], M['steelw'], 16, 320, 146, depth=72, drop=22)
+    SB.frame(D, e, M['trim_w'], 32, 160, 0, 128)
+    SB.frame(D, e, M['trim_w'], 208, 304, 48, 136, sill=True)
+    SB.fascia(D, M['trim_w'], SHOP, 200, h, sides='new')
+    boards = ('board_a', 'board_b', 'board_c', 'board_d')
+    up = np.array([-0.17, 0, 1.0])
+    for i, y in enumerate((-130, -76, -22)):                       # leaning on the front, south of the door
+        SB.surfboard(D, M[boards[i]], (x1 + 36, y, 1), up, (1, 0, 0), length=176, width=44)
+    D.clip_box((x1 + 8, -156, 0), (x1 + 44, 6, 40))
+    for i, x in enumerate(range(x0 + 50, x1 - 20, 62)):             # rack on the north side
+        SB.surfboard(D, M[boards[(i + 1) % 4]], (x, y1 + 36, 1), (0, -0.17, 1.0), (0, 1, 0), length=180, width=44)
+    D.clip_box((x0 + 20, y1 + 6, 0), (x1 - 10, y1 + 46, 40))
+    rbox(D.mesh(M['trim_w']), (x0 + 22, y1 + 36, 30), (x1 - 12, y1 + 42, 36), r=1.5, k=1, tile=64)   # the rack's rail
+    for x in (x0 + 22, x1 - 18):
+        rbox(D.mesh(M['trim_w']), (x, y1 + 36, 0), (x + 6, y1 + 42, 40), r=1.5, k=1, tile=64)
+    # inside: a wall of boards on the west wall, a longboard hanging from the ceiling, till on the counter, lamp
+    for i, y in enumerate((-110, -60, -10, 40)):
+        SB.surfboard(D, M[boards[(i + 2) % 4]], (x0 + 16 + 30, y, 1), (-0.13, 0, 1.0), (1, 0, 0), length=170, width=40)
+    nose = SB.surfboard(D, M['board_b'], ((x0 + x1) / 2, -80, 196), (0, 1, 0), (0, 0, -1), length=230, width=50)
+    for yy in (-40, 110):
+        tube(D.mesh(M['steelw']), [((x0 + x1) / 2, yy, 199), ((x0 + x1) / 2, yy, h - 0.5)], 0.7, nseg=4, caps=(False, False))
+    rbox(D.mesh(M['wheel']), (x0 + 24, 292, 48), (x0 + 56, 318, 64), r=2, k=1, tile=32)          # till
+    rbox(D.mesh(M['wheel']), (x0 + 30, 297, 64), (x0 + 50, 313, 74), r=2, k=1, tile=32)
+    revolve(D.mesh(M['lamp']), [(14, h - 14), (18, h - 8), (8, h - 0.5)], n=12, cx=(x0 + x1) / 2, cy=y0 + 120)
+    # landmark: a giant board planted in a striped bucket on the promenade in front of the shop
+    gx, gy = x1 + 190, -70
+    revolve(D.mesh(M['ring_o']), [(30, 0), (34, 46), (36, 48), (31, 48)], n=16, cx=gx, cy=gy, vlen=48)
+    revolve(D.mesh(M['beachsand']), [(31, 44), (16, 47), (0, 48)], n=16, cx=gx, cy=gy)
+    SB.surfboard(D, M['board_a'], (gx, gy, 30), (0.04, 0, 1.0), (0.7, -0.7, 0), length=360, width=80, thick=10)
+    D.clip_cyl(gx, gy, 36, 0, 60); D.clip_cyl(gx, gy, 20, 60, 380)
+    D.finish()
+
+
+def banana_hut_dress():
+    """Banana Hut: giant banana arch over the door, yellow awning over the serving hatch with banana bunches, bar
+    stools, a SMOOTHIES board, fruit crates, trims; inside a fridge, a juicer and more bananas"""
+    M = TX.mats
+    x0, y0, x1, y1 = SHACK; z = TERR_Z; h = SHACK_H
+    D = SB.Dress(K, 'banana_hut_dress', ((x0 + x1) / 2, (y0 + y1) / 2, z))
+    s_ = SB.Wall((0, y0), 's'); w_ = SB.Wall((x0, 0), 'w')
+    for wl in (s_, w_): wl.p0[2] = z
+    SB.awning(D, s_, M['canopy_ban'], M['steelw'], 1890, 2126, 146, depth=90, drop=24)
+    SB.frame(D, s_, M['trim_y'], 1904, 2112, 48, 136, sill=True)
+    SB.frame(D, w_, M['trim_y'], -1592, -1480, 0, 120)
+    SB.fascia(D, M['trim_w'], SHACK, z + 182, z + h, sides='new')
+    for u in (1930, 2010, 2090):
+        SB.banana_bunch(D, M['banana'], M['banana_tip'], s_.at(70, u, 146 - 24 * 70 / 90 - 2), k=5, size=26)
+    # giant banana arch over the west door
+    # chord 212 between two plinths (z + 70), sagitta 130 -> apex z + 200 over the 120u door
+    chord, sag = 212.0, 130.0
+    bend = 2 * math.atan(sag / (chord / 2))
+    body, tips = SB.banana_mesh(chord, 24, bend, 28)
+    R = np.diag([-1.0, 1.0, -1.0])                                    # banana_mesh sags; turned over it arches
+    t = np.array([x0 - 30, (1480 + 1592) / 2, z + 70])
+    D.add(M['banana'], body, R, t); D.add(M['banana_tip'], tips, R, t)
+    for yy in (t[1] - chord / 2, t[1] + chord / 2):
+        SB.crate(D, M['planks'], (x0 - 50, yy - 20, z), (x0 - 10, yy + 20, z + 70))
+    for i, x in enumerate((1940, 2000, 2060, 2120)):
+        SB.stool(D, M['canopy_r'], M['steelw'], x, y0 - 64, z, h=30, r=12)
+    SB.sandwich_board(D, M['menu_ban'], M['planks'], x0 + 30, y0 - 50, z, facing=-90)
+    SB.crate(D, M['planks'], (x1 - 50, y0 - 70, z), (x1 - 4, y0 - 24, z + 34))
+    SB.crate(D, M['planks'], (x1 - 48, y0 - 68, z + 34), (x1 - 8, y0 - 28, z + 62))
+    SB.banana_bunch(D, M['banana'], M['banana_tip'], (x1 - 28, y0 - 48, z + 62), k=6, size=30, hang=False)
+    # inside
+    rbox(D.mesh(M['fridge']), (x1 - 74, y1 - 76, z), (x1 - 18, y1 - 18, z + 110), r=4, k=2, tile=64)
+    rbox(D.mesh(M['steelw']), (x1 - 76, y1 - 60, z + 40), (x1 - 74.5, y1 - 54, z + 90), r=0.5, k=1, tile=16)
+    D.clip_box((x1 - 76, y1 - 76, z), (x1 - 18, y1 - 18, z + 110))
+    revolve(D.mesh(M['plastic']), [(9, z + 48), (10, z + 60), (7, z + 76), (4, z + 78)], n=12, cx=1916, cy=y0 + 32, vlen=64)
+    for (xx, yy) in ((1900, 1600), (2000, 1650)):
+        SB.banana_bunch(D, M['banana'], M['banana_tip'], (xx, yy, z + h - 0.5), k=5, size=26)
+    revolve(D.mesh(M['lamp']), [(12, h - 12), (16, h - 7), (7, h - 0.5)], n=12, cx=(x0 + x1) / 2, cy=(y0 + y1) / 2 + 60)
+    D.finish()
+
+
+def tiki_dress():
+    """Tiki Bar: thatch eaves (not over the roof stairs), bamboo corner posts, carved totems by the door, tiki torches,
+    bamboo stools at the hatch, a MAI TAI board, a mask over the door; inside paper lanterns and a bottle shelf"""
+    M = TX.mats
+    x0, y0, x1, y1 = TIKI; h = TIKI_H
+    D = SB.Dress(K, 'tiki_bar_dress', ((x0 + x1) / 2, (y0 + y1) / 2, 0))
+    SB.thatch_skirt(D, M['thatch'], TIKI, h + 6, out=56, drop=42, sides='esw')
+    for (cx, cy) in ((x0 - 7, y0 - 7), (x1 + 7, y0 - 7), (x0 - 7, y1 + 7), (x1 + 7, y1 + 7)):
+        tube(D.mesh(M['bamboo']), [(cx, cy, 0), (cx, cy, h + 4)], 6, nseg=8)
+    e = SB.Wall((x1, 0), 'e'); s_ = SB.Wall((0, y0), 's')
+    SB.frame(D, e, M['bamboo'], y0 + 120, y0 + 232, 0, 120, width=7)
+    SB.frame(D, s_, M['bamboo'], x0 + 60, x1 - 60, 48, 136, width=7, sill=True)
+    rbox(D.mesh(M['tikiface']), e.at(0.5, y0 + 148, 126), e.at(5, y0 + 204, 166), r=1.5, k=1, tile=56)
+    for yy in (y0 + 84, y0 + 268):
+        SB.totem(D, M['tikiface'], M['planks'], x1 + 34, yy, 0, h=128, r=17, facing=0)
+    for (tx, ty) in ((x0 - 40, y0 - 40), (x1 + 40, y0 - 40), (x0 - 40, y1 + 20)):
+        SB.torch(D, M['bamboo'], M['coco'], M['flame'], tx, ty, 0, h=118)
+    for x in range(x0 + 80, x1 - 60, 60):
+        SB.stool(D, M['bamboo'], M['bamboo'], x, y0 - 50, 0, h=28, r=11)
+    SB.sandwich_board(D, M['menu_tiki'], M['bamboo'], x1 + 60, y0 - 60, 0, facing=0)
+    # inside
+    for i, (lx, ly) in enumerate(((x0 + 80, y0 + 120), (x0 + 170, y0 + 200), (x0 + 250, y0 + 120), (x0 + 120, y0 + 290))):
+        SB.lantern(D, M['paper_r' if i % 2 else 'paper_o'], M['rope'], lx, ly, h, drop=28 + 6 * i)
+    for k, zz in enumerate((60, 100)):
+        rbox(D.mesh(M['planks']), (x0 + 16.5, y0 + 150, zz - 4), (x0 + 40, y1 - 90, zz), r=1, k=1, tile=64)
+        for j, yy in enumerate(range(y0 + 162, y1 - 96, 22)):
+            revolve(D.mesh(M['glassbottle']), [(5, zz), (5.5, zz + 14), (2, zz + 20), (1.6, zz + 28), (0.1, zz + 28)], n=8,
+                    cx=x0 + 28, cy=yy)
+    D.finish()
 
 
 def bay_dressing():
