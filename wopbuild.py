@@ -374,9 +374,15 @@ class Build:
         dist = os.path.join(self.out, 'dist'); os.makedirs(dist, exist_ok=True)
         pk3 = os.path.join(dist, self.map + '.pk3'); src = os.path.join(dist, self.map + '_source.zip')
         common = []
-        for d in (f'textures/{self.ns}', f'models/{self.ns}', f'env/{self.ns}', f'sound/{self.ns}', 'levelshots'):
-            common += [p for p in glob.glob(os.path.join(self.out, d, '**', '*'), recursive=True) if os.path.isfile(p)]
-        common += [os.path.join(self.out, 'scripts', self.ns + '.shader'), os.path.join(self.out, 'scripts', self.map + '.arena')]
+        # every namespace the generator wrote (a map can reuse another map's assets or add its own XL namespace)
+        nss = sorted({self.ns} | {os.path.basename(p) for d in ('textures', 'models', 'env', 'sound')
+                                  for p in glob.glob(os.path.join(self.out, d, '*')) if os.path.isdir(p)})
+        for ns in nss:
+            for d in (f'textures/{ns}', f'models/{ns}', f'env/{ns}', f'sound/{ns}'):
+                common += [p for p in glob.glob(os.path.join(self.out, d, '**', '*'), recursive=True) if os.path.isfile(p)]
+        common += [p for p in glob.glob(os.path.join(self.out, 'levelshots', '**', '*'), recursive=True) if os.path.isfile(p)]
+        common += [p for p in glob.glob(os.path.join(self.out, 'scripts', '*.shader')) if os.path.basename(p)[:-7] in nss]
+        common += [os.path.join(self.out, 'scripts', self.map + '.arena')]
         bins = [os.path.join(self.out, 'maps', self.map + e) for e in ('.bsp', '.aas')]
         for path, files in ((pk3, bins + common),
                             (src, [self.mapfile, os.path.join(self.out, 'scripts', 'custinfoparms.txt')] + common)):

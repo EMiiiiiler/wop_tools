@@ -528,7 +528,7 @@ def ship():
     pxn, pyn = SX + L.PAD_NEST[0], SY + L.PAD_NEST[1]
     jumppad(pxn, pyn, L.QD_Z, (SX - 72, SY, L.NEST_Z), 760, 'pad_nest')
     weapon('imperius', SX - 10, SY - 75, L.NEST_Z, 'purple')
-    jumppad(SX + 72, SY - 20, L.NEST_Z, (300, -1950, 0), 760, 'pad_nest_fling')
+    jumppad(SX + 72, SY - 20, L.NEST_Z, (300, -1950, 0), 840, 'pad_nest_fling')
     jumppad(SX, -560, 0, (SX, SY + 66, L.NEST_Z), 800, 'pad_nest_jetty')         # second way up, from the north jetty
     trigger_sound((SX - 104, SY - 36, L.NEST_Z + 2), (SX - 34, SY + 36, L.NEST_Z + 70), 'sound/world/human/applause.ogg', 'nest_cheer', 15, volume=0.6)
     trigger_sound((SX - 30, SY + 40, L.NEST_Z + 2), (SX + 30, SY + 104, L.NEST_Z + 70), 'sound/world/human/applause.ogg', 'nest_cheer2', 15, volume=0.6)
@@ -592,7 +592,7 @@ def skull_rock():
     a0 = math.radians(st0[0] - 12)
     route('skull_stair', (cx + 230 * math.cos(a0), cy + 230 * math.sin(a0), 0), (cx, cy - 330, L.BALC_Z))
     # centre pad up the shaft onto the crown, fling pad from the crown down to the plaza
-    jumppad(cx, cy, 0, (cx, cy + 124, L.CROWN_Z), 900, 'pad_crown')
+    jumppad(cx, cy, 0, (cx, cy + 124, L.CROWN_Z), 960, 'pad_crown')
     weapon('betty', cx - 120, cy - 20, L.CROWN_Z, 'purple')
     item('ammo_betty', cx + 120, cy + 10, L.CROWN_Z)
     jumppad(cx + 10, cy - 136, L.CROWN_Z, (cx - 60, cy - 830, 0), 760, 'pad_crown_fling')
@@ -1014,8 +1014,11 @@ def gulls():
 def decor():
     rng = np.random.default_rng(7)
     # main sign on the south promenade
-    A(sign_box((-400, -1996, 100), (400, -1992, 300), T('sign_main'), 1024, 256, back=CAULK, facing='n'))
-    A(box((-416, -2024, 0), (416, -1996, 316), {'side': T('fort_stone'), 'top': T('coping'), 'bot': CAULK}))
+    # XL: the sign wall became the gateway to the Long Pier (opening x +-160, 120 high)
+    A(sign_box((-400, -1996, 130), (400, -1992, 300), T('sign_main'), 1024, 256, back=CAULK, facing='n'))
+    gw = {'side': T('fort_stone'), 'top': T('coping'), 'bot': T('fort_stone')}
+    for (a, b) in ((-416, -160), (160, 416)): A(box((a, -2024, 0), (b, -1996, 316), gw))
+    A(box((-160, -2024, 120), (160, -1996, 316), gw))
     NOGO.append((-460, -2048, 460, -1960))
     A(sign_box((L.SK[0] + 200, L.SK[1] - 476, 120), (L.SK[0] + 456, L.SK[1] - 472, 184), T('sign_skull'), 512, 128, back=CAULK, facing='s'))
     A(box((L.SK[0] + 192, L.SK[1] - 472, 0), (L.SK[0] + 464, L.SK[1] - 456, 192), {'side': T('planks'), 'top': T('planks'), 'bot': CAULK}))

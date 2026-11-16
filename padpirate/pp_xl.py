@@ -360,7 +360,8 @@ def reef():
     G_['custom']('chest_open', lx1_ - 70, TY - 120, TFLOOR, 180)
     K.add(box((lx1_ - 100, TY - 140, TFLOOR), (lx1_ - 40, TY - 100, TFLOOR + 24), WCLIP))
     K.teleporter((lx0_ + 40, ly1_ - 60, TFLOOR), (lx0_ + 120, ly1_ - 8, TFLOOR + 96), dest=(300, -2700, 0), angle=90, name='locker_exit')
-    K.light((lx0_ + lx1_) / 2, TY, TFLOOR + 200, 360, '0.5 0.9 0.8')
+    K.light((lx0_ + lx1_) / 2, TY, TFLOOR + 200, 520, '0.5 0.9 0.8'); K.light(lx0_ + 80, TY + 120, TFLOOR + 150, 260, '0.5 0.9 0.8')
+    K.light((TANK[2] + lx0_) / 2, TY, TFLOOR + 100, 220, '0.6 0.9 1')
     K.speaker((lx0_ + lx1_) / 2, TY, TFLOOR + 80, 'ambient/water_drippling')
 
 
@@ -600,9 +601,6 @@ def isle_dressing():
         K.ammo(w, x, y, z)
     for (x, y) in ((-1100, -4200), (-700, -3800)):
         K.item('item_armor_shard', x, y, LAG_Z)
-    for x in range(-1800, 1801, 600):
-        K.light(x, -3900, 520, 900, '1 0.95 0.85')
-        K.light(x, -4800, 520, 900, '1 0.95 0.85')
 
 
 # ------------------------------------------------------------------------------------------------ Cannon Show
