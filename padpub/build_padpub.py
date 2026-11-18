@@ -124,10 +124,10 @@ def shell():
     K.add(box((NX0 - 32, SY1, 0), (SX0, SY1 + 32, ZC), tex6(s=T('wall_snug')), detail=False))
     K.add(box((NX0 - 32, NY0, 0), (NX0, SY1, ZC), tex6(e=T('wall_snug')), detail=False))
     # front wall: the band with the door and two windows, the band to the ceiling, the facade above the ceiling
-    wall('y', YFO, SY0, SX0 - 32, SX1 + 32, 0, WZ[1], {'n': T('wall'), 's': T('facade')},
+    wall('y', YFO, SY0, SX0 - 32, SX1 + 32, 0, WZ[1], {'n': T('wall'), 's': T('facade'), 'w': T('brick')},
          [(FRONT_DOOR[0], FRONT_DOOR[1], 0, FRONT_DOOR[2])] + [(a, b, WZ[0], WZ[1]) for (a, b) in WINDOWS])
-    K.add(box((SX0 - 32, YFO, WZ[1]), (SX1 + 32, SY0, ZC), tex6(n=T('wall'), s=T('facade')), detail=False))
-    K.add(box((SX0 - 32, YFO, ZC), (SX1 + 32, SY0, ZSKY), tex6(s=T('facade')), detail=False))
+    K.add(box((SX0 - 32, YFO, WZ[1]), (SX1 + 32, SY0, ZC), tex6(n=T('wall'), s=T('facade'), w=T('brick')), detail=False))
+    K.add(box((SX0 - 32, YFO, ZC), (SX1 + 32, SY0, ZSKY), tex6(s=T('facade'), w=T('brick')), detail=False))
     # saloon west wall: garden side (brick outside, rises to the sky lid above the ceiling) and the snug partition
     wall('x', SX0 - 32, SX0, SY0, NYO, 0, ZC, {'e': T('wall'), 'w': T('brick')}, [(SIDE_DOOR[0], SIDE_DOOR[1], 0, SIDE_DOOR[2])])
     K.add(box((SX0 - 32, SY0, ZC), (SX0, NYO, ZSKY), tex6(w=T('brick')), detail=False))
@@ -327,6 +327,7 @@ def garden():
     K.add(box((NX0, YFO - 16, 0), (GATE[0] - 40, YFO + 16, 200), lw), box((GATE[1] + 40, YFO - 16, 0), (SX0 - 32, YFO + 16, 200), lw))
     for x in (GATE[0] - 40, GATE[1]):
         K.add(box((x, YFO - 24, 0), (x + 40, YFO + 24, 320), lw))
+        deco('pier_cap', x + 20, YFO, 320)
     K.occupy(NX0, YFO - 24, SX0 - 32, YFO + 24, 0, 320)
     K.timer_sound(-2100, -700, 600, 'animal/blackbird', 'birds', 25, 15)
     K.timer_sound(-2300, -400, 900, 'animal/bird_blackcap', 'birds2', 35, 20)
@@ -368,19 +369,25 @@ def cellar():
 
 # ------------------------------------------------------------------------------------------------ pads, loot, spawns
 def pads():
-    J = K.jumppad
-    J(200, 430, 0, land=(200, 860, CZ), apex=CZ + 220, name='pad_counter', edges=[(200, CY0, CZ)])
-    J(-100, 850, CZ, land=(-100, 1480, KZ), apex=KZ + 150, name='pad_topshelf', ceiling=ZC, edges=[(-100, RET_Y1, KZ)])
-    J(340, 1150, 0, land=(340, 1418, BZ), apex=BZ + 170, name='pad_backbar', ceiling=KZ - 76, edges=[(340, RET_Y1, BZ)])
-    J(1050, FIRE_Y, 0, land=(1515, FIRE_Y, OMZ), apex=OMZ + 150, name='pad_overmantel', ceiling=ZC,
+    """every pad is a theme object: the 6u disc becomes an invisible nonsolid brush (trigger, aim and bot links are
+    unchanged) and the dressing model sits on the floor, turned so its 'business end' points along the flight"""
+    def P(x, y, z, land, apex, name, dress, glow=None, **kw):
+        K.jumppad(x, y, z, land=land, apex=apex, name=name, glow=False, top_tex=T('nodraw_ns'), side_tex=T('nodraw_ns'), **kw)
+        yaw = math.degrees(math.atan2(land[1] - y, land[0] - x))
+        deco(dress, x, y, z, round(yaw - 90) % 360, lit=True)
+        if glow: K.light(x, y, z + 24, glow, '1 0.7 0.4')
+    P(200, 430, 0, (200, 860, CZ), CZ + 220, 'pad_counter', 'pad_tray', edges=[(200, CY0, CZ)])
+    P(-100, 850, CZ, (-100, 1480, KZ), KZ + 150, 'pad_topshelf', 'pad_spill', ceiling=ZC, edges=[(-100, RET_Y1, KZ)])
+    P(340, 1150, 0, (340, 1418, BZ), BZ + 170, 'pad_backbar', 'pad_trapdoor', glow=90, ceiling=KZ - 76, edges=[(340, RET_Y1, BZ)])
+    P(1050, FIRE_Y, 0, (1515, FIRE_Y, OMZ), OMZ + 150, 'pad_overmantel', 'pad_bellows', ceiling=ZC,
       edges=[(SX1 - PM.OVERMANTEL_D - 10, FIRE_Y, OMZ)])
-    J(-1960, PIANO_Y, 0, land=(NX0 + 90, PIANO_Y, PM.PIANO[2]), apex=PM.PIANO[2] + 200, name='pad_piano', ceiling=ZC,
+    P(-1960, PIANO_Y, 0, (NX0 + 90, PIANO_Y, PM.PIANO[2]), PM.PIANO[2] + 200, 'pad_piano', 'pad_tambourine', ceiling=ZC,
       edges=[(NX0 + 180, PIANO_Y, PM.PIANO[2])])
-    J(560, PHONE[1], 0, land=(PHONE[0] - 30, PHONE[1], PM.PHONE[1]), apex=PM.PHONE[1] + 190, name='pad_phone',
+    P(560, PHONE[1], 0, (PHONE[0] - 30, PHONE[1], PM.PHONE[1]), PM.PHONE[1] + 190, 'pad_phone', 'pad_coalhole', glow=70,
       edges=[(PHONE[0] - 160, PHONE[1], PM.PHONE[1])])
     # exits for bots off the tall tops (bspc only traces walk-offs 1000u down): fling pads on the far side
-    J(GEND_X, SY1 - 60, KZ, land=(-880, 820, CZ), apex=KZ + 110, name='fling_topshelf', ceiling=ZC)
-    J(PHONE[0] + 110, PHONE[1], PM.PHONE[1], land=(PHONE[0] - 760, PHONE[1] + 80, 0), apex=PM.PHONE[1] + 170, name='fling_phone')
+    P(GEND_X, SY1 - 60, KZ, (-880, 820, CZ), KZ + 110, 'fling_topshelf', 'pad_corks', ceiling=ZC)
+    P(PHONE[0] + 110, PHONE[1], PM.PHONE[1], (PHONE[0] - 760, PHONE[1] + 80, 0), PM.PHONE[1] + 170, 'fling_phone', 'pad_puddle')
 
 
 def items():

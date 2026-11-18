@@ -1867,6 +1867,197 @@ def umbrella_stand(name='umbrella_stand'):
     coll(name, cyls=[(0, 0, R, 0, H)])
 
 
+# ================================================================================================= jump pad dressings
+# Each is built around the pad centre (0, 0) with the launch direction along +y, flat parts <= 8u high; anything
+# taller (a fallen glass or bottle) sits beside the 48u trigger, across the flight direction.
+def coal_hole_tex(n=256):
+    x, y = TL.xy(n)
+    r = np.hypot(x - 0.5, y - 0.5) * 2; t = np.arctan2(y - 0.5, x - 0.5)
+    a = np.zeros((n, n, 3), np.float32) + C((52, 50, 50)) + TL.N3(n, 0, 90, 10)
+    ring = (np.abs(r - 0.9) < 0.05) | (np.abs(r - 0.62) < 0.03) | (r < 0.12)
+    spokes = (np.abs(((t / (2 * math.pi) * 16) % 1) - 0.5) < 0.08) & (r > 0.14) & (r < 0.6)
+    studs = (np.hypot(((x * 10) % 1) - 0.5, ((y * 10) % 1) - 0.5) < 0.18) & (r > 0.64) & (r < 0.86)
+    a = np.where((ring | spokes | studs)[..., None], C((96, 92, 88)), a)
+    a = np.where((r > 0.98)[..., None], C((30, 28, 28)), a)
+    im, d = draw(a)
+    f = ML.font(15, serif=True)
+    for k, ch in enumerate('PADMAN & CO  LONDON  '):
+        ang = -math.pi / 2 + k * 2 * math.pi / 21
+        ctext(d, n / 2 + 0.38 * n * math.cos(ang), n / 2 + 0.38 * n * math.sin(ang), ch, f, (120, 116, 110))
+    return arr(im)
+
+
+def puddle_tex(n=128):
+    x, y = TL.xy(n)
+    return C((84, 104, 126)) + TL.N3(n, 2, 91, 10)
+
+
+def pad_materials():
+    m('coal_hole', coal_hole_tex(), 'lms', v=0.12, shade=60)
+    m('hatch', TL.planks((96, 62, 36), n_planks=4, gap=(40, 26, 16), grain=10), shade=30)
+    m('slit_glow', TL.solid((255, 190, 110), 1, 92, 32), 'glow')
+    m('spill', TL.solid((176, 104, 28), 2, 93, 64), 'lms', v=0.35, shade=60)
+    m('mat', beer_mat(), shade=40)
+    m('leather', TL.solid((110, 60, 32), 3, 94, 64) + TL.N3(64, 0, 95, 10), shade=40)
+    m('skin', TL.solid((232, 214, 176), 2, 96, 64), shade=40)
+    m('cork', TL.solid((176, 128, 80), 3, 97, 32) + TL.N3(32, 0, 98, 14), shade=60)
+    m('foil', TL.metal((214, 176, 70)), 'lms', v=0.3, shade=60)
+    m('wet', puddle_tex(), 'lms', v=0.55, shade=60)
+    m('autumn', TL.solid((190, 110, 40), 3, 99, 32), two=True, shade=60)
+
+
+def _blob(M, r, z, n=24, seed=0, amp=0.25, cx=0.0, cy=0.0):
+    """flat irregular puddle shape (facing up)"""
+    rng = np.random.default_rng(seed)
+    ph = rng.uniform(0, 2 * math.pi, 3)
+    pts = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        rr = r * (1 + amp * (0.5 * math.sin(2 * a + ph[0]) + 0.3 * math.sin(3 * a + ph[1]) + 0.2 * math.sin(5 * a + ph[2])))
+        pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a), z))
+    M.poly(pts, (0, 0, 1), [(0.5 + (p[0] - cx) / (2.6 * r), 0.5 - (p[1] - cy) / (2.6 * r)) for p in pts])
+
+
+def lying_glass(X, c, axis_ang, L=80, r0=15, r1=20, beer=0.0):
+    """a pint glass lying on its side, axis along angle axis_ang (radians) in the xy plane"""
+    d = np.array([math.cos(axis_ang), math.sin(axis_ang), 0.0])
+    p0 = np.array(c, float) + (0, 0, r1)
+    tube(X.mesh(M_['glass']), [p0 - d * L / 2, p0 + d * L / 2], [r0, r1], nseg=12, caps=(True, False))
+    if beer > 0:
+        tube(X.mesh(M_['beer']), [p0 - d * L / 2 + (0, 0, -r0 * 0.5), p0 - d * (L / 2 - L * beer) + (0, 0, -r0 * 0.5)],
+             [r0 * 0.5, r0 * 0.6], nseg=8)
+
+
+def pad_trapdoor(name='pad_trapdoor'):
+    """cellar trapdoor: oak frame flush with the floor, the hatch lifted an inch at the far edge, warm light leaking out
+    of the slit, an iron ring pull"""
+    X = ML.Model()
+    W = 75
+    for (mn, mx) in (((-W - 12, -W - 12, 0), (W + 12, -W, 4)), ((-W - 12, W, 0), (W + 12, W + 12, 4)),
+                     ((-W - 12, -W, 0), (-W, W, 4)), ((W, -W, 0), (W + 12, W, 4))):
+        bx(X, 'mahog_dark', mn, mx, r=1)
+    X.mesh(M_['slit_glow']).quad((-W, -W, 1), (W, -W, 1), (W, W, 1), (-W, W, 1), n=(0, 0, 1))
+    # hatch hinged on the near (-y) edge, lifted 9u at the far edge
+    tilt = math.atan2(9, 2 * W)
+    Y = ML.Model()
+    bx(Y, 'hatch', (-W + 2, 0, 0), (W - 2, 2 * W - 2, 5), r=1, tile=128)
+    for x in (-W + 20, W - 20):
+        bx(Y, 'iron', (x - 6, 4, 5), (x + 6, 2 * W - 10, 6), r=1, faces='t')
+    path = [(18 * math.cos(a), 2 * W - 30 + 18 * math.sin(a), 7) for a in np.linspace(0, 2 * math.pi, 13)]
+    tube(Y.mesh(M_['iron']), path, [2.5] * 13, nseg=5, caps=(False, False))
+    R = np.array([[1, 0, 0], [0, math.cos(tilt), -math.sin(tilt)], [0, math.sin(tilt), math.cos(tilt)]])
+    X.add_model(Y, R=R, t=(0, -W, 2))
+    ML.save(name, X)
+
+
+def pad_coalhole(name='pad_coalhole'):
+    """cast-iron coal-hole cover set into the pavement, with a stone surround"""
+    X = ML.Model()
+    revolve(X.mesh(M_['stone_m']), [(78, 0), (78, 2), (64, 3)], n=28)
+    disc(X.mesh(M_['coal_hole']), 64, 3, up=True, n=28)
+    ML.save(name, X)
+
+
+def pad_spill(name='pad_spill'):
+    """a knocked-over pint: ale puddle with a foamy edge, a soggy beer mat, the glass lying beside the trigger"""
+    X = ML.Model()
+    _blob(X.mesh(M_['foam']), 74, 0.6, seed=3, amp=0.3)
+    _blob(X.mesh(M_['spill']), 66, 1.2, seed=3, amp=0.3)
+    Y = ML.Model(); disc(Y.mesh(M_['mat']), 32, 0, n=20)
+    X.add_model(Y, R=rot_z(0.4), t=(6, -4, 1.8))
+    lying_glass(X, (-82, 10, 0), math.radians(100), beer=0.15)
+    _blob(X.mesh(M_['spill']), 22, 1.4, seed=5, cx=-60, cy=40)
+    ML.save(name, X)
+
+
+def pad_tray(name='pad_tray'):
+    """a dropped round brass serving tray, two empty glasses rolled off to the side"""
+    X = ML.Model()
+    revolve(X.mesh(M_['brass']), [(0, 0.5), (66, 0.5), (70, 2), (72, 7), (68, 7), (66, 2.5), (0, 2.5)], n=32)
+    disc(X.mesh(M_['brass']), 66, 2.6, up=True, n=32)
+    lying_glass(X, (92, 30, 0), math.radians(70))
+    lying_glass(X, (-96, -24, 0), math.radians(160))
+    ML.save(name, X)
+
+
+def pad_bellows(name='pad_bellows'):
+    """fireside bellows lying flat, the brass nozzle pointing along +y (at the fireplace)"""
+    X = ML.Model()
+    shape = [(0, 70)] + [(52 * math.sin(a), -20 + 55 * math.cos(a)) for a in np.linspace(0.5, 2 * math.pi - 0.5, 15)]
+    prism(X.mesh(M_['oak']), shape, 0, 2.5, tile=128)
+    prism(X.mesh(M_['leather']), [(x * 0.92, y * 0.92 + 4) for (x, y) in shape], 2.5, 5.5, tile=64)
+    prism(X.mesh(M_['oak']), shape, 5.5, 8, tile=128)
+    tube(X.mesh(M_['brass']), [(0, 66, 4), (0, 120, 4), (0, 140, 3)], [7, 5, 3], nseg=8)
+    for sx in (-1, 1):
+        tube(X.mesh(M_['oak']), [(sx * 18, -76, 4), (sx * 22, -120, 4)], [4, 5], nseg=6)
+    for k in range(5):
+        sphere(X.mesh(M_['brass']), (0, 40 - k * 22, 8.5), 3, nu=6, nv=3)
+    ML.save(name, X)
+
+
+def pad_tambourine(name='pad_tambourine'):
+    """a tambourine dropped on the floor: wooden hoop with brass jingles, stretched skin"""
+    X = ML.Model()
+    R = 56
+    revolve(X.mesh(M_['mahog']), [(R, 0), (R, 8)], n=28)
+    revolve(X.mesh(M_['mahog']), [(R - 5, 8), (R - 5, 0)], n=28, inward=True)
+    revolve(X.mesh(M_['mahog']), [(R, 8), (R - 5, 8)], n=28)
+    disc(X.mesh(M_['skin']), R - 5, 7, up=True, n=28)
+    for k in range(5):
+        a = 2 * math.pi * (k + 0.5) / 5
+        for dz in (2.5, 5.5):
+            Y = ML.Model(); revolve(Y.mesh(M_['brass']), [(9, -1), (9, 1)], n=10); disc(Y.mesh(M_['brass']), 9, 1, n=10)
+            X.add_model(Y, R=rot_z(a) @ np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0.0]]), t=(R * math.cos(a), R * math.sin(a), dz))
+    ML.save(name, X)
+
+
+def pad_corks(name='pad_corks'):
+    """popped champagne: a fallen bottle beside the trigger, corks and foil scattered round the pad"""
+    X = ML.Model()
+    rng = np.random.default_rng(11)
+    for k in range(6):
+        a = rng.uniform(0, 2 * math.pi); rr = rng.uniform(16, 60)
+        c = np.array([rr * math.cos(a), rr * math.sin(a), 0.0])
+        d = np.array([math.cos(a * 3), math.sin(a * 3), 0.0])
+        tube(X.mesh(M_['cork']), [c + d * -9 + (0, 0, 7), c + d * 7 + (0, 0, 7)], [7, 5], nseg=8)
+    for k in range(3):
+        a = rng.uniform(0, 2 * math.pi); rr = rng.uniform(20, 50)
+        _blob(X.mesh(M_['foil']), 9, 0.8 + k * 0.2, n=8, seed=20 + k, amp=0.4, cx=rr * math.cos(a), cy=rr * math.sin(a))
+    Y = ML.Model()
+    bottle_mesh(Y, 'bottle1', 0, 0, -64, kind=0, s=1.0)
+    X.add_model(Y, R=np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0.0]]), t=(86, -50, 16))
+    _blob(X.mesh(M_['spill']), 26, 0.6, seed=9, cx=96, cy=-50)
+    ML.save(name, X)
+
+
+def pad_puddle(name='pad_puddle'):
+    """rainwater puddle on the phone box roof with a few fallen leaves"""
+    X = ML.Model()
+    _blob(X.mesh(M_['wet']), 70, 0.6, seed=13, amp=0.35)
+    rng = np.random.default_rng(14)
+    for k in range(4):
+        a = rng.uniform(0, 2 * math.pi); rr = rng.uniform(10, 60); c = (rr * math.cos(a), rr * math.sin(a))
+        Y = ML.Model(); ellipsoid(Y.mesh(M_['autumn']), (0, 0, 0), 14, 7, 0.8, nu=8, nv=3)
+        X.add_model(Y, R=rot_z(rng.uniform(0, 6.28)), t=(c[0], c[1], 1.6))
+    ML.save(name, X)
+
+
+def pier_cap(name='pier_cap'):
+    """stone cap with a ball finial for the garden gate piers (40 x 48 pier top)"""
+    X = ML.Model()
+    bx(X, 'stone_m', (-20, -24, 0), (20, 24, 16), r=2, k=2)
+    lathe(X, 'stone_m', [(14, 16), (10, 24), (10, 30)], n=12, cap=False)
+    sphere(X.mesh(M_['stone_m']), (0, 0, 48), 18, nu=14, nv=8)
+    ML.save(name, X)
+
+
+def all_pad_models():
+    m('stone_m', TL.solid((176, 170, 160), 3, 100, 64), shade=40)
+    pad_materials()
+    pier_cap()
+    pad_trapdoor(); pad_coalhole(); pad_spill(); pad_tray(); pad_bellows(); pad_tambourine(); pad_corks(); pad_puddle()
+
+
 # ================================================================================================= cellar
 def barrel_rack(name='barrel_rack', n=3):
     """three barrels on their sides on a timber cradle (cellar)"""
@@ -1918,3 +2109,4 @@ def all_models():
     picnic_table(); parasol(); barrel(); barrel('barrel_plain', standing=False); keg(); crate(); planter()
     hanging_basket(); window_box(); coat_stand(); umbrella_stand()
     barrel_rack()
+    all_pad_models()
