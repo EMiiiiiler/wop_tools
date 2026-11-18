@@ -1,0 +1,10 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padpub
+front_door:         0,-1382,0 > 0,-1050,0
+side_door:          -1750,-760,0 > -1450,-760,0
+snug_door:          -1780,390,0 > -1450,390,0
+back_door:          -2160,-382,0 > -2160,-50,0
+gate:               -2100,-1432,0 > -2100,-1032,0
+staff_floor:        -1350,500,0 > -500,1180,0
+snug_length:        -1900,1150,0 > -1900,-60,0
+phone_box:          520,-1870,0 > 1050,-1750,16

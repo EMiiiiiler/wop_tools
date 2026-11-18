@@ -1,0 +1,58 @@
+{
+ "map": "wop_padpub",
+ "ns": "padpub",
+ "longname": "The Padman's Arms",
+ "generator": "build_padpub.py",
+ "bounds": [
+  -2560,
+  -2100,
+  1600,
+  1600
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "The Padman's Arms",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "bar:0,-300,380,90,-5",
+   "backbar:-300,780,720,80,-2",
+   "overview:1450,-1100,1450,140,-25",
+   "topshelf:-1050,1480,1440,0,-22",
+   "islands:-1400,-1050,450,35,-8",
+   "fireplace:500,250,420,0,-4",
+   "clock:1000,-650,380,-20,-4",
+   "frontwin:0,0,350,270,-3",
+   "snug:-1800,120,450,115,-8",
+   "piano:-1800,400,500,180,-6",
+   "garden:-1960,-1160,450,100,-10",
+   "street:-500,-2060,320,50,6",
+   "phone:250,-1900,320,10,4",
+   "cellar:0,-460,-1560,90,-12"
+  ]
+ },
+ "levelshots": {
+  "cover": "bar",
+  "shots": [
+   "backbar",
+   "street",
+   "snug"
+  ]
+ }
+}
