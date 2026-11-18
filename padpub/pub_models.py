@@ -775,6 +775,8 @@ def materials():
     m('green_paint', TL.solid((26, 66, 44), 2, 77, 64), lms, v=0.1, shade=30)
     m('fascia_m', fascia_sign(), shade=30)
     m('till_keys', till_keys(), shade=40)
+    m('umbrella_black', TL.fabric((28, 28, 32), weave=48), shade=40)
+    m('umbrella_red', TL.stripes((150, 24, 30), (30, 60, 40), n_stripes=6), shade=40)
 
 
 def alabaster(n=64):
@@ -1833,6 +1835,38 @@ def chalk_tex_reg():
     m('chalk', chalk_scores(), shade=30)
 
 
+def umbrella_stand(name='umbrella_stand'):
+    """Victorian umbrella stand: a brass-banded mahogany drum with two furled umbrellas and a walking cane"""
+    X = ML.Model()
+    R, H = 70, 300
+    lathe(X, 'mahog', [(R - 4, 0), (R, 10), (R, H - 10), (R + 4, H - 4), (R + 4, H)], n=20, u=2, cap=False)
+    revolve(X.mesh(M_['mahog_dark']), [(R + 4, H), (R - 6, H), (R - 6, H - 30)], n=20)            # rim, then into the drum
+    disc(X.mesh(M_['soil']), R - 6, H - 30, up=True, n=20)                                         # dark inside
+    for z in (40, H - 50):
+        revolve(X.mesh(M_['brass']), [(R + 2, z - 8), (R + 2, z + 8)], n=20)
+    for k in range(4):
+        a = math.radians(45 + 90 * k)
+        sphere(X.mesh(M_['brass']), (R * math.cos(a), R * math.sin(a), 6), 8, nu=8, nv=4)
+    # furled umbrellas leaning outward: canopy cone + ferrule tip + crook handle
+    for (cx, cy, lean, mat, hcol) in ((-20, 10, (-0.18, 0.08), 'umbrella_black', 'mahog'),
+                                      (22, -14, (0.16, -0.12), 'umbrella_red', 'mahog_dark')):
+        base = np.array([cx, cy, H - 120.0]); d = np.array([lean[0], lean[1], 1.0]); d /= np.linalg.norm(d)
+        top = base + d * 420
+        tube(X.mesh(M_['chrome']), [base, base + d * 30], [3, 3], nseg=6)                           # ferrule
+        tube(X.mesh(M_[mat]), [base + d * 30, base + d * 120, base + d * 300, base + d * 330], [6, 16, 14, 5], nseg=10)
+        tube(X.mesh(M_['chrome']), [base + d * 330, top - d * 40], [3, 3], nseg=6)                  # shaft
+        h0 = top - d * 40
+        side = np.cross(d, [0, 0, 1.0]); side /= max(1e-6, np.linalg.norm(side))
+        hook = [h0, h0 + d * 40, h0 + d * 60 + side * 20, h0 + d * 50 + side * 46, h0 + d * 22 + side * 50]
+        tube(X.mesh(M_[hcol]), hook, [6, 6, 6, 6, 5], nseg=8)
+    # walking cane with a brass knob
+    base = np.array([0, 34, H - 120.0]); d = np.array([0.05, 0.2, 1.0]); d /= np.linalg.norm(d)
+    tube(X.mesh(M_['mahog_dark']), [base, base + d * 430], [5, 6], nseg=8)
+    sphere(X.mesh(M_['brass']), base + d * 438, 11, nu=8, nv=5)
+    ML.save(name, X)
+    coll(name, cyls=[(0, 0, R, 0, H)])
+
+
 # ================================================================================================= cellar
 def barrel_rack(name='barrel_rack', n=3):
     """three barrels on their sides on a timber cradle (cellar)"""
@@ -1882,5 +1916,5 @@ def all_models():
     facade_pilaster()
     phone_box(); pillar_box(); street_lamp(); hanging_sign(); sign_bracket(); a_board()
     picnic_table(); parasol(); barrel(); barrel('barrel_plain', standing=False); keg(); crate(); planter()
-    hanging_basket(); window_box(); coat_stand()
+    hanging_basket(); window_box(); coat_stand(); umbrella_stand()
     barrel_rack()

@@ -277,7 +277,7 @@ def saloon():
     K.light(1400, SY1 - 400, 500, 180, '0.8 0.6 1')
     place('coat_stand', -1480, SY0 + 130, 0)
     K.catalog('pad_ddmix/plants/cane5.md3', 1500, -1100, 0, scale=1.6, angle=0)
-    K.catalog('pad_ddmix/plants/bonsai.md3', 1460, 860, 0, scale=1.0, angle=0)
+    place('umbrella_stand', 1480, 880, 0)
     # wall art: oval mirrors with sconces and hunting prints on the west wall; prints on the east wall, notices north
     for (y, kind) in ((-450, 'mirror'), (-20, 'print0'), (700, 'mirror'), (1150, 'print1')):
         if kind == 'mirror':
