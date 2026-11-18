@@ -749,6 +749,15 @@ def materials():
         m(f'screen_{th}', game_screen(th), 'flicker')
     m('grille', grille_tex(), shade=30)
     m('led_red', TL.solid((255, 70, 60), 1, 122, 16), 'glow')
+    m('plate_paper', plate_tex(), shade=60)
+    m('plate_paper_side', TL.solid((240, 238, 230), 1, 134, 64), two=True, shade=60)
+    m('crust', TL.solid((196, 140, 76), 3, 135, 64) + TL.N3(64, 1, 136, 10), shade=60)
+    m('cup', cup_tex(), 'lms', v=0.1, shade=50)
+    m('cup_in', TL.solid((90, 50, 30), 2, 137, 64), shade=50)
+    m('cup_lid', TL.solid((240, 240, 236), 1, 138, 64), 'lms', v=0.2, shade=50)
+    m('straw', TL.stripes((250, 250, 250), (200, 30, 36), 8), shade=60)
+    m('cola', TL.solid((70, 30, 14), 3, 139, 64) + TL.N3(64, 1, 140, 8), 'lms', v=0.35, shade=40)
+    m('ice', TL.solid((220, 236, 244), 1, 141, 32), 'glass', c='0.25 0.28 0.30')
     m('screen', screen_tex(), 'flicker')
     m('gum', TL.dots((240, 240, 240), (230, 60, 60), 8, r=0.3), shade=60)
     m('gumglass', TL.solid((200, 220, 230), 2, 74, 64), 'glass', c='0.12 0.13 0.15')
@@ -1608,6 +1617,116 @@ def bus_bin():
     coll('bus_bin', [((-130, -90, 0), (130, 90, 90))])
 
 
+# ------------------------------------------------------------------------------------------------- jump-pad skins
+PLATE_R = 56            # paper plate radius (the pad disc under it is r 34, 2u thick)
+CUP_L, CUP_R0, CUP_R1 = 78, 16, 22      # knocked-over soda cup: length, base radius, mouth radius
+CUP_Y0 = 50             # cup mouth distance from the pad centre (outside the disc and the trigger)
+PAD_THICK_PLATE, PAD_THICK_SPILL = 2, 1
+
+
+def plate_tex(n=256):
+    """greasy white paper plate seen from above: fluted rim, an orange grease ring, crumbs"""
+    x, y = TL.xy(n)
+    r = np.hypot(x - 0.5, y - 0.5) * 2
+    a = np.arctan2(y - 0.5, x - 0.5)
+    c = TL.fill(n, (246, 244, 238), 2, 130) + TL.N3(n, 2, 131, 4)
+    flute = (r > 0.62) & (np.cos(a * 72) > 0.2)
+    c = np.where(flute[..., None], c - 18, c)
+    c = np.where((np.abs(r - 0.6) < 0.012)[..., None], c - 30, c)
+    g = TL.N3(n, 3, 132, 1)[..., 0]
+    grease = (r < 0.55) & (g > 0.45) & (np.hypot(x - 0.42, y - 0.46) < 0.24)
+    c = np.where(grease[..., None], c * np.array([1.0, 0.86, 0.62]), c)
+    rng = np.random.default_rng(133)
+    for _ in range(18):
+        rr, aa = rng.random() * 0.5, rng.random() * 6.283
+        px, py = 0.5 + rr * 0.5 * math.cos(aa), 0.5 + rr * 0.5 * math.sin(aa)
+        c = np.where((np.hypot(x - px, y - py) < 0.008 + rng.random() * 0.008)[..., None], C((200, 150, 80)), c)
+    return c
+
+
+def cup_tex(w=256, h=128):
+    """90s paper soda cup wrap: red and white bands, a wave and 'COLD DRINKS' (u round the cup, v base -> mouth)"""
+    c = np.zeros((h, w, 3), np.float32) + C((250, 250, 248))
+    im, d = draw(c)
+    d.rectangle((0, h - 22, w, h), fill=(200, 30, 36)); d.rectangle((0, 0, w, 16), fill=(200, 30, 36))
+    for xx in range(0, w, 6):
+        d.line((xx, 60 + 10 * math.sin(xx / 14), xx + 6, 60 + 10 * math.sin((xx + 6) / 14)), fill=(30, 90, 190), width=6)
+    f = fit_font(d, 'COLD DRINKS', w / 2 - 20, 22, serif=False)
+    for k in range(2):
+        d.text((10 + k * w / 2, 80), 'COLD DRINKS', font=f, fill=(200, 30, 36))
+    return arr(im)
+
+
+def puddle_shape(r0, stretch, seed):
+    """star-shaped blob outline (angle, radius) pulled out towards +y by `stretch`"""
+    rng = np.random.default_rng(seed)
+    ph = rng.random(3) * 6.283
+    pts = []
+    for k in range(40):
+        a = 2 * math.pi * k / 40
+        r = r0 * (1 + 0.16 * math.sin(3 * a + ph[0]) + 0.1 * math.sin(5 * a + ph[1]) + 0.06 * math.sin(9 * a + ph[2]))
+        r += stretch * max(0.0, math.sin(a)) ** 3
+        pts.append((r * math.cos(a), r * math.sin(a)))
+    return pts
+
+
+def flat_blob(M, outline, z, uv_scale):
+    """fan-triangulated flat blob facing up (vertices clockwise seen from above)"""
+    ring = outline[::-1]
+    P = [(0.0, 0.0)] + ring
+    for k in range(len(ring)):
+        a, b = ring[k], ring[(k + 1) % len(ring)]
+        tri = [(0.0, 0.0, z), (a[0], a[1], z), (b[0], b[1], z)]
+        M.poly(tri, (0, 0, 1), [(0.5 + p[0] / uv_scale, 0.5 - p[1] / uv_scale) for p in tri])
+
+
+def paper_plate():
+    """jump-pad skin: a greasy paper plate (flat base on the 2u pad disc, fluted rim rising to r PLATE_R) with a
+    leftover crust"""
+    X = ML.Model()
+    t = PAD_THICK_PLATE
+    revolve(X.mesh(M_['plate_paper_side']), [(PLATE_R, t + 9), (PLATE_R - 1, t + 10), (PLATE_R * 0.66, t + 0.5), (PLATE_R * 0.64, 0),
+                                             (PLATE_R, t + 7)], n=36)
+    flat_blob(X.mesh(M_['plate_paper']), [(PLATE_R * math.cos(a), PLATE_R * math.sin(a))
+                                           for a in np.linspace(0, 2 * math.pi, 37)[:-1]], t + 0.3, 2 * PLATE_R)
+    # a curved leftover crust near the rim
+    pts = [(PLATE_R * 0.62 * math.cos(a), PLATE_R * 0.62 * math.sin(a), t + 3) for a in np.linspace(0.3, 1.5, 6)]
+    tube(X.mesh(M_['crust']), pts, [3, 5, 6, 6, 5, 3], nseg=8)
+    ML.save('pad_plate', X)
+
+
+def soda_spill():
+    """jump-pad skin: a cola puddle on the pad (origin) and a knocked-over paper cup lying beside it (along +y, mouth
+    towards the pad) with its lid, straw and a few ice cubes"""
+    X = ML.Model()
+    t = PAD_THICK_SPILL
+    outline = puddle_shape(52, 46, 140)
+    flat_blob(X.mesh(M_['cola']), outline, t + 0.4, 128)
+    # the cup: revolve about z, turn the axis onto -y (mouth at y = CUP_Y0, base at y = CUP_Y0 + CUP_L), tilt so the
+    # lowest line rests on the floor
+    C_ = ML.Model()
+    revolve(C_.mesh(M_['cup']), [(CUP_R0, 0), (CUP_R1, CUP_L)], n=18)
+    revolve(C_.mesh(M_['cup_in']), [(CUP_R0 - 1.5, 2), (CUP_R1 - 1.5, CUP_L)], n=18, inward=True)
+    revolve(C_.mesh(M_['cup']), [(CUP_R1 - 1.5, CUP_L), (CUP_R1 + 1, CUP_L), (CUP_R1 + 1, CUP_L - 3)], n=18)
+    disc(C_.mesh(M_['cup']), CUP_R0, 0, up=False, n=18)
+    a = math.atan2(CUP_R1 - CUP_R0, CUP_L)
+    ca, sa = math.cos(a), math.sin(a)
+    to_y = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float)        # z axis -> -y   (det +1)
+    tilt = np.array([[1, 0, 0], [0, ca, sa], [0, -sa, ca]], float)    # lift the mouth end so the bottom line is level
+    R = tilt @ to_y
+    base = np.array([0, CUP_Y0 + CUP_L * ca, 0.0])
+    X.add_model(C_, R=R, t=(0, CUP_Y0 + CUP_L, CUP_R0 * ca + 0.5))
+    # lid lying flat a little way off, a bent straw out of the mouth
+    revolve(X.mesh(M_['cup_lid']), [(CUP_R1 + 2, 0), (CUP_R1 + 2, 4), (CUP_R1 - 2, 6), (6, 6), (0, 7)], n=18, cx=46, cy=CUP_Y0 + 30)
+    tube(X.mesh(M_['straw']), [(4, CUP_Y0 + 10, CUP_R1), (10, CUP_Y0 - 10, 8), (22, CUP_Y0 - 36, 2.5)], [2.2, 2.2, 2.2], nseg=6)
+    for (ix, iy, ia) in ((-18, CUP_Y0 - 14, 0.3), (12, CUP_Y0 - 26, 0.9), (-6, CUP_Y0 - 40, 1.6)):
+        Y = ML.Model()
+        rbox(Y.mesh(M_['ice']), (-6, -6, 0), (6, 6, 10), r=2, k=1)
+        X.add_model(Y, R=rot_z(ia), t=(ix, iy, t))
+    ML.save('pad_spill', X)
+    coll('pad_spill', [((-CUP_R1 + 4, CUP_Y0 + 6, 0), (CUP_R1 - 4, CUP_Y0 + CUP_L - 2, 2 * CUP_R0))])
+
+
 def all_models():
     booth('booth_double', '+-'); booth('booth_end_n', '+'); booth('booth_end_s', '-')
     booth_table(); condiments()
@@ -1619,4 +1738,5 @@ def all_models():
     oven(); peel(); prep_table(); mixer(); flour_sacks(); tomato_case(); can_rack(); sink_dress()
     plate_steps(12, 16, 32, 150)
     hydrant(); trash_basket(); newsbox(); street_lamp(); wet_sign(); flags()
+    paper_plate(); soda_spill()
     frame_gold(300, 380, 'frame_a'); arch(); awning_valance(); door_leaf(); tv_bracket(); mop_bucket(); bus_bin()

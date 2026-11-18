@@ -280,21 +280,35 @@ def outside():
 
 
 # ------------------------------------------------------------------------------------------------ pads, loot, spawns
+def plate_skin(K, x, y, z, yaw, radius, thick):
+    """jump pad dressed as a greasy paper plate"""
+    deco('pad_plate', x, y, z, angle=round(yaw) % 360)
+
+
+def spill_skin(side=1):
+    """jump pad dressed as spilled soda: the puddle is the pad, the knocked-over cup lies beside it (across the flight
+    direction, on `side`), so it is never in the way of the launch"""
+    def skin(K, x, y, z, yaw, radius, thick):
+        ang = (round(yaw / 90) * 90 + (0 if side > 0 else 180)) % 360     # model +y = cup direction = yaw + 90 (or - 90)
+        place('pad_spill', x, y, z, angle=ang)
+    return skin
+
+
 def pads():
     J = K.jumppad
     tz = PM.TABLE_Z
-    J(-110, TABLES[0], 0, land=(-640, TABLES[0], tz), apex=tz + 260, name='pad_table_w1', edges=[(-330, TABLES[0], tz)])
-    J(110, TABLES[1], 0, land=(640, TABLES[1], tz), apex=tz + 260, name='pad_table_e2', edges=[(330, TABLES[1], tz)])
-    J(-110, TABLES[3], 0, land=(-640, TABLES[3], tz), apex=tz + 260, name='pad_table_w4', edges=[(-330, TABLES[3], tz)])
-    J(-260, 1960, 0, land=(-260, 2270, CZ), apex=CZ + 220, name='pad_counter', edges=[(-260, COUNTER[1], CZ)])
+    J(-110, TABLES[0], 0, land=(-640, TABLES[0], tz), apex=tz + 260, name='pad_table_w1', edges=[(-330, TABLES[0], tz)], skin=spill_skin(1), thick=PM.PAD_THICK_SPILL)
+    J(110, TABLES[1], 0, land=(640, TABLES[1], tz), apex=tz + 260, name='pad_table_e2', edges=[(330, TABLES[1], tz)], skin=spill_skin(-1), thick=PM.PAD_THICK_SPILL)
+    J(-110, TABLES[3], 0, land=(-640, TABLES[3], tz), apex=tz + 260, name='pad_table_w4', edges=[(-330, TABLES[3], tz)], skin=spill_skin(-1), thick=PM.PAD_THICK_SPILL)
+    J(-260, 1960, 0, land=(-260, 2270, CZ), apex=CZ + 220, name='pad_counter', edges=[(-260, COUNTER[1], CZ)], skin=plate_skin, thick=PM.PAD_THICK_PLATE)
     J(-260, 2430, CZ, land=(100, SHELF_Y0 + 150, SHELF[2]), apex=SHELF[2] + 190, name='pad_shelf', ceiling=ZC,
-      edges=[(30, SHELF_Y0, SHELF[2])])
+      edges=[(30, SHELF_Y0, SHELF[2])], skin=plate_skin, thick=PM.PAD_THICK_PLATE)
     J(240, COOLER[1], 0, land=(730, COOLER[1], PM.COOLER[2]), apex=PM.COOLER[2] + 190, name='pad_cooler', ceiling=ZC,
-      edges=[(550, COOLER[1], PM.COOLER[2])])
-    J(-300, 3110, 0, land=(-200, 3700, OZ), apex=OZ + 270, name='pad_oven', ceiling=ZC, edges=[(-230, OVEN[1], OZ)])
+      edges=[(550, COOLER[1], PM.COOLER[2])], skin=spill_skin(1), thick=PM.PAD_THICK_SPILL)
+    J(-300, 3110, 0, land=(-200, 3700, OZ), apex=OZ + 270, name='pad_oven', ceiling=ZC, edges=[(-230, OVEN[1], OZ)], skin=plate_skin, thick=PM.PAD_THICK_PLATE)
     # the sink counter is reached by walking off the oven top's east edge (no floor pad clears the oven)
     J(-450, -2600, 0, land=(-450, YFO - 90, PM.AWN_Z), apex=PM.AWN_Z + 260, name='pad_awning', ceiling=ZSKY,
-      edges=[(-450, YFO - PM.AWN_D, PM.AWN_Z)])
+      edges=[(-450, YFO - PM.AWN_D, PM.AWN_Z)], skin=spill_skin(1), thick=PM.PAD_THICK_SPILL)
 
 
 def items():

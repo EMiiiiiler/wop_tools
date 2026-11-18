@@ -224,6 +224,9 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   distance to the intended landing. bspc gives the pad 10 % more horizontal speed, steps 0.1 s, stops at 3 s: floor
   pads can't reach ~1450u up in time (padgarage roof: a woodshed roof at 800 as the first stage).
 - `K.jumppad` warns when the launch spot is already occupied (a prop placed first); a pad inside a prop has no area.
+- Themed pads: `K.jumppad(..., skin=fn, thick=1-2)` turns the glowing disc into invisible weapclip of the same size and
+  calls `fn(K, x, y, z, yaw, radius, thick)` to dress it (padpizzeria: greasy paper plates, spilled soda with a knocked-over
+  cup lying ACROSS the flight direction). Trigger, target and bot links are unchanged; glow is off unless `glow='force'`.
 - bspc lands a pad where the arc first touches ground: fling pads on small tops go on the far side.
 - Pad up through a hole = lift (target past the hole edge, high apex). Pad onto a cut-away upper level: stay outside
   the front plane until above slab + 24. Pad into an opening behind a ledge: apex at the opening, <= top - 32.

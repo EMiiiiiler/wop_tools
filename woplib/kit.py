@@ -356,10 +356,14 @@ class MapKit:
 
     # ------------------------------------------------------------------ jump pads, teleports, secrets
     def jumppad(self, x, y, z, land, apex, name, ceiling=None, edges=(), glow=True, top_tex=None, side_tex=None,
-                radius=34, light_rgb='1 0.6 0.8'):
-        """pad disc (6u) + trigger_push (48 x 48 x 64) + target_position at the apex, t_up/(t_up+t_down) of the way
-        to `land` (x, y, floor). Warns for flights > 2.9 s, apex too close to `ceiling`, < 20u over `edges`.
-        Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground)."""
+                radius=34, light_rgb='1 0.6 0.8', skin=None, thick=6):
+        """pad disc (`thick`, 6u) + trigger_push (48 x 48 x 64) + target_position at the apex, t_up/(t_up+t_down) of
+        the way to `land` (x, y, floor). Warns for flights > 2.9 s, apex too close to `ceiling`, < 20u over `edges`.
+        Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground).
+        skin: a themed look instead of the glowing disc - a callable skin(K, x, y, z, yaw, radius, thick) that places
+        the dressing (a paper plate, a spilled cup...). The disc then turns into invisible weapclip of the same size
+        (players still stand on it, bots still link it) and the glow light is off unless glow='force'. `yaw` is the
+        launch direction in degrees, so skins can put props beside or behind the pad, never in the flight path."""
         x, y = round(x), round(y)
         name = self.uniq(name)
         if not self.free(x, y, radius, z, z + 90, margin=0):
@@ -368,14 +372,18 @@ class MapKit:
         P = padmath.plan(z, (x, y), land, apex, ceiling=ceiling, edges=edges)
         for w in P['warnings']: self.warn(f'pad {name}: {w}')
         if P['target'] is None: raise ValueError(f'pad {name}: {P["warnings"]}')
-        top = top_tex or self.T('jumppad'); side = side_tex or self.T('rubber')
-        disc = cyl(x, y, radius, z, z + 6, {'top': top, 'side': side, 'bot': side}, 12)
+        if skin is not None:
+            top = side = WCLIP
+            glow = glow == 'force'
+        else:
+            top = top_tex or self.T('jumppad'); side = side_tex or self.T('rubber')
+        disc = cyl(x, y, radius, z, z + thick, {'top': top, 'side': side, 'bot': side}, 12)
         for f in disc.faces:
             if f.n[2] > 0.9:
                 s = 2 * radius / 256
                 f.sc = (s, s); f.off = ((-(x - radius) / s) % 256, ((y + radius) / s) % 256)
         self.add(disc)
-        trig = box((x - 24, y - 24, z + 6), (x + 24, y + 24, z + 70), TRIG)
+        trig = box((x - 24, y - 24, z + thick), (x + 24, y + 24, z + thick + 64), TRIG)
         self.M.ent('trigger_push', brushes=[trig], target=name)
         self.M.ent('target_position', P['target'], targetname=name)
         self.spots['pads'].append(dict(name=name, pad=(x, y, z), origin=P['origin'], target=P['target'],
@@ -383,6 +391,8 @@ class MapKit:
         if glow: self.light(x, y, z + 48, 120, light_rgb)
         self.occupy_r(x, y, 60, z, z + 90)
         self.occupy_r(land[0], land[1], 64, land[2], land[2] + 96)      # props scattered later must not fill the landing
+        if skin is not None:
+            skin(self, x, y, z, math.degrees(math.atan2(land[1] - y, land[0] - x)), radius, thick)
         return P
 
     def teleporter(self, mn, mx, dest, angle, name, visible_tex=None):
