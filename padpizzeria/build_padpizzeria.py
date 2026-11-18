@@ -294,11 +294,16 @@ def spill_skin(side=1):
     return skin
 
 
+def slice_skin(K, x, y, z, yaw, radius, thick):
+    """jump pad dressed as a dropped pepperoni slice, tip pointing where it launches you"""
+    deco('pad_slice', x, y, z, angle=round(yaw) % 360)
+
+
 def pads():
     J = K.jumppad
     tz = PM.TABLE_Z
     J(-110, TABLES[0], 0, land=(-640, TABLES[0], tz), apex=tz + 260, name='pad_table_w1', edges=[(-330, TABLES[0], tz)], skin=spill_skin(1), thick=PM.PAD_THICK_SPILL)
-    J(110, TABLES[1], 0, land=(640, TABLES[1], tz), apex=tz + 260, name='pad_table_e2', edges=[(330, TABLES[1], tz)], skin=spill_skin(-1), thick=PM.PAD_THICK_SPILL)
+    J(110, TABLES[1], 0, land=(640, TABLES[1], tz), apex=tz + 260, name='pad_table_e2', edges=[(330, TABLES[1], tz)], skin=slice_skin, thick=PM.PAD_THICK_SLICE)
     J(-110, TABLES[3], 0, land=(-640, TABLES[3], tz), apex=tz + 260, name='pad_table_w4', edges=[(-330, TABLES[3], tz)], skin=spill_skin(-1), thick=PM.PAD_THICK_SPILL)
     J(-260, 1960, 0, land=(-260, 2270, CZ), apex=CZ + 220, name='pad_counter', edges=[(-260, COUNTER[1], CZ)], skin=plate_skin, thick=PM.PAD_THICK_PLATE)
     J(-260, 2430, CZ, land=(100, SHELF_Y0 + 150, SHELF[2]), apex=SHELF[2] + 190, name='pad_shelf', ceiling=ZC,

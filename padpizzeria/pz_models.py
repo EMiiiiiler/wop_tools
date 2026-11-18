@@ -758,6 +758,7 @@ def materials():
     m('straw', TL.stripes((250, 250, 250), (200, 30, 36), 8), shade=60)
     m('cola', TL.solid((70, 30, 14), 3, 139, 64) + TL.N3(64, 1, 140, 8), 'lms', v=0.35, shade=40)
     m('ice', TL.solid((220, 236, 244), 1, 141, 32), 'glass', c='0.25 0.28 0.30')
+    m('sauce', TL.solid((170, 40, 26), 3, 142, 64) + TL.N3(64, 1, 143, 10), 'lms', v=0.2, shade=40)
     m('screen', screen_tex(), 'flicker')
     m('gum', TL.dots((240, 240, 240), (230, 60, 60), 8, r=0.3), shade=60)
     m('gumglass', TL.solid((200, 220, 230), 2, 74, 64), 'glass', c='0.12 0.13 0.15')
@@ -1621,7 +1622,7 @@ def bus_bin():
 PLATE_R = 56            # paper plate radius (the pad disc under it is r 34, 2u thick)
 CUP_L, CUP_R0, CUP_R1 = 78, 16, 22      # knocked-over soda cup: length, base radius, mouth radius
 CUP_Y0 = 50             # cup mouth distance from the pad centre (outside the disc and the trigger)
-PAD_THICK_PLATE, PAD_THICK_SPILL = 2, 1
+PAD_THICK_PLATE, PAD_THICK_SPILL, PAD_THICK_SLICE = 2, 1, 8
 
 
 def plate_tex(n=256):
@@ -1680,6 +1681,16 @@ def flat_blob(M, outline, z, uv_scale):
         M.poly(tri, (0, 0, 1), [(0.5 + p[0] / uv_scale, 0.5 - p[1] / uv_scale) for p in tri])
 
 
+def _flat_blob_at(M, outline, centre, z, uv_scale):
+    """fan blob around `centre` (outline must be star-shaped about it), facing up"""
+    ring = outline[::-1]
+    c = (centre[0], centre[1], z)
+    for k in range(len(ring)):
+        a, b = ring[k], ring[(k + 1) % len(ring)]
+        tri = [c, (a[0], a[1], z), (b[0], b[1], z)]
+        M.poly(tri, (0, 0, 1), [(0.5 + p[0] / uv_scale, 0.5 - p[1] / uv_scale) for p in tri])
+
+
 def paper_plate():
     """jump-pad skin: a greasy paper plate (flat base on the 2u pad disc, fluted rim rising to r PLATE_R) with a
     leftover crust"""
@@ -1727,6 +1738,43 @@ def soda_spill():
     coll('pad_spill', [((-CUP_R1 + 4, CUP_Y0 + 6, 0), (CUP_R1 - 4, CUP_Y0 + CUP_L - 2, 2 * CUP_R0))])
 
 
+def dropped_slice():
+    """jump-pad skin: a big pepperoni slice dropped cheese-up on the floor, tip pointing +x (the launch direction),
+    with a sauce smear under it. The top of the cheese is the pad disc's top (PAD_THICK_SLICE)."""
+    X = ML.Model()
+    t = PAD_THICK_SLICE
+    L, half = 150, 34                     # tip -> crust length, half angle (degrees)
+    tip = np.array([L * 0.55, 0.0])
+    def edge_pt(a):                       # point on the crust arc (centre of the pie behind the slice)
+        return np.array([tip[0] - L * math.cos(math.radians(a)), L * math.sin(math.radians(a))])
+    angs = np.linspace(-half, half, 9)
+    arc = [edge_pt(a) for a in angs]
+    # sauce smear on the floor: a soft blob under the middle of the slice, poking out at the sides
+    cx = tip[0] - L * 0.55
+    flat_blob_off = [(cx + px * 1.1, py * 1.25) for (px, py) in puddle_shape(48, 0, 144)]
+    _flat_blob_at(X.mesh(M_['sauce']), flat_blob_off, (cx, 0), 0.4, 256)
+    # cheese top: wedge mapped onto the pie texture (tip = texture centre, crust at radius 0.45)
+    P = X.mesh(M_['pizza_whole'])
+    uv = lambda q: (0.5 + (q[0] - tip[0]) / L * 0.45, 0.5 - (q[1] - tip[1]) / L * 0.45)
+    for k in range(len(arc) - 1):
+        a, b = arc[k], arc[k + 1]
+        tri = [(tip[0], tip[1], t), (b[0], b[1], t), (a[0], a[1], t)]
+        P.poly(tri, (0, 0, 1), [uv(q) for q in tri])
+    # cheese sides (slightly droopy) and the underside edge
+    S = X.mesh(M_['cheese'])
+    for (a, b) in ((tip, arc[0]), (arc[-1], tip)):
+        quad = [(a[0], a[1], t), (b[0], b[1], t), (b[0], b[1], 0.5), (a[0], a[1], 0.5)]
+        n = np.cross(np.array(quad[1]) - quad[0], np.array(quad[3]) - quad[0]); n /= np.linalg.norm(n)
+        S.poly(quad, tuple(n), [(0, 0), (1, 0), (1, 0.1), (0, 0.1)])
+    # the crust along the back edge
+    tube(X.mesh(M_['crust']), [(p[0] - 4, p[1], t * 0.8) for p in arc], [7] + [9] * (len(arc) - 2) + [7], nseg=10)
+    # raised pepperoni and a cheese drip over the side
+    for (px, py) in ((20, 6), (-30, -22), (-38, 26), (-70, 0), (-10, -8)):
+        cylz(X, 'tomato', px, py, 11, t, t + 1.5, n=12)
+    ellipsoid(X.mesh(M_['cheese']), (0, -0.6 * 40 - 4, t - 4), 10, 6, 5, nu=8, nv=5)
+    ML.save('pad_slice', X)
+
+
 def all_models():
     booth('booth_double', '+-'); booth('booth_end_n', '+'); booth('booth_end_s', '-')
     booth_table(); condiments()
@@ -1738,5 +1786,5 @@ def all_models():
     oven(); peel(); prep_table(); mixer(); flour_sacks(); tomato_case(); can_rack(); sink_dress()
     plate_steps(12, 16, 32, 150)
     hydrant(); trash_basket(); newsbox(); street_lamp(); wet_sign(); flags()
-    paper_plate(); soda_spill()
+    paper_plate(); soda_spill(); dropped_slice()
     frame_gold(300, 380, 'frame_a'); arch(); awning_valance(); door_leaf(); tv_bracket(); mop_bucket(); bus_bin()
