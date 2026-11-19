@@ -343,7 +343,12 @@ def pavement():
     deco('parasol', -1150, -1700, PM.PICNIC_Z)
     K.catalog('pad_ddmix/trashcan/garbage_bag_group.md3', 1480, -1350, 0, scale=1.6, angle=20)
     K.catalog('pad_ddmix/plants/flower_pink.md3', -1950, -1400, 0, scale=1.2, angle=0)
-    K.route('phone_box', (520, PHONE[1] - 120, 0), (PHONE[0], PHONE[1], 16))
+    # a brick planter by the kerb breaks the long view down the pavement
+    place('planter', -250, -1830, 0, 0)
+    K.catalog('pad_ddmix/trashcan/bush.md3', -330, -1830, 240, scale=1.0, angle=0)
+    K.catalog('pad_ddmix/plants/tulip1.md3', -60, -1880, 240, scale=0.8, angle=0)
+    K.catalog('pad_ddmix/plants/tulip2.md3', -90, -1760, 240, scale=0.8, angle=40)
+    K.route('phone_box', (480, PHONE[1] - 140, 0), (PHONE[0], PHONE[1], 16))
     K.timer_sound(0, -1950, 400, 'ambient/police_pass', 'siren', 70, 30)
     K.timer_sound(-1000, -1950, 200, 'misc/bicycle_bell', 'bike', 40, 20)
     K.timer_sound(500, -1950, 200, 'animal/dog_bark2', 'dog', 55, 25)
@@ -383,7 +388,7 @@ def pads():
       edges=[(SX1 - PM.OVERMANTEL_D - 10, FIRE_Y, OMZ)])
     P(-1960, PIANO_Y, 0, (NX0 + 90, PIANO_Y, PM.PIANO[2]), PM.PIANO[2] + 200, 'pad_piano', 'pad_tambourine', ceiling=ZC,
       edges=[(NX0 + 180, PIANO_Y, PM.PIANO[2])])
-    P(560, PHONE[1], 0, (PHONE[0] - 30, PHONE[1], PM.PHONE[1]), PM.PHONE[1] + 190, 'pad_phone', 'pad_coalhole', glow=70,
+    P(360, PHONE[1], 0, (PHONE[0] - 30, PHONE[1], PM.PHONE[1]), PM.PHONE[1] + 250, 'pad_phone', 'pad_coalhole', glow=70,
       edges=[(PHONE[0] - 160, PHONE[1], PM.PHONE[1])])
     # exits for bots off the tall tops (bspc only traces walk-offs 1000u down): fling pads on the far side
     P(GEND_X, SY1 - 60, KZ, (-880, 820, CZ), KZ + 110, 'fling_topshelf', 'pad_corks', ceiling=ZC)
@@ -397,15 +402,15 @@ def items():
     W('balloony', 1510, FIRE_Y - 220, OMZ, marker='orange')
     W('pumper', PHONE[0] - 60, PHONE[1] - 60, PM.PHONE[1], marker='green')
     W('splasher', NX0 + 90, PIANO_Y - 200, PM.PIANO[2], marker='blue')
-    W('boaster', 380, 900, CZ, marker='orange')
+    W('boaster', 0, -350, 0, marker='orange')                    # busy floor between the booths (bots skip it up on the counter)
     W('bubbleg', -1900, -560, 0, marker='green')
     ammo = {'imperius': [(780, 1480, KZ), (ISLANDS[0], ISLAND_Y, 0), (PHONE[0], PHONE[1] + 60, 16), (-2440, -1000, 0)],
-            'betty': [(-980, 1418, BZ), (100, 1180, 0), (-2002, 40, 0), (-200, -1960, 0), (1248, -820, 0)],
+            'betty': [(-980, 1418, BZ), (100, 1180, 0), (-2002, 40, 0), (180, -1960, 0), (1248, -820, 0)],
             'balloony': [(1510, FIRE_Y + 220, OMZ), (1424, -1049, 0), (-1187, -370, 0), (1350, 1180, 0)],
             'pumper': [(PHONE[0] + 60, PHONE[1] + 60, PM.PHONE[1]), (-1900, -1950, 0), (1400, -1950, 0), (-1873, 1173, 0)],
             'splasher': [(NX0 + 90, PIANO_Y + 200, PM.PIANO[2]), (-2200, 1200, 0), (-1960, -900, 0), (ISLANDS[1], ISLAND_Y, 0)],
-            'boaster': [(-1000, 830, CZ), (0, -900, 0), (798, -820, 0), (-2300, -1180, 0)],
-            'bubbleg': [(-2050, 700, 0), (0, -350, 0), (-600, -1900, 0), (1320, 662, 0)]}
+            'boaster': [(-1000, 830, CZ), (380, 900, CZ), (0, -900, 0), (798, -820, 0), (-2300, -1180, 0)],
+            'bubbleg': [(-2050, 700, 0), (0, 150, 0), (-600, -1900, 0), (1320, 662, 0)]}
     for w, spots in ammo.items():
         for (x, y, z) in spots: A(w, x, y, z)
     A('nipper', 0, 300, 0); A('nipper', -1400, 1180, 0); A('nipper', 200, -1700, 0); A('nipper', -2300, 1000, 0)
@@ -413,7 +418,7 @@ def items():
     K.item('item_armor_shard', NX0 + 90, PIANO_Y, PM.PIANO[2]); K.item('item_armor_shard', -1187, 30, 0)
     K.item('item_speedy', -1950, -1650, 0)
     K.item('item_jumper', -2200, 1300, 0)
-    K.item('holdable_floater', -2230, -720, PM.PICNIC_Z)
+    K.item('holdable_floater', -2230, -720, 0)                   # under the picnic table
     K.item('item_visionless', 600, 1180, 0)
     for (x, y, a) in ((-300, -900, 90), (300, -600, 90), (0, 0, 90), (-1100, -500, 0), (1150, -300, 180), (-200, 500, 270),
                       (1300, 900, 225), (-1350, 1000, 315), (-300, 1180, 0), (-2300, 800, 0), (-1900, 300, 180),
@@ -423,13 +428,13 @@ def items():
 
 
 def lights_sounds():
-    K.light_grid(SX0, SY0, SX1, SY1, 1350, 640, 1300, color='1 0.88 0.68')
-    K.light_grid(NX0, NY0, NX1, SY1, 1350, 640, 1000, color='1 0.86 0.66')
+    K.light_grid(SX0, SY0, SX1, SY1, 1100, 640, 2000, color='1 0.88 0.68')
+    K.light_grid(NX0, NY0, NX1, SY1, 1100, 640, 1600, color='1 0.86 0.66')
     for (x, y) in ((-1235, -370), (-1235, 30), (-1200, -820), (-750, -820), (750, -820), (1200, -820), (-2050, 40), (-1990, 950)):
         K.light(x, y, 230, 140, '1 0.85 0.65')                  # under the tables
     for (x, _) in BAYS:
         K.light(x, SY1 - 160, 1100, 260, '1 0.8 0.55')           # back-bar shelf lights
-        K.light(x, SY1 - 150, 620, 160, '0.9 0.95 1')
+        K.light(x, SY1 - 150, 620, 90, '0.9 0.95 1')
     K.light(GEND_X, SY1 - 300, 900, 200, '1 0.85 0.6')
     K.light(PHONE[0], PHONE[1], 900, 220, '1 0.95 0.85')
     for x in (-1250, 420):
@@ -440,7 +445,7 @@ def lights_sounds():
 
 
 def shader():
-    TX.write_shader(extra=[SH.sky('env/fort-pad512', sun=(200, 50), sun_int=110, skylight=(60, 3))],
+    TX.write_shader(extra=[SH.sky('env/fort-pad512', sun=(200, 75), sun_int=120, skylight=(85, 3))],
                     arena_types=INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})
 
 
