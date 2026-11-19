@@ -156,7 +156,10 @@ def kind(texs):
         if 'water' in pk and not any(any(s in x for s in TRIGGER) for x in t): return 'water'
     if all(any(s in x for s in SKIP_TEX) for x in t): return 'skip'
     if all('botclip' in x for x in t): return 'decor'          # bots only (nonsolid for players/shots) even without --shaders
-    if all(any(s in x for s in DECOR) or 'caulk' in x or 'nodraw' in x for x in t) and any(any(s in x for s in DECOR) for x in t):
+    # name guess for decoration, unless the texture has a shader that says it is solid ('padpub/encaustic' floor tiles
+    # contain 'caustic' and counted as decoration: every model on them was reported as floating)
+    dec = lambda x: any(s in x for s in DECOR) and parm_kind(x) in (None, 'decor')
+    if all(dec(x) or 'caulk' in x or 'nodraw' in x for x in t) and any(dec(x) for x in t):
         return 'decor'
     if any(any(s in x for s in TRIGGER) for x in t): return 'trigger'
     if any('water' in x.split('/')[-1] and 'waterfall' not in x for x in t): return 'water'

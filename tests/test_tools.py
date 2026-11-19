@@ -577,3 +577,20 @@ def test_slide_builds_floor_walls_and_reserves(tmp_path):
     bs = K.slide([(0, 1000, 800), (0, 0, 16), (0, -200, 16)], 48, 64, 't/slide')
     assert sum('t/slide' in b.textures() for b in bs) == 4 and sum(b.textures() == {'common/weapclip'} for b in bs) == 4
     assert not K.free(0, 500, 20, 400, 500)
+
+
+def test_audit_trusts_shader_parms_over_texture_names(tmp_path):
+    """padpub: a floor brush 'x/encaustic' (Victorian tiles) contains 'caustic', so the name guess called it decoration
+    and every model standing on it was reported as floating. A known solid shader must win over the name."""
+    import audit_map as A
+    sd = tmp_path / 'scripts'; sd.mkdir()
+    (sd / 'x.shader').write_text('textures/x/encaustic\n{\n\t{\n\t\tmap $lightmap\n\t}\n}\n'
+                                 'textures/x/foam_ns\n{\n\tsurfaceparm nonsolid\n}\n')
+    A.SHADER_PARMS.clear(); A.load_shaders([str(tmp_path)]); A.add_common_parms()
+    try:
+        assert A.kind(['x/encaustic', 'common/caulk']) == 'solid'
+        assert A.kind(['x/foam_ns', 'common/caulk']) == 'decor'
+        assert A.kind(['common/trigger']) == 'trigger'
+        assert A.kind(['common/weapclip']) == 'clip'
+    finally:
+        A.SHADER_PARMS.clear()
