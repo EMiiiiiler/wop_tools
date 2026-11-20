@@ -26,7 +26,10 @@
    600
   ],
   "min": 1800,
-  "target_pct": 4.0
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "600": 12.0
+  }
  },
  "preview": {
   "title": "Padman's Tabletop Quest",

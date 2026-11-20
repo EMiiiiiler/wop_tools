@@ -99,13 +99,13 @@ def shell():
     led, lip = T('led'), {'top': mp, 'bot': mv, 'side': mv}
     for (a, b, side) in (((X0, Y0), (X1, Y0), 's'), ((X0, Y0), (X0, 1280), 'w'), ((X1, Y0), (X1, YP - 32), 'e'), ((X0 + 192, Y1), (XP - 32, Y1), 'n')):
         if side == 's':
-            K.add(box((a[0], Y0, 504), (b[0], Y0 + 4, 520), led), box((a[0], Y0, RZ - 24), (b[0], Y0 + 20, RZ), lip))
+            K.add(box((a[0], Y0, 504), (b[0], Y0 + 4, 520), led))
         elif side == 'n':
-            K.add(box((a[0], Y1 - 4, 504), (b[0], Y1, 520), led), box((a[0], Y1 - 20, RZ - 24), (b[0], Y1, RZ), lip))
+            K.add(box((a[0], Y1 - 4, 504), (b[0], Y1, 520), led))
         elif side == 'w':
-            K.add(box((X0, a[1] + 20, 504), (X0 + 4, b[1] - 20, 520), led), box((X0, a[1] + 20, RZ - 24), (X0 + 20, b[1] - 20, RZ), lip))
+            K.add(box((X0, a[1] + 20, 504), (X0 + 4, b[1] - 20, 520), led))
         else:
-            K.add(box((X1 - 4, a[1] + 20, 504), (X1, b[1], 520), led), box((X1 - 20, a[1] + 20, RZ - 24), (X1, b[1], RZ), lip))
+            K.add(box((X1 - 4, a[1] + 20, 504), (X1, b[1], 520), led))
     # player clip at the outer edge of the rail top (the last 128u is table edge seen against the room)
     for (a, b) in (((-HX, -HY, RZ), (HX, -RY, HZ)), ((-HX, RY, RZ), (HX, HY, HZ)),
                    ((-HX, -RY, RZ), (-RX, RY, HZ)), ((RX, -RY, RZ), (HX, RY, HZ))):
@@ -331,7 +331,7 @@ def cliffs():
     for x in (1120, 1344, 1792, 2016):
         deco('boulder', x, YC - 96, 0, angle=x % 360)
     # rampart on the terrace edge (crenellated, gap where the stairs arrive)
-    for (a, b) in ((X0, STAIR[0] - 32), (STAIR[1] + 32, X1)):
+    for (a, b) in ((RAMP_W[2] + 32, STAIR[0] - 32), (STAIR[1] + 32, X1)):
         brushes, posts = [], []
         x = a
         brushes.append(box((a, YC, TZ), (b, YC + 32, TZ + 40), WCLIP))
@@ -339,7 +339,8 @@ def cliffs():
         for xm in xs:
             brushes.append(box((xm - 24, YC, TZ + 40), (xm + 24, YC + 32, TZ + 104), WCLIP))
         K.solid_piece(f'rampart{int(a > 0)}', brushes, wall_texfn([]))
-    K.botclip_rect(X0, YC, X1, YC + 32, TZ, sides='s')
+    K.botclip_rect(X0, YC + 32, X1, YC + 56, TZ, sides='s', gaps=[('s', X0, RAMP_W[2] + 32), ('s', STAIR[0] - 32, STAIR[1] + 32),
+                                                                 ('s', 1600, 1800)])
 
 
 STAIR = (-288, -32)                         # dungeon -> terrace flight (x range), y 512..1024
@@ -389,7 +390,7 @@ def cottage():
           box((x0 + t, y0 + t, COT_DECK - 16), (sw[0], y0 + t + 168, COT_DECK), dk))
     K.reserve(((x0 + t, y0 + t, COT_DECK - 16), (x1 - t, y1 - t, COT_DECK)))
     K.stairs16(sw[0], sw[1], sw[2], sw[3], 0, COT_DECK, 'w', dk, route=None)
-    K.route('cottage_up', (x1 - t - 40, y0 + t + 72, 0), (x0 + t + 48, y0 + t + 72, COT_DECK))
+    K.route('cottage_up', (x1 - t - 40, y0 + t + 260, 0), (x0 + t + 48, y0 + t + 72, COT_DECK))
     K.route('cottage_in', ((door[0] + door[1]) / 2, y1 + 80, 0), ((door[0] + door[1]) / 2, y1 - 160, 0))
     K.keep_clear(door[0], y1, door[1], y1 + 100, 0)
     K.keep_clear(x1 - t - 80, y0 + t, x1 - t, y0 + t + 128, 0)
@@ -415,7 +416,7 @@ def forest():
     # pond with steps out at its west end
     x0, y0, x1, y1, zb = POND
     CUTS.append(box((x0, y0, zb), (x1, y1, 0), CAULK))
-    steps = K.stairs16(x0, y0 + 96, x0 + 224, y1 - 96, zb, 0, 'w', {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}, route='pond_out')
+    steps = K.stairs16(x0, y0 + 96, x0 + 224, y1 - 96, zb, 0, 'w', {'top': T('rock'), 'side': T('rock'), 'bot': CAULK}, route=None)
     K.water_box((x0, y0, zb), (x1, y1, -8), T('water'), cutters=steps)
     for (x, y) in ((x0 - 60, y0 + 30), (x1 + 50, y1 - 60), (x1 - 100, y1 + 60)):
         deco('boulder', x, y, 0, angle=x % 360)
@@ -538,6 +539,11 @@ def rail_things():
     place('dm_screen', 0, Y1 + 300, RZ, angle=0)
     place('dice_tower', *TOWER, RZ)
     place('d20_blue', -1500, n, RZ, angle=140); place('d6_red', 1500, n - 30, RZ, angle=15)
+    # spare minis waiting their turn along the rail (cover on the long rail runs)
+    for (nm, x, y, ang) in (('mini_knight', -900, s, 90), ('mini_wizard', 700, s + 30, 100), ('mini_ogre', e, -1600, 180),
+                            ('mini_dwarf', e - 20, 1250 - 330, 200), ('mini_goblin', w, 300, 0), ('mini_rogue', w + 10, 1500, 330),
+                            ('mini_skeleton', -2100, n, 270), ('mini_knight', 1900, n + 20, 250)):
+        place(nm, x, y, RZ, angle=ang)
 
 
 BOOKS_Y = -400
@@ -601,6 +607,9 @@ def pads():
               skin=S('pad_coaster', (2496, 1250), (2496, 2112)), edges=[(2496, 1656, RZ + 24), (2496, 1952, RZ + TM.TOWER_H)])
     K.jumppad((X0 - RX) / 2, BOOKS_Y - 560, RZ, land=((X0 - RX) / 2, BOOKS_Y + 150, RZ + 4 * TM.BOOK_T), apex=RZ + 4 * TM.BOOK_T + 120,
               name='pad_books', skin=S('pad_coaster', ((X0 - RX) / 2, BOOKS_Y - 560), ((X0 - RX) / 2, BOOKS_Y)))
+    K.jumppad(-2176, BOOKS_Y + 60, 0, land=((X0 - RX) / 2, BOOKS_Y + 150, RZ + 4 * TM.BOOK_T), apex=RZ + 4 * TM.BOOK_T + 330,
+              name='pad_yard_books', skin=S('pad_plate', (-2176, BOOKS_Y + 60), ((X0 - RX) / 2, BOOKS_Y + 150)),
+              edges=[(X0 + 20, BOOKS_Y + 120, RZ)])
     K.jumppad(-1700, 1300, TZ, land=(-480, 1520, PZ), apex=PZ + 180, name='pad_west_plateau',
               skin=S('pad_rune', (-1700, 1300), (-560, 1500)), edges=[(XP, 1480, PZ)])
 
