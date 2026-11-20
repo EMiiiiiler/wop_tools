@@ -1,0 +1,63 @@
+{
+ "map": "wop_padtabletop",
+ "ns": "padtabletop",
+ "longname": "Padman's Tabletop Quest",
+ "generator": "build_padtabletop.py",
+ "bounds": [
+  -2688,
+  -2304,
+  2688,
+  2304
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   320,
+   600
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "600": 12.0
+  }
+ },
+ "preview": {
+  "title": "Padman's Tabletop Quest",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:2700,-2500,2600,132,-38",
+   "dungeon_top:-256,-2350,2000,90,-48",
+   "hall:-256,-560,150,90,-6",
+   "dragon:-500,1150,720,18,-8",
+   "terrace:-2100,1140,340,5,-4",
+   "forest:-1450,-1880,240,40,-6",
+   "cottage_deck:-1660,-1760,280,145,-12",
+   "rail_south:-2500,-2150,700,10,-8",
+   "tower:2350,1150,900,75,12",
+   "crypt_tunnel:500,420,120,25,0",
+   "well_room:-1250,350,220,150,-12",
+   "west_rail:-2496,-1500,700,90,-4",
+   "vault:0,-380,-1300,90,-4",
+   "clearing:1650,-1150,180,70,-4"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "dungeon_top",
+   "dragon",
+   "hall"
+  ]
+ }
+}
