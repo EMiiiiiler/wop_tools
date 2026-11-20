@@ -277,3 +277,9 @@ Tools and standing rules for building World of Padman (WoP) maps.
   round the tree) keeps a whole annulus prop-free, so plan cover outside it.
 - Wire cages: `K.cage_box()` / `K.cage_round(dome=...)` (alpha wire as its own unlit MD3 + common/clip, weapclip rims,
   open doors). An aas_check route end inside a lift collar reports NO AREA, not a broken door.
+- New MapKit helpers (padclassroom): `spiral_stairs()` (stacked step slabs round a core, top step pointing at a landing;
+  returns the steps so the visual MD3 uses the same angles; warns when a turn has no headroom) and `tube_brushes()`
+  (collision for a hollow n-gon tube lying on its side - tipped bin, pencil case, pipe - with a flat floor strip inside).
+- A `K.light_grid` hung ~150u under the ceiling washed the upper walls and ceiling white while light_check (floor only)
+  stayed OK; ~350u under the ceiling with ~15 % less intensity looked right. Look at a shot near the ceiling, not just lights.png.
+- `wopbuild.py` options go before the steps: `wopbuild.py <folder> --light final compile aas ...`.

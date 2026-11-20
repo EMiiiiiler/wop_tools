@@ -947,6 +947,65 @@ class MapKit:
                                                        dome=list(dome or [])))
         return e
 
+    def spiral_stairs(self, cx, cy, z0, ztop, r_in, r_out, step_deg, end_deg, tex=WCLIP, step_h=16, overlap=1.15,
+                      route=None):
+        """spiral staircase round a core at (cx, cy) (padclassroom exercise-book tower): one box per step from r_in to
+        r_out, rising step_h and turning step_deg each step, the TOP step pointing along end_deg so it meets a landing
+        (a desk edge just past r_out). Steps are stacked slabs (no volume overlap); put a core column of radius
+        <= r_in * cos(pi/n) at the centre. Returns [(angle_deg, top_z, brush)] so the caller can build the visual from
+        the same steps. Bots handle wide spirals (r_out >= 300) but give the landing a pad as well."""
+        n = int(round((ztop - z0) / step_h))
+        w = 2 * r_out * math.tan(math.radians(abs(step_deg)) / 2) * overlap
+        rise = step_h * 360.0 / abs(step_deg)
+        if rise < 56 + 2 * step_h + 16:
+            self.warn(f'spiral {route or (cx, cy)}: one turn rises {rise:.0f}u - no headroom under the turn above')
+        out = []
+        for i in range(n):
+            a = end_deg - (n - 1 - i) * step_deg
+            zb = z0 + i * step_h
+            out.append((a, zb + step_h, self.lbox(cx, cy, zb, a, (r_in, -w / 2, 0), (r_out, w / 2, step_h), tex)))
+        self.occupy_r(cx, cy, r_out + 8, z0, ztop + 8)
+        a0 = math.radians(out[0][0] - step_deg)                     # walk in from where the first step's predecessor would be
+        foot = (cx + (r_in + r_out) / 2 * math.cos(a0) * 1.0, cy + (r_in + r_out) / 2 * math.sin(a0), z0)
+        self.spots.setdefault('spirals', []).append(dict(c=[cx, cy], z0=z0, ztop=ztop, r=[r_in, r_out], step=step_deg,
+                                                         end=end_deg, foot=[round(v) for v in foot], name=route))
+        if route:
+            ae = math.radians(end_deg)
+            self.route(route, foot, (cx + (r_out + 96) * math.cos(ae), cy + (r_out + 96) * math.sin(ae), ztop))
+        return out
+
+    def tube_brushes(self, c, axis, length, r_out, thick, n=12, closed_end=None, tex=WCLIP):
+        """collision for a hollow n-gon tube LYING along 'x' or 'y' (tipped-over bin, pencil case, crayon box, pipe):
+        centre c = (x, y, z_base) with the lowest outer face on z_base and a flat side down, so the inside has a flat
+        floor strip at z_base + thick that players and bots walk on (the neighbouring faces slope 360/n degrees).
+        closed_end None / '+' / '-' adds an n-gon cap inside the tube at that end. Returns the brushes (not added):
+        K.clipped(...) them and build the smooth visual MD3 separately. Inner circumradius = r_out - thick/cos(pi/n)."""
+        cxx, cyy, zb = c
+        k = math.pi / n
+        R = r_out; Ri = r_out - thick / math.cos(k)
+        zc = zb + R * math.cos(k)
+        ang = [-math.pi / 2 + k + j * 2 * k for j in range(n)]
+        L = length / 2
+
+        def P(r, a, s):                                             # s = -1/+1 tube end
+            u, v = r * math.cos(a), zc + r * math.sin(a)
+            return (cxx + s * L, cyy + u, v) if axis == 'x' else (cxx + u, cyy + s * L, v)
+        out = []
+        for j in range(n):
+            a, b = ang[j], ang[(j + 1) % n]
+            pts = [P(r, t, s) for r in (R, Ri) for t in (a, b) for s in (-1, 1)]
+            out.append(hull(pts, tex, round_pts=False))
+        if closed_end:
+            s = 1 if closed_end == '+' else -1
+            e0, e1 = s * L - s * thick, s * L
+            pts = []
+            for t in ang:
+                u, v = Ri * math.cos(t), zc + Ri * math.sin(t)
+                for e in (e0, e1):
+                    pts.append((cxx + e, cyy + u, v) if axis == 'x' else (cxx + u, cyy + e, v))
+            out.append(hull(pts, tex, round_pts=False))
+        return out
+
     def crawl(self, mn, mx):
         """declare an intended crouch-only space (lint_map's headroom check skips it)"""
         self.spots['crawl'].append([list(mn), list(mx)])

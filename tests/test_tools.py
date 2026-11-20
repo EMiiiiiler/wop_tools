@@ -594,3 +594,30 @@ def test_audit_trusts_shader_parms_over_texture_names(tmp_path):
         assert A.kind(['common/weapclip']) == 'clip'
     finally:
         A.SHADER_PARMS.clear()
+
+
+# ------------------------------------------------------------------------------------------------ kit: spiral + lying tube
+def test_spiral_stairs_top_meets_landing():
+    """padclassroom book spiral: stacked 16u slabs, the top step points along end_deg at ztop, a route is added"""
+    K = MapKit('t', 't', 'T', (-2000, -2000, 2000, 2000))
+    st = K.spiral_stairs(0, 0, 0, 608, 48, 330, 22.5, 0.0, route='sp')
+    assert len(st) == 38
+    assert abs(st[-1][0]) < 1e-6 and st[-1][1] == 608
+    zs = [z for _, z, _ in st]
+    assert all(b - a == 16 for a, b in zip(zs, zs[1:]))
+    assert any(r[0] == 'sp' for r in K.routes)
+
+
+def test_spiral_stairs_warns_without_headroom():
+    K = MapKit('t', 't', 'T', (-2000, -2000, 2000, 2000))
+    K.spiral_stairs(0, 0, 0, 320, 48, 300, 90, 0.0)        # 4 steps per turn: 64u per turn, no headroom
+    assert any('headroom' in w for w in K.notes)
+
+
+def test_tube_brushes_flat_floor():
+    """lying 12-gon tube (tipped bin): one brush per side + the cap, a flat upward floor face at z_base + thick"""
+    K = MapKit('t', 't', 'T', (-2000, -2000, 2000, 2000))
+    bs = K.tube_brushes((0, 0, 0), 'x', 480, 176, 16, closed_end='+')
+    assert len(bs) == 13
+    ups = [f for b in bs for f in b.faces if f.n[2] > 0.999]
+    assert any(abs(f.d - 16) < 0.5 for f in ups), [round(f.d, 1) for f in ups]
