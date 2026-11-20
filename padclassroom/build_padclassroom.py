@@ -300,32 +300,34 @@ def ceiling_things():
 
 # ------------------------------------------------------------------------------------------------ pads, loot, spawns
 def pads():
-    K.jumppad(1250, -800, 0, land=(600, -800, DESK_Z), apex=DESK_Z + 260, name='pad_desks', edges=[(800, -800, DESK_Z)])
-    K.jumppad(-400, 1250, TD_Z, land=(-400, 1850, LEDGE[4]), apex=LEDGE[4] + 150, name='pad_ledge',
+    K.jumppad(1250, -800, 0, land=(600, -800, DESK_Z), apex=DESK_Z + 260, name='pad_desks', skin=CM.pad_skin('pad_book_blue', (1250, -800), (600, -800, DESK_Z)), edges=[(800, -800, DESK_Z)])
+    K.jumppad(-400, 1250, TD_Z, land=(-400, 1850, LEDGE[4]), apex=LEDGE[4] + 150, name='pad_ledge', skin=CM.pad_skin('pad_eraser', (-400, 1250), (-400, 1850, LEDGE[4])),
               edges=[(-400, 1760, LEDGE[4])])
-    K.jumppad(-1400, 1500, 0, land=(-1400, 1850, LEDGE[4]), apex=LEDGE[4] + 170, name='pad_ledge_w',
+    K.jumppad(-1400, 1500, 0, land=(-1400, 1850, LEDGE[4]), apex=LEDGE[4] + 170, name='pad_ledge_w', skin=CM.pad_skin('pad_book_red', (-1400, 1500), (-1400, 1850, LEDGE[4])),
               edges=[(-1400, 1760, LEDGE[4])])
-    K.jumppad(760, 1840, LEDGE[4], land=(1990, 1620, CB_TOP), apex=CB_TOP + 230, name='pad_cupboard', ceiling=ZC,
+    K.jumppad(760, 1840, LEDGE[4], land=(1990, 1620, CB_TOP), apex=CB_TOP + 230, name='pad_cupboard', skin=CM.pad_skin('pad_eraser', (760, 1840), (1990, 1620, CB_TOP)), ceiling=ZC,
               edges=[(1664, 1700, CB_TOP)])
-    K.jumppad(500, 1250, TD_Z, land=(1980, 1480, CB_TOP), apex=CB_TOP + 200, name='pad_cupboard2', ceiling=ZC,
+    K.jumppad(500, 1250, TD_Z, land=(1980, 1480, CB_TOP), apex=CB_TOP + 200, name='pad_cupboard2', skin=CM.pad_skin('pad_book_green', (500, 1250), (1980, 1480, CB_TOP)), ceiling=ZC,
               edges=[(1664, 1430, CB_TOP)])
-    K.jumppad(-1700, 640, 0, land=(-2150, 640, CM.BK_H), apex=CM.BK_H + 170, name='pad_bookcase', edges=[(-1984, 640, CM.BK_H)])
-    K.jumppad(0, -1450, 0, land=(0, -1830, SILL[4]), apex=SILL[4] + 150, name='pad_sill', edges=[(0, SILL[3], SILL[4])])
-    K.jumppad(1100, 700, 0, land=(450, 1000, TD_Z), apex=TD_Z + 220, name='pad_teacher', edges=[(640, 950, TD_Z)])
+    K.jumppad(-1700, 640, 0, land=(-2150, 640, CM.BK_H), apex=CM.BK_H + 170, name='pad_bookcase', skin=CM.pad_skin('pad_pcase', (-1700, 640), (-2150, 640, CM.BK_H)), edges=[(-1984, 640, CM.BK_H)])
+    K.jumppad(0, -1450, 0, land=(0, -1830, SILL[4]), apex=SILL[4] + 150, name='pad_sill', skin=CM.pad_skin('pad_book_yellow', (0, -1450), (0, -1830, SILL[4])), edges=[(0, SILL[3], SILL[4])])
+    K.jumppad(-1540, -1180, 0, land=(-2010, -1180, GRAVEL_Z), apex=RIM_Z + 110, name='pad_tank',
+              skin=CM.pad_skin('pad_book_red', (-1540, -1180), (-2010, -1180)), edges=[(-1824, -1180, RIM_Z)])
+    K.jumppad(1100, 700, 0, land=(450, 1000, TD_Z), apex=TD_Z + 220, name='pad_teacher', skin=CM.pad_skin('pad_pcase', (1100, 700), (450, 1000, TD_Z)), edges=[(640, 950, TD_Z)])
 
 
 def items():
     K.weapon('imperius', -800, 1840, LEDGE[4], marker='purple')
     K.weapon('betty', 1950, 1700, CB_TOP, marker='black')
     K.weapon('balloony', -2150, 880, CM.BK_H, marker='orange')
-    K.weapon('splasher', -1930, -620, GRAVEL_Z, marker='blue')
-    K.weapon('pumper', -420, 1000, TD_Z, marker='green')
+    K.weapon('splasher', -1960, -1300, GRAVEL_Z, marker='blue')
+    K.weapon('pumper', -80, 1150, TD_Z, marker='green')
     K.weapon('boaster', BIN_C[0] + 110, BIN_C[1], CM.BIN_T, marker='orange')
     K.weapon('bubbleg', 380, -880, DESK_Z, marker='green')
     ammo = {'imperius': [(1300, 1840, LEDGE[4]), (-2170, 760, 16), (2150, 1450, CB_TOP)],
             'betty': [(1900, 1500, 24), (1350, -1830, SILL[4]), (-2080, -1680, 12), (150, 1250, TD_Z)],
             'balloony': [(-2120, -50, CASTLE_TOP), (-1650, 1350, 0), (GLOBE_C[0], GLOBE_C[1] - 150, 32), (-400, -850, DESK_Z)],
-            'splasher': [(-1930, -1300, GRAVEL_Z), (-1350, -1830, SILL[4]), (-1500, -150, 0), (-700, 1850, LEDGE[4])],
+            'splasher': [(-1930, -620, GRAVEL_Z), (-1350, -1830, SILL[4]), (-1500, -150, 0), (-700, 1850, LEDGE[4])],
             'pumper': [(-560, -180, DESK_Z), (1450, 1400, 0), (-1900, -1500, 0), (0, 1100, 0)],
             'boaster': [(PCASE_C[0] + 60, PCASE_C[1], DESK_Z + 8), (580, -150, DESK_Z), (-1350, 300, 0), (1300, -400, 0)],
             'bubbleg': [(-580, -760, DESK_Z), (1500, 250, 0), (-1200, -1450, 0), (300, -1830, SILL[4]), (0, -1300, 0)]}

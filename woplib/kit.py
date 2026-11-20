@@ -356,26 +356,37 @@ class MapKit:
 
     # ------------------------------------------------------------------ jump pads, teleports, secrets
     def jumppad(self, x, y, z, land, apex, name, ceiling=None, edges=(), glow=True, top_tex=None, side_tex=None,
-                radius=34, light_rgb='1 0.6 0.8'):
+                radius=34, light_rgb='1 0.6 0.8', skin=None):
         """pad disc (6u) + trigger_push (48 x 48 x 64) + target_position at the apex, t_up/(t_up+t_down) of the way
         to `land` (x, y, floor). Warns for flights > 2.9 s, apex too close to `ceiling`, < 20u over `edges`.
-        Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground)."""
+        Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground).
+        skin = dict(place=models.PLACE[name], h=deck height (<= 16 so it is a step), angle=0, boxes=[(mn, mx)],
+        cyls=[...]) draws a themed object instead of the disc (padclassroom exercise books / erasers): the model with
+        its weapclip collision, the trigger on top of the deck at z + h. Its footprint must cover the 48u trigger."""
         x, y = round(x), round(y)
         name = self.uniq(name)
         if not self.free(x, y, radius, z, z + 90, margin=0):
             bl = self.blockers(x, y, radius, z, z + 90, margin=0)
             self.warn(f'pad {name}: launch spot ({x},{y},{z}) is occupied by ' + '; '.join(f'{w} {b}' for w, b in bl))
-        P = padmath.plan(z, (x, y), land, apex, ceiling=ceiling, edges=edges)
+        deck = 6
+        if skin:
+            deck = skin.get('h', 6)
+            if deck > 18: self.warn(f'pad {name}: skin deck {deck}u is taller than a step (18u) - players must jump on')
+        P = padmath.plan(z + deck - 6, (x, y), land, apex, ceiling=ceiling, edges=edges)
         for w in P['warnings']: self.warn(f'pad {name}: {w}')
         if P['target'] is None: raise ValueError(f'pad {name}: {P["warnings"]}')
-        top = top_tex or self.T('jumppad'); side = side_tex or self.T('rubber')
-        disc = cyl(x, y, radius, z, z + 6, {'top': top, 'side': side, 'bot': side}, 12)
-        for f in disc.faces:
-            if f.n[2] > 0.9:
-                s = 2 * radius / 256
-                f.sc = (s, s); f.off = ((-(x - radius) / s) % 256, ((y + radius) / s) % 256)
-        self.add(disc)
-        trig = box((x - 24, y - 24, z + 6), (x + 24, y + 24, z + 70), TRIG)
+        if skin:
+            self.custom(skin['place'], x, y, z, skin.get('angle', 0), boxes=skin.get('boxes', ()), cyls=skin.get('cyls', ()),
+                        occupy=False)
+        else:
+            top = top_tex or self.T('jumppad'); side = side_tex or self.T('rubber')
+            disc = cyl(x, y, radius, z, z + 6, {'top': top, 'side': side, 'bot': side}, 12)
+            for f in disc.faces:
+                if f.n[2] > 0.9:
+                    s = 2 * radius / 256
+                    f.sc = (s, s); f.off = ((-(x - radius) / s) % 256, ((y + radius) / s) % 256)
+            self.add(disc)
+        trig = box((x - 24, y - 24, z + deck), (x + 24, y + 24, z + deck + 64), TRIG)
         self.M.ent('trigger_push', brushes=[trig], target=name)
         self.M.ent('target_position', P['target'], targetname=name)
         self.spots['pads'].append(dict(name=name, pad=(x, y, z), origin=P['origin'], target=P['target'],

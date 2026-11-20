@@ -461,6 +461,7 @@ def materials():
     m('bag_green', TL.fabric((50, 140, 80), weave=64), shade=70)
     m('apple_red', TL.solid((200, 30, 40), 2, 58, 64), 'lms', v=0.15, shade=70)
     m('recycle', TL.label('RECYCLE', 256, 256, (40, 110, 190), (250, 250, 250)), shade=20)
+    m('sticker', TL.pad_sticker(), 'alpha', alpha=TL.disc_alpha())
     m('glue', TL.solid((250, 250, 250), 2, 59, 64), shade=60)
     m('glue_cap', TL.solid((240, 120, 30), 2, 60, 64), shade=60)
 
@@ -474,7 +475,7 @@ def all_models():
     spiral_books(); jumbo_pencil(); pencil_case(); lunchbox(); crayon_box(); radiator(); fluoro_panel()
     clock(); clock_hand(); plane_mobile(); fish_ring('fish_big', 150, 5, 'fish_orange', 1.0); fish_ring('fish_small', 110, 7, 'fish_blue', 0.7)
     bubbler(); for_bag = [schoolbag(c) for c in ('red', 'blue', 'green')]
-    paper_stack(); pencil_cup(); duster(); chalk_sticks(); eraser(); glue_bottle(); detention_desk(); open_book(); cover_props(); more_cover()
+    paper_stack(); pencil_cup(); duster(); chalk_sticks(); eraser(); glue_bottle(); detention_desk(); open_book(); cover_props(); more_cover(); pad_skins()
 
 
 def student_desk(i):
@@ -1148,3 +1149,41 @@ def more_cover():
         crumple(X.mesh(M_['crumple']), (-80 + j * 40, (j % 2) * 50 - 25, H - 40), 40, 300 + j)
     ML.save('recycle_box', X)
     coll('recycle_box', [((-L, -W, 0), (L, W, H))])
+
+
+# ------------------------------------------------------------------------------------------------ themed jump pads
+PAD_SKINS = {}         # name -> dict(w, d, h) for K.jumppad(skin=...)
+
+
+def pad_skins():
+    """jump pads dressed as classroom things lying on the floor/desks, each with a bright JUMP! sticker on top.
+    Decks are <= 16u so players step on and bots walk on; footprints cover the 48u trigger at any angle."""
+    for col, bi in (('blue', 1), ('red', 0), ('green', 2), ('yellow', 3)):           # exercise books
+        X = ML.Model(); W, D, H = 88, 64, 14
+        cov = M_[f'book{bi}']
+        rbox(X.mesh(cov), (-W, -D, 0), (W, D, 3), r=1, k=1, tile=256)
+        rbox(X.mesh(cov), (-W, -D, H - 3), (W, D, H), r=1, k=1, tile=256)
+        rbox(X.mesh(M_['pages']), (-W + 3, -D + 3, 3), (W - 4, D - 4, H - 3), r=0.5, k=1, tile=64)
+        rbox(X.mesh(cov), (-W, -D, 0), (-W + 8, D, H), r=1, k=1)                          # spine
+        pic(X.mesh(M_['sticker']), (6, 0, H + 0.6), (0, 0, 1), 100, 100, up=(1, 0, 0))
+        name = f'pad_book_{col}'
+        ML.save(name, X); PAD_SKINS[name] = dict(w=2 * W, d=2 * D, h=H)
+    X = ML.Model(); W, D, H = 84, 48, 16                                                # eraser with a paper sleeve
+    rbox(X.mesh(M_['eraser']), (-W, -D, 0), (W, D, H), r=6, k=2)
+    rbox(X.mesh(M_['bin_blue']), (-W * 0.35, -D - 1, 0), (W + 1, D + 1, H + 1), r=4, k=1)
+    pic(X.mesh(M_['sticker']), (-W * 0.25, 0, H + 0.8), (0, 0, 1), 84, 84, up=(1, 0, 0))
+    ML.save('pad_eraser', X); PAD_SKINS['pad_eraser'] = dict(w=2 * W, d=2 * D, h=H)
+    X = ML.Model(); W, D, H = 96, 56, 16                                                # flat zip pencil case
+    rbox(X.mesh(M_['pcase']), (-W, -D, 0), (W, D, H), r=8, k=3, tile=128)
+    tube(X.mesh(M_['zip']), [(-W + 10, D - 12, H - 1), (W - 10, D - 12, H - 1)], 3, nseg=6)
+    rbox(X.mesh(M_['zip']), (W - 14, D - 18, H - 4), (W + 14, D - 6, H + 2), r=2, k=1)
+    pic(X.mesh(M_['sticker']), (-20, 0, H + 1.2), (0, 0, 1), 92, 92, up=(1, 0, 0))
+    ML.save('pad_pcase', X); PAD_SKINS['pad_pcase'] = dict(w=2 * W, d=2 * D, h=H)
+
+
+def pad_skin(name, pad, land):
+    """skin for K.jumppad, turned so the sticker's arrows (+x) point at the landing"""
+    s = PAD_SKINS[name]
+    angle = round(math.degrees(math.atan2(land[1] - pad[1], land[0] - pad[0])))
+    return dict(place=ML.PLACE[name], h=s['h'], angle=angle,
+                boxes=[((-s['w'] / 2, -s['d'] / 2, 0), (s['w'] / 2, s['d'] / 2, s['h']))])

@@ -621,3 +621,17 @@ def test_tube_brushes_flat_floor():
     assert len(bs) == 13
     ups = [f for b in bs for f in b.faces if f.n[2] > 0.999]
     assert any(abs(f.d - 16) < 0.5 for f in ups), [round(f.d, 1) for f in ups]
+
+
+def test_jumppad_skin_raises_trigger_to_deck():
+    """themed pad skin (padclassroom exercise books): no disc brush, model + weapclip deck, trigger starts at z + h"""
+    K = MapKit('t', 't', 'T', (-2000, -2000, 2000, 2000))
+    nworld = len(K.M.world)
+    skin = dict(place=('models/t/pad.md3', 1.0, 0), h=14, angle=0, boxes=[((-88, -64, 0), (88, 64, 14))])
+    K.jumppad(0, 0, 0, land=(600, 0, 200), apex=500, name='p', skin=skin)
+    assert any(e['classname'] == 'misc_model' for e in K.M.ents)
+    trig = [e for e in K.M.ents if e['classname'] == 'trigger_push'][0]
+    zmin = min(p[2] for b in trig['_brushes'] for f in b.faces for p in f.pts)
+    assert abs(zmin - 14) < 1e-6
+    new = K.M.world[nworld:]
+    assert len(new) == 1 and all('weapclip' in f.tex for f in new[0].faces)     # the deck, no disc
