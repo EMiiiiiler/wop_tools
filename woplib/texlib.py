@@ -160,6 +160,29 @@ def is_tileable(arr, tol=6.0):
 
 
 # ================================================================================================= registry
+def pad_sticker(bg=(255, 210, 40), fg=(220, 40, 60), text='JUMP!', n=256, ring=(255, 255, 255)):
+    """round 'this is a jump pad' sticker for themed pad skins (K.jumppad(skin=...)): white ring, two up-chevrons
+    and a word. Transparent corners are filled with ring colour (use it on a quad slightly smaller than the top)."""
+    im = Image.new('RGB', (n, n), tuple(int(v) for v in ring))
+    d = ImageDraw.Draw(im)
+    d.ellipse((6, 6, n - 6, n - 6), fill=tuple(int(v) for v in bg), outline=tuple(int(v) for v in fg), width=10)
+    for k in range(2):
+        y0 = n * (0.22 + 0.17 * k)
+        d.polygon([(n * 0.28, y0 + n * 0.16), (n * 0.5, y0), (n * 0.72, y0 + n * 0.16), (n * 0.62, y0 + n * 0.21),
+                   (n * 0.5, y0 + n * 0.11), (n * 0.38, y0 + n * 0.21)], fill=tuple(int(v) for v in fg))
+    if text:
+        f = ML.font(int(n * 0.17), serif=False)
+        tw = d.textlength(text, font=f)
+        d.text(((n - tw) / 2, n * 0.62), text, font=f, fill=tuple(int(v) for v in fg))
+    return np.asarray(im, np.float32)
+
+
+def disc_alpha(n=256, margin=6):
+    """round alpha mask (255 inside a disc, 0 outside) for cut-out stickers: TX.material(key, rgb, 'alpha', alpha=...)"""
+    x, y = np.mgrid[0:n, 0:n] - (n - 1) / 2.0
+    return np.where(np.hypot(x, y) <= n / 2.0 - margin + 0.5, 255, 0).astype(np.uint8)
+
+
 BRUSH_KINDS = ('lm', 'sign', 'slick', 'neon', 'glass', 'water', 'fog', 'pulse', 'jumppad', 'raw')
 
 

@@ -1,0 +1,13 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padclassroom
+kneehole:           0,660,0 > 0,1340,0
+spiral:             -1112,966,0 > -552,1100,608
+cupboard_in:        1460,1450,0 > 1920,1450,24
+nook_in:            -1820,800,0 > -2170,800,16
+castle_top:         -2120,400,960 > -2120,-60,976
+crayon_in:          -1560,-1680,0 > -1960,-1680,12
+bridge_ns:          -480,-820,560 > -480,-170,560
+bridge_ew:          -430,-150,560 > 430,-180,560
+pcase_in:           210,20,560 > 560,20,568
+ruler_w:            -1764,-800,0 > -736,-800,560
+bin_in:             670,-1640,0 > 1080,-1640,16
