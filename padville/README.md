@@ -55,6 +55,9 @@ Models: `pv_models.py`. New shared modules written for this map: `woplib/town.py
 - **Basement corner** (behind the acrylic, decorative): modelled wooden stairs up to the house door on a landing,
   washing machine + laundry basket, hot-water boiler with copper pipes, metal shelving with labelled boxes under a high
   window with an additive sunbeam, bucket + mop. Replaced the painted wall in round 2.
+- **Viewing gallery** (round 3): the basement was pushed back 600u to make a visitors' aisle on the far side of the
+  acrylic: a drinks ledge on brackets along the guard (brushes, so the cups/glasses on it pass the support audit) and
+  six chrome bar stools (MD3, two seat colours, one with a back) facing the layout.
 - **Themed jump pads** (`K.jumppad(dress=...)`): manhole covers in town, steam vents on the mountain, a trapdoor in
   the tower, a coil spring under the board, the controller's red push button, a sewing button on the bench.
 - **Sounds:** trains (mechanics, horn on a timer), level-crossing bell, church bell, clock in the station, water at the

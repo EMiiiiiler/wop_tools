@@ -32,7 +32,7 @@ MAP, NS, LONG = INFO['map'], INFO['ns'], INFO['longname']
 X0, Y0, X1, Y1 = INFO['bounds']                # -2816 -2048 2304 2048
 BX = 1152                                      # layout | workbench seam
 ZC = 2600                                      # basement ceiling
-VY, VZ = -3300, -800                           # the basement beyond the acrylic guard (floor, modelled corner)
+VY, VZ = -3900, -800                           # the basement beyond the acrylic guard (floor, modelled corner)
 C = (-832.0, 0.0); R = 1500.0                  # main line circle
 BAL = (1380, 1620)                             # ballast band
 RAIL_Z = 30                                    # rail top
@@ -808,6 +808,29 @@ def shader():
 CABLES = {}
 
 
+def viewing_gallery():
+    """the visitors' side of the acrylic: a drinks ledge on brackets along the guard and a row of bar stools facing
+    the layout, so people can sit and watch the trains go by. Unreachable (behind the guard + clip): decoration only."""
+    z = VZ
+    lt = {'top': T('shelf'), 'side': T('shelf'), 'bot': T('shelf')}
+    K.add(box((X0 + 40, Y0 - 300, 170), (X1 - 40, Y0, 200), lt))                  # the ledge, its back against the guard
+    for x in range(-2600, 2200, 700):                                              # brackets down the fascia
+        K.add(hull([(x - 16, Y0, 170), (x + 16, Y0, 170), (x - 16, Y0 - 280, 170), (x + 16, Y0 - 280, 170),
+                    (x - 16, Y0, -40), (x + 16, Y0, -40)], lt, round_pts=False))
+    stools = [(-2350, 15, 'bar_stool'), (-1500, -10, 'bar_stool_b'), (-650, 30, 'bar_stool'), (250, -20, 'bar_stool_back'),
+              (1100, 5, 'bar_stool'), (1950, -35, 'bar_stool_b')]
+    for (x, a, nm) in stools:
+        deco(nm, x, Y0 - 560, z, 90 + a)
+    # drinks and a programme left on the ledge
+    for (x, path, sc) in ((-2300, 'pad_cups/pad_cup03.md3', 2.0), (-1480, 'pad_ddmix/diner/glass_betty.md3', 2.2),
+                          (300, 'pad_cups/pad_cup05.md3', 2.0), (1150, 'pad_ddmix/diner/glass_diner.md3', 2.4),
+                          (1900, 'pad_tins/pad_pupsi.md3', 1.5)):
+        K.catalog(path, x, Y0 - 150, 200, scale=sc, clip=False, nudge=False, lit=True)
+    K.catalog('pad_books/pad_ob_fl_md.md3', -700, Y0 - 160, 200, scale=1.4, angle=80, clip=False, nudge=False, lit=True)
+    for x in (-2000, -400, 1300):
+        K.light(x, Y0 - 700, z + 1700, 1300, '1 0.92 0.8')
+
+
 def basement_corner():
     """the real basement past the acrylic guard (it used to be a painted wall): stairs up to the house door on a
     landing, washing machine + laundry basket, hot-water boiler with copper pipes, metal shelving with stored boxes
@@ -841,6 +864,8 @@ def models():
     PM.mats(); building_mats(); PM.basement_mats(); PM.pad_mats()
     PM.washing_machine(); PM.laundry_basket(); PM.water_boiler(ceil=ZC - VZ); PM.basement_stairs(landing=0)
     PM.house_door(); PM.metal_shelving(); PM.basement_window(); PM.sunbeam(drop=2500, reach=1050); PM.bucket_mop()
+    PM.gallery_mats(); PM.bar_stool(); PM.bar_stool(key='stool_seat2', name='bar_stool_b')
+    PM.bar_stool(key='stool_seat2', name='bar_stool_back', back=True)
     PM.pad_manhole(); PM.pad_vent(); PM.pad_trapdoor(); PM.pad_spring(); PM.pad_button(); PM.pad_sewbutton()
     PM.tunnel_portal(150, 320, top_z=400)
     X = ML.Model(); from meshlib import tube as _t
@@ -870,7 +895,7 @@ if __name__ == '__main__':
     textures()
     models()
     shell(); underworld(); lake(); railway(); mountain()
-    B = buildings(); hatches(); workbench(); decals(); scenery(); vault(); basement_corner()
+    B = buildings(); hatches(); workbench(); decals(); scenery(); vault(); basement_corner(); viewing_gallery()
     TR = train()
     items(B); lights()
     K.fix_items()

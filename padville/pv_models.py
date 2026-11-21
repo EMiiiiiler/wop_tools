@@ -1085,3 +1085,36 @@ def pad_sewbutton():
     for (hx, hy) in ((-9, -9), (9, -9), (-9, 9), (9, 9)):
         disc(X.mesh(TX['iron_rim']), 4.5, 5.4, up=True, n=10, cx=hx, cy=hy)
     ML.save('pad_sewbutton', X)
+
+
+# ================================================================================================ viewing gallery (basement side of the acrylic)
+def gallery_mats():
+    M = TX.material
+    M('stool_seat', TL.fabric((150, 34, 30), 40, 401), shade=80)
+    M('stool_seat2', TL.fabric((30, 70, 120), 40, 402), shade=80)
+    M('stool_wood', TL.planks((120, 80, 46), 1, (80, 52, 30), 14, False, True, 403), shade=60)
+
+
+def bar_stool(seat_h=1240.0, seat_r=280.0, key='stool_seat', name='bar_stool', back=False):
+    """chrome bar stool: weighted round base, post, footrest ring, padded round seat (optionally a low wooden back).
+    Origin on the floor at the post."""
+    X = ML.Model()
+    ch = TX['chrome']
+    revolve(X.mesh(ch), [(300, 0), (300, 14), (240, 40), (60, 60), (40, 70)], n=32, u_tiles=2)
+    tube(X.mesh(ch), [(0, 0, 60), (0, 0, seat_h - 90)], 34, nseg=14, caps=(False, False))
+    ring = [(210 * math.cos(t), 210 * math.sin(t), seat_h * 0.42) for t in np.linspace(0, 2 * math.pi, 33)]
+    tube(X.mesh(ch), ring, 13, nseg=8, caps=(False, False))
+    for a in (0, 120, 240):
+        c, s_ = math.cos(math.radians(a)), math.sin(math.radians(a))
+        tube(X.mesh(ch), [(34 * c, 34 * s_, seat_h * 0.42 + 40), (205 * c, 205 * s_, seat_h * 0.42)], 9, nseg=6)
+    revolve(X.mesh(ch), [(120, seat_h - 96), (200, seat_h - 70), (0, seat_h - 70)], n=24, inward=True)
+    revolve(X.mesh(TX[key]), [(seat_r - 30, seat_h - 72), (seat_r, seat_h - 40), (seat_r - 6, seat_h + 10),
+                              (seat_r - 50, seat_h + 34), (0, seat_h + 40)], n=32, u_tiles=4)
+    if back:
+        for a in (150, 210):
+            c, s_ = math.cos(math.radians(a)), math.sin(math.radians(a))
+            tube(X.mesh(TX['stool_wood']), [((seat_r - 40) * c, (seat_r - 40) * s_, seat_h), ((seat_r - 20) * c, (seat_r - 20) * s_, seat_h + 420)], 16, nseg=8)
+        arc = [((seat_r - 10) * math.cos(t), (seat_r - 10) * math.sin(t), seat_h + 400) for t in np.radians(np.linspace(130, 230, 12))]
+        tube(X.mesh(TX['stool_wood']), arc, 34, nseg=8, ry=[60] * 12)
+    ML.save(name, X)
+    return X
