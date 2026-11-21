@@ -150,7 +150,8 @@ def main():
         ym = [dd[i] for i in range(len(n)) if n[i, 1] > 0.999]; yn = [-dd[i] for i in range(len(n)) if n[i, 1] < -0.999]
         zm = [dd[i] for i in range(len(n)) if n[i, 2] > 0.999]; zn = [-dd[i] for i in range(len(n)) if n[i, 2] < -0.999]
         if xm and xn and ym and yn and zm and zn and zn[0] < 60 and zm[0] > 40:
-            d.rectangle([px(xn[0], ym[0]), px(xm[0], yn[0])], fill=(10, 40, 90))
+            (ax, ay), (bx_, by_) = px(min(xn), max(ym)), px(max(xm), min(yn))   # several axial planes: use the extremes
+            if bx_ >= ax and by_ >= ay: d.rectangle([ax, ay, bx_, by_], fill=(10, 40, 90))
     long_ = np.where(L >= a.min)[0]
     for i in long_:
         o = RO[i]; e = o + RD[i] * L[i]
