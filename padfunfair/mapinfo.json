@@ -1,0 +1,29 @@
+{
+ "map": "wop_padfunfair",
+ "ns": "padfunfair",
+ "longname": "Padland Funfair",
+ "generator": "build_padfunfair.py",
+ "bounds": [-2560, -2304, 2560, 2304],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {"fast": "-fast -samples 2 -filter", "final": "-fast -samples 3 -filter -bounce 1 -bouncegrid"},
+ "bots": {"gametype": 0, "minutes": 3, "bots": 10},
+ "sightlines": {"zmax": [64], "min": 1800, "target_pct": 4.0},
+ "preview": {
+  "title": "Padland Funfair", "texsize": 192, "bigtex": "",
+  "shots": [
+   "overview:2400,-2200,1700,135,-26",
+   "entrance:0,-2250,160,90,4",
+   "midway:0,-1800,140,90,-2",
+   "wheel:600,400,500,110,8",
+   "carousel:-1100,-500,220,145,-6",
+   "ghost:1300,-900,200,60,0",
+   "helter:1300,1000,400,45,6",
+   "bigtop_in:-1650,1000,180,90,10",
+   "bigtop:-900,700,500,135,-6",
+   "dodgems:600,-700,200,135,-6",
+   "ducks:-700,-1200,160,150,-12",
+   "hub:0,900,1000,90,-12"
+  ]
+ },
+ "levelshots": {"cover": "overview", "shots": ["wheel", "carousel", "ghost"]}
+}

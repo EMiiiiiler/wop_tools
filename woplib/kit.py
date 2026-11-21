@@ -58,6 +58,12 @@ class MapKit:
     def add(self, *b, tag=None): return self.M.add(*b, tag=tag)
 
     def ent(self, cls, origin=None, brushes=None, **kv):
+        if kv.get('model2'):
+            from . import models as ML
+            for (path, sc, zo) in ML.PLACE.values():
+                if path == kv['model2'] and (abs(sc - 1) > 1e-6 or abs(zo) > 1e-6):
+                    raise ValueError(f'{cls} model2 {path} was saved at modelscale {sc} / zoff {zo} (past MD3 +-512u) '
+                                     'but model2 is never scaled - save it with ML.save_iqm instead (padfunfair wheel)')
         if cls in wopdata.FORBIDDEN: raise ValueError(f'{cls}: {wopdata.FORBIDDEN[cls]}')
         if cls not in wopdata.KNOWN_CLASSES:
             self.warn(f'{cls} is not in woplib.wopdata.KNOWN_CLASSES: check it in WoP entities.def')
@@ -716,13 +722,21 @@ class MapKit:
         underside for every segment whose underside comes below z0 + `below` (lint headroom flagged those slots and
         bots got wedged in them). skip(x, y) -> True leaves a segment out (over a pool). Returns the brushes."""
         P = [np.array(p, float) for p in pts]
+        n = len(P)
+        perps = []
+        for i in range(n - 1):
+            d = P[i + 1][:2] - P[i][:2]; d /= np.linalg.norm(d); perps.append(np.array([-d[1], d[0]]))
+        joints = []                                  # mitred joints (like slide()): neighbours share a face, no overlap on bends
+        for k in range(n):
+            m = perps[0] if k == 0 else perps[-1] if k == n - 1 else (perps[k - 1] + perps[k])
+            m = m / np.linalg.norm(m)
+            joints.append(m * hw / max(0.5, float(m @ perps[min(k, n - 2)])))
         out = []
-        for a, b in zip(P[:-1], P[1:]):
+        for i, (a, b) in enumerate(zip(P[:-1], P[1:])):
             if min(a[2], b[2]) - floor_t >= z0 + below or max(a[2], b[2]) - floor_t <= z0 + 2: continue
             if skip and skip((a[0] + b[0]) / 2, (a[1] + b[1]) / 2): continue
-            d = b[:2] - a[:2]; d /= np.linalg.norm(d); s = np.array([-d[1], d[0]]) * hw
             pts8 = []
-            for c in (a, b):
+            for c, s in ((a, joints[i]), (b, joints[i + 1])):
                 for sg in (1, -1):
                     q = c[:2] + s * sg
                     pts8 += [(q[0], q[1], z0), (q[0], q[1], max(z0 + 1, c[2] - floor_t - 2.0))]

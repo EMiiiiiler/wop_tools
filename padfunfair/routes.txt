@@ -1,0 +1,20 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padfunfair
+wheel_platform:     0,860,2 > 0,1100,48
+carousel_base:      -1190,-150,2 > -1450,-150,16
+haunted_st1:        1210,436,0 > 1770,436,240
+haunted_door_s1300: 1300,-246,0 > 1300,-54,4
+haunted_door_s2100: 2100,-246,0 > 2100,-54,4
+haunted_door_w356:  1054,356,0 > 1246,356,4
+haunted_door_e356:  2346,356,0 > 2154,356,4
+helter_slide:       1600,1450,2 > 1800,1450,880
+bleachers:          -1650,1740,2 > -1650,1970,80
+bigtop_door:        -1650,680,2 > -1650,940,2
+dodgems:            0,-560,2 > 0,-120,8
+coconut_door_s-1144:-1144,-1816,0 > -1144,-1624,4
+candyfloss_door_s956:956,-1816,0 > 956,-1624,4
+tickets_w_door_n-644:-644,-1884,0 > -644,-2076,4
+tickets_e_door_n644:644,-1884,0 > 644,-2076,4
+burgervan_door_e-1044:1396,-1044,0 > 1204,-1044,4
+caravanw_door_n-2134:-2134,-1454,32 > -2134,-1646,36
+caravane_door_n2166:2166,-1504,32 > 2166,-1696,36
