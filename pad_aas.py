@@ -12,6 +12,8 @@ For every trigger_push this reads the jump-pad reachability from the .aas and pr
 area is grounded, and the distance to the intended landing (from woplib's spots.json). FAIL when a pad has no
 link, ends in a non-grounded (mid-air) area, or ends more than --tol from where it should land.
 Fixes: more apex (or start the pad further back) so the flight crosses edges higher; land further from edges.
+Pads INTO water (padclassroom fish tank): bspc ends the flight where it enters the liquid, so a pad whose intended
+landing is under water passes when bspc ends in a liquid area within --tol horizontally and above the landing.
 """
 import os, sys, json, argparse
 import numpy as np
@@ -21,6 +23,7 @@ import aas_check as AC
 import audit_map as AM
 
 JUMPPAD = 18
+AREA_GROUNDED, AREA_LIQUID = 1, 4
 
 
 def main():
@@ -58,14 +61,21 @@ def main():
             print(f'  FAIL {name:14s} no bspc jump-pad link (pad area {area})'); fails += 1; continue
         r = links[0]
         end = np.array(r['end'], float); ta = int(r['area'])
-        grounded = bool(int(sets[ta]['flags']) & 1)
-        msg = f'{name:14s} bspc lands at {np.round(end).astype(int).tolist()} area {ta}{"" if grounded else " (MID-AIR)"}'
-        bad = not grounded
+        fl = int(sets[ta]['flags'])
+        grounded, liquid = bool(fl & AREA_GROUNDED), bool(fl & AREA_LIQUID)
+        tag = ' (WATER)' if liquid else ('' if grounded else ' (MID-AIR)')
+        msg = f'{name:14s} bspc lands at {np.round(end).astype(int).tolist()} area {ta}{tag}'
+        bad = not (grounded or liquid)
         if info.get('land'):
             L = np.array(info['land'][:2] + [info['land'][2] + 24], float)
             d = float(np.linalg.norm(end - L))
             msg += f', {d:.0f}u from the intended landing {[int(v) for v in info["land"]]}'
-            bad |= d > a.tol
+            if liquid:                           # flight ends at the water surface above an underwater landing
+                dh = float(np.linalg.norm(end[:2] - L[:2]))
+                bad |= dh > a.tol or end[2] < L[2] - 8
+                msg += f' (in water, {dh:.0f}u horizontally)'
+            else:
+                bad |= d > a.tol
         print(('  FAIL ' if bad else '  ok   ') + msg)
         fails += bad
     print('RESULT:', 'OK' if not fails else f'{fails} pad(s) bspc does not land where intended')
