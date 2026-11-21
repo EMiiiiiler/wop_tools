@@ -821,8 +821,9 @@ def basement_corner():
     for x in (-1290, -760):
         K.add(box((x, W + 380, z), (x + 50, W + 430, z + 2350), lt))
     deco('house_door', -1000, W, z + 2400, 180)
-    deco('washer', 1925, W + 330, z, 180)
-    deco('laundry_basket', 1300, W + 760, z, 20)
+    deco('washer', -277, W + 330, z, 180)                          # tucked under the stairs (underside > 1550 here)
+    deco('laundry_basket', 330, W + 700, z, 20)
+    K.light(-277, W + 760, z + 500, 900, '1 0.9 0.75')
     deco('water_boiler', -1600, W + 280, z, 180)
     deco('shelving', -2450, W + 220, z, 180)
     deco('bucket_mop', -1950, W + 700, z, 200)
@@ -832,7 +833,7 @@ def basement_corner():
     K.light(-2450, W + 300, z + 2350, 2600, '0.85 0.92 1')
     K.light(-2300, W + 800, z + 600, 1400, '0.9 0.95 1')
     K.light(300, W + 600, z + 2300, 2200, '1 0.85 0.6')
-    K.light(1700, W + 800, z + 800, 1500, '1 0.9 0.75')
+    K.light(1500, W + 800, z + 800, 1100, '1 0.9 0.75')
     K.light(-1000, W + 300, z + 2700, 600, '1 0.85 0.6')
 
 
