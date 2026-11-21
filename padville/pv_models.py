@@ -717,3 +717,371 @@ def station_sign(L=700.0, h=90.0):
         tube(X.mesh(TX['iron_green']), [(x, 0, -150), (x, 0, 0)], 6, nseg=8)
     ML.save('station_sign', X)
     return X
+
+
+# ================================================================================================ the basement beyond the acrylic
+# Seen from the layout across the acrylic guard, standing on the basement floor (z 0 local = the void floor). These
+# replace the old painted wall: washing machine, boiler + pipes, wooden stairs up to the house door, metal shelving
+# with stored boxes, a high window with a sunbeam, laundry basket, bucket + mop, a bare bulb.
+def basement_mats():
+    M = TX.material
+    M('enamel', TL.solid((236, 236, 232), 3, 201, 128), 'lms', shade=40, v=0.12)
+    M('chrome', TL.metal((200, 204, 210), False, 202), 'lms', shade=60, v=0.45)
+    M('porthole', TL.solid((40, 60, 80), 2, 203, 64), 'glass', c='0.18 0.22 0.28')
+    M('washer_panel', washer_panel_tex(), shade=30)
+    M('drum', TL.metal((150, 154, 160), True, 204), shade=40)
+    M('boiler', boiler_tex(), lathe=True, shade=60)
+    M('gauge', gauge_tex(), shade=30)
+    M('pipe_copper', TL.metal((190, 112, 64), True, 205), 'lms', shade=60, v=0.2)
+    M('pipe_grey', TL.solid((150, 150, 148), 3, 206, 64), shade=60)
+    M('tread', TL.planks((168, 124, 80), 1, (110, 76, 46), 10, False, False, 207), shade=30)
+    M('stringer', TL.grime(TL.solid((214, 208, 196), 3, 208, 128), 0.25, 209), shade=30)
+    M('handrail', TL.planks((120, 80, 48), 1, (80, 52, 30), 12, False, False, 210), shade=60)
+    M('door_paint', door_tex(), shade=30)
+    M('door_frame', TL.solid((230, 226, 214), 3, 211, 64), shade=30)
+    M('brass', TL.metal((200, 160, 70), False, 212), 'lms', shade=60, v=0.35)
+    M('door_glow', TL.solid((255, 230, 170), 2, 213, 64), 'glow')
+    M('shelf_metal', TL.grime(TL.metal((120, 126, 132), True, 214), 0.2, 215), shade=30)
+    M('box_xmas', box_label_tex('XMAS DECS', (200, 40, 40)), shade=30)
+    M('box_photos', box_label_tex('PHOTOS', (40, 90, 160)), shade=30)
+    M('box_trains', box_label_tex('SPARE TRACK', (30, 120, 60)), shade=30)
+    M('box_misc', box_label_tex('KEEP!', (140, 90, 30)), shade=30)
+    M('paintcan', paintcan_tex(), lathe=True, shade=60)
+    M('window_sky', TL.solid((210, 232, 250), 2, 216, 64), 'glow')
+    M('window_frame', TL.solid((224, 220, 210), 3, 217, 64), shade=30)
+    M('sunbeam', sunbeam_tex(), 'add')
+    M('basket', TL.grime(TL.dots((80, 150, 200), (40, 90, 140), 10, 0.2, 218), 0.1, 219), shade=60)
+    M('bucket', TL.solid((200, 50, 40), 3, 220, 64), 'lms', shade=60, v=0.12)
+    M('mophead', TL.fabric((220, 214, 196), 24, 221), shade=60)
+    M('laundry', TL.fabric((90, 120, 190), 32, 222), shade=60)
+
+
+def washer_panel_tex(w=512, h=128):
+    im = _img(w, h, (230, 230, 226)); d = ImageDraw.Draw(im)
+    d.rectangle((20, 30, 150, 98), fill=(200, 200, 196), outline=(150, 150, 150), width=3)        # detergent drawer
+    d.rectangle((60, 58, 110, 70), fill=(120, 120, 120))
+    d.rounded_rectangle((210, 40, 330, 88), 8, fill=(30, 50, 40)); d.text((270, 64), '1:24', font=font(30), fill=(90, 255, 140), anchor='mm')
+    for k, t in enumerate(('30', '40', '60', '90')): d.text((360 + k * 30, 30), t, font=font(14), fill=(60, 60, 60))
+    d.ellipse((380, 46, 470, 116), fill=(200, 200, 204), outline=(120, 120, 120), width=4)
+    d.text((40, 110), 'PADWASH 9000', font=font(14), fill=(80, 80, 80))
+    return _arr(im)
+
+
+def boiler_tex(w=512, h=512):
+    im = _img(w, h, (232, 230, 222)); d = ImageDraw.Draw(im)
+    for y in (40, h - 40): d.rectangle((0, y - 6, w, y + 6), fill=(180, 176, 168))
+    d.rectangle((150, 180, 360, 300), fill=(250, 250, 246), outline=(160, 160, 160), width=3)
+    d.text((255, 210), 'HOT WATER', font=font(26), fill=(200, 40, 40), anchor='mm')
+    d.text((255, 260), '180 L  /  3 kW', font=font(20), fill=(60, 60, 60), anchor='mm')
+    return _arr(im)
+
+
+def gauge_tex(n=128):
+    im = _img(n, n, (240, 240, 236)); d = ImageDraw.Draw(im)
+    d.ellipse((4, 4, n - 4, n - 4), outline=(40, 40, 40), width=6)
+    for k in range(9):
+        a = math.radians(225 - k * 33.75)
+        d.line((n / 2 + 40 * math.cos(a), n / 2 - 40 * math.sin(a), n / 2 + 52 * math.cos(a), n / 2 - 52 * math.sin(a)), fill=(30, 30, 30), width=3)
+    d.line((n / 2, n / 2, n / 2 + 40 * math.cos(math.radians(60)), n / 2 - 40 * math.sin(math.radians(60))), fill=(200, 30, 30), width=4)
+    return _arr(im)
+
+
+def door_tex(w=256, h=512):
+    im = _img(w, h, (110, 140, 120)); d = ImageDraw.Draw(im)
+    for (x0, y0, x1, y1) in ((30, 30, 226, 230), (30, 270, 226, 482)):
+        d.rectangle((x0, y0, x1, y1), outline=(80, 104, 88), width=10)
+        d.rectangle((x0 + 18, y0 + 18, x1 - 18, y1 - 18), outline=(136, 166, 146), width=4)
+    return _arr(im)
+
+
+def box_label_tex(text, col, w=512, h=256):
+    im = _img(w, h, (190, 152, 104)); d = ImageDraw.Draw(im)
+    d.rectangle((0, 110, w, 146), fill=(210, 190, 150))                                         # parcel tape
+    d.text((w / 2, 70), text, font=font(56), fill=col, anchor='mm')
+    d.text((w / 2, 200), 'THIS WAY UP  ^', font=font(22), fill=(70, 50, 30), anchor='mm')
+    return _arr(im)
+
+
+def paintcan_tex(w=512, h=256):
+    im = _img(w, h, (200, 200, 204)); d = ImageDraw.Draw(im)
+    d.rectangle((0, 60, w, 200), fill=(250, 250, 246))
+    d.rectangle((0, 60, w, 90), fill=(40, 120, 200))
+    d.text((w / 2, 150), 'EMULSION  MAGNOLIA', font=font(30), fill=(40, 40, 40), anchor='mm')
+    return _arr(im)
+
+
+def sunbeam_tex(n=128):
+    x, y = ML.xy(n)
+    a = np.clip(1 - np.abs(x - 0.5) * 2, 0, 1) ** 1.5 * (0.35 + 0.65 * (1 - y))
+    return np.stack([a * 120, a * 110, a * 80], -1).astype(np.float32)
+
+
+def washing_machine(w=650.0, d=620.0, h=1400.0):
+    """front faces -y (local), origin at the base centre"""
+    X = ML.Model()
+    rbox(X.mesh(TX['enamel']), (-w / 2, -d / 2, 30), (w / 2, d / 2, h), r=24, k=3, tile=512)
+    rbox(X.mesh(TX['pipe_grey']), (-w / 2 + 20, -d / 2 + 20, 0), (w / 2 - 20, d / 2 - 20, 30), r=4, k=1, tile=256)
+    for x in (-w / 2 + 50, w / 2 - 50):                                                              # feet
+        for y in (-d / 2 + 50, d / 2 - 50):
+            tube(X.mesh(TX['pipe_grey']), [(x, y, 0), (x, y, 30)], 16, nseg=8)
+    # control panel strip (fitted label) on the front top
+    X.mesh(TX['washer_panel']).poly([np.array(p, float) for p in ((-w / 2 + 30, -d / 2 - 0.6, h - 220), (w / 2 - 30, -d / 2 - 0.6, h - 220),
+                                                                  (w / 2 - 30, -d / 2 - 0.6, h - 40), (-w / 2 + 30, -d / 2 - 0.6, h - 40))],
+                                    (0, -1, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    # porthole door: chrome ring + tinted glass + drum behind
+    cz = h * 0.47; R = 230
+    ring = Mesh(); revolve(ring, [(R - 40, 0), (R, 0), (R + 10, 30), (R - 50, 34)], n=40)
+    X.mesh(TX['chrome']).add(ring, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float), (0, -d / 2, cz))
+    g = Mesh(); disc(g, R - 44, 28, up=True, n=40)
+    X.mesh(TX['porthole']).add(g, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float), (0, -d / 2, cz))
+    dr = Mesh(); disc(dr, R - 50, -60, up=True, n=32)
+    X.mesh(TX['drum']).add(dr, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float), (0, -d / 2, cz))
+    rbox(X.mesh(TX['chrome']), (R - 10, -d / 2 - 46, cz - 50), (R + 30, -d / 2 - 2, cz + 50), r=8, k=2, tile=64)  # handle
+    # knob
+    kn = Mesh(); revolve(kn, [(42, 0), (42, 36), (30, 46), (0, 48)], n=20)
+    X.mesh(TX['chrome']).add(kn, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float), (w / 2 - 110, -d / 2, h - 150))
+    # hoses to the wall
+    tube(X.mesh(TX['pipe_grey']), [(-w / 2 + 120, d / 2, h - 300), (-w / 2 + 120, d / 2 + 60, h - 260), (-w / 2 + 160, d / 2 + 70, h + 200)], 18, nseg=8)
+    ML.save('washer', X)
+    return X
+
+
+def laundry_basket(r=200.0, h=330.0):
+    X = ML.Model()
+    revolve(X.mesh(TX['basket']), [(r * 0.85, 0), (r, h), (r + 10, h + 14), (r - 10, h + 14), (r * 0.85 - 10, 12), (0, 12)], n=28, u_tiles=6)
+    ellipsoid(X.mesh(TX['laundry']), (0, 0, h - 30), r * 0.85, r * 0.8, 90, nu=14, nv=6)
+    tube(X.mesh(TX['laundry']), [(r * 0.6, 0, h), (r + 40, 30, h - 60), (r + 60, 60, 4)], [26, 22, 18], nseg=8)
+    ML.save('laundry_basket', X)
+    return X
+
+
+def water_boiler(r=260.0, h=1900.0, ceil=3400.0):
+    """cylinder on legs with a gauge, copper pipes up to the ceiling (local z 0 = floor, ceil = height of the ceiling)"""
+    X = ML.Model()
+    for a in (45, 165, 285):
+        tube(X.mesh(TX['pipe_grey']), [(r * 0.7 * math.cos(math.radians(a)), r * 0.7 * math.sin(math.radians(a)), 0),
+                                       (r * 0.7 * math.cos(math.radians(a)), r * 0.7 * math.sin(math.radians(a)), 160)], 18, nseg=8)
+    revolve(X.mesh(TX['boiler']), [(r - 30, 140), (r, 170), (r, h - 140), (r - 40, h - 60), (r * 0.5, h - 10), (0, h)], n=40, u_tiles=1)
+    revolve(X.mesh(TX['pipe_grey']), [(0, 150), (r - 30, 150), (r - 30, 140)], n=40, inward=True)
+    g = Mesh(); disc(g, 70, 0, up=True, n=24)
+    X.mesh(TX['gauge']).add(g, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float), (0, -r - 12, h * 0.55))
+    tube(X.mesh(TX['chrome']), [(0, -r + 4, h * 0.55), (0, -r - 12, h * 0.55)], 78, nseg=20, caps=(False, False))
+    for (x, y, rr) in ((-90, 60, 30), (90, 60, 30), (0, 150, 22)):                                 # pipes up to the ceiling
+        tube(X.mesh(TX['pipe_copper']), [(x, y, h - 40), (x, y, ceil)], rr, nseg=10, caps=(False, False))
+    tube(X.mesh(TX['pipe_copper']), [(-90, 60, h + 500), (-90, 400, h + 500)], 30, nseg=10)
+    for z in (h + 300, h + 900):                                                                    # pipe clips
+        for x in (-90, 90):
+            tube(X.mesh(TX['pipe_grey']), [(x, 60, z - 20), (x, 60, z + 20)], 40, nseg=10)
+    ML.save('water_boiler', X)
+    return X
+
+
+def basement_stairs(run=2200.0, rise=2400.0, width=440.0, n=16, landing=600.0):
+    """open wooden basement stairs rising toward +x along a wall at local y = +width/2 (the wall side), stringers,
+    handrail with balusters on the open (-y) side, and a top landing on posts. local z 0 = floor, x 0 = first riser."""
+    X = ML.Model()
+    tr, st, hr = TX['tread'], TX['stringer'], TX['handrail']
+    dx = run / n; dz = rise / n
+    for i in range(n):
+        x0 = i * dx; z = (i + 1) * dz
+        x1 = x0 + dx + (4 if i < n - 1 else -1)
+        rbox(X.mesh(tr), (x0 - 10, -width / 2 + 12, z - 36), (x1, width / 2 - 12, z), r=3, k=1, tile=256)
+    T = 50.0
+    for y in (-width / 2, width / 2 - 24):                                                          # stringers
+        pts2 = [(0, 0), (run, rise - 40), (run, rise + 40), (0, 100)]
+        q = [np.array([p[0], y, p[1]], float) for p in pts2]
+        X.mesh(st).poly(q, (0, -1, 0), [(p[0] / 256, -p[1] / 256) for p in pts2])
+        q2 = [np.array([p[0], y + 24, p[1]], float) for p in pts2[::-1]]
+        X.mesh(st).poly(q2, (0, 1, 0), [(p[0] / 256, -p[1] / 256) for p in pts2[::-1]])
+        X.mesh(st).poly([np.array(p, float) for p in ((0, y, 100), (run, y, rise + 40), (run, y + 24, rise + 40), (0, y + 24, 100))],
+                        (-0.73, 0, 0.68), [(0, 0), (1, 0), (1, 0.1), (0, 0.1)])
+    if landing > 0:                                                                                  # landing on posts
+        rbox(X.mesh(tr), (run, -width / 2, rise - 50), (run + landing, width / 2, rise), r=3, k=1, tile=256)
+        for x in (run + 20, run + landing - 30):
+            rbox(X.mesh(st), (x - 25, -width / 2 + 5, 0), (x + 25, -width / 2 + 55, rise - 50), r=3, k=1, tile=256)
+    # handrail + balusters
+    y = -width / 2 + 10
+    for i in range(0, n + 1, 2):
+        x = i * dx + dx / 2; z = (i + 1) * dz
+        tube(X.mesh(hr), [(x, y, z), (x, y, z + 520)], 9, nseg=6, caps=(False, False))
+    end = run + landing - 10 if landing > 0 else run - 30
+    tube(X.mesh(hr), [(dx / 2, y, dz + 540), (end, y, rise + 540)], 18, nseg=8)
+    tube(X.mesh(hr), [(end, y, rise - (0 if landing > 0 else dz)), (end, y, rise + 540)], 16, nseg=8)
+    ML.save('basement_stairs', X)
+    return X
+
+
+def house_door(w=440.0, h=850.0):
+    """panelled door in its frame on a wall (local: wall face at y = 0, door faces -y), light leaking under it"""
+    X = ML.Model()
+    fr = TX['door_frame']
+    for (x0, x1) in ((-w / 2 - 50, -w / 2), (w / 2, w / 2 + 50)):
+        rbox(X.mesh(fr), (x0, -26, 0), (x1, 0.5, h + 50), r=4, k=1, tile=128)
+    rbox(X.mesh(fr), (-w / 2 - 60, -30, h), (w / 2 + 60, 0.5, h + 70), r=4, k=1, tile=128)
+    X.mesh(TX['door_paint']).poly([np.array(p, float) for p in ((-w / 2, -10, 14), (w / 2, -10, 14), (w / 2, -10, h), (-w / 2, -10, h))],
+                                  (0, -1, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    X.mesh(TX['door_glow']).poly([np.array(p, float) for p in ((-w / 2, -8, 0), (w / 2, -8, 0), (w / 2, -8, 14), (-w / 2, -8, 14))],
+                                 (0, -1, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    kn = Mesh(); revolve(kn, [(22, 0), (14, 20), (30, 44), (0, 56)], n=16)
+    X.mesh(TX['brass']).add(kn, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float), (w / 2 - 60, -10, h * 0.48))
+    ML.save('house_door', X)
+    return X
+
+
+def metal_shelving(w=700.0, d=420.0, h=1500.0, levels=(20, 480, 940, 1400)):
+    X = ML.Model()
+    m = TX['shelf_metal']
+    for x in (-w / 2, w / 2 - 30):
+        for y in (-d / 2, d / 2 - 30):
+            rbox(X.mesh(m), (x, y, 0), (x + 30, y + 30, h), r=2, k=1, tile=128)
+    for z in levels:
+        rbox(X.mesh(m), (-w / 2, -d / 2, z), (w / 2, d / 2, z + 16), r=2, k=1, tile=256)
+    # stored things: labelled boxes, paint cans, an old suitcase
+    boxes = [(levels[0] + 16, -300, -40, 'box_trains'), (levels[0] + 16, -10, 310, 'box_photos'),
+             (levels[1] + 16, -320, 0, 'box_xmas'), (levels[2] + 16, -60, 300, 'box_misc')]
+    for (z, x0, x1, key) in boxes:
+        hh = 300 if key != 'box_photos' else 260
+        rbox(X.mesh(TX[key]), (x0, -d / 2 + 30, z), (x1, d / 2 - 30, z + hh), r=6, k=1, tile=x1 - x0)
+    for k, x in enumerate((90, 200, 300)):
+        revolve(X.mesh(TX['paintcan']), [(48, 0), (48, 120), (44, 124), (0, 124)], n=16, u_tiles=1, cx=x, cy=-40)
+    # (cans stand on the middle shelf)
+    M = X.mesh(TX['paintcan'])
+    off = levels[1] + 16
+    M.V = [v + np.array([0, 0, off]) if i >= len(M.V) - 3 * 17 * 4 else v for i, v in enumerate(M.V)]
+    rbox(X.mesh(TX['laundry']), (-320, -d / 2 + 40, levels[2] + 16), (-80, d / 2 - 40, levels[2] + 16 + 120), r=20, k=2, tile=128)
+    ML.save('shelving', X)
+    return X
+
+
+def basement_window(w=500.0, h=450.0):
+    """high window in the wall (local: wall face y = 0, room at -y): frame, mullion, glowing daylight panes, a sill"""
+    X = ML.Model()
+    fr = TX['window_frame']
+    X.mesh(TX['window_sky']).poly([np.array(p, float) for p in ((-w / 2, -2, 0), (w / 2, -2, 0), (w / 2, -2, h), (-w / 2, -2, h))],
+                                  (0, -1, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    for (x0, z0, x1, z1) in ((-w / 2 - 30, -30, -w / 2, h + 30), (w / 2, -30, w / 2 + 30, h + 30), (-w / 2, h, w / 2, h + 30),
+                             (-w / 2, -30, w / 2, 0), (-10, 0, 10, h), (-w / 2, h / 2 - 8, w / 2, h / 2 + 8)):
+        rbox(X.mesh(fr), (x0, -24, z0), (x1, 0.5, z1), r=2, k=1, tile=128)
+    rbox(X.mesh(fr), (-w / 2 - 50, -90, -60), (w / 2 + 50, 0.5, -30), r=3, k=1, tile=128)               # sill
+    ML.save('basement_window', X)
+    return X
+
+
+def sunbeam(top_w=500.0, drop=2400.0, reach=1300.0):
+    """additive dusty light shaft from the window (local origin at the window bottom centre) down and out into the room"""
+    X = ML.Model()
+    sb = TX['sunbeam']
+    q = [np.array(p, float) for p in ((-top_w / 2, -4, 420), (top_w / 2, -4, 420), (top_w / 2 + 60, -reach, -drop), (-top_w / 2 - 60, -reach, -drop))]
+    X.mesh(sb).poly(q, (0, -0.9, 0.4), [(0, 0), (1, 0), (1, 1), (0, 1)])
+    q = [np.array(p, float) for p in ((-top_w / 2, -4, 0), (top_w / 2, -4, 0), (top_w / 2 + 60, -reach + 300, -drop), (-top_w / 2 - 60, -reach + 300, -drop))]
+    X.mesh(sb).poly(q, (0, -0.9, 0.4), [(0, 0), (1, 0), (1, 1), (0, 1)])
+    ML.save('sunbeam', X)
+    return X
+
+
+def bucket_mop():
+    X = ML.Model()
+    revolve(X.mesh(TX['bucket']), [(110, 0), (140, 260), (146, 270), (134, 270), (104, 12), (0, 12)], n=24, u_tiles=2)
+    tube(X.mesh(TX['chrome']), [(-130, 0, 250), (0, 0, 380), (130, 0, 250)], 5, nseg=6)
+    tube(X.mesh(TX['handrail']), [(40, 20, 40), (180, 140, 1300)], 14, nseg=8)
+    ellipsoid(X.mesh(TX['mophead']), (40, 20, 70), 90, 90, 70, nu=12, nv=6)
+    ML.save('bucket_mop', X)
+    return X
+
+
+# ================================================================================================ themed jump pads
+# Dressing for K.jumppad(dress=...): local +y = flight direction, z 0 = the floor, radius ~40 (the trigger is 48x48).
+def pad_mats():
+    M = TX.material
+    M('manhole', manhole_tex(), shade=60)
+    M('iron_rim', TL.grime(TL.metal((70, 70, 74), False, 301), 0.3, 302), shade=60)
+    M('vent_rock', TL.stone((120, 112, 100), 10, (80, 74, 66), seed=303), shade=60)
+    M('steam', steam_tex(), 'add', wave='sin 0.6 0.3 0 0.7', tcmod='scroll 0 0.4', two=True)
+    M('vent_glow', TL.solid((255, 170, 70), 2, 304, 64), 'glow', wave='sin 0.8 0.2 0 0.5')
+    M('trapdoor', TL.planks((126, 86, 52), 5, (70, 46, 28), 8, False, False, 305), shade=60)
+    M('coil', TL.metal((196, 128, 70), True, 306), 'lms', shade=80, v=0.3)
+    M('btn_red', TL.solid((220, 30, 26), 2, 307, 64), 'lms', shade=80, v=0.3)
+    M('btn_glow', TL.solid((255, 80, 60), 2, 308, 64), 'glow', wave='sin 0.7 0.3 0 0.6')
+    M('sewbutton', TL.solid((240, 200, 60), 3, 309, 64), 'lms', shade=80, v=0.2)
+
+
+def manhole_tex(n=256):
+    im = _img(n, n, (70, 70, 72)); d = ImageDraw.Draw(im)
+    c = n / 2
+    for r in (120, 100): d.ellipse((c - r, c - r, c + r, c + r), outline=(110, 110, 112), width=6)
+    for k in range(-4, 5):
+        d.line((c - 90, c + k * 20, c + 90, c + k * 20), fill=(100, 100, 102), width=5)
+    d.rectangle((c - 70, c - 16, c + 70, c + 16), fill=(70, 70, 72))
+    d.text((c, c), 'PADVILLE', font=font(22), fill=(140, 140, 140), anchor='mm')
+    return _arr(im)
+
+
+def steam_tex(n=128):
+    x, y = ML.xy(n)
+    a = np.clip(1 - np.abs(x - 0.5) * 2, 0, 1) * (1 - y) * (0.6 + 0.4 * ML.noise(n, 4, 310))
+    a = np.clip(a, 0, 1)
+    return np.stack([a * 200] * 3, -1).astype(np.float32)
+
+
+def pad_manhole():
+    X = ML.Model()
+    revolve(X.mesh(TX['iron_rim']), [(46, 0), (46, 4), (40, 6)], n=24)
+    disc(X.mesh(TX['manhole']), 40, 6, up=True, n=24)
+    ML.save('pad_manhole', X)
+
+
+def pad_vent():
+    X = ML.Model()
+    rng = np.random.default_rng(7)
+    for k in range(9):
+        a = 2 * math.pi * k / 9
+        r = 40 + rng.uniform(-3, 3)
+        ellipsoid(X.mesh(TX['vent_rock']), (r * math.cos(a), r * math.sin(a), 0), 16, 16, rng.uniform(12, 20), nu=8, nv=5, flat_bottom=0)
+    disc(X.mesh(TX['vent_glow']), 30, 2, up=True, n=16)
+    for ang in (0, 60, 120):                                                                # crossed steam sheets
+        a = math.radians(ang); c, s_ = math.cos(a), math.sin(a)
+        q = [np.array(p, float) for p in ((-26 * c, -26 * s_, 4), (26 * c, 26 * s_, 4), (44 * c, 44 * s_, 150), (-44 * c, -44 * s_, 150))]
+        X.mesh(TX['steam']).poly(q, (-s_, c, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    ML.save('pad_vent', X)
+
+
+def pad_trapdoor():
+    """open wooden trapdoor: frame flush on the floor, the lid swung up and back (hinge at -y)"""
+    X = ML.Model()
+    for (x0, y0, x1, y1) in ((-46, -46, 46, -38), (-46, 38, 46, 46), (-46, -38, -38, 38), (38, -38, 46, 38)):
+        rbox(X.mesh(TX['iron_rim']), (x0, y0, 0), (x1, y1, 3), r=0.5, k=1, tile=64)
+    lid = Mesh(); rbox(lid, (-40, 0, 0), (40, 6, 80), r=1, k=1, tile=96)
+    a = math.radians(-18)
+    X.mesh(TX['trapdoor']).add(lid, np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]]), (0, -52, 0))
+    for x in (-28, 28):
+        rbox(X.mesh(TX['iron_rim']), (x - 3, -52, 0), (x + 3, -40, 3), r=0.5, k=1, tile=32)
+    ML.save('pad_trapdoor', X)
+
+
+def pad_spring():
+    """giant compression spring on a steel plate (the under-board world is at real-world scale)"""
+    X = ML.Model()
+    revolve(X.mesh(TX['steel']), [(44, 0), (44, 6), (0, 6)], n=24, inward=False)
+    disc(X.mesh(TX['steel']), 44, 6, up=True, n=24)
+    pts = [(30 * math.cos(t), 30 * math.sin(t), 12 + t * 3.2) for t in np.linspace(0, 2 * math.pi * 6, 150)]
+    tube(X.mesh(TX['coil']), pts, 5, nseg=6)
+    ML.save('pad_spring', X)
+
+
+def pad_button():
+    """the controller's big red push button: chrome bezel + glowing red cap"""
+    X = ML.Model()
+    revolve(X.mesh(TX['chrome']), [(46, 0), (46, 8), (38, 12), (34, 10)], n=24)
+    revolve(X.mesh(TX['btn_red']), [(34, 8), (34, 20), (28, 26), (0, 27)], n=24)
+    revolve(X.mesh(TX['btn_glow']), [(36, 8.5), (34.5, 9.5)], n=24)
+    ML.save('pad_button', X)
+
+
+def pad_sewbutton():
+    """a sewing button dropped on the bench: four holes and a raised rim"""
+    X = ML.Model()
+    revolve(X.mesh(TX['sewbutton']), [(42, 0), (42, 6), (38, 9), (30, 7), (30, 5)], n=28)
+    disc(X.mesh(TX['sewbutton']), 30, 5, up=True, n=28)
+    for (hx, hy) in ((-9, -9), (9, -9), (-9, 9), (9, 9)):
+        disc(X.mesh(TX['iron_rim']), 4.5, 5.4, up=True, n=10, cx=hx, cy=hy)
+    ML.save('pad_sewbutton', X)

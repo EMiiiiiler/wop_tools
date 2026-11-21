@@ -32,7 +32,7 @@ MAP, NS, LONG = INFO['map'], INFO['ns'], INFO['longname']
 X0, Y0, X1, Y1 = INFO['bounds']                # -2816 -2048 2304 2048
 BX = 1152                                      # layout | workbench seam
 ZC = 2600                                      # basement ceiling
-VY, VZ = -2400, -800                           # the void beyond the acrylic guard
+VY, VZ = -3300, -800                           # the basement beyond the acrylic guard (floor, modelled corner)
 C = (-832.0, 0.0); R = 1500.0                  # main line circle
 BAL = (1380, 1620)                             # ballast band
 RAIL_Z = 30                                    # rail top
@@ -223,7 +223,6 @@ def textures():
     TX.add('tube', TL.solid((250, 250, 240), 2, 43, 64), 'neon', rgb=(1.0, 0.98, 0.9), light=0)
     TX.add('backdrop_n', backdrop_tex(seed=3), 'sign', check_tile=False)
     TX.add('backdrop_w', backdrop_tex(seed=7), 'sign', check_tile=False)
-    TX.add('basement', basement_view_tex(), 'sign', check_tile=False)
     TX.add('pegboard', pegboard_tex())
     TX.add('rock_fake', TL.grime(TL.stone((92, 86, 80), cells=12, edge=(56, 52, 48), seed=22), 0.4, 23), 'raw',
            shader=SH.fake_wall('rock_fake', f'textures/{NS}/rock_fake'), check_tile=False)
@@ -288,7 +287,6 @@ def shell():
     # painted scenery: backdrops behind the layout, the basement beyond the acrylic
     K.add(sign_box((X0, Y1 - 8, 0), (BX, Y1, 1500), T('backdrop_n'), 2048, 768, facing='s', edge=T('fascia')))
     K.add(sign_box((X0, Y0 + 8, 0), (X0 + 8, Y1 - 8, 1500), T('backdrop_w'), 2048, 768, facing='e', edge=T('fascia')))
-    K.add(sign_box((X0, VY, VZ), (X1, VY + 8, ZC - 200), T('basement'), 2048, 1024, facing='n', edge=T('wallb')))
     # acrylic safety guard along the open south edge + player clip to the ceiling
     K.add(box((X0, Y0, 0), (X1, Y0 + 8, 320), T('acrylic')))
     K.add(box((X0, Y0, 320), (X1, Y0 + 8, ZC), CLIP))
@@ -338,7 +336,7 @@ def hatches():
         K.keep_clear(cx - HH - 40, cy - HH - 40, cx + HH + 40, cy + HH + 40, 0)
     place('hatchlid', H1[0] + 20, H1[1] + HH + 60, 2, 0)
     place('hatchlid', H2[0] - 30, H2[1] - HH - 72, 2, 180)
-    K.jumppad(H2[0] - 60, H2[1], UZ, land=(H2[0] + 280, H2[1], 2), apex=400, name='pad_hatch',
+    K.jumppad(H2[0] - 60, H2[1], UZ, land=(H2[0] + 280, H2[1], 2), apex=400, name='pad_hatch', dress=ML.PLACE['pad_spring'],
               edges=[(H2[0] + HH, H2[1], 0)])
 
 
@@ -478,10 +476,10 @@ def mountain():
     for (x0, y0, x1, y1, z) in ((-400, 900, -280, 970, 400), (-1690, 1760, -1624, 1880, 640)):
         K.keep_clear(x0, y0, x1, y1, z)
     # pads: churchyard -> T1, T1 -> T2, T2 -> T3, farm -> T1 west
-    K.jumppad(-832, 760, 0, land=(-832, 1150, 400), apex=720, name='pad_t1', edges=[(-832, 900, 400)])
-    K.jumppad(-1100, 1080, 400, land=(-1100, 1600, 640), apex=800, name='pad_t2', edges=[(-1100, 1450, 640)])
-    K.jumppad(-900, 1520, 640, land=(-900, 1860, 832), apex=990, name='pad_t3', edges=[(-900, 1700, 832)])
-    K.jumppad(-2100, 1250, 0, land=(-1620, 1300, 400), apex=600, name='pad_t1w', edges=[(-1740, 1290, 400)])
+    K.jumppad(-832, 760, 0, land=(-832, 1150, 400), apex=720, name='pad_t1', dress=ML.PLACE['pad_manhole'], edges=[(-832, 900, 400)])
+    K.jumppad(-1100, 1080, 400, land=(-1100, 1600, 640), apex=800, name='pad_t2', dress=ML.PLACE['pad_vent'], dress_light=140, dress_rgb='1 0.6 0.3', edges=[(-1100, 1450, 640)])
+    K.jumppad(-900, 1520, 640, land=(-900, 1860, 832), apex=990, name='pad_t3', dress=ML.PLACE['pad_vent'], dress_light=140, dress_rgb='1 0.6 0.3', edges=[(-900, 1700, 832)])
+    K.jumppad(-2100, 1250, 0, land=(-1620, 1300, 400), apex=600, name='pad_t1w', dress=ML.PLACE['pad_manhole'], edges=[(-1740, 1290, 400)])
 
 
 # ================================================================================================ buildings
@@ -520,8 +518,8 @@ def buildings():
                        doors=[('w', 364, 476), ('s', -500, -388)], roof='flat', hatch=(-578, 308, -354, 532),
                        windows={'n': [(-470, -366, 0, 520, 640)], 's': [(-300, -250, 0, 520, 640)], 'e': [(368, 472, 0, 520, 640)]})
     tw.build()
-    K.jumppad(-560, 420, 4, land=(-290, 420, 736), apex=1000, name='pad_tower', edges=[(-354, 420, 736)])
-    K.jumppad(-1180, 700, 0, land=(-1000, ch.ridge[1], ch.roof_top), apex=ch.roof_top + 140, name='pad_nave',
+    K.jumppad(-560, 420, 4, land=(-290, 420, 736), apex=1000, name='pad_tower', dress=ML.PLACE['pad_trapdoor'], edges=[(-354, 420, 736)])
+    K.jumppad(-1180, 700, 0, land=(-1000, ch.ridge[1], ch.roof_top), apex=ch.roof_top + 140, name='pad_nave', dress=ML.PLACE['pad_manhole'],
               edges=[(-1100, 580, 256)])
     K.timer_sound(-418, 420, 650, 'machine/dingdong', 'church_bell', 45, 20)
     # pews inside the nave
@@ -538,8 +536,8 @@ def buildings():
                        mk(ext='render_pink', int='wallpaper', trim='trim', floor='boards', roof='slate', ceil='plaster', gable='render_pink'),
                        doors=[('w', 440, 552), ('s', 900, 1012)], stairs=[(990, 444, 1084, 764, 'n')], roof='gable_y', no_windows='e')
     h2.build()
-    K.jumppad(60, 680, 0, land=(100, h1.ridge[1], h1.roof_top), apex=h1.roof_top + 140, name='pad_house1', edges=[(80, 560, 320)])
-    K.jumppad(1070, 230, 0, land=(h2.ridge[1], 500, h2.roof_top), apex=h2.roof_top + 160, name='pad_house2',
+    K.jumppad(60, 680, 0, land=(100, h1.ridge[1], h1.roof_top), apex=h1.roof_top + 140, name='pad_house1', dress=ML.PLACE['pad_manhole'], edges=[(80, 560, 320)])
+    K.jumppad(1070, 230, 0, land=(h2.ridge[1], 500, h2.roof_top), apex=h2.roof_top + 160, name='pad_house2', dress=ML.PLACE['pad_manhole'],
               edges=[(1000, 364, h2.roof_top)])
     # ---- shop row (flat roof, stairs inside, awnings + signs on the plaza side)
     sh = town.Building(K, 'shops', (-100, -800, 200, -150), 0, (176, 160),
@@ -576,7 +574,7 @@ def buildings():
                        doors=[('e', -1880, -1720), ('n', -2640, -2500)], roof='gable_x', door_h=160)
     gs.build()
     K.add(sign_box((-2380, -1940, 180), (-2376, -1620, 220), T('sign_goods'), 1024, 128, facing='e', edge=T('fascia')))
-    K.jumppad(-2300, -1500, 0, land=(-2570, gs.ridge[1], gs.roof_top), apex=gs.roof_top + 150, name='pad_goods',
+    K.jumppad(-2300, -1500, 0, land=(-2570, gs.ridge[1], gs.roof_top), apex=gs.roof_top + 150, name='pad_goods', dress=ML.PLACE['pad_manhole'],
               edges=[(-2380, -1700, 240)])
     # ---- barn (hayloft) + windmill
     bn = town.Building(K, 'barn', (-2780, 1300, -2280, 1700), 0, (176, 160),
@@ -587,7 +585,7 @@ def buildings():
     K.add(sign_box((-2690, 1294, 196), (-2370, 1300, 236), T('sign_farm'), 1024, 128, facing='s', edge=T('fascia')))
     place('windmill_tower', -2560, 880, 0, 0)
     K.rotating_model2(ML.PLACE['windmill_sails'][0], (-2450, 880, 560), 18, axis='x')
-    K.jumppad(-2350, 1150, 0, land=(-2400, bn.ridge[1], bn.roof_top), apex=bn.roof_top + 190, name='pad_barn',
+    K.jumppad(-2350, 1150, 0, land=(-2400, bn.ridge[1], bn.roof_top), apex=bn.roof_top + 190, name='pad_barn', dress=ML.PLACE['pad_manhole'],
               edges=[(-2400, 1280, 352)])
     # ---- engine shed + turntable
     es = town.Building(K, 'loco_shed', (760, -1300, 1120, -620), 0, (256,),
@@ -627,7 +625,7 @@ def workbench():
              cyls=[(-mid[0], -mid[1], 200, 0, 60), (hx, hy, rs, HT - 60, HT), (hx, hy, rs + 26, HT - 150, HT - 60),
                    (hx, hy, rs + 60, HT - 214, HT - 150)])
     K.light(head[0], head[1], HT - 260, 2600, '1 0.95 0.8')
-    K.jumppad(1560, 1330, 300, land=(head[0], head[1], HT), apex=HT + 120, name='pad_lamp', edges=[(head[0], head[1] + rs, HT)])
+    K.jumppad(1560, 1330, 300, land=(head[0], head[1], HT), apex=HT + 120, name='pad_lamp', dress=ML.PLACE['pad_button'], dress_light=110, dress_rgb='1 0.6 0.3', edges=[(head[0], head[1] + rs, HT)])
     # tipped-over mug + spilled coffee
     mx, my = 1650, -760
     K.custom(ML.PLACE['mug'], mx, my, 0, 0, occupy=False)
@@ -665,7 +663,7 @@ def workbench():
                     (X1 - 8, y - 8, 520), (X1 - 8, y + 8, 520)], {'top': T('shelf'), 'side': T('shelf'), 'bot': T('shelf')}, round_pts=False))
     for (y, s, path) in ((-640, 0.95, 'pad_tins/pad_paint1.md3'), (-520, 0.95, 'pad_tins/pad_paint2.md3'), (240, 0.95, 'pad_tins/pad_paint1.md3')):
         K.catalog(path, 2200, y, 716, scale=s, lit=True)
-    K.jumppad(1880, -200, 0, land=(2176, -200, 716), apex=860, name='pad_shelf', edges=[(2048, -200, 716)])
+    K.jumppad(1880, -200, 0, land=(2176, -200, 716), apex=860, name='pad_shelf', dress=ML.PLACE['pad_sewbutton'], edges=[(2048, -200, 716)])
     # the seam: layout fascia edge strip (a low lip you step over)
     K.timer_sound(1800, 0, 400, 'animal/blackbird', 'basement_bird', 50, 30)
 
@@ -810,8 +808,39 @@ def shader():
 CABLES = {}
 
 
+def basement_corner():
+    """the real basement past the acrylic guard (it used to be a painted wall): stairs up to the house door on a
+    landing, washing machine + laundry basket, hot-water boiler with copper pipes, metal shelving with stored boxes
+    under a high window with a sunbeam, bucket + mop. Unreachable (behind the guard + clip), so no collision."""
+    W = VY                                                        # back wall face
+    z = VZ
+    # stairs rise west from x 1500 to x -700; the landing + its posts are brushes so the door stands on something
+    deco('basement_stairs', 1500, W + 220, z, 180)
+    lt = {'top': T('ruler_side'), 'side': T('stairside'), 'bot': T('stairside')}
+    K.add(box((-1300, W, z + 2350), (-700, W + 440, z + 2400), lt))
+    for x in (-1290, -760):
+        K.add(box((x, W + 380, z), (x + 50, W + 430, z + 2350), lt))
+    deco('house_door', -1000, W, z + 2400, 180)
+    deco('washer', 1925, W + 330, z, 180)
+    deco('laundry_basket', 1300, W + 760, z, 20)
+    deco('water_boiler', -1600, W + 280, z, 180)
+    deco('shelving', -2450, W + 220, z, 180)
+    deco('bucket_mop', -1950, W + 700, z, 200)
+    K.add(box((-2750, W, z + 2410), (-2150, W + 90, z + 2440), {'top': T('stairside'), 'side': T('stairside'), 'bot': T('stairside')}))
+    deco('basement_window', -2450, W, z + 2500, 180)
+    deco('sunbeam', -2450, W, z + 2500, 180, lit=False)
+    K.light(-2450, W + 300, z + 2350, 2600, '0.85 0.92 1')
+    K.light(-2300, W + 800, z + 600, 1400, '0.9 0.95 1')
+    K.light(300, W + 600, z + 2300, 2200, '1 0.85 0.6')
+    K.light(1700, W + 800, z + 800, 1500, '1 0.9 0.75')
+    K.light(-1000, W + 300, z + 2700, 600, '1 0.85 0.6')
+
+
 def models():
-    PM.mats(); building_mats()
+    PM.mats(); building_mats(); PM.basement_mats(); PM.pad_mats()
+    PM.washing_machine(); PM.laundry_basket(); PM.water_boiler(ceil=ZC - VZ); PM.basement_stairs(landing=0)
+    PM.house_door(); PM.metal_shelving(); PM.basement_window(); PM.sunbeam(drop=2500, reach=1050); PM.bucket_mop()
+    PM.pad_manhole(); PM.pad_vent(); PM.pad_trapdoor(); PM.pad_spring(); PM.pad_button(); PM.pad_sewbutton()
     PM.tunnel_portal(150, 320, top_z=400)
     X = ML.Model(); from meshlib import tube as _t
     _t(X.mesh(TX['iron_green']), [(0, 0, 0), (0, 0, 192)], 7, nseg=10)
@@ -840,7 +869,7 @@ if __name__ == '__main__':
     textures()
     models()
     shell(); underworld(); lake(); railway(); mountain()
-    B = buildings(); hatches(); workbench(); decals(); scenery(); vault()
+    B = buildings(); hatches(); workbench(); decals(); scenery(); vault(); basement_corner()
     TR = train()
     items(B); lights()
     K.fix_items()

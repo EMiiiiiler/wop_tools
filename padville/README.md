@@ -52,6 +52,11 @@ Models: `pv_models.py`. New shared modules written for this map: `woplib/town.py
   Health stations: platform, bench, farm.
 - **Secret.** A refuge niche halfway through the tunnel has a fake rock back wall. Behind it, a passage teleports you to
   the "spare-parts tin" vault with Pad Power, Revival and Killer Ducks. The exit teleporter drops you on the bench.
+- **Basement corner** (behind the acrylic, decorative): modelled wooden stairs up to the house door on a landing,
+  washing machine + laundry basket, hot-water boiler with copper pipes, metal shelving with labelled boxes under a high
+  window with an additive sunbeam, bucket + mop. Replaced the painted wall in round 2.
+- **Themed jump pads** (`K.jumppad(dress=...)`): manhole covers in town, steam vents on the mountain, a trapdoor in
+  the tower, a coil spring under the board, the controller's red push button, a sewing button on the bench.
 - **Sounds:** trains (mechanics, horn on a timer), level-crossing bell, church bell, clock in the station, water at the
   fountain/mill/lake, transformer hum + sizzle underneath, blackbird.
 

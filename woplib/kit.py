@@ -356,12 +356,19 @@ class MapKit:
 
     # ------------------------------------------------------------------ jump pads, teleports, secrets
     def jumppad(self, x, y, z, land, apex, name, ceiling=None, edges=(), glow=True, top_tex=None, side_tex=None,
-                radius=34, light_rgb='1 0.6 0.8'):
+                radius=34, light_rgb='1 0.6 0.8', dress=None, dress_light=0, dress_rgb='1 0.85 0.6'):
         """pad disc (6u) + trigger_push (48 x 48 x 64) + target_position at the apex, t_up/(t_up+t_down) of the way
         to `land` (x, y, floor). Warns for flights > 2.9 s, apex too close to `ceiling`, < 20u over `edges`.
         Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground)."""
         x, y = round(x), round(y)
         name = self.uniq(name)
+        if dress is not None:
+            # themed pad (padpub recipe): the disc becomes invisible + nonsolid, so the trigger, aim and bot links are
+            # unchanged, and a dressing model (models.PLACE tuple, local +y = flight direction) sits on the floor
+            top_tex = side_tex = self.T('nodraw_ns'); glow = False
+            yaw = math.degrees(math.atan2(land[1] - y, land[0] - x))
+            self.custom(dress, x, y, z, round(yaw - 90) % 360, occupy=False)
+            if dress_light: self.light(x, y, z + 40, dress_light, dress_rgb)
         if not self.free(x, y, radius, z, z + 90, margin=0):
             bl = self.blockers(x, y, radius, z, z + 90, margin=0)
             self.warn(f'pad {name}: launch spot ({x},{y},{z}) is occupied by ' + '; '.join(f'{w} {b}' for w, b in bl))
