@@ -1,0 +1,56 @@
+{
+ "map": "wop_padclassroom",
+ "ns": "padclassroom",
+ "longname": "Padman's Classroom",
+ "generator": "build_padclassroom.py",
+ "bounds": [
+  -2304,
+  -1920,
+  2304,
+  1920
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Classroom",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:2150,-1800,1500,138,-26",
+   "front:0,-300,700,90,-6",
+   "desks:1500,-1500,950,145,-24",
+   "tank:-1500,-700,900,180,-10",
+   "spiral:-300,450,750,145,-12",
+   "cupboard:900,700,900,40,-12",
+   "bin_globe:250,-1100,260,-25,-6",
+   "ledge:-1350,1700,950,5,-8",
+   "cupboard_top:1650,1250,1720,55,-18",
+   "bookcase_top:-2000,1250,1080,250,-12",
+   "vault:0,-420,-1300,90,-4",
+   "under_desk:0,500,60,270,0"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "front",
+   "desks",
+   "tank"
+  ]
+ }
+}

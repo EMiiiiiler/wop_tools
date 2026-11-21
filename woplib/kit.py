@@ -356,10 +356,17 @@ class MapKit:
 
     # ------------------------------------------------------------------ jump pads, teleports, secrets
     def jumppad(self, x, y, z, land, apex, name, ceiling=None, edges=(), glow=True, top_tex=None, side_tex=None,
-                radius=34, light_rgb='1 0.6 0.8', dress=None, dress_light=0, dress_rgb='1 0.85 0.6'):
+                radius=34, light_rgb='1 0.6 0.8', skin=None, dress=None, dress_light=0, dress_rgb='1 0.85 0.6'):
         """pad disc (6u) + trigger_push (48 x 48 x 64) + target_position at the apex, t_up/(t_up+t_down) of the way
         to `land` (x, y, floor). Warns for flights > 2.9 s, apex too close to `ceiling`, < 20u over `edges`.
-        Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground)."""
+        Fling pads on small tops go on the FAR side (bspc lands a pad where the arc first touches ground).
+        skin = dict(place=models.PLACE[name], h=deck height (<= 16 so it is a step), angle=0, boxes=[(mn, mx)],
+        cyls=[...]) draws a themed object instead of the disc (padclassroom exercise books / erasers): the model with
+        its weapclip collision, the trigger on top of the deck at z + h. Its footprint must cover the 48u trigger.
+        skin angle 'auto' turns the model so its local +y points along the flight.
+        dress = models.PLACE[name] (padpub/padville recipe): decoration only - the 6u disc stays as an invisible
+        nonsolid brush and the model (no collision, local +y along the flight) sits on the floor over it. Use skin for
+        solid decks you stand on, dress for things you stand in or over (vents, manholes, springs)."""
         x, y = round(x), round(y)
         name = self.uniq(name)
         if dress is not None:
@@ -372,17 +379,27 @@ class MapKit:
         if not self.free(x, y, radius, z, z + 90, margin=0):
             bl = self.blockers(x, y, radius, z, z + 90, margin=0)
             self.warn(f'pad {name}: launch spot ({x},{y},{z}) is occupied by ' + '; '.join(f'{w} {b}' for w, b in bl))
-        P = padmath.plan(z, (x, y), land, apex, ceiling=ceiling, edges=edges)
+        deck = 6
+        if skin:
+            deck = skin.get('h', 6)
+            if deck > 18: self.warn(f'pad {name}: skin deck {deck}u is taller than a step (18u) - players must jump on')
+        P = padmath.plan(z + deck - 6, (x, y), land, apex, ceiling=ceiling, edges=edges)
         for w in P['warnings']: self.warn(f'pad {name}: {w}')
         if P['target'] is None: raise ValueError(f'pad {name}: {P["warnings"]}')
-        top = top_tex or self.T('jumppad'); side = side_tex or self.T('rubber')
-        disc = cyl(x, y, radius, z, z + 6, {'top': top, 'side': side, 'bot': side}, 12)
-        for f in disc.faces:
-            if f.n[2] > 0.9:
-                s = 2 * radius / 256
-                f.sc = (s, s); f.off = ((-(x - radius) / s) % 256, ((y + radius) / s) % 256)
-        self.add(disc)
-        trig = box((x - 24, y - 24, z + 6), (x + 24, y + 24, z + 70), TRIG)
+        if skin:
+            ang = skin.get('angle', 0)
+            if ang == 'auto': ang = round(math.degrees(math.atan2(land[1] - y, land[0] - x)) - 90) % 360
+            self.custom(skin['place'], x, y, z, ang, boxes=skin.get('boxes', ()), cyls=skin.get('cyls', ()),
+                        occupy=False)
+        else:
+            top = top_tex or self.T('jumppad'); side = side_tex or self.T('rubber')
+            disc = cyl(x, y, radius, z, z + 6, {'top': top, 'side': side, 'bot': side}, 12)
+            for f in disc.faces:
+                if f.n[2] > 0.9:
+                    s = 2 * radius / 256
+                    f.sc = (s, s); f.off = ((-(x - radius) / s) % 256, ((y + radius) / s) % 256)
+            self.add(disc)
+        trig = box((x - 24, y - 24, z + deck), (x + 24, y + 24, z + deck + 64), TRIG)
         self.M.ent('trigger_push', brushes=[trig], target=name)
         self.M.ent('target_position', P['target'], targetname=name)
         self.spots['pads'].append(dict(name=name, pad=(x, y, z), origin=P['origin'], target=P['target'],
@@ -953,6 +970,65 @@ class MapKit:
         self.spots.setdefault('cages', []).append(dict(name=name, c=[cx, cy], r=r, z0=z0, z1=z1, door=list(door or []),
                                                        dome=list(dome or [])))
         return e
+
+    def spiral_stairs(self, cx, cy, z0, ztop, r_in, r_out, step_deg, end_deg, tex=WCLIP, step_h=16, overlap=1.15,
+                      route=None):
+        """spiral staircase round a core at (cx, cy) (padclassroom exercise-book tower): one box per step from r_in to
+        r_out, rising step_h and turning step_deg each step, the TOP step pointing along end_deg so it meets a landing
+        (a desk edge just past r_out). Steps are stacked slabs (no volume overlap); put a core column of radius
+        <= r_in * cos(pi/n) at the centre. Returns [(angle_deg, top_z, brush)] so the caller can build the visual from
+        the same steps. Bots handle wide spirals (r_out >= 300) but give the landing a pad as well."""
+        n = int(round((ztop - z0) / step_h))
+        w = 2 * r_out * math.tan(math.radians(abs(step_deg)) / 2) * overlap
+        rise = step_h * 360.0 / abs(step_deg)
+        if rise < 56 + 2 * step_h + 16:
+            self.warn(f'spiral {route or (cx, cy)}: one turn rises {rise:.0f}u - no headroom under the turn above')
+        out = []
+        for i in range(n):
+            a = end_deg - (n - 1 - i) * step_deg
+            zb = z0 + i * step_h
+            out.append((a, zb + step_h, self.lbox(cx, cy, zb, a, (r_in, -w / 2, 0), (r_out, w / 2, step_h), tex)))
+        self.occupy_r(cx, cy, r_out + 8, z0, ztop + 8)
+        a0 = math.radians(out[0][0] - step_deg)                     # walk in from where the first step's predecessor would be
+        foot = (cx + (r_in + r_out) / 2 * math.cos(a0) * 1.0, cy + (r_in + r_out) / 2 * math.sin(a0), z0)
+        self.spots.setdefault('spirals', []).append(dict(c=[cx, cy], z0=z0, ztop=ztop, r=[r_in, r_out], step=step_deg,
+                                                         end=end_deg, foot=[round(v) for v in foot], name=route))
+        if route:
+            ae = math.radians(end_deg)
+            self.route(route, foot, (cx + (r_out + 96) * math.cos(ae), cy + (r_out + 96) * math.sin(ae), ztop))
+        return out
+
+    def tube_brushes(self, c, axis, length, r_out, thick, n=12, closed_end=None, tex=WCLIP):
+        """collision for a hollow n-gon tube LYING along 'x' or 'y' (tipped-over bin, pencil case, crayon box, pipe):
+        centre c = (x, y, z_base) with the lowest outer face on z_base and a flat side down, so the inside has a flat
+        floor strip at z_base + thick that players and bots walk on (the neighbouring faces slope 360/n degrees).
+        closed_end None / '+' / '-' adds an n-gon cap inside the tube at that end. Returns the brushes (not added):
+        K.clipped(...) them and build the smooth visual MD3 separately. Inner circumradius = r_out - thick/cos(pi/n)."""
+        cxx, cyy, zb = c
+        k = math.pi / n
+        R = r_out; Ri = r_out - thick / math.cos(k)
+        zc = zb + R * math.cos(k)
+        ang = [-math.pi / 2 + k + j * 2 * k for j in range(n)]
+        L = length / 2
+
+        def P(r, a, s):                                             # s = -1/+1 tube end
+            u, v = r * math.cos(a), zc + r * math.sin(a)
+            return (cxx + s * L, cyy + u, v) if axis == 'x' else (cxx + u, cyy + s * L, v)
+        out = []
+        for j in range(n):
+            a, b = ang[j], ang[(j + 1) % n]
+            pts = [P(r, t, s) for r in (R, Ri) for t in (a, b) for s in (-1, 1)]
+            out.append(hull(pts, tex, round_pts=False))
+        if closed_end:
+            s = 1 if closed_end == '+' else -1
+            e0, e1 = s * L - s * thick, s * L
+            pts = []
+            for t in ang:
+                u, v = Ri * math.cos(t), zc + Ri * math.sin(t)
+                for e in (e0, e1):
+                    pts.append((cxx + e, cyy + u, v) if axis == 'x' else (cxx + u, cyy + e, v))
+            out.append(hull(pts, tex, round_pts=False))
+        return out
 
     def crawl(self, mn, mx):
         """declare an intended crouch-only space (lint_map's headroom check skips it)"""
