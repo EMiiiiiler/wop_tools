@@ -13,6 +13,7 @@ mats are TX.material keys (model shaders) the caller registered first. Openings:
   doors   [(side, a, b)]                     ground storey; a..b along x (n/s walls) or y (e/w walls); 112u high
   windows auto: every storey/side gets evenly spaced open windows (win_w wide, sill 56, head h - 40); pass
           windows={side: [(a, b, storey)]} to set them yourself, or no_windows='ne' to skip whole sides
+  ground_z  outside floor height when the building stands on a plinth or wheels (door route test points)
   stairs  one flight per upper storey [(x0, y0, x1, y1, dir)], 16u risers rising toward dir; its slab hole is the
           flight's footprint (no ceiling over any step, so no headroom problems). Leave 48u+ to other flights.
   roof    'flat' (stand on it; roof_stairs=(x0, y0, x1, y1, dir) adds a flight from the top storey up through a
@@ -36,7 +37,7 @@ SLAB = 16
 class Building:
     def __init__(self, K, name, rect, z0, storeys, mats, doors=(), windows=None, no_windows='', win_w=72, win_gap=None,
                  stairs=(), roof='flat', roof_stairs=None, wall_t=16, overhang=20, floor_mat=True, tile=128.0,
-                 ext_by_storey=None, door_h=DOOR_H, hatch=None, gable_ext=(16, 16)):
+                 ext_by_storey=None, door_h=DOOR_H, hatch=None, gable_ext=(16, 16), ground_z=None):
         self.K, self.name = K, name
         self.rect = tuple(float(v) for v in rect)
         self.z0 = float(z0); self.storeys = list(storeys); self.mats = mats
@@ -46,6 +47,7 @@ class Building:
         self.t = wall_t; self.o = overhang; self.floor_mat = floor_mat; self.tile = tile
         self.ext_by_storey = ext_by_storey or {}
         self.door_h = door_h; self.hatch = hatch; self.gable_ext = gable_ext
+        self.ground_z = self.z0 if ground_z is None else float(ground_z)   # outside floor (a building on a plinth/wheels)
         self.brushes = []; self.stair_brushes = []
         self.levels = []                     # floor z of each storey
         z = self.z0
@@ -255,10 +257,10 @@ class Building:
         x0, y0, x1, y1 = self.rect
         for (s, a, b) in self.doors:
             m = (a + b) / 2
-            if s == 's': o, i = (m, y0 - 96, self.z0), (m, y0 + 96, self.z0 + 4); K.keep_clear(a - 24, y0 - approach, b + 24, y0, self.z0)
-            elif s == 'n': o, i = (m, y1 + 96, self.z0), (m, y1 - 96, self.z0 + 4); K.keep_clear(a - 24, y1, b + 24, y1 + approach, self.z0)
-            elif s == 'w': o, i = (x0 - 96, m, self.z0), (x0 + 96, m, self.z0 + 4); K.keep_clear(x0 - approach, a - 24, x0, b + 24, self.z0)
-            else: o, i = (x1 + 96, m, self.z0), (x1 - 96, m, self.z0 + 4); K.keep_clear(x1, a - 24, x1 + approach, b + 24, self.z0)
+            if s == 's': o, i = (m, y0 - 96, self.ground_z), (m, y0 + 96, self.z0 + 4); K.keep_clear(a - 24, y0 - approach, b + 24, y0, self.z0)
+            elif s == 'n': o, i = (m, y1 + 96, self.ground_z), (m, y1 - 96, self.z0 + 4); K.keep_clear(a - 24, y1, b + 24, y1 + approach, self.z0)
+            elif s == 'w': o, i = (x0 - 96, m, self.ground_z), (x0 + 96, m, self.z0 + 4); K.keep_clear(x0 - approach, a - 24, x0, b + 24, self.z0)
+            else: o, i = (x1 + 96, m, self.ground_z), (x1 - 96, m, self.z0 + 4); K.keep_clear(x1, a - 24, x1 + approach, b + 24, self.z0)
             K.route(f'{self.name}_door_{s}{int(m)}', o, i)
         return e
 

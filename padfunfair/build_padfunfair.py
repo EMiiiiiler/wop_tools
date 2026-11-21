@@ -35,7 +35,7 @@ GT_C = (1700.0, -150.0); GT_R = 400.0
 HS = (1800.0, 1450.0); HS_R = 170.0; HS_H = 880.0
 BT = (-1650.0, 1450.0); BT_R = 650.0; BT_WALL = 300.0; BT_PEAK = 620.0
 POOL = (-1050.0, -1000.0); POOL_R = 230.0
-VAULT = (0, 3600, -1400)
+VAULT = (0, 1900, -1400)                        # sealed, far under the ground (inside the playable bounds)
 
 K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '22', '_color': '0.75 0.8 1', 'gridsize': '192 192 256'})
 T = K.T
@@ -215,6 +215,11 @@ def ghost_train():
                        windows={'n': [(1400, 1480, 1), (1700, 1780, 1), (2000, 2080, 1)], 's': [(1600, 1680, 1), (1800, 1880, 1)]})
     hs.build()
     K.add(sign_box((1560, -156, 250), (1840, -150, 320), T('sign_ghost'), 1024, 256, facing='s', edge=T('wood')))
+    deco('skull_sign', 1700, -150, 325, 0)                                   # big skull over the ride sign
+    for x in (1640, 1840):                                                   # crooked shutters on the upper windows
+        deco('shutters', x, -150, 240 + 56, 0)
+    for x in (1440, 1740, 2040):
+        deco('shutters', x, 500, 240 + 56, 180)
     cars = []
     for k in range(3):
         X = ML.Model()
@@ -262,17 +267,24 @@ def helter_skelter():
     K.add(cyl(cx, cy, HS_R, HS_H - 16, HS_H, {'top': T('boards'), 'side': T('redpaint'), 'bot': T('redpaint')}, 16))
     K.occupy_r(cx, cy, HS_R + 8, 0, HS_H)
     # lift inside: springboard pad up through a hatch? the top is closed: the lift lands you on top from the door side
-    K.jumppad(cx, cy - 520, 0, land=(cx, cy, HS_H), apex=HS_H + 300, name='pad_helter', skin=skin('springboard'), glow=False,
-              edges=[(cx, cy - HS_R, HS_H)])
+    K.jumppad(cx, cy + 520, 0, land=(cx, cy, HS_H), apex=HS_H + 300, name='pad_helter', skin=skin('springboard'), glow=False,
+              edges=[(cx, cy + HS_R, HS_H)])                             # north side: the top coil of the slide is south
     # the spiral slide: 2.25 turns from the top edge down to the ground, walkable both ways (13 deg)
     pts = rides.helix((cx, cy), HS_R + 70, HS_H - 40, 24, 2.25, a0=-90, n_per_turn=20, ccw=False)
-    pts[0] = (pts[0][0], pts[0][1], HS_H - 32)
+    pts[0] = (pts[0][0], pts[0][1], HS_H)
+    # landing from the tower top to the slide's open top end (CCW side of the start, flush with the deck)
+    lp = []
+    for a in (-86.0, -62.0):
+        for r in (HS_R + 8, HS_R + 120):
+            ar = math.radians(a); lp += [(cx + r * math.cos(ar), cy + r * math.sin(ar), HS_H - 16), (cx + r * math.cos(ar), cy + r * math.sin(ar), HS_H)]
+    K.add(hull(lp, {'top': T('boards'), 'side': T('redpaint'), 'bot': T('redpaint')}, round_pts=False))
     K.slide(pts, 50, 44, T('slidefloor'), wall_tex=T('redpaint'))
     low = [p for p in pts if p[2] < 140]
     if len(low) > 1: K.slide_skirt(low, 50, 0)                       # no crawl gap under the low end
     X = ML.Model(); ML.flume(X, pts, 50, 44, TX['slide_red']); c = np.mean(np.array(pts), 0)
     X.shift((c[0], c[1], 0)); ML.save('helter_slide', X); deco('helter_slide', c[0], c[1], 0)
-    K.route('helter_slide', (pts[-1][0] + 40, pts[-1][1], 2), (cx, cy, HS_H))
+    d = np.array(pts[-1][:2]) - np.array(pts[-2][:2]); d /= np.linalg.norm(d)
+    K.route('helter_slide', (pts[-1][0] + d[0] * 140, pts[-1][1] + d[1] * 140, 0), (cx, cy, HS_H))
 
 
 def big_top():
@@ -308,7 +320,7 @@ def big_top():
     K.jumppad(cx + 120, cy - 180, 0, land=(cx + 330, cy - 40, 300), apex=410, name='pad_trapeze2', dress=ML.PLACE['cannon'],
               dress_light=140, ceiling=465, edges=[(cx + 270, cy - 40, 300)])
     # outside: a cannon that fires you onto the tent roof crown
-    K.jumppad(cx + 760, cy - 300, 0, land=(cx, cy, BT_PEAK), apex=BT_PEAK + 190, name='pad_bigtop',
+    K.jumppad(cx + 760, cy - 300, 0, land=(cx, cy, BT_PEAK), apex=960, name='pad_bigtop',
               dress=ML.PLACE['cannon'], dress_light=140, edges=[(cx + BT_R, cy - 60, BT_WALL)])
     K.route('bigtop_door', (cx, cy - BT_R - 120, 2), (cx, cy - BT_R + 140, 2))
     for (x, y) in ((cx - 260, cy + 120), (cx + 260, cy + 120), (cx, cy - 300)):
@@ -331,7 +343,7 @@ def dodgems():
         place(f'dodgem_{key}', x, y - 100, 8, a)
     K.jumppad(-700, -650, 0, land=(-300, -150, h + 8), apex=h + 200, name='pad_dodgems', skin=skin('trampoline'), glow=False,
               edges=[(-500, -360, h + 8)])
-    K.route('dodgems', (0, -560, 2), (0, -120, 8))
+    K.route('dodgems', (0, -560, 0), (0, -350, 8))
 
 
 def duck_pool():
@@ -386,7 +398,7 @@ def stalls():
     co = stall('coconut', (-1300, -1720, -800, -1380), 'b_red', 'sign_coconut', ('s', -1200, -1088), 'e', (-1690, -1410))
     deco('coconut_stand', -1000, -1550, 4, 90)
     cf = stall('candyfloss', (800, -1720, 1200, -1400), 'b_blue', 'sign_candy', ('s', 900, 1012), 'w', (-1690, -1430))
-    place('candyfloss', 1000, -1560, 4)
+    place('candyfloss', 1080, -1500, 4)
     tb1 = stall('tickets_w', (-760, -2220, -480, -1980), 'booth', 'sign_tickets', ('n', -700, -588), 'e', (-2190, -2010))
     tb2 = stall('tickets_e', (480, -2220, 760, -1980), 'booth', 'sign_tickets', ('n', 588, 700), 'w', (-2190, -2010))
     # burger van: a little building in van livery with the serving hatch facing the midway
@@ -397,6 +409,8 @@ def stalls():
     # test-your-strength: striker plate is a pad onto the coconut-shy roof
     K.jumppad(-600, -1300, 0, land=(-1000, -1550, 208), apex=420, name='pad_coconut', skin=skin('striker', angle=302), glow=False,
               edges=[(-800, -1450, 208)])
+    K.jumppad(1450, -1300, 0, land=(1050, -1040, 216), apex=430, name='pad_van', skin=skin('trampoline'), glow=False,
+              edges=[(1300, -1040, 216)])
     K.jumppad(600, -1300, 0, land=(1000, -1560, 208), apex=420, name='pad_candy', skin=skin('springboard'), glow=False,
               edges=[(800, -1460, 208)])
     K.jumppad(150, -1960, 0, land=(620, -2100, 208), apex=400, name='pad_tickets', skin=skin('trampoline'), glow=False,
@@ -411,7 +425,7 @@ def caravans():
     for (x, y, a) in ((-2150, -1650, 0), (2150, -1700, 180)):
         b = town.Building(K, f'caravan{"w" if x < 0 else "e"}', (x - 210, y - 100, x + 210, y + 100), 32, (176,),
                           M_(ext='caravan_w', int='b_plain', trim='b_trim', floor='b_floor', roofflat='b_roof', ceil='b_plain'),
-                          doors=[('n', x - 40, x + 72)], roof='flat', door_h=120, no_windows='nsew')
+                          doors=[('n', x - 40, x + 72)], roof='flat', door_h=120, no_windows='nsew', ground_z=0)
         b.build()
         K.add(box((x - 210, y - 100, 0), (x + 210, y + 100, 32), {'top': CAULK, 'side': T('wood'), 'bot': CAULK}))
         K.reserve(K.stairs16(x - 40, y + 100, x + 72, y + 164, 0, 32, 's', {'top': T('stairtread'), 'side': T('stairside')}))
@@ -423,21 +437,57 @@ def caravans():
 
 def entrance():
     """the arch over the way in (pylons + a walkable top beam with the big sign below it)"""
-    for x in (-300, 300):
-        b = box((x - 60, Y0 + 140, 0), (x + 60, Y0 + 260, 520), {'side': T('redpaint'), 'top': T('roof'), 'bot': CAULK})
-        K.add(b); K.reserve(b)
-    beam = box((-360, Y0 + 140, 520), (360, Y0 + 260, 560), {'side': T('redpaint'), 'top': T('boards'), 'bot': T('redpaint')})
-    K.add(beam); K.reserve(beam)
+    parts = [box((x - 60, Y0 + 140, 0), (x + 60, Y0 + 260, 520), 'x/x') for x in (-300, 300)]
+    parts.append(box((-360, Y0 + 140, 520), (360, Y0 + 260, 560), 'x/x'))
+    def arch_tex(c, n, poly):
+        uv = ML.planar_uv(n, 128)
+        if n[2] > 0.7 and c[2] > 550: return TX['wood'], uv
+        if c[2] > 515: return TX['paint_yellow'], uv
+        return TX['canvas_ry'], uv
+    K.solid_piece('entrance_arch', parts, arch_tex)
+    for b in parts: K.reserve(b)
+    deco('arch_dress', 0, Y0 + 200, 0, 0)
     K.add(sign_box((-300, Y0 + 134, 400), (300, Y0 + 140, 516), T('sign_entrance'), 1024, 256, facing='s', edge=T('redpaint')))
     K.add(sign_box((-300, Y0 + 260, 400), (300, Y0 + 266, 516), T('sign_entrance'), 1024, 256, facing='n', edge=T('redpaint')))
     K.jumppad(0, Y0 + 520, 0, land=(0, Y0 + 200, 560), apex=720, name='pad_arch', skin=skin('springboard', angle='auto'), glow=False,
               edges=[(0, Y0 + 260, 560)])
 
 
+def fortune_booth():
+    cx, cy, r = -1120.0, 780.0, 160.0
+    deco('fortune_tent', cx, cy, 0)
+    n = 24
+    for k in range(n):
+        a0 = 2 * math.pi * k / n; a1 = 2 * math.pi * (k + 1) / n
+        am = math.degrees((a0 + a1) / 2)
+        z0 = 150 if -112 <= ((am + 180) % 360) - 180 <= -68 else 0
+        pts = []
+        for a in (a0, a1):
+            for rr in (r - 10, r):
+                pts += [(cx + rr * math.cos(a), cy + rr * math.sin(a), z0), (cx + rr * math.cos(a), cy + rr * math.sin(a), 194)]
+        wb = hull(pts, WCLIP, round_pts=False); K.add(wb); K.reserve(wb)
+    for k in range(16):                                           # cone roof (30 deg) up to a small gold crown
+        a0 = 2 * math.pi * k / 16; a1 = 2 * math.pi * (k + 1) / 16
+        pts = []
+        for a in (a0, a1):
+            for (rr, z) in ((40, 330), (r + 20, 194)):
+                pts += [(cx + rr * math.cos(a), cy + rr * math.sin(a), z), (cx + rr * math.cos(a), cy + rr * math.sin(a), z - 12)]
+        K.add(hull(pts, WCLIP, round_pts=False))
+    K.add(cyl(cx, cy, 40, 318, 330, WCLIP, 12))
+    place('crystal_ball', cx, cy + 40, 0)
+    K.light(cx, cy, 150, 220, '0.8 0.5 1')
+    K.route('fortune_door', (cx, cy - r - 120, 0), (cx, cy - 40, 0))
+    K.keep_clear(cx - 60, cy - r - 112, cx + 60, cy - r, 0)
+    K.jumppad(cx + 380, cy - 60, 0, land=(cx, cy, 330), apex=500, name='pad_fortune', skin=skin('springboard'), glow=False,
+              edges=[(cx + r, cy, 194)])
+
+
 def props():
     # festoon light strings along the midway + bins, benches, crates
     for y in (-1900, -1300, -800):
         deco('festoon_6', -330, y, 0, 0)
+    for (x, y, a) in ((-330, 420, 0), (-1300, 240, 0), (620, 880, 0), (1500, 900, 90), (-1050, -420, 90)):
+        place('festoon_6', x, y, 0, a)
     for (x, y) in ((-700, 450), (700, 450), (-400, 900), (450, 1050), (-900, -500), (900, -400), (-2200, 300), (2300, 900),
                    (-2300, -900), (100, 2100), (-700, 1900), (1000, 1900)):
         K.catalog('pad_ddmix/trashcan/bush.md3', x, y, 0, scale=0.55, lit=True)
@@ -446,6 +496,20 @@ def props():
     K.catalog('pad_ducks/pad_duck.md3', -1350, -1000, 0, scale=0.6, angle=30, lit=True)
     for (x, y) in ((-1400, -300), (-1000, 500), (1300, 650), (2300, -300)):
         K.catalog('pad_ddmix/padship/shiplamp.md3', x, y, 0, scale=1.6, lit=True)
+
+
+def cover():
+    """sightline cover that belongs at a fair: generators in the corners, hay bales, picnic tables, food carts"""
+    for (x, y, a) in ((2250, 2060, 0), (-2250, 2080, 0), (2300, -2080, 0), (-2330, -2090, 0), (2420, -650, 90), (-2420, 1300, 90)):
+        place('generator', x, y, 0, a)
+    for (x, y, a) in ((-1450, -720, 20), (-1700, -1300, 80), (1800, -1300, 10), (2350, -1250, 90), (-900, -110, 60),
+                      (-2400, 220, 90), (2350, 1500, 90), (1150, 1200, 30),
+                      (-1500, -1870, 0), (1500, -1870, 0), (-2200, -1880, 0), (2100, -1880, 0), (650, 1250, 70), (-1300, -560, 0), (-1600, -960, 90)):
+        place('hay_bales', x, y, 0, a)
+    for (x, y, a) in ((950, -250, 90), (-150, 330, 0), (700, 1800, 10), (-900, 1690, 80), (-400, -1240, 90), (-1600, 520, 0)):
+        place('picnic_table', x, y, 0, a)
+    for (x, y, a) in ((400, -760, 0), (-250, -920, 90), (180, -1380, 0), (-1150, 250, 30), (-60, -1620, 90)):
+        place('hotdog_cart', x, y, 0, a)
 
 
 def items():
@@ -457,7 +521,7 @@ def items():
     K.weapon('splasher', POOL[0] - 60, POOL[1], -48, marker='blue')
     K.weapon('boaster', 0, -800, 2, marker='orange')
     K.weapon('bubbleg', -150, -1700, 2, marker='green')
-    ammo = {'imperius': [(BT[0] + 100, BT[1], BT_PEAK - 20), (2150, -1700, 32), (-2150, -1650, 224), (0, Y0 + 200, 560)],
+    ammo = {'imperius': [(BT[0], BT[1] + 470, 80), (2150, -1700, 36), (-2150, -1650, 224), (0, Y0 + 200, 560)],
             'balloony': [(CAR[0] + 60, CAR[1], 640), (1400, 200, 240), (2300, 1900, 0), (-2300, 1900, 0)],
             'betty': [(BT[0] + 330, BT[1] - 40, 300), (BT[0], BT[1] + 500, 80), (-300, -150, 328), (1000, -1560, 208)],
             'pumper': [(1300, 440, 4), (1260, -40, 4), (1000, -1050, 4), (-2150, -1650, 36), (500, 1900, 0)],
@@ -498,11 +562,15 @@ def vault():
 def lights():
     K.light_grid(X0 + 300, Y0 + 300, X1 - 300, Y1 - 300, 1100, 900, 2400, color='1 0.88 0.72')
     hx, hy, hz = WHEEL
-    for (x, y, z, v, c) in ((hx, hy, hz + 200, 1200, '1 0.5 0.4'), (hx, hy - 400, 300, 700, '0.6 0.7 1'), (HS[0], HS[1], HS_H + 200, 900, '1 0.8 0.5'),
+    for (x, y, z, v, c) in ((hx, hy, hz + 200, 1200, '1 0.5 0.4'), (hx, hy - 400, 300, 700, '0.6 0.7 1'), (HS[0], HS[1], HS_H + 260, 420, '1 0.8 0.5'),
                             (CAR[0], CAR[1], 300, 900, '1 0.8 0.5'), (CAR[0], CAR[1], 800, 700, '1 0.7 0.6'),
                             (BT[0], BT[1], BT_PEAK + 220, 800, '1 0.8 0.6'), (0, -100, 250, 700, '0.7 0.8 1'), (0, -100, 520, 600, '1 0.9 0.7'),
                             (POOL[0], POOL[1], 200, 500, '0.6 0.8 1'), (0, Y0 + 200, 700, 700, '1 0.8 0.5'), (1700, 150, 700, 700, '0.6 0.5 1')):
         K.light(x, y, z, v, c)
+    for (x, y, z, v) in ((1500, 200, 380, 320), (2050, 200, 380, 320), (2121, 1775, 400, 700), (-1728, 2064, 400, 700),
+                         (2261, 181, 300, 600), (-2133, 1291, 300, 600), (-1216, 1216, 300, 600), (1139, -1421, 260, 500),
+                         (2389, -1899, 300, 500), (-1216, -1536, 300, 500)):
+        K.light(x, y, z, v, '1 0.85 0.65')
     K.timer_sound(0, 0, 600, 'human/applause', 'crowd', 45, 25)
 
 
@@ -520,7 +588,8 @@ def models():
     FM.pavilion(1000, 700, 312)
     FM.bouncy_castle(); FM.trampoline(); FM.cannon(); FM.striker_plate(); FM.coffin_pad(); FM.springboard()
     FM.fence_panel(); FM.festoon(660, name='festoon_6'); FM.candyfloss_machine(); FM.coconut_stand(); FM.skeleton(); FM.ghost_sheet()
-    FM.crystal_ball()
+    FM.crystal_ball(); FM.skull_sign(); FM.shutters(); FM.arch_dress(); FM.fortune_tent()
+    FM.generator_trailer(); FM.hay_bales(); FM.picnic_table(); FM.hotdog_cart()
     X = ML.Model()
     for (mn, mx) in (((-60, -60, 0), (60, 60, 96)), ((60, -50, 0), (150, 40, 80)), ((-40, -40, 96), (40, 40, 170))):
         rbox(X.mesh(TX['crate']), mn, mx, r=4, k=2, tile=96)
@@ -532,7 +601,7 @@ if __name__ == '__main__':
     textures()
     models()
     shell(); big_wheel(); carousel(); hs, TR = ghost_train(); helter_skelter(); big_top(); dodgems(); duck_pool()
-    stalls(); caravans(); entrance(); props(); vault()
+    stalls(); caravans(); entrance(); fortune_booth(); props(); cover(); vault()
     items(); lights()
     K.fix_items()
     TR.sweep_check()

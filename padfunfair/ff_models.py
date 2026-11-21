@@ -552,3 +552,119 @@ def crystal_ball():
     sphere(X.mesh(TX['crystal']), (0, 0, 64), 36, nu=14, nv=10)
     ML.save('crystal_ball', X)
     return X
+
+
+# ================================================================================================ polish: facades, arch, fortune booth
+def skull_sign(w=260.0, h=200.0):
+    """big grinning skull mounted on a wall (local: wall face at y = 0, skull bulges toward -y), glowing eyes"""
+    X = ML.Model()
+    tmp = Mesh(); ellipsoid(tmp, (0, 0, h * 0.55), w / 2, 60, h * 0.45, nu=16, nv=10)
+    X.mesh(TX['bone']).add(tmp, np.eye(3), (0, -2, 0))
+    rbox(X.mesh(TX['bone']), (-w * 0.3, -56, 0), (w * 0.3, 0.5, h * 0.3), r=14, k=3, tile=128)        # jaw
+    for k in range(6):
+        x = -w * 0.25 + k * w * 0.1
+        rbox(X.mesh(TX['coffin_in']), (x - 8, -58, h * 0.14), (x + 8, -54, h * 0.28), r=1, k=1, tile=32)  # teeth gaps
+    for e in (-1, 1):
+        sphere(X.mesh(TX['eyes']), (e * w * 0.2, -56, h * 0.6), 24, nu=10, nv=8)
+    ML.save('skull_sign', X)
+    return X
+
+
+def shutters(h=110.0, w=40.0):
+    """a pair of crooked wooden shutters either side of a window (local: wall face y = 0, window centre x 0)"""
+    X = ML.Model()
+    for s, tilt in ((-1, 0.08), (1, -0.12)):
+        tmp = Mesh(); rbox(tmp, (-w / 2, -6, 0), (w / 2, 0.5, h), r=1, k=1, tile=64)
+        c, sn = math.cos(tilt), math.sin(tilt)
+        Rm = np.array([[c, 0, -sn], [0, 1, 0], [sn, 0, c]])
+        X.mesh(TX['wood_dark']).add(tmp, Rm, (s * (w / 2 + 42), 0, 0))
+    ML.save('shutters', X)
+    return X
+
+
+def arch_dress(half=360.0, depth=120.0, h=560.0):
+    """bulbs and gold trim for the entrance arch (local: arch centred at 0, front face y = -depth/2)"""
+    X = ML.Model()
+    for y in (-depth / 2 - 1, depth / 2 + 1):
+        for x in (-300, 300):
+            for z in np.arange(30, 520, 40):
+                for dx in (-60, 60):
+                    sphere(X.mesh(TX['bulb_chase'] if int(z / 40) % 2 else TX['bulb']), (x + dx * 0.9, y, z), 7, nu=6, nv=4)
+        for x in np.arange(-half + 20, half, 40):
+            sphere(X.mesh(TX['bulb_chase'] if int(x / 40) % 2 else TX['bulb']), (x, y, h - 20), 7, nu=6, nv=4)
+    ML.save('arch_dress', X)
+    return X
+
+
+def fortune_tent(r=160.0, wall=200.0, peak=330.0):
+    """Madame Padova's fortune-telling booth: a little purple-striped round tent with a door at -y and a flag"""
+    X = ML.Model()
+    holes = lambda a, z: -112 <= ((a + 180) % 360) - 180 <= -68 and z < 150
+    ML.lathe(X.mesh(TX['canvas_by']), [(r, 0), (r, wall)], n=24, u_tiles=8, holes=holes)
+    ML.lathe(X.mesh(TX['canvas_by']), [(r - 2, wall), (r - 2, 0)], n=24, u_tiles=8, holes=holes)
+    revolve(X.mesh(TX['canvas_by']), [(r + 20, wall - 6), (40, peak)], n=24, u_tiles=8)
+    revolve(X.mesh(TX['canvas_by']), [(40, peak - 4), (r + 16, wall - 10)], n=24, u_tiles=8)
+    disc(X.mesh(TX['gold']), 40, peak, up=True, n=16)
+    ML.save('fortune_tent', X)
+    return X
+
+
+# ================================================================================================ cover props (sightlines)
+def generator_trailer(L=420.0, W=200.0, H=220.0):
+    """showman's generator on a trailer: green box with louvres, exhaust stack, hazard stripes, cables (origin on the floor)"""
+    X = ML.Model()
+    rbox(X.mesh(TX['paint_green']), (-L / 2, -W / 2, 50), (L / 2, W / 2, 50 + H), r=10, k=2, tile=256)
+    rbox(X.mesh(TX['rubber']), (-L / 2 + 10, -W / 2 + 10, 20), (L / 2 - 10, W / 2 - 10, 50), r=3, k=1, tile=128)
+    for x in np.linspace(-L / 2 + 50, L / 2 - 50, 8):
+        for y in (-W / 2 - 1, W / 2 + 1):
+            rbox(X.mesh(TX['rubber']), (x - 14, y - 1, 110), (x + 14, y + 1, 220), r=0.5, k=1, tile=32)
+    tube(X.mesh(TX['steel']), [(L / 2 - 60, 0, 50 + H), (L / 2 - 60, 0, 50 + H + 90)], 16, nseg=10)
+    for x in (-L * 0.25, L * 0.25):
+        for y in (-W / 2 - 6, W / 2 + 6):
+            tmp = Mesh(); revolve(tmp, [(0, -10), (34, -10), (34, 10), (0, 10)], n=14)
+            X.mesh(TX['rubber']).add(tmp, RX90, (x, y, 34))
+    rbox(X.mesh(TX['paint_yellow']), (-L / 2 - 1, -W / 2 - 1, 50), (L / 2 + 1, W / 2 + 1, 66), r=1, k=1, tile=64)
+    ML.save('generator', X)
+    COLL['generator'] = dict(boxes=[((-L / 2 + 2, -W / 2 + 2, 0), (L / 2 - 2, W / 2 - 2, 50 + H))])
+    return X
+
+
+def hay_bales():
+    """a stack of straw bales (2 + 1) - cover and a step (32u high bottom row: barrier-jumpable)"""
+    X = ML.Model()
+    hay = TX['crate']
+    for (x0, y0, z0, x1, y1, z1) in ((-110, -45, 0, 0, 45, 60), (0, -45, 0, 110, 45, 60), (-55, -45, 60, 55, 45, 120)):
+        rbox(X.mesh(hay), (x0 + 2, y0, z0), (x1 - 2, y1, z1), r=10, k=2, tile=64)
+    ML.save('hay_bales', X)
+    COLL['hay_bales'] = dict(boxes=[((-108, -43, 0), (108, 43, 60)), ((-53, -43, 60), (53, 43, 118))])
+    return X
+
+
+def picnic_table():
+    X = ML.Model()
+    w = TX['wood']
+    rbox(X.mesh(w), (-110, -36, 70), (110, 36, 78), r=2, k=1, tile=128)
+    for y in (-66, 66):
+        rbox(X.mesh(w), (-110, y - 14, 40), (110, y + 14, 46), r=2, k=1, tile=128)
+    for x in (-80, 80):
+        for s in (-1, 1):
+            tube(X.mesh(w), [(x, s * 70, 0), (x, s * 10, 76)], 4, nseg=5)
+    ML.save('picnic_table', X)
+    COLL['picnic_table'] = dict(boxes=[((-108, -78, 0), (108, 78, 46)), ((-108, -34, 46), (108, 34, 78))])
+    return X
+
+
+def hotdog_cart():
+    X = ML.Model()
+    rbox(X.mesh(TX['paint_red']), (-90, -45, 40), (90, 45, 130), r=8, k=2, tile=128)
+    rbox(X.mesh(TX['chrome']), (-90, -45, 130), (90, 45, 136), r=2, k=1, tile=64)
+    for x in (-80, 80):
+        tube(X.mesh(TX['steel']), [(x, -40, 136), (x, -40, 250)], 3, nseg=5)
+        tube(X.mesh(TX['steel']), [(x, 40, 136), (x, 40, 250)], 3, nseg=5)
+    revolve(X.mesh(TX['canvas_ry']), [(130, 240), (10, 290)], n=12, u_tiles=4)
+    for y in (-50, 50):
+        tmp = Mesh(); revolve(tmp, [(0, -6), (40, -6), (40, 6), (0, 6)], n=14)
+        X.mesh(TX['rubber']).add(tmp, RX90, (-40, y, 40))
+    ML.save('hotdog_cart', X)
+    COLL['hotdog_cart'] = dict(boxes=[((-88, -43, 0), (88, 43, 136))])
+    return X
