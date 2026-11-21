@@ -1,0 +1,63 @@
+{
+ "map": "wop_padville",
+ "ns": "padville",
+ "longname": "Padville Junction",
+ "generator": "build_padville.py",
+ "bounds": [
+  -2816,
+  -2048,
+  2304,
+  2048
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 1 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   464
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "464": 9.0
+  }
+ },
+ "preview": {
+  "title": "Padville Junction",
+  "texsize": 192,
+  "bigtex": "",
+  "shots": [
+   "overview:1900,-1900,1900,135,-28",
+   "station:-832,-1650,140,90,-4",
+   "plaza:-400,-500,160,170,-6",
+   "church:-830,900,600,270,-18",
+   "tunnel:-460,1440,90,150,-2",
+   "mountain:500,250,950,135,-20",
+   "lake:-1300,300,150,220,-10",
+   "bench:1300,-1950,500,80,-8",
+   "lamp:1700,700,1050,90,-30",
+   "mug:1650,-1100,160,90,-4",
+   "kitbox:1150,-1450,420,0,-20",
+   "underworld:-1250,-1100,-520,35,-6",
+   "farm:-2100,900,300,150,-12",
+   "depot:500,-1300,250,315,-12",
+   "towerroof:-280,420,800,200,-14"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "station",
+   "bench",
+   "mountain"
+  ]
+ }
+}
