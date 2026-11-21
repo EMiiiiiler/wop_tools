@@ -817,16 +817,14 @@ def viewing_gallery():
     for x in range(-2600, 2200, 700):                                              # brackets down the fascia
         K.add(hull([(x - 16, Y0, 170), (x + 16, Y0, 170), (x - 16, Y0 - 280, 170), (x + 16, Y0 - 280, 170),
                     (x - 16, Y0, -40), (x + 16, Y0, -40)], lt, round_pts=False))
-    stools = [(-2350, 15, 'bar_stool'), (-1500, -10, 'bar_stool_b'), (-650, 30, 'bar_stool'), (250, -20, 'bar_stool_back'),
-              (1100, 5, 'bar_stool'), (1950, -35, 'bar_stool_b')]
+    stools = [(-1600, 12, 'bar_stool'), (100, -20, 'bar_stool_back'), (1700, -30, 'bar_stool_b')]
     for (x, a, nm) in stools:
         deco(nm, x, Y0 - 560, z, 90 + a)
     # drinks and a programme left on the ledge
-    for (x, path, sc) in ((-2300, 'pad_cups/pad_cup03.md3', 2.0), (-1480, 'pad_ddmix/diner/glass_betty.md3', 2.2),
-                          (300, 'pad_cups/pad_cup05.md3', 2.0), (1150, 'pad_ddmix/diner/glass_diner.md3', 2.4),
-                          (1900, 'pad_tins/pad_pupsi.md3', 1.5)):
+    for (x, path, sc) in ((-1550, 'pad_cups/pad_cup03.md3', 2.0), (180, 'pad_ddmix/diner/glass_betty.md3', 2.2),
+                          (1760, 'pad_tins/pad_pupsi.md3', 1.5)):
         K.catalog(path, x, Y0 - 150, 200, scale=sc, clip=False, nudge=False, lit=True)
-    K.catalog('pad_books/pad_ob_fl_md.md3', -700, Y0 - 160, 200, scale=1.4, angle=80, clip=False, nudge=False, lit=True)
+    K.catalog('pad_books/pad_ob_fl_md.md3', -60, Y0 - 160, 200, scale=1.4, angle=80, clip=False, nudge=False, lit=True)
     for x in (-2000, -400, 1300):
         K.light(x, Y0 - 700, z + 1700, 1300, '1 0.92 0.8')
 
