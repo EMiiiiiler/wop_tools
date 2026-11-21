@@ -740,7 +740,7 @@ def materials():
     m('ember', ember(), 'glow', wave='wave noise 0.8 0.25 0 3')
     m('flame', flame(), 'add', wave='wave noise 0.7 0.3 0 5', deform='autosprite2')
     m('clockface', clock_face(), shade=30)
-    m('black_lacquer', TL.solid((16, 14, 14), 2, 61, 64), lms, v=0.35, shade=40)
+    m('black_lacquer', TL.planks((34, 24, 22), n_planks=3, gap=(20, 14, 12), grain=6), lms, v=0.1, shade=40)
     m('keys', keys_tex(), shade=30)
     m('fruit', fruit_glass(), 'glow')
     m('fruit_body', TL.solid((30, 30, 60), 2, 62, 64), lms, v=0.15, shade=30)
@@ -1251,7 +1251,7 @@ def piano(name='piano'):
     X = ML.Model()
     W, D, H = PIANO
     h = W / 2
-    bx(X, 'black_lacquer', (-h, -D + 100, 0), (h, 0, H), r=6, k=2)                    # case
+    bx(X, 'black_lacquer', (-h, -D + 100, 0), (h, 0, H - 20), r=6, k=2, faces='nsewb')   # case (the lid is its top)
     bx(X, 'black_lacquer', (-h, -D + 10, PIANO_KEYS_Z - 40), (h, -D + 100, PIANO_KEYS_Z), r=4, faces='nsewb')  # key bed
     X.mesh(M_['keys']).quad((-h + 40, -D + 20, PIANO_KEYS_Z + 1), (h - 40, -D + 20, PIANO_KEYS_Z + 1),
                             (h - 40, -D + 90, PIANO_KEYS_Z + 1), (-h + 40, -D + 90, PIANO_KEYS_Z + 1), n=(0, 0, 1))
@@ -1265,7 +1265,7 @@ def piano(name='piano'):
     for sx in (-1, 1):
         tube(X.mesh(M_['brass']), [(sx * (h - 80), -D + 100, 560), (sx * (h - 70), -D + 60, 570), (sx * (h - 70), -D + 50, 590)], [3, 3, 3], nseg=6)
         lathe(X, 'cream', [(6, 590), (6, 640), (0, 642)], cx=sx * (h - 70), cy=-D + 50, n=8)
-    bx(X, 'black_lacquer', (-h - 6, -D + 94, H - 20), (h + 6, 6, H), r=4, k=2)      # lid
+    bx(X, 'black_lacquer', (-h - 6, -D + 94, H - 20), (h + 6, 0, H), r=4, k=2)      # lid
     # things on top: a pint, sheet music, a candelabra
     pint(X, -220, -100, H, 0.6)
     bx(X, 'cream', (80, -150, H), (220, -60, H + 4), r=1)
@@ -1429,7 +1429,7 @@ def jukebox(name='jukebox'):
     W, D, H = JUKE
     h = W / 2
     Y = ML.Model()
-    prism(Y.mesh(M_['mahog']), arch_poly(W, H, n=16), -D, 0, tile=128)
+    prism(Y.mesh(M_['mahog']), arch_poly(W, H, n=16), 0, D, tile=128)            # R_XZ: z 0..D -> y 0..-D (into the room)
     X.add_model(Y, R=R_XZ, t=(0, 0, 0))
     pic(X.mesh(M_['juke']), (0, -D - 1, 280), (0, -1, 0), W - 80, 380)
     r = h - 24
