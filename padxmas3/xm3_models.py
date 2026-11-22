@@ -101,7 +101,7 @@ def light_string(X, a, b, sag, nb, cols, rng):
         ellipsoid(X.mesh(M['bulb_' + col]), p, 6, 6, 11, nu=8, nv=5)
 
 
-def canopy(trunk_z0, tiers, wall_y=None, skip_angle=None, seed=3):
+def canopy(trunk_z0, tiers, wall_y=None, skip_angle=None, seed=3, hang=None):
     """the tree above the arena, in model space round the trunk axis (origin = trunk base): whorls of drooping
     boughs dressed with needle cards, an opaque needle skirt above each whorl so gaps show greenery (not sky),
     baubles hanging from the lowest whorl, fairy-light strings swagged between its boughs.
@@ -144,6 +144,10 @@ def canopy(trunk_z0, tiers, wall_y=None, skip_angle=None, seed=3):
                 for f, col in ((0.55, list(A.BAUBLES)[i % 6]), (0.92, list(A.BAUBLES)[(i + 3) % 6])):
                     p = np.asarray(pts[int(f * (len(pts) - 1))])
                     hang_bauble(X, p - [0, 0, 6], rr.uniform(60, 160), rr.uniform(46, 70), col, rr)
+                if hang:                                   # more ornament kinds between the baubles
+                    for f in (0.3, 0.72):
+                        p = np.asarray(pts[int(f * (len(pts) - 1))])
+                        hang(X, p - [0, 0, 8], i * 2 + (f > 0.5), rr)
                 # light swag to the next bough
                 ang2, pts2 = tips[(i + 1) % len(tips)]
                 for f in (0.45, 0.8):

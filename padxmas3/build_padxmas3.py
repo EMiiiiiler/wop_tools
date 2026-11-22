@@ -23,6 +23,7 @@ from woplib.kit import MapKit, CAULK, WCLIP, CLIP, TRIG
 from woplib import models as ML, shaders as SH, texlib as TL
 import xm3_art as A
 import xm3_models as XM
+import xm3_more as XR
 
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
@@ -155,7 +156,8 @@ def tree():
 
     # --- canopy above (no collision) and the walkable branch
     X, lights = XM.canopy(SFL, [(1450 - SFL, 2300, 300, 11), (1950 - SFL, 1900, 300, 9), (2450 - SFL, 1500, 260, 8),
-                                (2950 - SFL, 1100, 220, 7)], wall_y=Y1 - TC[1], skip_angle=BR_ANG)
+                                (2950 - SFL, 1100, 220, 7)], wall_y=Y1 - TC[1], skip_angle=BR_ANG,
+                          hang=lambda X, p, k, rr: XR.ornament_mix(X, p, KINDS[k % len(KINDS)], rr))
     ML.save('canopy', X)
     K.custom(ML.PLACE['canopy'], TC[0], TC[1], SFL, lit=False, occupy=False)
     CANOPY_LIGHTS.extend([(TC[0] + p[0], TC[1] + p[1], SFL + p[2]) for p in lights])
@@ -163,6 +165,7 @@ def tree():
 
 
 CANOPY_LIGHTS = []
+KINDS = ['icicle', 'cane', 'star', 'gingerman', 'bell', 'pinecone', 'icicle', 'star']
 
 
 def walk_branch():
@@ -318,13 +321,7 @@ def bauble():
         XM.revolve(X.mesh(MA['bauble_gold']), [(ro + 3, cz - 40), (ro + 3, cz + 40)], n=nl * 2, cx=cx, cy=cy, a0=math.degrees(hole_az) + 52,
                    a1=math.degrees(hole_az) + 308)
     K.solid_piece('bauble', bs, tf_by(tex), extra=ext)
-    # player clip ring where the shell curves in over the floor (crouch-only rim inside), open at the broken side
-    for j in range(nl):
-        a0 = 2 * math.pi * j / nl; a1 = a0 + 2 * math.pi / nl
-        if abs(math.atan2(math.sin((a0 + a1) / 2 - hole_az), math.cos((a0 + a1) / 2 - hole_az))) < 0.9: continue
-        pts = [(cx + r * math.cos(a), cy + r * math.sin(a), z) for a in (a0, a1) for r in (196, ri * math.cos(math.pi / nl) - 2)
-               for z in (0, 60)]
-        K.add(hull(pts, CLIP, round_pts=False))
+    K.crawl((cx - ro, cy - ro, 0), (cx + ro, cy + ro, 140))      # the shell curving in over the floor inside
     K.add(box((cx + ro + 2, cy - 70, cz - 70), (cx + ro + 84, cy + 70, cz + 70), WCLIP))
     K.keep_clear(cx + ri * 0.7 * math.cos(hole_az) - 80, cy + ri * 0.7 * math.sin(hole_az) - 80,
                  cx + ri * 0.7 * math.cos(hole_az) + 80, cy + ri * 0.7 * math.sin(hole_az) + 80, 0)
@@ -516,7 +513,7 @@ def props():
     place('skirt', XM.skirt(1500, 470), TC[0], TC[1] - 60, 0, occupy=False, lit=True)
     gifts = [((-700, -300), (176, 160, 150), 'blue', 20), ((-560, -520), (112, 112, 112), 'gold', 50), ((520, -260), (200, 176, 170), 'stripe', -15),
              ((300, -700), (128, 128, 220), 'purple', 30), ((-1000, 300), (190, 150, 140), 'kraft', 10), ((900, -500), (150, 150, 120), 'green', 40),
-             ((-300, -1150), (160, 140, 130), 'red', 5), ((1950, -300), (220, 200, 180), 'gold', 25), ((-1200, -350), (130, 130, 130), 'stripe', 60),
+             ((-300, -1150), (160, 140, 130), 'red', 5), ((-1200, -350), (130, 130, 130), 'stripe', 60),
              ((2150, 700), (180, 180, 200), 'purple', 15), ((-800, 1900), (200, 160, 150), 'blue', 0), ((450, 1900), (150, 150, 260), 'red', 35),
              ((1100, 300), (140, 120, 110), 'kraft', 70), ((-1350, 700), (150, 150, 200), 'green', 20)]
     for i, ((x, y), (w, d, h), pat, ang) in enumerate(gifts):
@@ -527,7 +524,7 @@ def props():
     for (x, y) in ((600, 250), (-650, 120), (200, -1300), (-2300, -800), (2200, -1900), (2300, 1300)):
         K.prop(pc, x, y, 0, cyls=[(0, 0, 70, 0, 250)])
     cc = model('candy_cane', XM.candy_cane_lying)
-    for (x, y, a) in ((-200, -500, 30), (1200, -500, 110), (-1100, -1000, 75), (1900, 300, 160)):
+    for (x, y, a) in ((-200, -500, 30), (1200, -500, 110), (-1000, -620, 75), (1900, 300, 160)):
         K.prop(cc, x, y, 0, boxes=[((-260, -24, 0), (180, 24, 48)), ((180, -24, 0), (264, 150, 48))], angle=a)
     for i, (x, y, a) in enumerate(((-100, -800, 15), (100, -860, 50), (0, -760, 30), (1400, 400, 20), (-1650, -250, 40))):
         p = model('abc_block', XM.abc_block)
@@ -536,17 +533,77 @@ def props():
         p = model(f'bauble_s_{col}', XM.lying_bauble, r, col)
         K.prop(p, x, y, 0, cyls=[(0, 0, r - 4, 0, 2 * r - 4)])
     gm = model('ginger_man', XM.ginger_man)
-    for (x, y, a) in ((-1250, -1400, 20), (-2350, -1950, 70), (300, 600 - 900, 0)):
+    for (x, y, a) in ((700, -1500, 20), (-1700, -2100, 70), (300, 600 - 900, 0)):
         K.prop(gm, x, y, 0, boxes=[((-60, -150, 0), (60, 150, 16))], angle=a)
     for (x, y) in ((-1000, -700), (1700, 700), (-2200, -1300)):
-        K.catalog('gummybears/redbear.md3' if x < 0 else 'gummybears/greenbear.md3', x, y, 0, scale=1.5)
+        K.catalog('gummybears/redbear.md3' if x < 0 else 'gummybears/greenbear.md3', x, y, 0, scale=1.5, search=320)
     K.catalog('gummybears/ldyellowbear.md3', 500, -1500, 0, scale=1.5, angle=40)
-    K.catalog('pad_ddmix/jail/snowman.md3', -500, 300 - 1100 + 200, 0, scale=1.4, angle=60, lit=True)
+    K.catalog('pad_ddmix/jail/snowman.md3', -1250, 1050, 0, scale=1.4, angle=60, lit=True)
     K.catalog('pad_actionfigures/fig_lilly.md3', 2000, -800, 0, scale=1.6, angle=200, lit=True)
     K.catalog('pad_ball/pad_soccerball.md3', 1300, -2000, 0, scale=2.0)
     K.catalog('pad_ducks/pad_duck.md3', -2300, 300, 0, scale=0.9, angle=0, lit=True)
     for (x, y) in ((-900, -1900), (2350, 1900), (-2400, -400)):
         K.catalog('pad_fruits/walnut.md3', x, y, 0, scale=2.5)
+
+
+# ------------------------------------------------------------------------------------------------ round 2: more toys + life
+def more():
+    """landmark toys as cover/sight blockers, the candy village round the gingerbread house, things lying about on the
+    carpet, a mouse hole in the skirting board, a turning Christmas pyramid"""
+    P = lambda name, fn, *a, **kw: model(name, fn, *a, **kw)
+    nut = P('nutcracker', XR.nutcracker)
+    for (x, y, a) in ((2150, 1050, 200), (-760, 1150, 300)):
+        K.prop(nut, x, y, 0, cyls=[(0, 0, 145, 0, 40), (0, 0, 108, 40, 756)], angle=a)
+    K.prop(P('snow_globe', XR.snow_globe), 2050, -380, 0, cyls=[(0, 0, 316, 0, 110), (0, 0, 262, 110, 560)], angle=150)
+    K.light(2050, -380, 640, 260, '0.8 0.9 1')
+    K.prop(P('rocking_horse', XR.rocking_horse), -950, -1250, 0, boxes=[((-300, -96, 0), (300, 96, 370)), ((170, -40, 370), (310, 40, 540))],
+           angle=35)
+    K.prop(P('teddy', XR.teddy), 2200, 1900, 0, cyls=[(0, 0, 130, 0, 430)], angle=230)
+    K.prop(P('jack_box', XR.jack_in_box), 320, -480, 0, boxes=[((-120, -120, 0), (120, 120, 240))], angle=110)
+    K.prop(P('drum', XR.drum), 1420, -1760, 0, cyls=[(0, 0, 206, 0, 236)], angle=20)
+    K.prop(P('sleigh', XR.sleigh), 2150, -1350, 0, boxes=[((-270, -150, 0), (160, 150, 220)), ((160, -140, 0), (230, 140, 120))], angle=160)
+    K.prop(P('bauble_box', XR.bauble_box), -520, -1020, 0, boxes=[((-210, -150, 0), (210, 150, 110))], angle=-20)
+    K.prop(P('stocking', XR.stocking_spill), -420, -2020, 0, boxes=[((-300, -70, 0), (180, 130, 100))], angle=10)
+    # Christmas pyramid: static frame + turning carousel (func_rotating model2)
+    pb = P('pyramid_base', XR.pyramid_base)
+    pp = K.prop(pb, 2250, 300, 0, cyls=[(0, 0, 232, 0, 480)], angle=0)
+    if pp:
+        rot = 'pyramid_rotor'
+        if rot not in ML.PLACE: ML.save(rot, XR.pyramid_rotor())
+        assert ML.PLACE[rot][1] == 1 and ML.PLACE[rot][2] == 0, 'rotor must be stored at scale 1 for model2'
+        K.rotating_model2(ML.PLACE[rot][0], (pp[0], pp[1], 24), 24)
+        K.light(pp[0], pp[1], 200, 300, '1 0.8 0.5')
+    # candy village round the gingerbread house
+    for (x, y, h, key) in ((-2380, -1250, 460, 'lolly_swirl'), (-1230, -960, 400, 'lolly_swirl2'), (-2380, -800, 380, 'lolly_swirl2'),
+                           (-1180, -1560, 440, 'lolly_swirl')):
+        K.prop(P(f'lolly_{h}_{key[-1]}', XR.lollipop, h, 110, key), x, y, 0, cyls=[(0, 0, 40, 0, 30), (0, 0, 14, 30, h - 2 * 110 - 10)],
+               boxes=[((-112, -18, h - 220), (112, 18, h))], angle=0)
+    for (x, y) in ((-2420, -1650), (-2200, -2050)):
+        K.prop(P('gumdrop_tree', XR.gumdrop_tree), x, y, 0, cyls=[(0, 0, 118, 0, 380)])
+    fn = P('fence', XR.fence)
+    for (x, y, a) in ((-1960, -950, 0), (-1430, -950, 0)):
+        K.prop(fn, x, y, 0, boxes=[((-160, -8, 0), (160, 8, 72))], angle=a, search=48)
+    # things lying on the carpet (visual only)
+    ring = [(TC[0] + 1520 * math.cos(t), TC[1] - 60 + 1520 * math.sin(t), 4) for t in np.linspace(0, 2 * math.pi, 120)]
+    ring = [p for p in ring if p[1] < Y1 - 60]
+    place('lights_skirt', XR.floor_lights(ring, seed=1), 0, 0, 0, occupy=False, lit=False)
+    wall = [(x, Y1 - 50 + 12 * math.sin(x / 140), 4) for x in np.linspace(X0 + 60, X1 - 60, 90)]
+    place('lights_wall', XR.floor_lights(wall, seed=2), 0, 0, 0, occupy=False, lit=False)
+    helix = [(TC[0] + (TRUNK_R + 8) * math.cos(t), TC[1] + (TRUNK_R + 8) * math.sin(t), 340 + t * 26) for t in np.linspace(0, 6 * 2 * math.pi, 220)]
+    place('lights_trunk', XR.floor_lights(helix, seed=3), 0, 0, 0, occupy=False, lit=False)
+    for k, (pts, g) in enumerate(((((-600, -300, 3), (-420, -380, 3), (-250, -330, 3), (-60, -420, 3)), True),
+                                   (((900, -900, 3), (1060, -820, 3), (1200, -900, 3), (1380, -840, 3)), False),
+                                   (((-1150, 650, 3), (-1050, 520, 3), (-900, 560, 3), (-800, 420, 3)), True))):
+        place(f'tinsel{k}', XR.tinsel(pts, g), 0, 0, 0, occupy=False, lit=False)
+    for k, (x, y) in enumerate(((-1350, 1380), (1650, 1500), (-150, -1500), (2300, -1700))):
+        place(f'coins{k}', XR.coins(9, 110, 10 + k), x, y, 0 if (x, y) != (-1350, 1380) else 16, occupy=False)
+    for k, (x, y) in enumerate(((-700, -150), (700, -100), (650, 1200), (-850, 950), (300, 200), (-300, 1500))):
+        place(f'needles{k}', XR.needle_scatter(36, 380, 20 + k), x, y, 0, occupy=False, lit=False)
+    place('mouse_hole', XR.mouse_hole(), 640, Y1 - 24, 0, occupy=False)
+    K.light(640, Y1 - 120, 60, 90, '1 0.75 0.4')
+    # light from the floor strings (a few warm/coloured points low down)
+    for i, p in enumerate(ring[::10]):
+        K.light(p[0], p[1], 60, 160, ['1 0.4 0.35', '0.45 1 0.5', '0.5 0.6 1', '1 0.85 0.4'][i % 4])
 
 
 # ------------------------------------------------------------------------------------------------ loot, spawns
@@ -597,12 +654,13 @@ def textures():
     TX.add('sky', TL.solid((60, 40, 30), 2, 21, 64), 'raw', shader=A.sky(OUT, NS), check_tile=False)
     TX.kit_defaults(pad_rgb=(255, 120, 90))
     A.materials(TX)
+    XR.materials(TX)
 
 
 if __name__ == '__main__':
     textures()
     shell(); tree(); tower(); ginger(); bauble(); wrap_tube(); train(); cookies(); vault()
-    pads(); props(); items(); lights()
+    pads(); more(); props(); items(); lights()
     K.fix_items()
     TX.write_shader(arena_types=INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))
