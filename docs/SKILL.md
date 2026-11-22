@@ -15,7 +15,7 @@ the source of this skill. Key pieces:
 | Piece | What it does |
 |---|---|
 | `newmap.py wop_x "Name"` | scaffolds `<ns>/` with `mapinfo.json`, a working generator on woplib, a design-sheet README |
-| `wopbuild.py <folder> <steps>` | the pipeline: gen, lint, compile, aas, sight, bots, render, levelshots, package; writes `report.md`. `preview` (= gen + quick) is the ~20 s unlit walk-through for review rounds |
+| `wopbuild.py <folder> <steps>` | the pipeline: gen, lint, compile, aas, sight, bots, render, levelshots, package; writes `report.md`. `preview` (= gen + quick) is the ~20 s unlit walk-through for review rounds; `ents` swaps only the entity lump + rebuilds the .aas (loot moved after the final light: 14 s instead of an hour) |
 | `woplib/kit.py` MapKit | placement with occupancy, catalog/custom models + collision, items, pads, secrets, movers, routes, spots.json |
 | `woplib/models.py` | custom MD3/IQM + procedural textures + model shader kinds (`configure(ns, out)` once) |
 | `woplib/shaders.py` | brush shader stanzas (lm, sky, water, fog, glass, neon, pad, pulse, slick), `.shader` + `.arena` writers (validated) |
@@ -142,6 +142,8 @@ updates), send `dist/X.pk3` + `dist/X_source.zip`, commit the generator on a bra
 | aas OUT OF BOUNDS (bots/players reach the scenery) | a gap in the boundary clip: slot in front of a gate, clip that stops short | gates flush with the playable side, clip to the sky over walls + hedges, one clip line at the street ends |
 | sight/lights count gardens nobody can reach | eye points behind the clip | wopbuild passes `--aas` once the .aas is fresh (sightlines, light_check) |
 | BSP 15-20 MB on a big outdoor hull | light grid over the whole volume, fine lightmaps on scenery | worldspawn `gridsize 192 192 256`; `q3map_lightmapSampleSize` 32-48 on scenery shaders |
+| big dark patches round furniture / raised decks | grid lights inside solids are culled | `K.light_grid` now lifts them 96u above the solid (drops ones inside walls); raised walk surfaces (mantel, sofa back, box tops) above the grid need their own lights |
+| dark carpet under a rug / skirt / paper decal | misc_model surfaces cast shadows by default | `_castshadows 0` on anything lying flat on the floor (padxmas3 `DECALS`) |
 | a light changes nothing in light_check | light inside a weapclip prop (culled), or a hidden closed surface between light and floor (a lofted body's flat top lid over a car cabin) | lights above props; skip lid faces in `loft(skip=)`; q3map2 log "culled lights" |
 
 ## 3. The user's standing rules
@@ -224,6 +226,11 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   distance to the intended landing. bspc gives the pad 10 % more horizontal speed, steps 0.1 s, stops at 3 s: floor
   pads can't reach ~1450u up in time (padgarage roof: a woodshed roof at 800 as the first stage).
 - `K.jumppad` warns when the launch spot is already occupied (a prop placed first); a pad inside a prop has no area.
+- Themed pads: `K.themed_pad(x, y, z, land, apex, name, place)` = invisible disc + a low dressing MD3 turned along the
+  flight (tambourine, bellows, whoopee cushion...). Floor pads onto furniture (seat 720, mantel 1216): start them
+  ~420u out with apex +380 or bspc's faster, flatter flight hits the front face (padxmas3 sofa + mantel).
+- A pad on a botclipped deck needs a botclip gap where its arc crosses the edge (`botclip_rect(gaps=)`), and its own
+  trigger must not overlap the strip, or bspc's flight ends at the start.
 - bspc lands a pad where the arc first touches ground: fling pads on small tops go on the far side.
 - Pad up through a hole = lift (target past the hole edge, high apex). Pad onto a cut-away upper level: stay outside
   the front plane until above slab + 24. Pad into an opening behind a ledge: apex at the opening, <= top - 32.
@@ -289,7 +296,7 @@ bspc passing a link does not mean bots or players can use it: bot-test.
 ## 11. Custom MD3s (woplib.models)
 1. `ML.configure(ns, out)`; textures with `ML.T(name, array[, alpha])`; shaders with `ML.S(img, kind, **opt)`.
 2. Meshes with meshlib (revolve/lathe, tube, ellipsoid, rbox, prism, disc) or `solids_mesh()` from convex brush solids
-   (same solids = the weapclip collision; give those shaders `shade=20-30`). `K.solid_piece(name, brushes, texfn)` does
+   (same solids = the weapclip collision; give those shaders `shade=20-30`). `K.solid_piece(name, brushes, texfn, extra=fn)` (extra adds world-space dressing to the same MD3; texfn may return None for invisible collision) does
    both in one call (MD3 stored centred on the footprint, brushes added as weapclip).
 3. `ML.save(name, X)` handles MD3 limits (+-512u: tall models stored round mid-height; < 4000 verts per surface;
    collapsed triangles dropped) and records `PLACE[name]` for `K.custom`/`K.prop`. `ML.save_iqm` for movers.

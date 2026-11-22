@@ -281,13 +281,40 @@ class MapKit:
         out; fast light, _ambient 20, no bounce - bounce light adds ~10-30 indoors):
             600u over the floor, 512 grid:  600 -> 58   900 -> 79   1500 -> 124   2200 -> 173
             300u over the floor, 384 grid:  300 -> 64   600 -> 113  900 -> 162    1500 -> 238 (saturated)
-        Aim for a median of 90-150 and run wopbuild `lights` (light_check) to confirm."""
+        Aim for a median of 90-150 and run wopbuild `lights` (light_check) to confirm.
+        A grid light that lands inside a solid (a sofa, a box, weapclip round a model) is culled by q3map2 and the
+        floor round it goes dark: such lights are lifted to 96u above the solid instead (see lift_light)."""
         nx = max(1, round((x1 - x0) / spacing)); ny = max(1, round((y1 - y0) / spacing))
+        lifted = dropped = 0
         for i in range(nx):
             for j in range(ny):
                 x = x0 + (i + 0.5) * (x1 - x0) / nx; y = y0 + (j + 0.5) * (y1 - y0) / ny
                 if skip and skip(x, y): continue
-                self.light(x, y, z, val, color)
+                zz = self.lift_light(x, y, z)
+                if zz is None: dropped += 1; continue
+                lifted += zz != z
+                self.light(x, y, zz, val, color)
+        if lifted or dropped: print(f'  light_grid: lifted {lifted} light(s) out of solids, dropped {dropped} inside walls/columns')
+
+    def lift_light(self, x, y, z, clearance=96, margin=12, max_lift=1000):
+        """z for a point light at (x, y, z) that is not inside any solid brush: while the point is inside one (AABB
+        grown by margin; triggers, nonsolid and nodraw_ns ignored), move it to clearance above that brush's top.
+        None when that would lift it more than max_lift (inside a wall, chimney breast or column: drop the light)."""
+        z0 = z
+        boxes = []
+        for b in self.M.world:
+            texs = {getattr(f, 'tex', '') for f in getattr(b, 'faces', [])}
+            if texs and all(('trigger' in t or 'nodraw' in t or 'botclip' in t or t.endswith('/sky')) for t in texs): continue
+            try: mn, mx = b.bounds()
+            except Exception: continue
+            boxes.append((mn, mx))
+        for _ in range(8):
+            hit = [mx[2] for mn, mx in boxes if mn[0] - margin < x < mx[0] + margin and mn[1] - margin < y < mx[1] + margin
+                   and mn[2] - margin < z < mx[2] + margin]
+            if not hit: break
+            z = max(hit) + clearance
+            if z - z0 > max_lift: return None
+        return z
 
     @staticmethod
     def sound_path(noise):

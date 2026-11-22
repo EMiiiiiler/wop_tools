@@ -54,6 +54,8 @@ TUN = (640, -1952, 1040, -1648); TUN_H = 400
 PLATE = (-1500, 1520, 360)
 FP = (-3328, -600, -3072, 1000); FP_OPEN = (-280, 680, 960); MANTEL_Z, MANTEL_D = 1216, 288
 WINDOW = (-1400, 1400, 1500, 3300)
+STOOL = (-2250, 80, 640, 420)                     # footstool x, y, top, radius
+STOOL_AT = [STOOL[0], STOOL[1]]                    # where the placer actually put it
 VAULT = (-384, -384, 384, 384); VZ = -1600
 
 
@@ -81,9 +83,15 @@ def tf_by(fn):
     return f
 
 
+DECALS = ('skirt', 'needles', 'torn', 'tinsel', 'coins', 'lights_', 'curls', 'dust', 'tissue', 'rails', 'garland')
+
+
 def place(name, X, x, y, z, angle=0, boxes=(), cyls=(), lit=True, occupy=True):
+    """save + place a custom MD3. Things lying flat on the floor (DECALS) don't cast shadows: q3map2 casts misc_model
+    shadows by default, and a skirt or sheet of paper on the carpet blacks out the carpet's lightmap under it"""
     if name not in ML.PLACE: ML.save(name, X)
-    return K.custom(ML.PLACE[name], x, y, z, angle=angle, boxes=boxes, cyls=cyls, lit=lit, occupy=occupy)
+    kw = {'_castshadows': 0} if name.startswith(DECALS) else {}
+    return K.custom(ML.PLACE[name], x, y, z, angle=angle, boxes=boxes, cyls=cyls, lit=lit, occupy=occupy, **kw)
 
 
 def model(name, builder, *a, **kw):
@@ -184,10 +192,21 @@ def fireplace():
     place('painting', XR.picture(900, 680), bx1, 200, mz + 220, occupy=False)
     for k, (y, a) in enumerate(((-480, 8), (-340, -10), (420, 6), (560, -12), (790, 4))):
         place(f'card{k % 3}', XR.xmas_card(k % 3), bx1 + 60, y, mz, angle=a, boxes=[((-40, -40, 0), (40, 40, 140))])
-    K.botclip_rect(bx1, by0 - 160, bx1 + MANTEL_D, by1 + 160, mz, sides='nse', gaps=[('e', -650, -470), ('e', 730, 910), ('n', -2900, -2790)])
+    K.botclip_rect(bx1, by0 - 160, bx1 + MANTEL_D, by1 + 160, mz, sides='nse', gaps=[('e', -650, -470), ('e', 730, 910), ('e', 990, 1160), ('n', -2900, -2790)])
     # hearth-side dressing on the floor
-    K.prop(model('log_basket', XR.log_basket), -2950, -1250, 0, cyls=[(0, 0, 182, 0, 200)])
-    K.prop(model('fire_tools', XR.fire_tools), -2900, -900, 0, cyls=[(0, 0, 88, 0, 30), (0, 0, 40, 30, 680)])
+    K.prop(model('log_basket', XR.log_basket), -2780, -1250, 0, cyls=[(0, 0, 182, 0, 200)])
+    K.prop(model('fire_tools', XR.fire_tools), -2760, -860, 0, cyls=[(0, 0, 88, 0, 30), (0, 0, 40, 30, 680)])
+    K.prop(model('cat', XS.sleeping_cat), -2760, -1820, 0, cyls=[(0, 0, 204, 0, 230)], angle=60)
+    K.prop(model('log_pile', XR.log_pile), -2020, 1060, 0, boxes=[((-190, -160, 0), (190, 160, 200))], angle=20)
+    K.prop(model('pinecone', XM.pinecone), -1250, 300, 0, cyls=[(0, 0, 70, 0, 250)])
+    for (x, y, w, d, h, pat, a) in ((-1520, 600, 200, 180, 170, 'blue', 30), (860, -80, 220, 200, 180, 'red', -10)):
+        nm = f'gift_{pat}_{w}x{d}x{h}'
+        if nm not in ML.PLACE: ML.save(nm, XM.gift(w, d, h, pat))
+        K.prop(ML.PLACE[nm], x, y, 0, boxes=[((-w / 2 + 4, -d / 2 + 4, 0), (w / 2 - 4, d / 2 - 4, h - 4))], angle=a)
+    for (dz, w, h, pat, a) in ((0, 280, 200, 'stripe', 10), (200, 200, 170, 'green', -25)):
+        nm = f'gift_{pat}_{w}x{w}x{h}'
+        if nm not in ML.PLACE: ML.save(nm, XM.gift(w, w, h, pat))
+        K.custom(ML.PLACE[nm], 200, 2080, dz, angle=a, boxes=[((-w / 2 + 4, -w / 2 + 4, 0), (w / 2 - 4, w / 2 - 4, h - 4))])
 
 
 # ------------------------------------------------------------------------------------------------ the tree
@@ -224,7 +243,7 @@ def tree():
     K.keep_clear(x1 + 470, 200, x1 + 620, 456, 0); K.keep_clear(x0 - 620, 200, x0 - 470, 456, 0)
     # steps out of the water (south inside), the water itself, the trunk
     steps = K.stairs16(x0 + 64, y0 + SW, x0 + 384, y0 + SW + 96, SFL, RIM, 'e', {'top': T('stand'), 'side': T('stand'), 'bot': CAULK},
-                       route='stand_steps')
+                       route=None)                      # starts under water: aas_check can't test it (lint water + bspc swim links do)
     tr = cyl(TC[0], TC[1], TRUNK_R, SFL, ZTOP, WCLIP, 16)
     K.add(tr)
     K.water_box((x0 + SW, y0 + SW, SFL), (x1 - SW, y1 - SW, WTOP), T('water'), cutters=steps + [tr] + screws)
@@ -583,18 +602,22 @@ def pads():
     bel = model('pad_bellows', XR.bellows)
     mx = FP[2] + 190
     for (y, nm) in ((-560, 'pad_mantel_s'), (820, 'pad_mantel_n')):
-        K.themed_pad(-2560, y, 0, land=(mx, y, MANTEL_Z), apex=MANTEL_Z + 90, name=nm, place=bel, glow=140,
+        K.themed_pad(-2380, y, 0, land=(mx, y, MANTEL_Z), apex=MANTEL_Z + 230, name=nm, place=bel, glow=140,
                      edges=[(FP[2] + MANTEL_D, y, MANTEL_Z)], turn=-90)
-    K.themed_pad(FP[2] + 140, 1080, MANTEL_Z, land=(-2350, 1120, 0), apex=MANTEL_Z + 60, name='fling_mantel', place=bw_g)
+    K.themed_pad(-2845, 1070, MANTEL_Z, land=(TUBE_X, 1560, TUBE_A * 2), apex=MANTEL_Z + 120, name='fling_mantel', place=bw_g)
     # sofa corner: whoopee cushion -> sofa seat, throw pillow on the seat -> sofa back, ball of yarn -> armchair seat
     S, Ar = XS.SOFA, XS.ARM
     wh = model('pad_whoopee', XS.whoopee); tp = model('pad_pillow', XS.throw_pillow); yb_ = model('pad_yarn', XS.yarn_ball)
-    K.themed_pad(S['x0'] - 260, 500, 0, land=(S['x0'] + 420, 500, S['seat']), apex=S['seat'] + 260, name='pad_sofa', place=wh,
+    K.themed_pad(S['x0'] - 420, 500, 0, land=(S['x0'] + 420, 500, S['seat']), apex=S['seat'] + 380, name='pad_sofa', place=wh,
                  glow=140, edges=[(S['x0'], 500, S['seat'])])
     K.themed_pad(S['x0'] + 470, 1500, S['seat'], land=(S['back_x'] + 160, 1300, S['back_h']), apex=S['back_h'] + 130, name='pad_sofaback',
                  place=tp, glow=120, edges=[(S['bc_x'], 1420, S['bc_h']), (S['back_x'], 1360, S['back_h'])])
-    K.themed_pad(Ar['x0'] - 260, -1500, 0, land=(Ar['x0'] + 420, -1500, Ar['seat']), apex=Ar['seat'] + 260, name='pad_armchair',
+    K.themed_pad(Ar['x0'] - 420, -1500, 0, land=(Ar['x0'] + 420, -1500, Ar['seat']), apex=Ar['seat'] + 380, name='pad_armchair',
                  place=yb_, glow=140, edges=[(Ar['x0'], -1500, Ar['seat'])])
+    # floor -> footstool top (a dropped throw pillow)
+    sx, sy = STOOL_AT
+    K.themed_pad(sx + STOOL[3] + 330, sy, 0, land=(sx + 60, sy, STOOL[2]), apex=STOOL[2] + 260, name='pad_stool', place=tp, glow=110,
+                 edges=[(sx + STOOL[3], sy, STOOL[2])])
     # floor -> gingerbread roof, floor -> cab roof, floor -> tunnel roof, floor -> tube top
     gx0, gy0, gx1, gy1 = GH
     K.themed_pad(-1520, -760, 0, land=(-1520, -1260, GH_H + 16), apex=GH_H + 16 + 170, name='pad_ginger', place=gp, glow=140,
@@ -610,7 +633,7 @@ def pads():
 
 # ------------------------------------------------------------------------------------------------ cover + props
 def props():
-    place('skirt', XM.skirt(1500, 470), TC[0], TC[1] - 60, 0, occupy=False, lit=True)
+    place('skirt', XM.skirt(1500, 470), TC[0], TC[1] - 60, 0, occupy=False, lit=False)   # vertex lit: no shadow on the carpet
     gifts = [((-700, -300), (176, 160, 150), 'blue', 20), ((-560, -520), (112, 112, 112), 'gold', 50), ((520, -260), (200, 176, 170), 'stripe', -15),
              ((300, -700), (128, 128, 220), 'purple', 30), ((-1000, 300), (190, 150, 140), 'kraft', 10), ((900, -500), (150, 150, 120), 'green', 40),
              ((-300, -1150), (160, 140, 130), 'red', 5), ((-1200, -350), (130, 130, 130), 'stripe', 60),
@@ -621,15 +644,15 @@ def props():
         if nm not in ML.PLACE: ML.save(nm, XM.gift(w, d, h, pat))
         K.prop(ML.PLACE[nm], x, y, 0, boxes=[((-w / 2 + 4, -d / 2 + 4, 0), (w / 2 - 4, d / 2 - 4, h - 4))], angle=ang)
     pc = model('pinecone', XM.pinecone)
-    for (x, y) in ((600, 250), (-650, 120), (200, -1300), (-2300, -800), (2200, -1900), (2300, 1300)):
+    for (x, y) in ((600, 250), (-650, 120), (200, -1300), (-2300, -800), (2250, -1250), (2300, 1300)):
         K.prop(pc, x, y, 0, cyls=[(0, 0, 70, 0, 250)])
     cc = model('candy_cane', XM.candy_cane_lying)
-    for (x, y, a) in ((-200, -500, 30), (1200, -500, 110), (-1000, -620, 75), (1900, 300, 160)):
+    for (x, y, a) in ((-200, -500, 30), (1200, -500, 110), (-1000, -620, 75)):
         K.prop(cc, x, y, 0, boxes=[((-260, -24, 0), (180, 24, 48)), ((180, -24, 0), (264, 150, 48))], angle=a)
     for i, (x, y, a) in enumerate(((-100, -800, 15), (100, -860, 50), (0, -760, 30), (1400, 400, 20), (-1650, -250, 40))):
         p = model('abc_block', XM.abc_block)
         K.prop(p, x, y, 0, boxes=[((-60, -60, 0), (60, 60, 124))], angle=a)
-    for (x, y, r, col) in ((-450, 1450, 90, 'blue'), (700, -1100, 80, 'gold'), (2300, -900, 100, 'silver'), (-2000, 1150, 85, 'green')):
+    for (x, y, r, col) in ((-450, 1450, 90, 'blue'), (700, -1100, 80, 'gold'), (2300, -900, 100, 'silver'), (-2050, -760, 85, 'green')):
         p = model(f'bauble_s_{col}', XM.lying_bauble, r, col)
         K.prop(p, x, y, 0, cyls=[(0, 0, r - 4, 0, 2 * r - 4)])
     gm = model('ginger_man', XM.ginger_man)
@@ -640,10 +663,18 @@ def props():
     K.catalog('gummybears/ldyellowbear.md3', 500, -1500, 0, scale=1.5, angle=40)
     K.catalog('pad_ddmix/jail/snowman.md3', -1250, 1050, 0, scale=1.4, angle=60, lit=True)
     K.catalog('pad_actionfigures/fig_lilly.md3', 2000, -800, 0, scale=1.6, angle=200, lit=True)
-    K.catalog('pad_ball/pad_soccerball.md3', 1300, -2000, 0, scale=2.0)
-    K.catalog('pad_ducks/pad_duck.md3', -2300, 300, 0, scale=0.9, angle=0, lit=True)
-    for (x, y) in ((-900, -1900), (2350, 1900), (-2400, -400)):
+    K.catalog('pad_ball/pad_soccerball.md3', 500, -2150, 0, scale=2.0)
+    K.catalog('pad_ducks/pad_duck.md3', -1850, -450, 0, scale=0.9, angle=0, lit=True)
+    for (x, y) in ((-900, -1900), (1900, 2150), (-2400, -400)):
         K.catalog('pad_fruits/walnut.md3', x, y, 0, scale=2.5)
+
+
+def stool():
+    """placed before the pads so the throw-pillow pad can aim at wherever the placer put it"""
+    # tufted leather footstool in front of the fire (cover across the fireside floor; a throw-pillow pad gets you on top)
+    sp = K.prop(model('footstool', XS.footstool), STOOL[0], STOOL[1], 0, cyls=[(0, 0, STOOL[3] - 30, 0, 110), (0, 0, STOOL[3], 110, STOOL[2])])
+    STOOL_AT[:] = [sp[0], sp[1]]
+    K.item('item_armor_shard', sp[0], sp[1] + 120, STOOL[2])
 
 
 # ------------------------------------------------------------------------------------------------ round 5: the sofa corner (E)
@@ -652,19 +683,42 @@ def sofa_corner():
     is 224u of clearance: walk underneath to find what fell down there. Pads: a whoopee cushion (floor -> sofa seat),
     a throw pillow on the seat (-> the sofa back, Balloony), a ball of yarn (floor -> armchair seat)."""
     S, Ar = XS.SOFA, XS.ARM
-    K.solid_piece('sofa', XS.sofa_brushes(box), lambda c, n, poly: None, extra=XS.sofa_visual)
-    K.solid_piece('armchair', XS.armchair_brushes(box), lambda c, n, poly: None, extra=XS.armchair_visual)
+    sv = XS.valance_spans(S, front_gap=(560, 960), sides='ns'); av = XS.valance_spans(Ar, front_gap=None, sides='ns')
+    av = [sp for sp in av if sp[0][0] > Ar['x0']]          # armchair: skirt on the sides only, front open
+    K.solid_piece('sofa', XS.sofa_brushes(box) + [box(mn, mx, 'x/x') for mn, mx in sv], lambda c, n, poly: None,
+                  extra=lambda X: (XS.sofa_visual(X), XS.valance_visual(X, sv, 'velvet_dk')))
+    K.solid_piece('armchair', XS.armchair_brushes(box) + [box(mn, mx, 'x/x') for mn, mx in av], lambda c, n, poly: None,
+                  extra=lambda X: (XS.armchair_visual(X), XS.valance_visual(X, av, 'tartan_g')))
     ya, yb = S['y0'] + S['arm_w'], S['y1'] - S['arm_w']; ym = (ya + yb) / 2
     K.crawl((S['x0'], S['y0'], 0), (S['x1'], S['y1'], S['leg']))
     K.crawl((Ar['x0'], Ar['y0'], 0), (Ar['x1'], Ar['y1'], Ar['leg']))
     K.keep_clear(S['x0'] - 260, ya, S['x0'], yb, 0); K.keep_clear(Ar['x0'] - 260, Ar['y0'] + 240, Ar['x0'], Ar['y1'] - 240, 0)
-    K.route('under_sofa', (S['x0'] - 160, 200, 0), (S['x1'] - 200, 200, 0))
+    K.keep_clear(S['x0'] - 500, 400, S['x0'], 600, 0); K.keep_clear(S['x0'] - 160, 560, S['x0'], 960, 0); K.keep_clear(Ar['x0'] - 500, -1600, Ar['x0'], -1400, 0)
+    K.route('under_sofa', (S['x0'] - 160, 760, 0), (S['x1'] - 200, 200, 0))
     K.route('under_armchair', (Ar['x0'] - 160, -1500, 0), (Ar['x1'] - 200, -1500, 0))
     # under the sofa: dust bunnies, lost coins, a lost marker pen... and some loot
     place('dust', XS_dust(), (S['x0'] + S['x1']) / 2, ym, 0, occupy=False, lit=True)
     place('coins_sofa', XR.coins(8, 140, 31), 3700, 1500, 0, occupy=False)
     place('coins_gap', XR.coins(4, 20, 32), 3300, ym, S['seat'] - 16, occupy=False)
-    K.light(3600, ym, 150, 260, '1 0.8 0.6')
+    for y in (-300, 330, 1000, 1650):                     # under the sofa: dim and dusty, but you can see the loot
+        K.light(3300, y, 150, 420, '1 0.8 0.6'); K.light(4000, y, 150, 300, '1 0.8 0.6')
+    for y in (-1900, -1250):
+        K.light(3300, y, 150, 400, '1 0.8 0.6'); K.light(4000, y, 150, 300, '1 0.8 0.6')
+    # things that rolled under the furniture (and split its long low sightlines): a lost present, the RC car, a sock
+    for (x, y, w, d, h, pat) in ((3600, 220, 300, 240, 170, 'gold'), (3400, 1380, 260, 260, 180, 'blue'), (3550, -1350, 240, 220, 160, 'red')):
+        nm = f'gift_{pat}_{w}x{d}x{h}'
+        if nm not in ML.PLACE: ML.save(nm, XM.gift(w, d, h, pat))
+        K.custom(ML.PLACE[nm], x, y, 0, angle=25, boxes=[((-w / 2 + 4, -d / 2 + 4, 0), (w / 2 - 4, d / 2 - 4, h - 4))])
+    K.catalog('pad_radio_car/radio_control.md3', 3900, 800, 0, scale=1.6, angle=100)
+    # standing lamps at both ends of the sofa strip (warm pools of light; their bases break the long N-S lines)
+    lp = model('floor_lamp', XS.floor_lamp)
+    for (x, y) in ((2650, 2060),):
+        at = K.prop(lp, x, y, 0, cyls=[(0, 0, 206, 0, 120), (0, 0, 22, 120, 2080)], search=120)
+        if at: K.light(at[0], at[1], 2080, 900, '1 0.78 0.5')
+    for (dx, dz, w, h, pat, a) in ((0, 0, 260, 220, 'green', 15), (10, 220, 180, 150, 'red', -20)):
+        nm = f'gift_{pat}_{w}x{w}x{h}'
+        if nm not in ML.PLACE: ML.save(nm, XM.gift(w, w, h, pat))
+        K.custom(ML.PLACE[nm], 2700 + dx, -700, dz, angle=a, boxes=[((-w / 2 + 4, -w / 2 + 4, 0), (w / 2 - 4, w / 2 - 4, h - 4))])
     # on the seat: the remote and a mug of cocoa
     place('remote', XS.remote(), 3150, 120, S['seat'] + 8, angle=20, boxes=[((-110, -30, 0), (110, 30, 24))])
     place('cocoa', XS.cocoa_mug(), 3250, 1250, S['seat'] + 8, cyls=[(0, 0, 72, 0, 140)])
@@ -711,7 +765,21 @@ def more():
     K.prop(P('teddy', XR.teddy), 2200, 1900, 0, cyls=[(0, 0, 130, 0, 430)], angle=230)
     K.prop(P('jack_box', XR.jack_in_box), 320, -480, 0, boxes=[((-120, -120, 0), (120, 120, 240))], angle=110)
     K.prop(P('drum', XR.drum), 1420, -1760, 0, cyls=[(0, 0, 206, 0, 236)], angle=20)
-    K.prop(P('sleigh', XR.sleigh), 2150, -1350, 0, boxes=[((-270, -150, 0), (160, 150, 220)), ((160, -140, 0), (230, 140, 120))], angle=160)
+    K.prop(P('sleigh', XR.sleigh), 2000, -1950, 0, boxes=[((-270, -150, 0), (160, 150, 220)), ((160, -140, 0), (230, 140, 120))], angle=160)
+    # a present stack between the stand and the tower (breaks the long diagonal behind the tree)
+    for (dx, dy, dz, w, h, pat, a) in ((0, 0, 0, 240, 200, 'purple', 10), (20, 10, 200, 170, 150, 'gold', -15)):
+        nm = f'gift_{pat}_{w}x{w}x{h}'
+        if nm not in ML.PLACE: ML.save(nm, XM.gift(w, w, h, pat))
+        K.custom(ML.PLACE[nm], 520 + dx, 1330 + dy, dz, angle=a, boxes=[((-w / 2 + 4, -w / 2 + 4, 0), (w / 2 - 4, w / 2 - 4, h - 4))])
+    # along the south wall (behind the train): a toy chest, a stack of picture books, the big drum's twin
+    for (x, nm, fn, bx) in ((-2600, 'abc_tower', None, None), (-1000, 'bauble_box_s', XR.bauble_box, ((-210, -150, 0), (210, 150, 110))),
+                            (1200, 'jack_box2', XR.jack_in_box, ((-120, -120, 0), (120, 120, 240)))):
+        if fn is None:
+            p = model('abc_block', XM.abc_block)
+            for k, (dx, dy, dz, a) in enumerate(((0, 0, 0, 10), (140, 10, 0, -15), (60, 0, 124, 30))):
+                K.custom(p, x + dx, Y0 + 130 + dy, dz, angle=a, boxes=[((-60, -60, 0), (60, 60, 124))])
+        else:
+            K.prop(model(nm, fn), x, Y0 + 40 + (bx[1][1] - bx[0][1]) / 2, 0, boxes=[bx], angle=0, search=60)
     K.prop(P('bauble_box', XR.bauble_box), -520, -1020, 0, boxes=[((-210, -150, 0), (210, 150, 110))], angle=-20)
     K.prop(P('stocking', XR.stocking_spill), -420, -2020, 0, boxes=[((-300, -70, 0), (180, 130, 100))], angle=10)
     # Christmas pyramid: static frame + turning carousel (func_rotating model2)
@@ -759,13 +827,13 @@ def more():
 # ------------------------------------------------------------------------------------------------ loot, spawns
 def items():
     tip = bpt(1150, branch_z(1150))
-    K.weapon('imperius', FP[2] + 170, -250, MANTEL_Z, marker='purple')
-    K.weapon('betty', tip[0], tip[1], tip[2], marker='black')
+    K.weapon('imperius', tip[0], tip[1], tip[2], marker='purple')
+    K.weapon('betty', FP[2] + 170, -250, MANTEL_Z, marker='black')
     K.weapon('balloony', XS.SOFA['back_x'] + 160, 300, XS.SOFA['back_h'], marker='orange')
-    K.weapon('pumper', 1700, 1560, A_H + B_H, marker='green')
+    K.item('holdable_bambam', 1700, 1560, A_H + B_H)
     K.weapon('splasher', -250, 870, SFL, marker='blue')
     K.weapon('boaster', BAUB[0] + 40, BAUB[1] + 20, 0, marker='orange')
-    K.item('holdable_bambam', TUBE_X, 1600, TUBE_A - TUBE_IN)
+    K.weapon('pumper', TUBE_X, 1600, TUBE_A - TUBE_IN, marker='green')
     K.weapon('bubbleg', -1450, 1600, 16, marker='green')
     ammo = {'imperius': [(FP[2] + 170, 950, MANTEL_Z), (-2450, 1300, 0), (-2420, -2180, 0), (1600, 1650, 0), (-1450, -1200, GH_H + 16)],
             'betty': [bpt(600, branch_z(600)), (1650, 1150, 0), (2400, -2150, 0), (-260, 640, RIM), (3300, 1700, 0)],
@@ -780,14 +848,14 @@ def items():
     for (x, y) in ((900, 950), (-900, -1250), (2200, 0)): K.ammo('nipper', x, y, 0)
     K.item('item_armor_padshield', -1700, -1400, GH_H + 16)
     K.item('item_armor_shard', 840, -1720, TUN_H + 16)
-    K.item('item_armor_shard', -1600, -1500, 0); K.item('item_armor_shard', 1250, 1500, A_H); K.item('item_armor_shard', 260, 640, RIM)
+    K.item('item_armor_shard', -1600, -1500, 0); K.item('item_armor_shard', 1250, 1300, A_H); K.item('item_armor_shard', 260, 640, RIM)
     K.item('item_speedy', -60, TRAIN_Y, 336)
     K.item('item_visionless', 1500, 1300, 0)
     K.item('holdable_floater', TUBE_X, 1700, TUBE_A * 2)
     K.item('item_climber', -1450, -1350, 0)
     K.station(0, -1250, 0, ang=90)
     for (x, y, a) in ((-2200, 600, 315), (-900, 1500, 270), (300, 2000, 270), (2300, 2000, 225), (2300, 600, 180), (2300, -600, 180),
-                      (1900, -2050, 135), (300, -2100, 90), (-1100, -2100, 45), (-2350, -1000, 0), (-2300, -100, 0), (-600, -400, 45),
+                      (1900, -2050, 135), (300, -2100, 90), (-1100, -2100, 45), (-2350, -1000, 0), (-1650, -750, 0), (-600, -400, 45),
                       (700, -200, 135), (1500, 100, 180), (-3000, -1900, 45), (-2400, 2100, 315), (2700, -500, 180), (2750, 2000, 225), (2600, -2050, 135)):
         K.spawn(x, y, 0, a)
 
@@ -795,8 +863,30 @@ def items():
 def lights():
     for p in CANOPY_LIGHTS[::2]:
         K.light(p[0], p[1], max(p[2], 1150), 650, ['1 0.4 0.35', '0.45 1 0.5', '0.5 0.6 1', '1 0.85 0.4', '1 0.95 0.85'][int(abs(p[0] + p[1])) % 5])
-    K.light_grid(X0, Y0, X1, Y1, 700, 1024, 420, '1 0.85 0.65')
+    K.light_grid(X0, Y0, X1, Y1, 600, 512, 1300, '1 0.84 0.62')
     K.light(0, 600, 700, 600, '1 0.8 0.5')
+    # the raised walk surfaces sit above the grid: their own lamps
+    S, Ar = XS.SOFA, XS.ARM
+    for y in (-500, 200, 900):
+        K.light(FP[2] + 200, y, MANTEL_Z + 420, 520, '1 0.8 0.55')
+    for y in (-60, 760, 1580):
+        K.light(S['x0'] + 400, y, S['seat'] + 420, 700, '1 0.82 0.6')
+    for y in (100, 1500):
+        K.light(S['back_x'] + 160, y, S['back_h'] + 340, 480, '1 0.82 0.6')
+    K.light(Ar['x0'] + 420, (Ar['y0'] + Ar['y1']) / 2, Ar['seat'] + 420, 650, '1 0.82 0.6')
+    K.light(1630, 1470, A_H + B_H + 320, 520, '1 0.85 0.65'); K.light(1290, 1250, A_H + 300, 480, '1 0.85 0.65')
+    for d in (420, 800, 1140):
+        p = bpt(d, branch_z(d) + 220)
+        K.light(p[0], p[1], p[2], 380, '1 0.8 0.55')
+    K.light(200, 620, 250, 360, '0.6 0.9 0.8')                    # in the stand's bowl (under water)
+    K.light(TUBE_X, 1580, 130, 330, '1 0.8 0.55')                  # inside the tube
+    K.light(STOOL_AT[0], STOOL_AT[1], STOOL[2] + 300, 380, '1 0.8 0.55')
+    K.light(FP[2] + 200, 1100, MANTEL_Z + 300, 360, '1 0.8 0.55')
+    for y in (S['y0'] + 140, S['y1'] - 140):                       # sofa arm tops
+        K.light(3900, y, S['arm_h'] + 300, 320, '1 0.82 0.6')
+    for y in (Ar['y0'] + 120, Ar['y1'] - 120):
+        K.light(3900, y, Ar['arm_h'] + 300, 300, '1 0.82 0.6')
+    K.light(-1920, -1536, 160, 300, '1 0.8 0.6')
     K.timer_sound(0, 0, 900, 'machine/clock_ticking', 'clock', 40, 20)
     K.timer_sound(-2000, 1800, 300, 'misc/wind_chimes', 'chimes', 35, 25)
     K.timer_sound(2400, -2000, 300, 'animal/kitten_meow', 'kitten', 60, 40)
@@ -820,7 +910,7 @@ def textures():
 if __name__ == '__main__':
     textures()
     shell(); fireplace(); tree(); tower(); ginger(); bauble(); wrap_tube(); train(); cookies(); vault()
-    pads(); sofa_corner(); more(); props(); items(); lights()
+    stool(); pads(); sofa_corner(); more(); props(); items(); lights()
     K.fix_items()
     TX.write_shader(arena_types=INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))

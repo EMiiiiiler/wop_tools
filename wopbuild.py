@@ -7,6 +7,9 @@ Steps (in pipeline order; aliases: `check` = gen lint compile aas lights sight, 
   gen        run the folder's generator (mapinfo.json "generator") with OUT=<out>
   lint       audit_map + lint_map + pad_check (+ mover_sweep when the map has func_bobbing)      [no compiler needed]
   compile    q3map2 BSP -> VIS -> LIGHT, then bspc (always after -light); fails on a leak; reports portals and warnings
+  ents       items/spawns/loot moved after a (final) light: q3map2 -onlyents swaps the BSP's entity lump (no relight,
+             seconds instead of the final light's hour), then bspc rebuilds the .aas (its checksum changes). Only for
+             point entities: anything with brushes (triggers, movers, pads) or geometry needs `compile`
   aas        aas_check with the folder's routes.txt (every pickup reachable, no traps, every route both ways) and
              pad_aas (bspc's own flight for every jump pad lands where intended, not in mid-air)
   lights     light_check: floor brightness from the BSP lightmaps (dark / blown-out walkable areas, lights.png)
@@ -146,6 +149,19 @@ class Build:
         lw = re.search(r'\((\d+) warnings\)', open(os.path.join(self.out, 'lint.log')).read())
         nw = int(lw.group(1)) if lw else 0
         return self.set('lint', 'PASS' if ok and not nw else ('WARN' if ok else 'FAIL'), lint_warnings=nw, details=det, **res)
+
+    def s_ents(self):
+        if not self.link_into_game():
+            return self.set('ents', 'FAIL', details=f'GAME={self.game} has no wop/ folder')
+        Q = [self.q3map2, '-game', 'quake3', '-fs_basepath', self.game + '/', '-fs_game', 'wop']
+        mp = os.path.join('maps', self.map + '.map'); bsp = os.path.join('maps', self.map + '.bsp')
+        if not os.path.exists(os.path.join(self.out, bsp)): return self.set('ents', 'FAIL', details='no BSP yet: run compile')
+        rc, o, t = self.run(Q + ['-onlyents', mp], log='ents.log', cwd=self.out)
+        if rc: return self.set('ents', 'FAIL', stage='onlyents', details=o[-3000:])
+        rc, o2, t2 = self.run([self.bspc, '-forcesidesvisible', '-optimize', '-bsp2aas', bsp], log='bspc.log', cwd=self.out)
+        if rc or not os.path.exists(os.path.join(self.out, 'maps', self.map + '.aas')):
+            return self.set('ents', 'FAIL', stage='bspc', details=o2[-3000:])
+        return self.set('ents', 'PASS', seconds=round(t + t2))
 
     def s_compile(self):
         if not self.link_into_game():
@@ -414,7 +430,7 @@ def main():
     steps = []
     for s in a.steps: steps += ALIASES.get(s, [s])
     for s in steps:
-        if s not in ORDER + ['quick']: sys.exit(f'unknown step {s}; steps: {" ".join(ORDER)} quick (aliases check, all, preview)')
+        if s not in ORDER + ['quick', 'ents']: sys.exit(f'unknown step {s}; steps: {" ".join(ORDER)} quick ents (aliases check, all, preview)')
     B = Build(a.folder, a.out, a.light)
     print(f'{B.map}: out {B.out}')
     ok = True
@@ -424,7 +440,7 @@ def main():
             B.set(s, 'SKIP', details=f'skipped: {stale} failed, its outputs are stale')
             continue
         if not getattr(B, 's_' + s)():
-            if s in ('gen', 'compile'): stale = s
+            if s in ('gen', 'compile', 'ents'): stale = s
             ok = False
             print(f'see {os.path.join(B.out, "report.md")} and {s}*.log')
             if not a.keep_going: break

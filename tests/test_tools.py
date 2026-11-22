@@ -594,3 +594,27 @@ def test_audit_trusts_shader_parms_over_texture_names(tmp_path):
         assert A.kind(['common/weapclip']) == 'clip'
     finally:
         A.SHADER_PARMS.clear()
+
+
+# ------------------------------------------------------------------------------------------------ light grid (padxmas3)
+def test_light_grid_lifts_lights_out_of_solids():
+    """padxmas3: grid lights at 600u landed inside the sofa (seat 720, back 1360) and the top present; q3map2 culls a
+    light inside a solid and the sofa corner was 100 % dark. light_grid must lift them above the solid, and drop a
+    light that would need lifting through a wall-height solid (it would end up above the ceiling = a leak)."""
+    K = MapKit('t_lift', 't', 'T', (-1024, -1024, 1024, 1024))
+    K.add(box((-400, -400, 0), (-100, -100, 720), WCLIP))          # a sofa-height block under the (-256, -256) grid light
+    K.add(box((700, -1024, 0), (900, 1024, 3800), WCLIP))          # a chimney breast under the x = 768 column
+    assert K.lift_light(-256, -256, 600) == 720 + 96
+    assert K.lift_light(256, 256, 600) == 600                       # free air: unchanged
+    assert K.lift_light(768, 0, 600) is None                        # inside a wall-height solid: dropped
+    n0 = sum(1 for e in K.M.ents if e.get('classname') == 'light')
+    K.light_grid(-1024, -1024, 1024, 1024, 600, 512, 900)
+    zs = [float(e['origin'].split()[2]) for e in K.M.ents[n0:] if e.get('classname') == 'light']
+    assert len(zs) == 12 and max(zs) == 816                         # 16 points, the x = 768 column dropped, one lifted
+
+
+def test_light_check_ignores_midair_surfaces():
+    """padxmas3: the tree canopy (lightmapped skirts at z 1900-3000) sits inside the air column of grounded AAS areas
+    and light_check counted it as 10 % dark floor. aas_mask must keep only samples at an area's floor."""
+    src = open(os.path.join(ROOT, 'light_check.py')).read()
+    assert "sets[ar]['flags']) & 1" in src and "areas[ar]['mins'][2]" in src

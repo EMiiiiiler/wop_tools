@@ -727,3 +727,16 @@ def xmas_card(k=0, w=150, h=190, spread=70):
         X.mesh(M[keys[k] if sg > 0 else 'white']).poly(p, n, [(0, 0), (1, 0), (1, 1), (0, 1)])
         X.mesh(M['white']).poly(p[::-1], -n, [(0, 1), (1, 1), (1, 0), (0, 0)])
     return X
+
+
+def log_pile(L=380, r=40):
+    """firewood stacked in a pyramid (3-2-1), logs along x"""
+    X = Model()
+    for row, n in enumerate((4, 3, 2)):
+        for k in range(n):
+            y = (k - (n - 1) / 2) * 2 * r
+            z = r + row * r * 1.7
+            p0, p1 = np.array([-L / 2, y, z]), np.array([L / 2, y, z])
+            tube(X.mesh(M['logbark']), [p0, p1], r, nseg=10, caps=(False, False), vlen=200)
+            disc_axis(X.mesh(M['logend']), p1, r, (1, 0, 0)); disc_axis(X.mesh(M['logend']), p0, r, (-1, 0, 0))
+    return X

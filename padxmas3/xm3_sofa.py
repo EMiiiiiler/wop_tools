@@ -32,6 +32,8 @@ def materials(TX):
     m('rbtn', TL.dots((34, 34, 38), (200, 60, 50), n_dots=6, r=0.12), shade=40)
     m('yarn', yarn(), shade=80)
     m('whoopee', TL.solid((220, 70, 90), 2, 705), 'lms', v=0.3, shade=80)
+    m('lampshade', TL.fabric((214, 180, 120), weave=64), 'glow', wave='const 0.85')
+    m('catfur', TL.stripes((210, 120, 50), (170, 86, 30), n_stripes=10, vertical=False), shade=80)
 
 
 def velvet(col, n=256):
@@ -154,7 +156,7 @@ def sofa_visual(X, S=SOFA, fab='velvet', fab2='velvet_dk', throw='tartan'):
         X.mesh(M[key]).add(m, R=rot_z(rot) @ rot_y(-0.35), t=(S['bc_x'] - 70, cy, St))
 
 
-ARM = dict(x0=2880, x1=4320, y0=-2200, y1=-800, leg=240, base=400, seat=720, arm_w=240, arm_h=1040, back_x=4000,
+ARM = dict(x0=2880, x1=4320, y0=-2256, y1=-856, leg=240, base=400, seat=720, arm_w=240, arm_h=1040, back_x=4000,
            back_h=1700, bc_x=3760, bc_h=1500)
 
 
@@ -305,4 +307,78 @@ def yarn_ball(r=60):
     tube(X.mesh(M['yarn']), [(r, 0, 4), (r + 60, 30, 3), (r + 120, -10, 3), (r + 170, 20, 3)], 4, nseg=4)
     for sg in (-1, 1):
         tube(X.mesh(M['legwood']), [(-r * 0.6, sg * 20, 10), (r * 0.9, sg * 30, 14)], 4, nseg=5)
+    return X
+
+
+def valance_spans(S, front_gap=None, sides='nse'):
+    """fabric skirt panels from the floor to the sofa base (16u thick, inside the footprint), leaving front_gap (y0, y1)
+    open: returns [(mn, mx)] boxes used for both the weapclip and the visual panel"""
+    x0, x1, y0, y1, L = S['x0'], S['x1'], S['y0'], S['y1'], S['leg']
+    out = []
+    if 'w' in sides or front_gap is not None:          # front face is -x (faces the room)
+        segs = [(y0, y1)] if front_gap is None else [(y0, front_gap[0]), (front_gap[1], y1)]
+        for a, b in segs:
+            if b - a > 8: out.append(((x0, a, 0), (x0 + 16, b, L)))
+    if 's' in sides: out.append(((x0 + 16, y0, 0), (x1, y0 + 16, L)))
+    if 'n' in sides: out.append(((x0 + 16, y1 - 16, 0), (x1, y1, L)))
+    return out
+
+
+def valance_visual(X, spans, fab):
+    m = X.mesh(M[fab])
+    for (mn, mx) in spans:
+        rbox(m, (mn[0] - 2, mn[1] - 2, 2), (mx[0] + 2, mx[1] + 2, mx[2] + 4), r=3, k=1, tile=256)
+        # gathered pleats: shallow vertical ridges along the outward face
+        hor = (mx[1] - mn[1]) > (mx[0] - mn[0])
+        L = (mx[1] - mn[1]) if hor else (mx[0] - mn[0])
+        for k in range(int(L // 80)):
+            t = (k + 0.5) * 80
+            if hor: tube(m, [(mn[0] - 2, mn[1] + t, 4), (mn[0] - 2, mn[1] + t, mx[2])], 6, nseg=5)
+            else:
+                yy = mn[1] - 2 if mn[1] < (mn[1] + mx[1]) / 2 + 1 and mx[1] - mn[1] < 20 and mn[1] < 0 else mx[1] + 2
+                tube(m, [(mn[0] + t, yy, 4), (mn[0] + t, yy, mx[2])], 6, nseg=5)
+
+
+def footstool(r=420, h=640):
+    """tufted oxblood leather footstool (ottoman) on bun feet, a folded tartan blanket on top"""
+    X = Model()
+    lt = X.mesh(M['leather'])
+    revolve(lt, [(r - 30, 70), (r, 110), (r + 6, h * 0.5), (r, h - 60), (r - 40, h - 10), (r - 90, h), (0.1, h)], n=40, u_tiles=8)
+    for k in range(12):
+        a = 2 * math.pi * k / 12
+        for rr, zz in ((r * 0.35, h + 1), (r * 0.7, h - 8)):
+            sphere(X.mesh(M['button']), (rr * math.cos(a + (0.26 if rr > 200 else 0)), rr * math.sin(a + (0.26 if rr > 200 else 0)), zz), 12, nu=6, nv=4)
+    for k in range(4):
+        a = 2 * math.pi * k / 4 + math.pi / 4
+        sphere(X.mesh(M['legwood']), ((r - 90) * math.cos(a), (r - 90) * math.sin(a), 46), 48, nu=10, nv=6)
+        tube(X.mesh(M['legwood']), [((r - 90) * math.cos(a), (r - 90) * math.sin(a), 0), ((r - 90) * math.cos(a), (r - 90) * math.sin(a), 80)], 34, nseg=8)
+    rbox(X.mesh(M['tartan']), (-150, -220, h - 2), (150, 220, h + 40), r=14, k=3, tile=300)
+    return X
+
+
+def floor_lamp(h=2500, shade_r=300):
+    """standing lamp: weighted brass base, a turned pole, a pleated fabric shade (glows from inside)"""
+    X = Model()
+    revolve(X.mesh(M['brass']), [(210, 0), (210, 30), (170, 70), (120, 100), (40, 120), (0.1, 120)], n=24)
+    tube(X.mesh(M['brass']), [(0, 0, 120), (0, 0, h - 300)], 18, nseg=10)
+    for z in (700, 1400): revolve(X.mesh(M['brass']), [(18, z - 20), (34, z), (18, z + 20)], n=12)
+    sh = Mesh()
+    revolve(sh, [(shade_r, h - 420), (shade_r * 0.62, h), (shade_r * 0.62 - 6, h), (shade_r - 6, h - 420)], n=24, u_tiles=12)
+    X.mesh(M['lampshade']).add(sh)
+    revolve(X.mesh(M['mousewin']), [(40, h - 330), (40, h - 250), (0.1, h - 240)], n=12)      # the bulb (glows)
+    return X
+
+
+def sleeping_cat(r=200):
+    """a ginger cat curled up asleep on a round cushion"""
+    X = Model()
+    revolve(X.mesh(M['velvet_dk']), [(r, 0), (r + 10, 30), (r, 70), (r * 0.8, 84), (0.1, 80)], n=24)
+    c = X.mesh(M['catfur'])
+    body = Mesh(); ellipsoid(body, (0, 0, 0), 130, 100, 70, nu=16, nv=10, flat_bottom=-60)
+    c.add(body, t=(0, 0, 140))
+    sphere(c, (90, -60, 150), 52, nu=12, nv=8)                                   # head tucked in
+    for s in (-1, 1):
+        ellipsoid(c, (90 + s * 26, -66, 196), 12, 8, 22, nu=6, nv=4)            # ears
+    tail = [(-110, 20, 110), (-80, 110, 100), (20, 130, 98), (110, 70, 104)]
+    tube(c, tail, [26, 22, 18, 14], nseg=8, caps=(False, True))
     return X
