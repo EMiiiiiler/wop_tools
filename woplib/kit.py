@@ -385,6 +385,46 @@ class MapKit:
         self.occupy_r(land[0], land[1], 64, land[2], land[2] + 96)      # props scattered later must not fill the landing
         return P
 
+    def themed_pad(self, x, y, z, land, apex, name, dress=None, glow=None, glow_rgb='1 0.8 0.5', turn=-90, **kw):
+        """jump pad dressed as a theme object (user rule: never show the pad disc). The disc becomes an invisible
+        nonsolid brush (trigger, aim and bot links are exactly K.jumppad's) and `dress` - a models.PLACE tuple
+        (path, scale, zoff) - sits on the floor at the pad, turned so its +y points along the flight (turn=-90; pass
+        turn=0 for models built facing +x). glow = optional small light at the pad. Promoted from padpub's P()."""
+        P = self.jumppad(x, y, z, land=land, apex=apex, name=name, glow=False, top_tex=self.T('nodraw_ns'),
+                         side_tex=self.T('nodraw_ns'), **kw)
+        if dress:
+            yaw = math.degrees(math.atan2(land[1] - y, land[0] - x))
+            self.custom(dress, round(x), round(y), z, angle=round(yaw + turn) % 360, lit=True, occupy=False)
+            self.spots['pads'][-1]['dress'] = dress[0]
+        if glow: self.light(x, y, z + 24, glow, glow_rgb)
+        return P
+
+    def shoot_gate(self, button_mn, button_mx, button_tex, gate_mn, gate_mx, gate_tex, name, push=0, model2=None,
+                   wait=10, gate_move='up', gate_speed=120, lip=8, sound=None):
+        """shootable switch that opens a gate for `wait` seconds (padplumbing's valve wheel -> sluice gate).
+        Button: func_button health 1 (a shot or a touch fires it), pushed `push` yaw degrees by 4u, optional model2
+        (the wheel/lever; the brush stays a small hub). Gate: func_door with a targetname, so only the switch opens it;
+        gate_move 'up' (angle -1) or 'down' (-2), travelling its own height minus lip. sound = noise played at the gate
+        (target_speaker fired with the gate). Keep anything bots NEED out of the gated room: bots seldom shoot
+        switches. Returns the gate targetname."""
+        name = self.uniq(name)
+        bkv = dict(health=1, angle=push, lip=4, wait=wait, speed=80, target=name)
+        bb = [box(button_mn, button_mx, button_tex)]
+        if model2:          # model2 is drawn at the entity origin: an origin brush puts it on the hub, not at 0 0 0
+            bkv['model2'] = model2
+            bb.append(self._origin_brush([(a + b) / 2 for a, b in zip(button_mn, button_mx)], r=4))
+        self.ent('func_button', brushes=bb, **bkv)
+        self.ent('func_door', brushes=[box(gate_mn, gate_mx, gate_tex)], targetname=name,
+                 angle={'up': -1, 'down': -2}[gate_move], wait=wait, speed=gate_speed, lip=lip)
+        if sound:
+            c = [round((a + b) / 2) for a, b in zip(gate_mn, gate_mx)]
+            self.M.ent('target_speaker', c, noise=self.sound_path(sound), targetname=name)
+        self.spots['movers'].append(dict(cls='func_door', rect=[gate_mn[0], gate_mn[1], gate_mx[0], gate_mx[1]],
+                                         z_low=gate_mn[2], z_high=gate_mx[2], name=name))
+        self.occupy(min(button_mn[0], gate_mn[0]), min(button_mn[1], gate_mn[1]), max(button_mx[0], gate_mx[0]),
+                    max(button_mx[1], gate_mx[1]), min(button_mn[2], gate_mn[2]), max(button_mx[2], gate_mx[2]))
+        return name
+
     def teleporter(self, mn, mx, dest, angle, name, visible_tex=None):
         """trigger_teleport -> misc_teleporter_dest. The dest must NOT be inside a trigger_push: put it just behind a
         pad (the 400 u/s exit speed slides the player on). dest = (x, y, floor)."""

@@ -1,0 +1,18 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padplumbing
+arch_-1408:         -1312,128,0 > -1312,352,0
+arch_-96:           0,128,0 > 0,352,0
+arch_1216:          1312,128,0 > 1312,352,0
+bridge_plank:       -900,-1196,0 > -900,-604,0
+bridge_pipe:        700,-1196,0 > 700,-604,0
+vault_s_-1050:      -1170,-1240,0 > -930,-1240,0
+vault_n_-1050:      -1170,-320,0 > -930,-320,0
+vault_s_1200:       1080,-1240,0 > 1320,-1240,0
+vault_n_1200:       1080,-320,0 > 1320,-320,0
+stairs_low:         330,144,0 > 1024,120,256
+stairs_high:        1024,-64,256 > 288,-64,512
+stairs_top:         288,0,512 > 288,420,512
+tunnel_w:           -1676,1100,0 > -1436,1100,56
+tunnel_e:           376,1100,0 > 136,1100,56
+tunnel_through:     -1440,1100,56 > 140,1100,56
+tub_steps:          -1222,1447,794 > -1040,1567,842

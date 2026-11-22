@@ -594,3 +594,29 @@ def test_audit_trusts_shader_parms_over_texture_names(tmp_path):
         assert A.kind(['common/weapclip']) == 'clip'
     finally:
         A.SHADER_PARMS.clear()
+
+
+# ------------------------------------------------------------------------------------------------ padplumbing helpers
+def test_themed_pad_hides_disc_and_places_dressing():
+    """user rule: jump pads never show the disc; themed_pad keeps K.jumppad's trigger/aim and adds the dressing model"""
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    K.themed_pad(0, 0, 0, land=(0, 400, 200), apex=380, name='pad_x', dress=('models/t/duck.md3', 1.0, 0.0))
+    pad = [b for b in K.M.world if any('jumppad' in (t or '') or 'rubber' in (t or '') for t in b.textures())]
+    assert not pad, 'a visible pad disc was drawn'
+    ents = [e['classname'] for e in K.M.ents]
+    assert 'trigger_push' in ents and 'target_position' in ents
+    m = [e for e in K.M.ents if e['classname'] == 'misc_model']
+    assert m and m[0]['model'] == 'models/t/duck.md3' and m[0]['angle'] in ('0', 0)     # +y turned to face the flight
+    assert K.spots['pads'][-1]['dress'] == 'models/t/duck.md3'
+
+
+def test_shoot_gate_button_model2_has_origin_brush():
+    """model2 on a brush mover draws at the entity origin: without an origin brush the valve wheel sat at 0 0 0"""
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    nm = K.shoot_gate((100, 0, 100), (112, 48, 148), 't/metal', (200, 0, 0), (224, 160, 200), 't/metal', 'gate',
+                      model2='models/t/wheel.md3', sound='misc/toilet_flush')
+    btn = [e for e in K.M.ents if e['classname'] == 'func_button'][0]
+    door = [e for e in K.M.ents if e['classname'] == 'func_door'][0]
+    assert btn['target'] == nm == door['targetname'] and str(btn['health']) == '1'
+    assert any(ORIGIN in b.textures() for b in btn['_brushes'])
+    assert 'origin' not in btn
