@@ -281,13 +281,40 @@ class MapKit:
         out; fast light, _ambient 20, no bounce - bounce light adds ~10-30 indoors):
             600u over the floor, 512 grid:  600 -> 58   900 -> 79   1500 -> 124   2200 -> 173
             300u over the floor, 384 grid:  300 -> 64   600 -> 113  900 -> 162    1500 -> 238 (saturated)
-        Aim for a median of 90-150 and run wopbuild `lights` (light_check) to confirm."""
+        Aim for a median of 90-150 and run wopbuild `lights` (light_check) to confirm.
+        A grid light that lands inside a solid (a sofa, a box, weapclip round a model) is culled by q3map2 and the
+        floor round it goes dark: such lights are lifted to 96u above the solid instead (see lift_light)."""
         nx = max(1, round((x1 - x0) / spacing)); ny = max(1, round((y1 - y0) / spacing))
+        lifted = dropped = 0
         for i in range(nx):
             for j in range(ny):
                 x = x0 + (i + 0.5) * (x1 - x0) / nx; y = y0 + (j + 0.5) * (y1 - y0) / ny
                 if skip and skip(x, y): continue
-                self.light(x, y, z, val, color)
+                zz = self.lift_light(x, y, z)
+                if zz is None: dropped += 1; continue
+                lifted += zz != z
+                self.light(x, y, zz, val, color)
+        if lifted or dropped: print(f'  light_grid: lifted {lifted} light(s) out of solids, dropped {dropped} inside walls/columns')
+
+    def lift_light(self, x, y, z, clearance=96, margin=12, max_lift=1000):
+        """z for a point light at (x, y, z) that is not inside any solid brush: while the point is inside one (AABB
+        grown by margin; triggers, nonsolid and nodraw_ns ignored), move it to clearance above that brush's top.
+        None when that would lift it more than max_lift (inside a wall, chimney breast or column: drop the light)."""
+        z0 = z
+        boxes = []
+        for b in self.M.world:
+            texs = {getattr(f, 'tex', '') for f in getattr(b, 'faces', [])}
+            if texs and all(('trigger' in t or 'nodraw' in t or 'botclip' in t or t.endswith('/sky')) for t in texs): continue
+            try: mn, mx = b.bounds()
+            except Exception: continue
+            boxes.append((mn, mx))
+        for _ in range(8):
+            hit = [mx[2] for mn, mx in boxes if mn[0] - margin < x < mx[0] + margin and mn[1] - margin < y < mx[1] + margin
+                   and mn[2] - margin < z < mx[2] + margin]
+            if not hit: break
+            z = max(hit) + clearance
+            if z - z0 > max_lift: return None
+        return z
 
     @staticmethod
     def sound_path(noise):
@@ -383,6 +410,18 @@ class MapKit:
         if glow: self.light(x, y, z + 48, 120, light_rgb)
         self.occupy_r(x, y, 60, z, z + 90)
         self.occupy_r(land[0], land[1], 64, land[2], land[2] + 96)      # props scattered later must not fill the landing
+        return P
+
+    def themed_pad(self, x, y, z, land, apex, name, place, glow=None, glow_rgb='1 0.75 0.5', turn=-90, boxes=(), **kw):
+        """the user's rule: no pad discs - a theme object IS the jump pad (padpub's tambourine, trapdoor, bellows...).
+        The kit pad's 6u disc becomes an invisible nonsolid brush (trigger, aim and bspc links unchanged) and `place`
+        (models.PLACE[...] of a low dressing model, <= 16u where players step on it) sits at (x, y, z) at yaw
+        (flight direction + turn). boxes = optional weapclip collision in model space. Returns the padmath plan."""
+        nd = self.T('nodraw_ns')
+        P = self.jumppad(x, y, z, land=land, apex=apex, name=name, glow=False, top_tex=nd, side_tex=nd, **kw)
+        yaw = math.degrees(math.atan2(land[1] - y, land[0] - x))
+        self.custom(place, round(x), round(y), z, angle=round(yaw + turn) % 360, boxes=boxes, occupy=False)
+        if glow: self.light(x, y, z + 32, glow, glow_rgb)
         return P
 
     def teleporter(self, mn, mx, dest, angle, name, visible_tex=None):
@@ -547,12 +586,13 @@ class MapKit:
         self.spots.setdefault('water', []).append(dict(mn=list(mn), mx=list(mx), depth=mx[2] - mn[2]))
         return pieces
 
-    def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None):
+    def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None, extra=None):
         """big architecture built ONCE as convex brushes and used twice: the visible faces become a custom MD3
         (woplib.models.solids_mesh) and the same brushes become invisible collision, so bot routes never drift from
         what players see (az_shapes/padaztec recipe). texfn(centre, normal, poly) -> (shader, uvfn) in WORLD space.
         The model is stored centred on the pieces' footprint (MD3 +-512 limit) and placed back there. Returns the
-        misc_model entity."""
+        misc_model entity. extra(X) may add more meshes in WORLD space (ribbons, icing, bolts) to the same MD3 before
+        it is centred and saved: dressing that has no collision of its own rides along with the body."""
         from . import models as ML
         mn = np.min([b.bounds()[0] for b in brushes], 0); mx = np.max([b.bounds()[1] for b in brushes], 0)
         o = np.array([(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, mn[2]])
@@ -564,6 +604,7 @@ class MapKit:
             sh, uvf = r
             return sh, (lambda p, uvf=uvf: uvf(p))
         ML.solids_mesh(X, brushes, tf, hidden=hidden)
+        if extra: extra(X)
         X.shift(o)
         place = ML.save(name, X)
         e = self.custom(place, float(o[0]), float(o[1]), float(o[2]), lit=lit, occupy=False)

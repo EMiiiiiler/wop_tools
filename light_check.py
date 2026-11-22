@@ -133,7 +133,12 @@ def aas_mask(F, aasfile, mapfile):
         for dz in (25, 32, 16):
             ar = AC.point_area(planes, nodes, np.array([p[0], p[1], p[2] + dz], np.float32))
             if ar > 0:
-                keep[i] = ar in seen; break
+                # only GROUNDED areas, at their floor: a lightmapped surface in mid-air (a canopy, a lampshade, a cloud
+                # layer) was counted as dark floor (padxmas3's tree canopy: 10 % of 'floor' was the boughs)
+                # and the surface must be that area's floor: AAS areas run up to the ceiling, so a mid-air surface is
+                # inside a grounded area's column too
+                keep[i] = ar in seen and bool(int(sets[ar]['flags']) & 1) and p[2] <= float(areas[ar]['mins'][2]) + 48
+                break
     return keep
 
 

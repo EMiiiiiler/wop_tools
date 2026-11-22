@@ -1,0 +1,66 @@
+{
+ "map": "wop_padxmas3",
+ "ns": "padxmas3",
+ "longname": "Padman's Christmas: Under the Tree",
+ "generator": "build_padxmas3.py",
+ "bounds": [
+  -3328,
+  -2304,
+  4368,
+  2304
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Christmas: Under the Tree",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:2400,-2100,2200,145,-28",
+   "fireplace:-1750,-1150,520,128,-10",
+   "mantel:-2860,-720,1300,90,-6",
+   "window:-200,-600,500,270,22",
+   "sofa:1750,750,520,350,2",
+   "sofaback:4160,-300,1440,90,-12",
+   "undersofa:2600,760,100,0,0",
+   "undertree:-350,-450,90,80,14",
+   "stand:-700,200,520,20,-18",
+   "branch:300,780,1170,28,-6",
+   "tower:900,600,300,50,-2",
+   "boxtop:1300,1250,940,30,-10",
+   "ginger:-1300,-600,250,235,-4",
+   "village:-1000,-500,260,215,-8",
+   "globe:1500,0,300,330,-6",
+   "toys:900,-900,200,250,-4",
+   "mousehole:640,2000,60,90,0",
+   "bauble:800,-700,220,320,-6",
+   "tube:-2000,1400,600,160,-14",
+   "train:-600,-1300,250,320,-6",
+   "cookies:-900,1000,260,135,-8",
+   "secret:0,-300,-1450,90,-12"
+  ]
+ },
+ "levelshots": {
+  "cover": "fireplace",
+  "shots": [
+   "undertree",
+   "tower",
+   "ginger"
+  ]
+ }
+}

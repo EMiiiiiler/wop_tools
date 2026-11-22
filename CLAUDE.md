@@ -277,3 +277,17 @@ Tools and standing rules for building World of Padman (WoP) maps.
   round the tree) keeps a whole annulus prop-free, so plan cover outside it.
 - Wire cages: `K.cage_box()` / `K.cage_round(dome=...)` (alpha wire as its own unlit MD3 + common/clip, weapclip rims,
   open doors). An aas_check route end inside a lift collar reports NO AREA, not a broken door.
+- `K.light_grid` lifts grid lights out of solids (q3map2 culls them; padxmas3's sofa corner was black) and drops ones
+  inside wall-height solids. Lights you place by hand still need care: `check_entities.py` flags lights inside props,
+  and `K.lift_light(x, y, z)` tells you (call it in the last generator step, after every prop is placed).
+- misc_model surfaces cast shadows by default: a felt skirt, rug or paper decal on the floor blacks out the carpet's
+  lightmap under it. Give flat floor decals `_castshadows 0` (padxmas3 `DECALS`).
+- `light_check` used to count lightmapped surfaces in mid-air (tree canopy) as dark floor, because AAS areas run up to the
+  ceiling; it now keeps only samples at a grounded area's floor.
+- Loot/spawn/speaker moves after the final light: `wopbuild.py <folder> gen ents aas` (q3map2 -onlyents + bspc, ~15 s)
+  instead of relighting for an hour. Not for anything with brushes.
+- Floor pads onto furniture-height tops (sofa seat 720, mantel 1216): start ~420u out with apex +380, or bspc's faster,
+  flatter flight hits the front face. Botclipped decks need a gap where a fling pad's arc leaves, and the pad's trigger
+  must not overlap the strip (padxmas3 mantel fling).
+- A walk-in teleporter onto a high reward (padxmas3: the fire -> the mantel) makes that spot EASY for bots (Imperius
+  picked 28x in 3 min): rank the loot ladder by real bot access, not by height.
