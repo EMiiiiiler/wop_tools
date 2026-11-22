@@ -48,12 +48,12 @@ def materials(TX):
     m('mousehole', TL.solid((14, 10, 8), 2, 408), 'vl')
     m('mousewin', TL.solid((255, 210, 120), 2, 409), 'glow')
     m('candle', TL.solid((246, 236, 210), 2, 410), shade=70)
-    m('flame', flame(), 'glow', wave='wave noise 0.85 0.15 0 6')
+    m('flame', flame(), 'add', wave='wave noise 0.85 0.15 0 6')
     # mover shaders (model2 on func_rotating is not lightmapped): lightingDiffuse variants of existing images
     for k, img in (('wood_dyn', 'wood_m'), ('paint_red_dyn', 'paint_red_m'), ('paint_green_dyn', 'paint_green_m'),
                    ('brass_dyn', 'brass_m'), ('white_dyn', 'white_m'), ('candle_dyn', 'candle_m')):
         M[k] = ML.S(img, 'dyn')
-    M['flame_dyn'] = ML.S('flame_m', 'glow', tag='mv')
+    M['flame_dyn'] = ML.S('flame_m', 'add', tag='mv')
     nd, na = XM.A.needles(128, 64)
     m('fallen', nd, 'alpha', alpha=na)
 
@@ -498,3 +498,232 @@ def ornament_mix(X, top, kind, rr):
         m = Mesh(); revolve(m, [(0.1, 0), (14, -6), (22, -40), (34, -64), (36, -70), (0.1, -66)], n=14)
         X.mesh(M['brass']).add(m, t=p)
         sphere(X.mesh(M['brass']), p + [0, 0, -72], 8, nu=6, nv=4)
+
+
+# ------------------------------------------------------------------------------------------------ round 3: the fireplace
+def fire_materials(TX):
+    from woplib import texlib as TL
+    m = lambda key, arr, kind='lm', **o: M.__setitem__(key, TX.material(key, arr, kind, **o))
+    m('logbark', XM.A.bark(), shade=70)
+    m('logend', log_end(), shade=40)
+    m('ember', TL.solid((255, 110, 30), 4, 450), 'glow', wave='wave sin 0.8 0.2 0 0.7')
+    m('iron', TL.metal((54, 54, 58), brushed=False), 'lms', v=0.25, shade=60)
+    m('wicker', TL.fabric((176, 132, 76), weave=48), shade=70)
+    m('leather', TL.solid((110, 50, 30), 3, 451), 'lms', v=0.15, shade=70)
+    m('clockface', clock_face(), shade=60)
+    m('frame_gold', TL.metal((206, 160, 70), brushed=False), 'lms', v=0.45, shade=40)
+    m('painting', painting(), shade=20)
+    M['fire'] = ML.S('flame_m', 'add', tag='fire', deform='autosprite2', wave='wave noise 0.85 0.15 0 6')
+
+
+def log_end(n=128):
+    x, y = ML.xy(n)
+    r = np.hypot(x - 0.5, y - 0.5)
+    rings = 0.75 + 0.25 * np.sin(r * 60 + ML.noise(n, 4, 452) * 1.5)
+    c = ML.C((196, 150, 100)) * rings[..., None]
+    return np.where((r > 0.44)[..., None], ML.C((80, 54, 34)), c)
+
+
+def clock_face(n=256):
+    from PIL import ImageDraw
+    a = ML.fill(n, (244, 238, 220), 2, 453)
+    im = ML.img(a); d = ImageDraw.Draw(im)
+    c = n / 2
+    d.ellipse((8, 8, n - 8, n - 8), outline=(40, 30, 20), width=5)
+    for k in range(12):
+        t = k * math.pi / 6
+        d.line((c + 100 * math.sin(t), c - 100 * math.cos(t), c + 114 * math.sin(t), c - 114 * math.cos(t)), fill=(30, 20, 10), width=6)
+    d.line((c, c, c + 50 * math.sin(5.9), c - 50 * math.cos(5.9)), fill=(20, 20, 20), width=8)    # five to twelve
+    d.line((c, c, c, c - 90), fill=(20, 20, 20), width=5)
+    return np.asarray(im, np.float32)
+
+
+def painting(w=512, h=384):
+    """original winter landscape: dusk sky, snowy hills, a frozen pond, firs, a lit cottage"""
+    from PIL import ImageDraw, ImageFilter
+    y = np.linspace(0, 1, h)[:, None, None]
+    a = ML.lerp(ML.C((40, 50, 100)), ML.C((230, 160, 120)), np.clip(y * 1.6, 0, 1)) * np.ones((h, w, 3))
+    im = ML.img(a); d = ImageDraw.Draw(im)
+    d.polygon([(0, 230), (120, 180), (260, 220), (400, 170), (512, 210), (512, 384), (0, 384)], fill=(220, 226, 238))
+    d.polygon([(0, 290), (180, 250), (330, 300), (512, 270), (512, 384), (0, 384)], fill=(240, 244, 250))
+    d.ellipse((170, 300, 360, 340), fill=(150, 176, 200))
+    rng = np.random.default_rng(454)
+    for _ in range(14):
+        x = rng.uniform(0, w); yb = rng.uniform(200, 300); hh = rng.uniform(40, 90)
+        d.polygon([(x, yb - hh), (x - hh * 0.3, yb), (x + hh * 0.3, yb)], fill=(30, 60, 44))
+    d.rectangle((370, 220, 430, 262), fill=(120, 70, 50)); d.polygon([(362, 222), (400, 192), (438, 222)], fill=(250, 250, 252))
+    d.rectangle((386, 234, 400, 248), fill=(255, 210, 110))
+    d.ellipse((60, 40, 90, 70), fill=(250, 240, 210))
+    return np.asarray(im.filter(ImageFilter.GaussianBlur(0.8)), np.float32)
+
+
+def grate_logs(w=520):
+    """iron fire basket with three logs, glowing embers and crossed flame quads (autosprite2)"""
+    X = Model()
+    ir = X.mesh(M['iron'])
+    for x in np.linspace(-w / 2, w / 2, 9):
+        tube(ir, [(x, -90, 30), (x, -100, 110)], 6, nseg=6)
+        tube(ir, [(x, 90, 30), (x, 100, 110)], 6, nseg=6)
+    for y in (-90, 90):
+        tube(ir, [(-w / 2, y, 30), (w / 2, y, 30)], 8, nseg=6)
+    for sx in (-1, 1):
+        tube(ir, [(sx * w / 2, -90, 0), (sx * w / 2, -90, 30), (sx * w / 2, 90, 30), (sx * w / 2, 90, 0)], 10, nseg=6)
+    rbox(X.mesh(M['ember']), (-w / 2 + 20, -80, 30), (w / 2 - 20, 80, 42), r=0, k=1, tile=64, faces='t')
+    for (y, z, ang, L) in ((-40, 64, 0.1, w * 0.9), (40, 64, -0.08, w * 0.85), (0, 110, 0.4, w * 0.7)):
+        R = rot_z(ang)
+        p0 = R @ np.array([-L / 2, 0, 0]) + [0, y, z]; p1 = R @ np.array([L / 2, 0, 0]) + [0, y, z]
+        tube(X.mesh(M['logbark']), [p0, p1], 34, nseg=10, caps=(False, False), vlen=200)
+        for p, sg in ((p0, -1), (p1, 1)):
+            dd = (p1 - p0) / np.linalg.norm(p1 - p0) * sg
+            disc_axis(X.mesh(M['logend']), p, 34, dd)
+    rr = random.Random(455)
+    for k in range(9):
+        x = -w / 2 + 50 + (w - 100) * k / 8; hh = rr.uniform(140, 260); ww = hh * 0.5
+        q = Mesh()
+        q.poly([(x - ww / 2, rr.uniform(-20, 20), 50), (x + ww / 2, 0, 50), (x + ww / 2, 0, 50 + hh), (x - ww / 2, 0, 50 + hh)], (0, -1, 0),
+               [(0, 1), (1, 1), (1, 0), (0, 0)])
+        X.mesh(M['fire']).add(q)
+    return X
+
+
+def disc_axis(Mm, c, r, nrm, n=12):
+    nrm = np.asarray(nrm, float); nrm /= np.linalg.norm(nrm)
+    u = np.cross(nrm, [0, 0, 1.0])
+    if np.linalg.norm(u) < 1e-6: u = np.array([1.0, 0, 0])
+    u /= np.linalg.norm(u); v = np.cross(nrm, u)
+    pts = [np.asarray(c) + (u * math.cos(t) + v * math.sin(t)) * r for t in np.linspace(0, 2 * math.pi, n, endpoint=False)]
+    Mm.poly(pts, nrm, [(0.5 + 0.5 * math.cos(t), 0.5 + 0.5 * math.sin(t)) for t in np.linspace(0, 2 * math.pi, n, endpoint=False)])
+
+
+def mantel_clock(w=300, h=360, d=140):
+    X = Model()
+    wd = X.mesh(M['wood'])
+    rbox(wd, (-d / 2, -w / 2, 0), (d / 2, w / 2, 30), r=6, k=2, tile=128)
+    rbox(wd, (-d / 2 + 14, -w / 2 + 20, 30), (d / 2 - 14, w / 2 - 20, h * 0.62), r=8, k=2, tile=128)
+    ellipsoid(wd, (0, 0, h * 0.62), d / 2 - 14, w / 2 - 20, h * 0.36, nu=16, nv=8, flat_bottom=0)
+    disc_axis(X.mesh(M['clockface']), (d / 2 - 12, 0, h * 0.6), 96, (1, 0, 0), n=24)
+    for sy in (-1, 1): sphere(X.mesh(M['brass']), (0, sy * (w / 2 - 6), 10), 12, nu=8, nv=5)
+    sphere(X.mesh(M['brass']), (0, 0, h * 0.98 + 10), 14, nu=8, nv=5)
+    return X
+
+
+def candlestick(h=300):
+    X = Model()
+    revolve(X.mesh(M['brass']), [(60, 0), (60, 10), (24, 24), (14, 60), (20, 90), (12, h * 0.55), (30, h * 0.6), (30, h * 0.62), (0.1, h * 0.62)], n=16)
+    tube(X.mesh(M['candle']), [(0, 0, h * 0.62), (0, 0, h)], 16, nseg=10)
+    q = Mesh(); q.poly([(-10, 0, h), (10, 0, h), (10, 0, h + 50), (-10, 0, h + 50)], (0, -1, 0), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    X.mesh(M['fire']).add(q)
+    return X
+
+
+def stocking_hang(col='red', L=420):
+    """stocking hanging from a loop: origin = the hanging point (top), model hangs DOWN (z < 0), faces +x"""
+    X = Model()
+    st = X.mesh(M['stocking'])
+    pts = [(0, 0, -60), (0, 0, -200), (0, 0, -L + 70), (0, 30, -L + 30), (0, 110, -L + 10)]
+    tube(st, pts, [64, 62, 58, 52, 44], nseg=12, ry=[30, 30, 30, 28, 24], caps=(True, True), vlen=200)
+    cuff = Mesh(); revolve(cuff, [(70, -110), (76, -85), (70, -50), (0.1, -50)], n=14, u_tiles=4)
+    X.mesh(M['fluff']).add(cuff)
+    tube(X.mesh(M['ribbon_' + col]), [(0, -10, -40), (0, -14, 0), (0, 14, 0), (0, 10, -40)], 4, nseg=5)
+    put(X, XM.candy_cane_lying(140, 8, 22), R=rot_x(math.pi / 2), t=(0, 30, -30))
+    return X
+
+
+def garland(L=1900, sag=60, n_swags=5):
+    """pine garland swagged along the mantel front with lights and red bows: origin = centre of the top line,
+    runs along y, hangs down (z < 0)"""
+    X = Model()
+    rr = random.Random(456)
+    pts = []
+    for i in range(n_swags):
+        y0 = -L / 2 + L * i / n_swags; y1 = y0 + L / n_swags
+        for t in np.linspace(0, 1, 10)[(0 if i == 0 else 1):]:
+            pts.append((4, y0 + (y1 - y0) * t, -sag * 4 * t * (1 - t) - 10))
+    pts = np.asarray(pts)
+    tube(X.mesh(M['needle_mass']), pts, 26, nseg=8, vlen=128)
+    nd = X.mesh(M['needles'])
+    for p in pts[::2]:
+        for a in (0, 2.1, 4.2):
+            XM.card(nd, p, (math.cos(a) * 0.5, 1, math.sin(a)), 60, 70, tilt=rr.uniform(-1, 1), droop=6)
+    for i in range(n_swags + 1):
+        y = -L / 2 + L * i / n_swags
+        ellipsoid(X.mesh(M['ribbon_red']), (16, y, -20), 10, 30, 22, nu=8, nv=5)
+    for p in pts[1::3]:
+        ellipsoid(X.mesh(M['bulb_' + 'rgbyw'[rr.randint(0, 4)]]), p + [26, 0, -8], 6, 6, 10, nu=6, nv=4)
+    return X
+
+
+def picture(w=700, h=520, b=50):
+    """gilt frame with the winter painting, leaning-free: hangs on the chimney breast, faces +x, origin bottom centre"""
+    X = Model()
+    fg = X.mesh(M['frame_gold'])
+    for (y0, y1, z0, z1) in ((-w / 2, w / 2, 0, b), (-w / 2, w / 2, h - b, h), (-w / 2, -w / 2 + b, b, h - b), (w / 2 - b, w / 2, b, h - b)):
+        rbox(fg, (0, y0, z0), (24, y1, z1), r=6, k=2, tile=128)
+    p = X.mesh(M['painting'])
+    p.poly([(10, w / 2 - b, b), (10, -w / 2 + b, b), (10, -w / 2 + b, h - b), (10, w / 2 - b, h - b)], (1, 0, 0), [(1, 1), (0, 1), (0, 0), (1, 0)])
+    return X
+
+
+def log_basket(r=180, h=200):
+    X = Model()
+    revolve(X.mesh(M['wicker']), [(r * 0.85, 0), (r, h), (r - 12, h), (r * 0.85 - 12, 12), (0.1, 12)], n=24, u_tiles=6)
+    tube(X.mesh(M['wicker']), [(-r, 0, h), (-r * 0.6, 0, h + 120), (r * 0.6, 0, h + 120), (r, 0, h)], 10, nseg=6)
+    rr = random.Random(457)
+    for k in range(6):
+        a = rr.uniform(0, 6.28); rad = rr.uniform(0, r * 0.5)
+        c = np.array([rad * math.cos(a), rad * math.sin(a), h * 0.6 + rr.uniform(0, 60)])
+        d = np.array([math.cos(a + 1.5), math.sin(a + 1.5), rr.uniform(-0.3, 0.3)]); d /= np.linalg.norm(d)
+        L = r * 1.3
+        tube(X.mesh(M['logbark']), [c - d * L / 2, c + d * L / 2], 26, nseg=8, caps=(False, False))
+        disc_axis(X.mesh(M['logend']), c + d * L / 2, 26, d); disc_axis(X.mesh(M['logend']), c - d * L / 2, 26, -d)
+    return X
+
+
+def fire_tools(h=700):
+    X = Model()
+    ir = X.mesh(M['iron'])
+    revolve(ir, [(90, 0), (90, 14), (20, 30), (0.1, 30)], n=16)
+    tube(ir, [(0, 0, 30), (0, 0, h)], 10, nseg=8)
+    tube(X.mesh(M['brass']), [(-60, 0, h - 40), (60, 0, h - 40)], 6, nseg=6)
+    for k, x in enumerate((-50, -15, 20, 55)):
+        tube(ir, [(x, 0, h - 40), (x * 1.3, 8, 80)], 7, nseg=6)
+        sphere(X.mesh(M['brass']), (x, 0, h - 20), 14, nu=8, nv=5)
+    rbox(ir, (-110, -30, 60), (-30, 30, 74), r=2, k=1, tile=64)        # shovel blade
+    tube(ir, [(70, 8, 80), (90, 20, 40)], 6, nseg=6)
+    return X
+
+
+def bellows(L=240):
+    """fire bellows lying on the floor (pad dressing): leather body, wooden boards, brass nozzle pointing +y"""
+    X = Model()
+    board = [(0, -L / 2), (L * 0.32, -L * 0.3), (L * 0.36, L * 0.15), (L * 0.1, L * 0.42), (-L * 0.1, L * 0.42), (-L * 0.36, L * 0.15), (-L * 0.32, -L * 0.3)]
+    board = [(x, -y) for (x, y) in board]
+    prism(X.mesh(M['wood']), XM.sorted_ccw([(x, y) for (x, y) in board]), 0, 5)
+    prism(X.mesh(M['wood']), XM.sorted_ccw([(x * 0.96, y * 0.96) for (x, y) in board]), 11, 16)
+    prism(X.mesh(M['leather']), XM.sorted_ccw([(x * 0.9, y * 0.9) for (x, y) in board]), 5, 11)
+    tube(X.mesh(M['brass']), [(0, L * 0.5, 8), (0, L * 0.5 + 90, 8)], [10, 4], nseg=8)
+    tube(X.mesh(M['wood']), [(0, -L * 0.5, 8), (0, -L * 0.5 - 70, 8)], 8, nseg=6)
+    return X
+
+
+def topper(r=200, t=30):
+    """gold star topper (stands on the trunk tip under the ceiling), faces +x"""
+    X = Model()
+    pts = A.star_pts(0, 0, r, r * 0.42)
+    m = Mesh(); prism(m, XM.sorted_ccw([(x, -y) for x, y in pts]), -t / 2, t / 2, tile=256)
+    X.mesh(M['brass']).add(m, R=rot_y(math.pi / 2) @ rot_z(0), t=(0, 0, r))
+    return X
+
+
+def xmas_card(k=0, w=150, h=190, spread=70):
+    """folded Christmas card standing on the mantel like a tent (front faces +x)"""
+    X = Model()
+    keys = ('paper_green', 'paper_red', 'paper_blue')
+    for sg in (-1, 1):
+        a = np.array([0, 0, h]); b = np.array([sg * spread / 2, 0, 0])
+        p = [a + [0, -w / 2, 0], a + [0, w / 2, 0], b + [0, w / 2, 0], b + [0, -w / 2, 0]]
+        n = np.cross(p[1] - p[0], p[2] - p[0]); n /= np.linalg.norm(n)
+        if n[0] * sg < 0: p = p[::-1]; n = -n
+        X.mesh(M[keys[k] if sg > 0 else 'white']).poly(p, n, [(0, 0), (1, 0), (1, 1), (0, 1)])
+        X.mesh(M['white']).poly(p[::-1], -n, [(0, 1), (1, 1), (1, 0), (0, 0)])
+    return X

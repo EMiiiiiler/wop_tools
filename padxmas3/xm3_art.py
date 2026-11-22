@@ -337,3 +337,17 @@ def sky(out, ns, n=512):
     t = f'textures/{ns}/sky'
     return (f'{t}\n{{\n\tqer_editorimage env/{ns}/room_ft\n\tsurfaceparm noimpact\n\tsurfaceparm nolightmap\n\tsurfaceparm sky\n'
             f'\tq3map_sun 1 0.78 0.55 40 180 30\n\tq3map_skylight 30 3\n\tskyparms env/{ns}/room - -\n}}\n\n')
+
+
+# ------------------------------------------------------------------------------------------------ round 3: the room + fireplace
+def fire_brush(TX):
+    TX.add('ceiling', TL.solid((228, 222, 210), 3, 501), scale=4.0)
+    TX.add('sill', TL.solid((240, 238, 232), 2, 502), scale=2.0)
+
+
+def fire_mats(TX):
+    m = lambda key, arr, kind='lm', **o: M.__setitem__(key, TX.material(key, arr, kind, **o))
+    m('hearth_tile', TL.tiles((120, 60, 50), (60, 40, 34), cols=4, rows=4, offset=0, grout_w=0.03, vary=10), shade=20)
+    m('sootbrick', TL.grime(TL.bricks((110, 56, 44), (70, 60, 54)), 0.6), shade=20)
+    m('mantel_paint', TL.solid((240, 236, 226), 2, 503), 'lms', v=0.08, shade=40)
+    m('plaster', wallpaper(), shade=20)

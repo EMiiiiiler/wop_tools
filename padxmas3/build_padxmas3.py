@@ -28,9 +28,8 @@ import xm3_more as XR
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
 MAP, NS, LONG = INFO['map'], INFO['ns'], INFO['longname']
-X0, Y0, X1, Y1 = INFO['bounds']                    # playable: -2560 -2304 2560 2304 (north = the room wall)
-HX0, HY0, HX1 = -3584, -3328, 3584                 # hull (sky) beyond the clip
-ZTOP = 3584
+X0, Y0, X1, Y1 = INFO['bounds']                    # the room: -3328 -2304 2560 2304, walls on all four sides
+ZTOP = 3840                                         # ceiling (2.4 m at 16u/cm)
 K = MapKit(MAP, NS, LONG, (X0, Y0, X1, Y1), worldspawn={'_ambient': '22', '_color': '1 0.86 0.7', 'gridsize': '128 128 256'})
 T = K.T
 ML.configure(NS, OUT); SH.configure(NS, MAP, LONG)
@@ -48,10 +47,12 @@ BOXA = (1120, 1088, 1888, 1728); A_H = 576; A_DOOR = (1424, 1584, 240); A_HATCH 
 BOXB = (1440, 1280, 1824, 1664); B_H = 288
 GH = (-2048, -1664, -1344, -1088); GH_H = 352; GH_DOOR = (-1760, -1632, 192)
 BAUB = (1500.0, -1250.0, 300.0); BAUB_R, BAUB_T = 340, 24
-TUBE_X, TUBE_Y0, TUBE_Y1, TUBE_A, TUBE_IN = -2100, -400, 800, 200, 184
+TUBE_X, TUBE_Y0, TUBE_Y1, TUBE_A, TUBE_IN = -2850, 1100, 2050, 200, 184
 TRAIN_Y = -1800
 TUN = (640, -1952, 1040, -1648); TUN_H = 400
 PLATE = (-1500, 1520, 360)
+FP = (-3328, -600, -3072, 1000); FP_OPEN = (-280, 680, 960); MANTEL_Z, MANTEL_D = 1216, 288
+WINDOW = (-1400, 1400, 1500, 3300)
 VAULT = (-384, -384, 384, 384); VZ = -1600
 
 
@@ -91,22 +92,88 @@ def model(name, builder, *a, **kw):
 
 # ------------------------------------------------------------------------------------------------ shell
 def shell():
-    """structural floor + sky box; the room wall closes the north side (wallpaper + skirting board), the other three
-    sides are invisible player clip at the playable edge with more carpet and the blurred room (sky) beyond"""
+    """the living room itself: structural floor, four wallpapered walls with skirting boards, a ceiling at real room
+    height (2.4 m = 3840u) and a big south window onto the snowy night (sealed sky box behind it)"""
     fl = {'top': T('carpet'), 'side': CAULK, 'bot': CAULK}
-    K.add(box((HX0 - 32, HY0 - 32, -32), (HX1 + 32, Y1 + 32, 0), fl, detail=False))
-    K.add(box((HX0 - 32, Y1, 0), (HX1 + 32, Y1 + 64, ZTOP), tex6(s=T('wall')), detail=False))
-    K.add(box((HX0 - 32, HY0 - 32, 0), (HX0, Y1, ZTOP), tex6(e=T('sky')), detail=False))
-    K.add(box((HX1, HY0 - 32, 0), (HX1 + 32, Y1, ZTOP), tex6(w=T('sky')), detail=False))
-    K.add(box((HX0, HY0 - 32, 0), (HX1, HY0, ZTOP), tex6(n=T('sky')), detail=False))
-    K.add(box((HX0 - 32, HY0 - 32, ZTOP), (HX1 + 32, Y1 + 64, ZTOP + 32), tex6(bot=T('sky')), detail=False))
-    sk = {'s': T('skirting'), 'top': T('skirting'), 'e': T('skirting'), 'w': T('skirting'), 'n': CAULK, 'bot': CAULK}
-    K.add(box((HX0, Y1 - 24, 0), (HX1, Y1, 160), sk))
-    # playable edge: player clip from floor to sky (bspc sees it solid)
-    K.add(box((X0 - 32, Y0 - 32, 0), (X0, Y1 - 24, ZTOP), CLIP), box((X1, Y0 - 32, 0), (X1 + 32, Y1 - 24, ZTOP), CLIP),
-          box((X0, Y0 - 32, 0), (X1, Y0, ZTOP), CLIP))
+    K.add(box((X0 - 64, Y0 - 64, -32), (X1 + 64, Y1 + 64, 0), fl, detail=False))
+    K.add(box((X0 - 64, Y1, 0), (X1 + 64, Y1 + 64, ZTOP), tex6(s=T('wall')), detail=False))
+    K.add(box((X0 - 64, Y0 - 64, 0), (X0, Y1, ZTOP), tex6(e=T('wall')), detail=False))
+    K.add(box((X1, Y0 - 64, 0), (X1 + 64, Y1, ZTOP), tex6(w=T('wall')), detail=False))
+    K.add(box((X0 - 64, Y0 - 64, ZTOP), (X1 + 64, Y1 + 64, ZTOP + 32), tex6(bot=T('ceiling')), detail=False))
+    WX0, WX1, WZ0, WZ1 = WINDOW
+    K.sky_window((X0, Y0 - 64, 0), (X1, Y0, ZTOP), (WX0, WX1, WZ0, WZ1), T('wall'), T('sky'), jamb_tex=T('sill'),
+                 glass_tex=T('glass'), face='n')
+    wt = {'side': T('sill'), 'top': T('sill'), 'bot': T('sill')}
+    for x in (WX0 + (WX1 - WX0) / 3, WX0 + 2 * (WX1 - WX0) / 3):
+        K.add(box((x - 20, Y0 - 28, WZ0), (x + 20, Y0, WZ1), wt))
+    zm = (WZ0 + WZ1) / 2
+    for (xa, xb) in ((WX0, WX0 + (WX1 - WX0) / 3 - 20), (WX0 + (WX1 - WX0) / 3 + 20, WX0 + 2 * (WX1 - WX0) / 3 - 20),
+                     (WX0 + 2 * (WX1 - WX0) / 3 + 20, WX1)):
+        K.add(box((xa, Y0 - 28, zm - 16), (xb, Y0, zm + 16), wt))
+    K.add(box((WX0 - 80, Y0, WZ0 - 60), (WX1 + 80, Y0 + 96, WZ0), wt))
+    # skirting boards (the west one stops at the chimney breast)
+    sk = {'n': T('skirting'), 's': T('skirting'), 'e': T('skirting'), 'w': T('skirting'), 'top': T('skirting'), 'bot': CAULK}
+    K.add(box((X0, Y1 - 24, 0), (X1, Y1, 160), sk), box((X0, Y0, 0), (X1, Y0 + 24, 160), sk),
+          box((X1 - 24, Y0 + 24, 0), (X1, Y1 - 24, 160), sk),
+          box((X0, Y0 + 24, 0), (X0 + 24, FP[1], 160), sk), box((X0, FP[3], 0), (X0 + 24, Y1 - 24, 160), sk))
     # the wall socket the fairy lights are plugged into
     K.add(sign_box((-580, Y1 - 32, 216), (-420, Y1 - 24, 376), T('socket'), 128, 128, back=CAULK, facing='s', edge=T('china')))
+
+
+# ------------------------------------------------------------------------------------------------ the fireplace (W)
+def fireplace():
+    """chimney breast on the west wall with a lit fire, a stone hearth (one 16u step), a painted surround and a deep
+    mantel shelf (walk surface MANTEL_Z): bellows pads from the floor at both ends, the flames teleport you up onto it
+    (Santa's way in, reversed), a gold-bow fling pad takes you back down"""
+    bx0, by0, bx1, by1 = FP                 # breast x -3328..-3072
+    oy0, oy1, oz = FP_OPEN
+    fx0 = bx0 + 64                          # firebox back face
+    hx1 = bx1 + 320                         # hearth front
+    br = [box((bx0, by0, 0), (fx0, by1, ZTOP), 'x/x'),                                     # back wall
+          box((fx0, by0, 16), (bx1, oy0, ZTOP), 'x/x'), box((fx0, oy1, 16), (bx1, by1, ZTOP), 'x/x'),   # jambs
+          box((fx0, oy0, oz), (bx1, oy1, ZTOP), 'x/x'),                                    # lintel + breast above
+          box((fx0, by0, 0), (hx1, by1, 16), 'x/x')]                                       # hearth (into the firebox)
+    pil = [box((bx1, by0, 16), (bx1 + 80, by0 + 160, MANTEL_Z - 32), 'x/x'), box((bx1, by1 - 160, 16), (bx1 + 80, by1, MANTEL_Z - 32), 'x/x')]
+    shelf = [box((bx1, by0 - 160, MANTEL_Z - 32), (bx1 + MANTEL_D, by1 + 160, MANTEL_Z), 'x/x')]
+
+    def tex(c, n):
+        if c[2] < 17 and n[2] > 0.5: return 'hearth_tile'
+        if c[2] < 17: return 'hearth_tile'
+        inside = fx0 - 1 < c[0] < bx1 + 1 and oy0 - 1 < c[1] < oy1 + 1 and c[2] < oz + 1
+        if inside: return 'sootbrick'
+        if c[0] > bx1 - 0.5 and c[2] < MANTEL_Z + 1: return 'mantel_paint'
+        return 'plaster'
+
+    def ext(X):
+        wm = X.mesh(MA['mantel_paint'])
+        for y in (by0 + 20, by0 + 140, by1 - 140, by1 - 20):              # corbels under the shelf
+            XM.rbox(wm, (bx1 + 80, y - 20, MANTEL_Z - 132), (bx1 + 150, y + 20, MANTEL_Z - 32), r=8, k=2, tile=128)
+        XM.rbox(wm, (bx1 + MANTEL_D - 6, by0 - 166, MANTEL_Z - 40), (bx1 + MANTEL_D + 6, by1 + 166, MANTEL_Z - 4), r=4, k=2, tile=128)
+        XM.rbox(wm, (bx1 - 1, oy0 - 40, oz), (bx1 + 30, oy1 + 40, oz + 60), r=6, k=2, tile=128)          # lintel moulding
+    K.solid_piece('fireplace', br + pil + shelf, tf_by(tex), extra=ext)
+    fc = ((fx0 + bx1) / 2, (oy0 + oy1) / 2)
+    place('fire', XR.grate_logs(520), fc[0], fc[1], 16, angle=90, occupy=False, lit=False)
+    K.light(bx1 + 40, fc[1], 260, 1100, '1 0.55 0.2'); K.light(bx1 + 400, fc[1], 120, 500, '1 0.6 0.3')
+    K.speaker(fc[0], fc[1], 120, 'ambient/fire_crackling')
+    md = (bx1 + 190, 520, MANTEL_Z)
+    K.teleporter((fx0 + 20, fc[1] - 300, 17), (bx1 - 30, fc[1] + 300, 200), dest=md, angle=0, name='chimney')
+    K.keep_clear(bx1, oy0, hx1 + 160, oy1, 0)
+    # mantel dressing (clock against the breast, candles, stockings + garland on the front, the painting above)
+    mz = MANTEL_Z
+    place('mantel_clock', XR.mantel_clock(), bx1 + 80, 200, mz, boxes=[((-70, -150, 0), (70, 150, 340))])
+    cs = model('candlestick', XR.candlestick)
+    for y in (-690, 660):
+        K.custom(cs, bx1 + 60, y, mz, cyls=[(0, 0, 40, 0, 180)])
+    for y, col in ((-520, 'gold'), (-160, 'red'), (560, 'green'), (900, 'gold')):
+        place(f'stocking_{col}', XR.stocking_hang(col), bx1 + MANTEL_D - 46, y, mz - 32, angle=0, occupy=False)
+    place('garland', XR.garland(by1 - by0 + 300), bx1 + MANTEL_D + 6, (by0 + by1) / 2, mz - 2, occupy=False, lit=False)
+    place('painting', XR.picture(900, 680), bx1, 200, mz + 220, occupy=False)
+    for k, (y, a) in enumerate(((-480, 8), (-340, -10), (420, 6), (560, -12), (790, 4))):
+        place(f'card{k % 3}', XR.xmas_card(k % 3), bx1 + 60, y, mz, angle=a, boxes=[((-40, -40, 0), (40, 40, 140))])
+    K.botclip_rect(bx1, by0 - 160, bx1 + MANTEL_D, by1 + 160, mz, sides='nse', gaps=[('e', -650, -470), ('e', 730, 910), ('n', -2900, -2790)])
+    # hearth-side dressing on the floor
+    K.prop(model('log_basket', XR.log_basket), -2950, -1250, 0, cyls=[(0, 0, 182, 0, 200)])
+    K.prop(model('fire_tools', XR.fire_tools), -2900, -900, 0, cyls=[(0, 0, 88, 0, 30), (0, 0, 40, 30, 680)])
 
 
 # ------------------------------------------------------------------------------------------------ the tree
@@ -161,6 +228,8 @@ def tree():
     ML.save('canopy', X)
     K.custom(ML.PLACE['canopy'], TC[0], TC[1], SFL, lit=False, occupy=False)
     CANOPY_LIGHTS.extend([(TC[0] + p[0], TC[1] + p[1], SFL + p[2]) for p in lights])
+    place('topper', XR.topper(), TC[0], TC[1], 3330, angle=270, occupy=False)
+    K.light(TC[0], TC[1] - 300, 3500, 400, '1 0.9 0.6')
     walk_branch()
 
 
@@ -364,9 +433,10 @@ def wrap_tube():
 
     K.solid_piece('tube', bs, tf_by(tex))
     # the half-unrolled sheet: a sloped paper slab from the tube's shoulder down to the floor (players + bots walk up it)
-    xs, xe, zt = -1960, -1420, 376
+    xs, zt = TUBE_X + 140, 376
+    xe = xs + 540
     xb = xe - 16 * (xe - xs) / zt
-    sy0, sy1 = 80, 420
+    sy0, sy1 = 1440, 1780
     pts = []
     for y in (sy0, sy1):
         pts += [(xs, y, zt), (xs, y, zt - 16), (xe, y, 0), (xb, y, 0)]
@@ -446,7 +516,7 @@ def cookies():
     K.solid_piece('plate', pl, tf_by(lambda c, n: 'china'), extra=ext)
     place('cookies3', XM.cookie_stack(110, 36, 3, 1), px - 120, py + 110, 16, cyls=[(0, 0, 112, 0, 108)])
     place('cookies2', XM.cookie_stack(100, 36, 2, 2), px + 150, py - 80, 16, cyls=[(0, 0, 102, 0, 72)])
-    place('milk', XM.milk_glass(150, 500), -2060, 1960, 0, cyls=[(0, 0, 156, 0, 500)])
+    place('milk', XM.milk_glass(150, 500), -1950, 2060, 0, cyls=[(0, 0, 156, 0, 500)])
     K.add(box((-1300, 1960, 0), (-1000, 2140, 3), {'top': T('letter'), 'side': T('paper_back'), 'bot': CAULK}))
     # plug in the wall socket and the fairy-light cable along the floor to the stand and up the trunk
     path = [(-500, Y1 - 80, 260), (-500, Y1 - 120, 140), (-500, Y1 - 150, 9), (-420, 1500, 9), (-200, 1200, 9), (-80, 1100, 9),
@@ -495,6 +565,13 @@ def pads():
                  edges=[(1640, by0, A_H + B_H)])
     tip = bpt(1110, branch_z(1110))
     K.themed_pad(bx0 + 50, 1380, A_H + B_H, land=tip, apex=tip[2] + 110, name='pad_tip', place=bw_g, glow=120)
+    # floor -> mantel (bellows at both ends), mantel -> floor (fling)
+    bel = model('pad_bellows', XR.bellows)
+    mx = FP[2] + 190
+    for (y, nm) in ((-560, 'pad_mantel_s'), (820, 'pad_mantel_n')):
+        K.themed_pad(-2560, y, 0, land=(mx, y, MANTEL_Z), apex=MANTEL_Z + 90, name=nm, place=bel, glow=140,
+                     edges=[(FP[2] + MANTEL_D, y, MANTEL_Z)], turn=-90)
+    K.themed_pad(FP[2] + 140, 1080, MANTEL_Z, land=(-2350, 1120, 0), apex=MANTEL_Z + 60, name='fling_mantel', place=bw_g)
     # floor -> gingerbread roof, floor -> cab roof, floor -> tunnel roof, floor -> tube top
     gx0, gy0, gx1, gy1 = GH
     K.themed_pad(-1520, -760, 0, land=(-1520, -1260, GH_H + 16), apex=GH_H + 16 + 170, name='pad_ginger', place=gp, glow=140,
@@ -504,8 +581,8 @@ def pads():
     tx0, ty0, tx1, ty1 = TUN
     K.themed_pad(840, -1400, 0, land=(840, -1830, TUN_H + 16), apex=TUN_H + 16 + 170, name='pad_tunnel', place=sp, glow=120,
                  edges=[(840, ty1, TUN_H + 16)])
-    K.themed_pad(-1700, 900, 0, land=(TUBE_X, 640, TUBE_A * 2), apex=TUBE_A * 2 + 150, name='pad_tube', place=gp, glow=120,
-                 edges=[(TUBE_X + TUBE_A, 640, TUBE_A * 2)])
+    K.themed_pad(-2380, 1250, 0, land=(TUBE_X, 1300, TUBE_A * 2), apex=TUBE_A * 2 + 150, name='pad_tube', place=gp, glow=120,
+                 edges=[(TUBE_X + TUBE_A, 1290, TUBE_A * 2)])
 
 
 # ------------------------------------------------------------------------------------------------ cover + props
@@ -529,7 +606,7 @@ def props():
     for i, (x, y, a) in enumerate(((-100, -800, 15), (100, -860, 50), (0, -760, 30), (1400, 400, 20), (-1650, -250, 40))):
         p = model('abc_block', XM.abc_block)
         K.prop(p, x, y, 0, boxes=[((-60, -60, 0), (60, 60, 124))], angle=a)
-    for (x, y, r, col) in ((-450, 1450, 90, 'blue'), (700, -1100, 80, 'gold'), (2300, -900, 100, 'silver'), (-2350, 1500, 85, 'green')):
+    for (x, y, r, col) in ((-450, 1450, 90, 'blue'), (700, -1100, 80, 'gold'), (2300, -900, 100, 'silver'), (-2000, 1150, 85, 'green')):
         p = model(f'bauble_s_{col}', XM.lying_bauble, r, col)
         K.prop(p, x, y, 0, cyls=[(0, 0, r - 4, 0, 2 * r - 4)])
     gm = model('ginger_man', XM.ginger_man)
@@ -609,33 +686,34 @@ def more():
 # ------------------------------------------------------------------------------------------------ loot, spawns
 def items():
     tip = bpt(1150, branch_z(1150))
-    K.weapon('imperius', tip[0], tip[1], tip[2], marker='purple')
-    K.weapon('betty', 1700, 1560, A_H + B_H, marker='black')
-    K.weapon('balloony', -1700, -1400, GH_H + 16, marker='orange')
+    K.weapon('imperius', FP[2] + 170, -250, MANTEL_Z, marker='purple')
+    K.weapon('betty', tip[0], tip[1], tip[2], marker='black')
+    K.weapon('balloony', 1700, 1560, A_H + B_H, marker='orange')
     K.weapon('pumper', -250, 870, SFL, marker='green')
     K.weapon('splasher', BAUB[0] + 40, BAUB[1] + 20, 0, marker='blue')
-    K.weapon('boaster', TUBE_X, 200, TUBE_A - TUBE_IN, marker='orange')
+    K.weapon('boaster', TUBE_X, 1600, TUBE_A - TUBE_IN, marker='orange')
     K.weapon('bubbleg', -1450, 1600, 16, marker='green')
-    ammo = {'imperius': [bpt(600, branch_z(600)), (1700, 1350, A_H + B_H), (-2420, -2180, 0), (1600, 1650, 0)],
-            'betty': [(1300, 1200, A_H), (1650, 1150, 0), (2400, -2150, 0), (-260, 640, RIM)],
-            'balloony': [(-1900, -1300, 0), (-1450, -1200, GH_H + 16), (-2400, 2150, 0), (600, 2150, 0)],
+    ammo = {'imperius': [(FP[2] + 170, 950, MANTEL_Z), (-2450, 1300, 0), (-2420, -2180, 0), (1600, 1650, 0), (-1450, -1200, GH_H + 16)],
+            'betty': [bpt(600, branch_z(600)), (1650, 1150, 0), (2400, -2150, 0), (-260, 640, RIM)],
+            'balloony': [(1700, 1350, A_H + B_H), (1300, 1200, A_H), (-1900, -1300, 0), (-2400, 2150, 0), (600, 2150, 0)],
             'pumper': [(250, 380, SFL), (0, 860, 304), (-2150, 1700, 0), (2400, 200, 0)],
-            'splasher': [(BAUB[0] - 120, BAUB[1] - 100, 0), (1000, -2150, 0), (TUBE_X, 700, TUBE_A * 2), (-600, -2100, 0)],
-            'boaster': [(TUBE_X, -250, TUBE_A - TUBE_IN), (-60, TRAIN_Y, 16), (-1300, 1350, 16), (1300, -900, 0), (-2400, 900, 0)],
+            'splasher': [(BAUB[0] - 120, BAUB[1] - 100, 0), (1000, -2150, 0), (TUBE_X, 1950, TUBE_A * 2), (-600, -2100, 0)],
+            'boaster': [(TUBE_X, 1180, TUBE_A - TUBE_IN), (-60, TRAIN_Y, 16), (-1300, 1350, 16), (1300, -900, 0), (-2400, 900, 0)],
             'bubbleg': [(-1650, 1450, 16), (300, 1600, 0), (-1000, -1500, 0), (2000, -1500, 0)]}
     for w, spots in ammo.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
     for (x, y) in ((900, 950), (-900, -1250), (2200, 0)): K.ammo('nipper', x, y, 0)
-    K.item('item_armor_padshield', 840, -1720, TUN_H + 16)
+    K.item('item_armor_padshield', -1700, -1400, GH_H + 16)
+    K.item('item_armor_shard', 840, -1720, TUN_H + 16)
     K.item('item_armor_shard', -1600, -1500, 0); K.item('item_armor_shard', 1250, 1500, A_H); K.item('item_armor_shard', 260, 640, RIM)
     K.item('item_speedy', -60, TRAIN_Y, 336)
     K.item('item_visionless', 1500, 1300, 0)
-    K.item('holdable_floater', TUBE_X, 450, TUBE_A * 2)
+    K.item('holdable_floater', TUBE_X, 1700, TUBE_A * 2)
     K.item('item_climber', -1450, -1350, 0)
     K.station(0, -1250, 0, ang=90)
-    for (x, y, a) in ((-2300, 1200, 315), (-900, 1500, 270), (300, 2000, 270), (2300, 2000, 225), (2300, 600, 180), (2300, -600, 180),
+    for (x, y, a) in ((-2200, 600, 315), (-900, 1500, 270), (300, 2000, 270), (2300, 2000, 225), (2300, 600, 180), (2300, -600, 180),
                       (1900, -2050, 135), (300, -2100, 90), (-1100, -2100, 45), (-2350, -1000, 0), (-2300, -100, 0), (-600, -400, 45),
-                      (700, -200, 135), (1500, 100, 180)):
+                      (700, -200, 135), (1500, 100, 180), (-3000, -1900, 45), (-2400, 2100, 315)):
         K.spawn(x, y, 0, a)
 
 
@@ -651,15 +729,19 @@ def lights():
 
 def textures():
     A.brush(TX)
-    TX.add('sky', TL.solid((60, 40, 30), 2, 21, 64), 'raw', shader=A.sky(OUT, NS), check_tile=False)
+    TX.add('sky', TL.solid((40, 50, 80), 2, 21, 64), 'raw', check_tile=False,
+           shader=SH.sky('env/frost-bite512', sun=(270, 25), sun_rgb=(0.6, 0.7, 1), sun_int=60, skylight=(25, 3)))
+    A.fire_brush(TX)
     TX.kit_defaults(pad_rgb=(255, 120, 90))
     A.materials(TX)
     XR.materials(TX)
+    XR.fire_materials(TX)
+    A.fire_mats(TX)
 
 
 if __name__ == '__main__':
     textures()
-    shell(); tree(); tower(); ginger(); bauble(); wrap_tube(); train(); cookies(); vault()
+    shell(); fireplace(); tree(); tower(); ginger(); bauble(); wrap_tube(); train(); cookies(); vault()
     pads(); more(); props(); items(); lights()
     K.fix_items()
     TX.write_shader(arena_types=INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})

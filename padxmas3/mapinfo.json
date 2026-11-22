@@ -4,7 +4,7 @@
  "longname": "Padman's Christmas: Under the Tree",
  "generator": "build_padxmas3.py",
  "bounds": [
-  -2560,
+  -3328,
   -2304,
   2560,
   2304
@@ -31,7 +31,10 @@
   "texsize": 256,
   "bigtex": "",
   "shots": [
-   "overview:2300,-2200,1500,135,-28",
+   "overview:2400,-2100,2200,145,-28",
+   "fireplace:-2100,200,330,180,-6",
+   "mantel:-2860,-720,1300,90,-6",
+   "window:-200,-600,500,270,22",
    "undertree:-350,-450,90,80,14",
    "stand:-700,200,520,20,-18",
    "branch:300,780,1170,28,-6",
@@ -43,16 +46,16 @@
    "toys:900,-900,200,250,-4",
    "mousehole:640,2000,60,90,0",
    "bauble:800,-700,220,320,-6",
-   "tube:-1300,200,520,180,-15",
+   "tube:-2000,1400,600,160,-14",
    "train:-600,-1300,250,320,-6",
    "cookies:-900,1000,260,135,-8",
    "secret:0,-300,-1450,90,-12"
   ]
  },
  "levelshots": {
-  "cover": "undertree",
+  "cover": "fireplace",
   "shots": [
-   "stand",
+   "undertree",
    "tower",
    "ginger"
   ]
