@@ -111,13 +111,26 @@ def shell():
                      (WX0 + 2 * (WX1 - WX0) / 3 + 20, WX1)):
         K.add(box((xa, Y0 - 28, zm - 16), (xb, Y0, zm + 16), wt))
     K.add(box((WX0 - 80, Y0, WZ0 - 60), (WX1 + 80, Y0 + 96, WZ0), wt))
-    # skirting boards (the west one stops at the chimney breast)
+    # walnut wainscot to a dado rail, dark skirting boards in front, a crown moulding at the ceiling
+    # (the west wall's run stops at the chimney breast)
+    WZ, DZ = 1280, 1312
+    runs = [('n', X0, X1), ('s', X0, X1), ('e', Y0, Y1), ('w', Y0, FP[1]), ('w', FP[3], Y1)]
     sk = {'n': T('skirting'), 's': T('skirting'), 'e': T('skirting'), 'w': T('skirting'), 'top': T('skirting'), 'bot': CAULK}
-    K.add(box((X0, Y1 - 24, 0), (X1, Y1, 160), sk), box((X0, Y0, 0), (X1, Y0 + 24, 160), sk),
-          box((X1 - 24, Y0 + 24, 0), (X1, Y1 - 24, 160), sk),
-          box((X0, Y0 + 24, 0), (X0 + 24, FP[1], 160), sk), box((X0, FP[3], 0), (X0 + 24, Y1 - 24, 160), sk))
+    rail = {'n': T('dado'), 's': T('dado'), 'e': T('dado'), 'w': T('dado'), 'top': T('dado'), 'bot': T('dado')}
+    crown = {'n': T('crown'), 's': T('crown'), 'e': T('crown'), 'w': T('crown'), 'top': CAULK, 'bot': T('crown')}
+    for side, a, b in runs:
+        for (d, z0, z1, tex) in ((24, 0, 160, sk), (16, 160, WZ, {'n': T('wainscot'), 's': T('wainscot'), 'e': T('wainscot'),
+                                                               'w': T('wainscot'), 'top': T('dado'), 'bot': CAULK}),
+                                 (40, WZ, DZ, rail), (48, ZTOP - 64, ZTOP, crown)):
+            lo = a + d if (side in 'ew' and a == Y0) else a          # e/w runs stop against the n/s run of the same layer
+            hi = b - d if (side in 'ew' and b == Y1) else b
+            if side == 'n': mn, mx = (lo, Y1 - d, z0), (hi, Y1, z1)
+            elif side == 's': mn, mx = (lo, Y0, z0), (hi, Y0 + d, z1)
+            elif side == 'e': mn, mx = (X1 - d, lo, z0), (X1, hi, z1)
+            else: mn, mx = (X0, lo, z0), (X0 + d, hi, z1)
+            K.add(box(mn, mx, tex))
     # the wall socket the fairy lights are plugged into
-    K.add(sign_box((-580, Y1 - 32, 216), (-420, Y1 - 24, 376), T('socket'), 128, 128, back=CAULK, facing='s', edge=T('china')))
+    K.add(sign_box((-580, Y1 - 24, 216), (-420, Y1 - 16, 376), T('socket'), 128, 128, back=CAULK, facing='s', edge=T('china')))
 
 
 # ------------------------------------------------------------------------------------------------ the fireplace (W)
@@ -129,7 +142,7 @@ def fireplace():
     oy0, oy1, oz = FP_OPEN
     fx0 = bx0 + 64                          # firebox back face
     hx1 = bx1 + 320                         # hearth front
-    br = [box((bx0, by0, 0), (fx0, by1, ZTOP), 'x/x'),                                     # back wall
+    br = [box((bx0, by0, 0), (fx0, by1, oz), 'x/x'), box((bx0, by0, oz), (fx0, by1, ZTOP), 'x/x'),   # back wall (split: firebox face)
           box((fx0, by0, 16), (bx1, oy0, ZTOP), 'x/x'), box((fx0, oy1, 16), (bx1, by1, ZTOP), 'x/x'),   # jambs
           box((fx0, oy0, oz), (bx1, oy1, ZTOP), 'x/x'),                                    # lintel + breast above
           box((fx0, by0, 0), (hx1, by1, 16), 'x/x')]                                       # hearth (into the firebox)
@@ -141,11 +154,11 @@ def fireplace():
         if c[2] < 17: return 'hearth_tile'
         inside = fx0 - 1 < c[0] < bx1 + 1 and oy0 - 1 < c[1] < oy1 + 1 and c[2] < oz + 1
         if inside: return 'sootbrick'
-        if c[0] > bx1 - 0.5 and c[2] < MANTEL_Z + 1: return 'mantel_paint'
+        if c[0] > bx1 - 0.5 and c[2] < MANTEL_Z + 1: return 'oak'
         return 'plaster'
 
     def ext(X):
-        wm = X.mesh(MA['mantel_paint'])
+        wm = X.mesh(MA['oak'])
         for y in (by0 + 20, by0 + 140, by1 - 140, by1 - 20):              # corbels under the shelf
             XM.rbox(wm, (bx1 + 80, y - 20, MANTEL_Z - 132), (bx1 + 150, y + 20, MANTEL_Z - 32), r=8, k=2, tile=128)
         XM.rbox(wm, (bx1 + MANTEL_D - 6, by0 - 166, MANTEL_Z - 40), (bx1 + MANTEL_D + 6, by1 + 166, MANTEL_Z - 4), r=4, k=2, tile=128)
@@ -521,8 +534,8 @@ def cookies():
     # plug in the wall socket and the fairy-light cable along the floor to the stand and up the trunk
     path = [(-500, Y1 - 80, 260), (-500, Y1 - 120, 140), (-500, Y1 - 150, 9), (-420, 1500, 9), (-200, 1200, 9), (-80, 1100, 9),
             (-60, ST[3] + 90, 9)]
-    X = XM.plug_and_cable([(0, -56, 0)] + [(p[0] + 500, p[1] - (Y1 - 32), p[2] - 280) for p in path[1:]])
-    place('plug', X, -500, Y1 - 32, 280, occupy=False)
+    X = XM.plug_and_cable([(0, -56, 0)] + [(p[0] + 500, p[1] - (Y1 - 24), p[2] - 280) for p in path[1:]])
+    place('plug', X, -500, Y1 - 24, 280, occupy=False)
     K.speaker(-500, Y1 - 120, 300, 'machine/electric_sizzle')
 
 
@@ -732,11 +745,13 @@ def textures():
     TX.add('sky', TL.solid((40, 50, 80), 2, 21, 64), 'raw', check_tile=False,
            shader=SH.sky('env/frost-bite512', sun=(270, 25), sun_rgb=(0.6, 0.7, 1), sun_int=60, skylight=(25, 3)))
     A.fire_brush(TX)
+    A.cosy_brush(TX)
     TX.kit_defaults(pad_rgb=(255, 120, 90))
     A.materials(TX)
     XR.materials(TX)
     XR.fire_materials(TX)
     A.fire_mats(TX)
+    A.cosy_mats(TX)
 
 
 if __name__ == '__main__':

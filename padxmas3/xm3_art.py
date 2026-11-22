@@ -159,7 +159,7 @@ def carpet(n=256):
     return a + N3(n, 0.7, 52, 9)
 
 
-def wallpaper(n=256):
+def wallpaper_old(n=256):
     a = ML.fill(n, (226, 208, 170), 4, 61)
     x, y = xy(n)
     stripe = (np.abs(((x * 4) % 1) - 0.5) < 0.05)
@@ -207,7 +207,7 @@ def socket(n=128):
 def brush(TX):
     TX.add('carpet', carpet(), scale=1.0, steps='carpetsteps')
     TX.add('wall', wallpaper(), scale=2.0)
-    TX.add('skirting', TL.planks((236, 232, 222), n_planks=2, gap=(200, 196, 186), grain=3), scale=2.0)
+    TX.add('skirting', TL.planks((72, 42, 24), n_planks=2, gap=(46, 26, 14), grain=5), scale=2.0)
     TX.add('stand', TL.solid((34, 112, 58), 3, 91), steps=None)
     TX.add('choc', TL.tiles((92, 52, 30), (64, 34, 18), cols=2, rows=2, offset=0, grout_w=0.06, vary=4))
     TX.add('paper_sheet', paper(*PAPERS['red'][:3], 95), scale=1.0)
@@ -341,8 +341,8 @@ def sky(out, ns, n=512):
 
 # ------------------------------------------------------------------------------------------------ round 3: the room + fireplace
 def fire_brush(TX):
-    TX.add('ceiling', TL.solid((228, 222, 210), 3, 501), scale=4.0)
-    TX.add('sill', TL.solid((240, 238, 232), 2, 502), scale=2.0)
+    TX.add('ceiling', TL.solid((196, 180, 150), 3, 501), scale=4.0)
+    TX.add('sill', TL.planks((96, 58, 32), n_planks=2, gap=(60, 36, 20), grain=6), scale=2.0)
 
 
 def fire_mats(TX):
@@ -350,4 +350,67 @@ def fire_mats(TX):
     m('hearth_tile', TL.tiles((120, 60, 50), (60, 40, 34), cols=4, rows=4, offset=0, grout_w=0.03, vary=10), shade=20)
     m('sootbrick', TL.grime(TL.bricks((110, 56, 44), (70, 60, 54)), 0.6), shade=20)
     m('mantel_paint', TL.solid((240, 236, 226), 2, 503), 'lms', v=0.08, shade=40)
-    m('plaster', wallpaper(), shade=20)
+    m('plaster', brick(), shade=20)
+
+
+# ------------------------------------------------------------------------------------------------ round 4: cosy walls
+def wallpaper(n=256):
+    """deep forest-green damask with muted gold motifs and a faint stripe (tiles seamlessly)"""
+    a = ML.fill(n, (30, 58, 42), 3, 601)
+    x, y = xy(n)
+    stripe = np.abs(((x * 2) % 1) - 0.5) < 0.012
+    a = np.where(stripe[..., None], a * 0.8 + C((30, 24, 10)), a)
+    im = img(a)
+    gold, dim = (150, 118, 58), (86, 80, 48)
+
+    def motif(d, cx, cy, s, col):
+        d.ellipse((cx - 10 * s, cy - 30 * s, cx + 10 * s, cy + 30 * s), outline=col, width=3)
+        d.polygon([(cx, cy - 46 * s), (cx - 7 * s, cy - 34 * s), (cx + 7 * s, cy - 34 * s)], fill=col)
+        d.polygon([(cx, cy + 46 * s), (cx - 7 * s, cy + 34 * s), (cx + 7 * s, cy + 34 * s)], fill=col)
+        for sg in (-1, 1):
+            d.arc((cx + sg * 8 * s - 22 * s, cy - 22 * s, cx + sg * 8 * s + 22 * s, cy + 22 * s),
+                  (-60 if sg > 0 else 120), (60 if sg > 0 else 240), fill=col, width=3)
+            d.ellipse((cx + sg * 30 * s - 4, cy - 4, cx + sg * 30 * s + 4, cy + 4), fill=col)
+        d.ellipse((cx - 5, cy - 5, cx + 5, cy + 5), fill=col)
+
+    def f(d, ox, oy):
+        motif(d, 64 + ox, 64 + oy, 1.0, gold); motif(d, 192 + ox, 192 + oy, 1.0, gold)
+        for (cx, cy) in ((192, 64), (64, 192)):
+            d.ellipse((cx + ox - 6, cy + oy - 6, cx + ox + 6, cy + oy + 6), fill=dim)
+    tiled(im, f)
+    out = np.asarray(im.filter(ImageFilter.GaussianBlur(0.6)), np.float32)
+    return out + N3(n, 1, 602, 4)
+
+
+def wainscot(w=256, h=512):
+    """walnut panelling, one raised panel per tile (tile = 640 x 1280 world): plinth band at the bottom, top rail"""
+    a = ML.fill(w, (84, 50, 28), 3, 611, m=h)
+    gx = np.sin(np.linspace(0, 40, w))[None, :] * 4 + ML.noise(w, 2, 612, h) * 4
+    a = a + gx[..., None]
+    yy, xx = np.mgrid[0:h, 0:w] / np.array([h, w])[:, None, None]
+    st = 0.12; top, bot = 0.10, 0.25                  # stiles, top rail, bottom rail (plinth hidden by the skirting)
+    panel = (xx > st) & (xx < 1 - st) & (yy > top) & (yy < 1 - bot)
+    bev = 0.035
+    inner = (xx > st + bev) & (xx < 1 - st - bev) & (yy > top + bev) & (yy < 1 - bot - bev)
+    edge_lt = panel & ~inner & ((xx - st < yy - top) & (xx - st < bev) | (yy - top < bev))
+    a = np.where(panel[..., None], a * 1.12, a)
+    a = np.where((panel & ~inner)[..., None], a * 0.82, a)
+    a = np.where(edge_lt[..., None], a * 1.35, a)
+    groove = (np.abs(xx - st) < 0.006) | (np.abs(xx - 1 + st) < 0.006) | (np.abs(yy - top) < 0.004) | (np.abs(yy - 1 + bot) < 0.004)
+    return np.where(groove[..., None], a * 0.55, a)
+
+
+def brick(n=256):
+    return TL.grime(TL.bricks((150, 70, 52), (120, 104, 92), rows=8, cols=4, vary=22), 0.15)
+
+
+def cosy_brush(TX):
+    TX.add('wainscot', wainscot(), scale=(2.5, 2.5), check_tile=False)
+    TX.add('dado', TL.planks((96, 58, 32), n_planks=2, gap=(60, 36, 20), grain=6), scale=1.0)
+    TX.add('crown', TL.solid((220, 206, 176), 2, 613), scale=2.0)
+
+
+def cosy_mats(TX):
+    m = lambda key, arr, kind='lm', **o: M.__setitem__(key, TX.material(key, arr, kind, **o))
+    m('brick', brick(), shade=20)
+    m('oak', TL.planks((110, 66, 36), n_planks=3, gap=(70, 40, 22), grain=8), 'lms', v=0.12, shade=40)
