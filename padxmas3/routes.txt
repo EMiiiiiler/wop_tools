@@ -1,0 +1,14 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padxmas3
+stand_east_foot:    976,328,0 > 400,328,320
+stand_west_foot:    -976,328,0 > -400,328,320
+stand_steps:        -400,264,160 > 16,264,320
+branch_walk:        265,741,1096 > 971,1118,997
+tower_door:         1504,992,0 > 1504,1208,0
+ginger_stairs:      -2128,-1728,0 > -1296,-1728,368
+ginger_door:        -1696,-992,0 > -1696,-1208,0
+bauble_in:          1085,-904,0 > 1500,-1250,0
+tube_sheet:         -1324,250,0 > -2100,250,400
+tube_inside:        -2100,-520,0 > -2100,920,0
+cab_door:           -60,-1608,0 > -60,-1992,0
+tunnel_through:     520,-1800,0 > 1160,-1800,0

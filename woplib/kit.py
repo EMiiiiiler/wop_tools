@@ -385,6 +385,18 @@ class MapKit:
         self.occupy_r(land[0], land[1], 64, land[2], land[2] + 96)      # props scattered later must not fill the landing
         return P
 
+    def themed_pad(self, x, y, z, land, apex, name, place, glow=None, glow_rgb='1 0.75 0.5', turn=-90, boxes=(), **kw):
+        """the user's rule: no pad discs - a theme object IS the jump pad (padpub's tambourine, trapdoor, bellows...).
+        The kit pad's 6u disc becomes an invisible nonsolid brush (trigger, aim and bspc links unchanged) and `place`
+        (models.PLACE[...] of a low dressing model, <= 16u where players step on it) sits at (x, y, z) at yaw
+        (flight direction + turn). boxes = optional weapclip collision in model space. Returns the padmath plan."""
+        nd = self.T('nodraw_ns')
+        P = self.jumppad(x, y, z, land=land, apex=apex, name=name, glow=False, top_tex=nd, side_tex=nd, **kw)
+        yaw = math.degrees(math.atan2(land[1] - y, land[0] - x))
+        self.custom(place, round(x), round(y), z, angle=round(yaw + turn) % 360, boxes=boxes, occupy=False)
+        if glow: self.light(x, y, z + 32, glow, glow_rgb)
+        return P
+
     def teleporter(self, mn, mx, dest, angle, name, visible_tex=None):
         """trigger_teleport -> misc_teleporter_dest. The dest must NOT be inside a trigger_push: put it just behind a
         pad (the 400 u/s exit speed slides the player on). dest = (x, y, floor)."""
@@ -547,12 +559,13 @@ class MapKit:
         self.spots.setdefault('water', []).append(dict(mn=list(mn), mx=list(mx), depth=mx[2] - mn[2]))
         return pieces
 
-    def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None):
+    def solid_piece(self, name, brushes, texfn, lit=True, clip=WCLIP, hidden=None, extra=None):
         """big architecture built ONCE as convex brushes and used twice: the visible faces become a custom MD3
         (woplib.models.solids_mesh) and the same brushes become invisible collision, so bot routes never drift from
         what players see (az_shapes/padaztec recipe). texfn(centre, normal, poly) -> (shader, uvfn) in WORLD space.
         The model is stored centred on the pieces' footprint (MD3 +-512 limit) and placed back there. Returns the
-        misc_model entity."""
+        misc_model entity. extra(X) may add more meshes in WORLD space (ribbons, icing, bolts) to the same MD3 before
+        it is centred and saved: dressing that has no collision of its own rides along with the body."""
         from . import models as ML
         mn = np.min([b.bounds()[0] for b in brushes], 0); mx = np.max([b.bounds()[1] for b in brushes], 0)
         o = np.array([(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, mn[2]])
@@ -564,6 +577,7 @@ class MapKit:
             sh, uvf = r
             return sh, (lambda p, uvf=uvf: uvf(p))
         ML.solids_mesh(X, brushes, tf, hidden=hidden)
+        if extra: extra(X)
         X.shift(o)
         place = ML.save(name, X)
         e = self.custom(place, float(o[0]), float(o[1]), float(o[2]), lit=lit, occupy=False)
