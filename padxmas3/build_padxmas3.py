@@ -24,6 +24,7 @@ from woplib import models as ML, shaders as SH, texlib as TL
 import xm3_art as A
 import xm3_models as XM
 import xm3_more as XR
+import xm3_sofa as XS
 
 INFO = json.load(open(os.path.join(HERE, 'mapinfo.json')))
 OUT = os.environ.get('OUT', os.path.join(HERE, 'out'))
@@ -585,6 +586,15 @@ def pads():
         K.themed_pad(-2560, y, 0, land=(mx, y, MANTEL_Z), apex=MANTEL_Z + 90, name=nm, place=bel, glow=140,
                      edges=[(FP[2] + MANTEL_D, y, MANTEL_Z)], turn=-90)
     K.themed_pad(FP[2] + 140, 1080, MANTEL_Z, land=(-2350, 1120, 0), apex=MANTEL_Z + 60, name='fling_mantel', place=bw_g)
+    # sofa corner: whoopee cushion -> sofa seat, throw pillow on the seat -> sofa back, ball of yarn -> armchair seat
+    S, Ar = XS.SOFA, XS.ARM
+    wh = model('pad_whoopee', XS.whoopee); tp = model('pad_pillow', XS.throw_pillow); yb_ = model('pad_yarn', XS.yarn_ball)
+    K.themed_pad(S['x0'] - 260, 500, 0, land=(S['x0'] + 420, 500, S['seat']), apex=S['seat'] + 260, name='pad_sofa', place=wh,
+                 glow=140, edges=[(S['x0'], 500, S['seat'])])
+    K.themed_pad(S['x0'] + 470, 1500, S['seat'], land=(S['back_x'] + 160, 1300, S['back_h']), apex=S['back_h'] + 130, name='pad_sofaback',
+                 place=tp, glow=120, edges=[(S['bc_x'], 1420, S['bc_h']), (S['back_x'], 1360, S['back_h'])])
+    K.themed_pad(Ar['x0'] - 260, -1500, 0, land=(Ar['x0'] + 420, -1500, Ar['seat']), apex=Ar['seat'] + 260, name='pad_armchair',
+                 place=yb_, glow=140, edges=[(Ar['x0'], -1500, Ar['seat'])])
     # floor -> gingerbread roof, floor -> cab roof, floor -> tunnel roof, floor -> tube top
     gx0, gy0, gx1, gy1 = GH
     K.themed_pad(-1520, -760, 0, land=(-1520, -1260, GH_H + 16), apex=GH_H + 16 + 170, name='pad_ginger', place=gp, glow=140,
@@ -634,6 +644,56 @@ def props():
     K.catalog('pad_ducks/pad_duck.md3', -2300, 300, 0, scale=0.9, angle=0, lit=True)
     for (x, y) in ((-900, -1900), (2350, 1900), (-2400, -400)):
         K.catalog('pad_fruits/walnut.md3', x, y, 0, scale=2.5)
+
+
+# ------------------------------------------------------------------------------------------------ round 5: the sofa corner (E)
+def sofa_corner():
+    """a three-seat velvet sofa and a tartan wingback against the east wall, at real scale (seat 720u). Under both
+    is 224u of clearance: walk underneath to find what fell down there. Pads: a whoopee cushion (floor -> sofa seat),
+    a throw pillow on the seat (-> the sofa back, Balloony), a ball of yarn (floor -> armchair seat)."""
+    S, Ar = XS.SOFA, XS.ARM
+    K.solid_piece('sofa', XS.sofa_brushes(box), lambda c, n, poly: None, extra=XS.sofa_visual)
+    K.solid_piece('armchair', XS.armchair_brushes(box), lambda c, n, poly: None, extra=XS.armchair_visual)
+    ya, yb = S['y0'] + S['arm_w'], S['y1'] - S['arm_w']; ym = (ya + yb) / 2
+    K.crawl((S['x0'], S['y0'], 0), (S['x1'], S['y1'], S['leg']))
+    K.crawl((Ar['x0'], Ar['y0'], 0), (Ar['x1'], Ar['y1'], Ar['leg']))
+    K.keep_clear(S['x0'] - 260, ya, S['x0'], yb, 0); K.keep_clear(Ar['x0'] - 260, Ar['y0'] + 240, Ar['x0'], Ar['y1'] - 240, 0)
+    K.route('under_sofa', (S['x0'] - 160, 200, 0), (S['x1'] - 200, 200, 0))
+    K.route('under_armchair', (Ar['x0'] - 160, -1500, 0), (Ar['x1'] - 200, -1500, 0))
+    # under the sofa: dust bunnies, lost coins, a lost marker pen... and some loot
+    place('dust', XS_dust(), (S['x0'] + S['x1']) / 2, ym, 0, occupy=False, lit=True)
+    place('coins_sofa', XR.coins(8, 140, 31), 3700, 1500, 0, occupy=False)
+    place('coins_gap', XR.coins(4, 20, 32), 3300, ym, S['seat'] - 16, occupy=False)
+    K.light(3600, ym, 150, 260, '1 0.8 0.6')
+    # on the seat: the remote and a mug of cocoa
+    place('remote', XS.remote(), 3150, 120, S['seat'] + 8, angle=20, boxes=[((-110, -30, 0), (110, 30, 24))])
+    place('cocoa', XS.cocoa_mug(), 3250, 1250, S['seat'] + 8, cyls=[(0, 0, 72, 0, 140)])
+    K.prop(model('slippers', XS.slippers), 2620, 1350, 0, angle=200, boxes=[((-140, -140, 0), (140, 140, 52))])
+    # Christmas-morning mess in front of the sofa: torn paper, crumpled balls, opened boxes, lids, ribbon curls
+    for k, (x, y, w, d, pat, a) in enumerate(((2450, 300, 460, 340, 'red', 20), (2600, -260, 380, 300, 'blue', -30),
+                                              (2300, 1650, 420, 320, 'gold', 60), (2450, -1900, 400, 300, 'green', 10))):
+        place(f'torn{k}', XS.torn_paper(w, d, pat, 40 + k), x, y, 0, angle=a, occupy=False)
+    for k, (x, y, r, pat) in enumerate(((2700, 700, 70, 'red'), (2560, 820, 56, 'stripe'), (2380, -600, 64, 'green'),
+                                        (2700, -900, 60, 'gold'), (2300, 1100, 66, 'purple'))):
+        K.prop(model(f'ball{k}', XS.paper_ball, r, pat, 50 + k), x, y, 0, cyls=[(0, 0, r * 0.8, 0, r * 1.6)])
+    for k, (x, y, w, d, h, pat, a) in enumerate(((2650, 0, 260, 220, 190, 'purple', 15), (2250, 1550, 300, 260, 160, 'stripe', -20),
+                                                 (2620, -2030, 240, 240, 220, 'kraft', 35))):
+        K.prop(model(f'openbox{k}', XS.open_box, w, d, h, pat, 60 + k), x, y, 0, angle=a, boxes=[((-w / 2, -d / 2, 0), (w / 2, d / 2, h))])
+        if k == 0: K.prop(model(f'lid{k}', XS.lid, w, d, pat), x - 60, y - 330, 0, angle=a + 40, boxes=[((-w / 2 - 5, -d / 2 - 5, 0), (w / 2 + 5, d / 2 + 5, 18))])
+    for k, (x, y, col) in enumerate(((2500, 550, 'gold'), (2250, -150, 'red'), (2550, 1600, 'silver'))):
+        place(f'curls{k}', XS.ribbon_curls(70 + k, col), x, y, 0, occupy=False)
+
+
+def XS_dust():
+    """dust bunnies under the sofa (grey fluff balls) - visual only"""
+    X = XM.Model()
+    import random as _r
+    rr = _r.Random(77)
+    for k in range(9):
+        x, y = rr.uniform(-560, 560), rr.uniform(-1100, 1100)
+        r = rr.uniform(30, 60)
+        XM.ellipsoid(X.mesh(MA['fluff']), (x, y, r * 0.6), r * 1.3, r, r * 0.6, nu=10, nv=6)
+    return X
 
 
 # ------------------------------------------------------------------------------------------------ round 2: more toys + life
@@ -701,18 +761,20 @@ def items():
     tip = bpt(1150, branch_z(1150))
     K.weapon('imperius', FP[2] + 170, -250, MANTEL_Z, marker='purple')
     K.weapon('betty', tip[0], tip[1], tip[2], marker='black')
-    K.weapon('balloony', 1700, 1560, A_H + B_H, marker='orange')
-    K.weapon('pumper', -250, 870, SFL, marker='green')
-    K.weapon('splasher', BAUB[0] + 40, BAUB[1] + 20, 0, marker='blue')
-    K.weapon('boaster', TUBE_X, 1600, TUBE_A - TUBE_IN, marker='orange')
+    K.weapon('balloony', XS.SOFA['back_x'] + 160, 300, XS.SOFA['back_h'], marker='orange')
+    K.weapon('pumper', 1700, 1560, A_H + B_H, marker='green')
+    K.weapon('splasher', -250, 870, SFL, marker='blue')
+    K.weapon('boaster', BAUB[0] + 40, BAUB[1] + 20, 0, marker='orange')
+    K.item('holdable_bambam', TUBE_X, 1600, TUBE_A - TUBE_IN)
     K.weapon('bubbleg', -1450, 1600, 16, marker='green')
     ammo = {'imperius': [(FP[2] + 170, 950, MANTEL_Z), (-2450, 1300, 0), (-2420, -2180, 0), (1600, 1650, 0), (-1450, -1200, GH_H + 16)],
-            'betty': [bpt(600, branch_z(600)), (1650, 1150, 0), (2400, -2150, 0), (-260, 640, RIM)],
-            'balloony': [(1700, 1350, A_H + B_H), (1300, 1200, A_H), (-1900, -1300, 0), (-2400, 2150, 0), (600, 2150, 0)],
+            'betty': [bpt(600, branch_z(600)), (1650, 1150, 0), (2400, -2150, 0), (-260, 640, RIM), (3300, 1700, 0)],
+            'balloony': [(XS.SOFA['back_x'] + 160, 1500, XS.SOFA['back_h']), (3500, -200, 0), (1300, 1200, A_H), (-1900, -1300, 0), (-2400, 2150, 0), (600, 2150, 0)],
             'pumper': [(250, 380, SFL), (0, 860, 304), (-2150, 1700, 0), (2400, 200, 0)],
             'splasher': [(BAUB[0] - 120, BAUB[1] - 100, 0), (1000, -2150, 0), (TUBE_X, 1950, TUBE_A * 2), (-600, -2100, 0)],
             'boaster': [(TUBE_X, 1180, TUBE_A - TUBE_IN), (-60, TRAIN_Y, 16), (-1300, 1350, 16), (1300, -900, 0), (-2400, 900, 0)],
             'bubbleg': [(-1650, 1450, 16), (300, 1600, 0), (-1000, -1500, 0), (2000, -1500, 0)]}
+    K.item('item_armor_shard', 3400, 300, 0); K.item('item_jumper', 3300, -1500, XS.ARM['seat'] + 8)
     for w, spots in ammo.items():
         for (x, y, z) in spots: K.ammo(w, x, y, z)
     for (x, y) in ((900, 950), (-900, -1250), (2200, 0)): K.ammo('nipper', x, y, 0)
@@ -726,7 +788,7 @@ def items():
     K.station(0, -1250, 0, ang=90)
     for (x, y, a) in ((-2200, 600, 315), (-900, 1500, 270), (300, 2000, 270), (2300, 2000, 225), (2300, 600, 180), (2300, -600, 180),
                       (1900, -2050, 135), (300, -2100, 90), (-1100, -2100, 45), (-2350, -1000, 0), (-2300, -100, 0), (-600, -400, 45),
-                      (700, -200, 135), (1500, 100, 180), (-3000, -1900, 45), (-2400, 2100, 315)):
+                      (700, -200, 135), (1500, 100, 180), (-3000, -1900, 45), (-2400, 2100, 315), (2700, -500, 180), (2750, 2000, 225), (2600, -2050, 135)):
         K.spawn(x, y, 0, a)
 
 
@@ -750,6 +812,7 @@ def textures():
     A.materials(TX)
     XR.materials(TX)
     XR.fire_materials(TX)
+    XS.materials(TX)
     A.fire_mats(TX)
     A.cosy_mats(TX)
 
@@ -757,7 +820,7 @@ def textures():
 if __name__ == '__main__':
     textures()
     shell(); fireplace(); tree(); tower(); ginger(); bauble(); wrap_tube(); train(); cookies(); vault()
-    pads(); more(); props(); items(); lights()
+    pads(); sofa_corner(); more(); props(); items(); lights()
     K.fix_items()
     TX.write_shader(arena_types=INFO.get('arena_types', 'ffa lps team ft syc_ffa'), ents={e['classname'] for e in K.M.ents})
     K.write(OUT, routes_path=os.path.join(HERE, 'routes.txt'))
