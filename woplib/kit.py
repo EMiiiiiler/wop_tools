@@ -194,6 +194,11 @@ class MapKit:
         boxes [(mn, mx)] and cyls [(cx, cy, r, z0, z1)] in model space -> common/weapclip, so bot routes don't change
         when the visual does. Lightmapped (spawnflags 4) by default; vertex lit (lit=False) for alpha foliage."""
         path, sc, zo = place
+        from . import models as _ML
+        bad = _ML.static_problems(path)
+        if bad:
+            raise ValueError(f'{path} as a misc_model uses mover shaders {bad[:3]} (rgbGen lightingDiffuse): baked into the '
+                             f'BSP they draw black. Save a lit copy: ML.save(name, ML.static_copy(X))')
         extra = dict(spawnflags=4, _castshadows=1, _receiveshadows=1) if lit else {}
         extra.update(kw)
         e = self.M.model(path, (round(x, 2), round(y, 2), round(zbase + zo, 2)), scale=round(sc, 4), angle=angle, **extra)

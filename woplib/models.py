@@ -38,10 +38,12 @@ def configure(ns, out_dir):
     global NS, MD, TD
     NS, MD, TD = ns, f'models/{ns}', f'textures/{ns}'
     STATE['out'] = out_dir
-    REG.clear(); PLACE.clear(); IQM.clear()
+    REG.clear(); PLACE.clear(); IQM.clear(); SURF.clear()
 REG = {}            # shader name -> (image, kind, options)
 PLACE = {}          # model name -> (path, scale, zoff)
 IQM = {}            # mover name -> path
+SURF = {}           # md3 path -> shader names of its surfaces (K.custom checks static models with it)
+STATIC_TWIN = {'dyn': 'lm', 'dynalpha': 'alpha'}   # mover kinds -> the kind a baked misc_model of the same art needs
 
 
 def out(*p): return os.path.join(STATE['out'], *p)
@@ -98,7 +100,26 @@ def save(name, X):
     os.makedirs(out(MD), exist_ok=True)
     sc, zo = save_md3(out(path), X.surfaces(), name, with_offset=True)
     PLACE[name] = (path, sc, zo)
+    SURF[path] = [sh for sh, M in X.m.items() if len(M)]
     return path, sc, zo
+
+
+def static_copy(X):
+    """the same model with every mover shader (dyn / dynalpha: rgbGen lightingDiffuse) swapped for its lightmapped
+    twin, for a parked copy of a train car / ride placed as a misc_model. q3map2 bakes misc_models into the BSP,
+    where lightingDiffuse has no entity light and the whole model draws black (padville's engine-shed loco)."""
+    Y = Model()
+    for sh, M in X.m.items():
+        if sh in REG and REG[sh][1] in STATIC_TWIN:
+            im, kind, opt = REG[sh]
+            sh = S(im, STATIC_TWIN[kind], **{k: v for k, v in opt.items() if k in ('two', 'deform', 'tag', 'shade')})
+        Y.mesh(sh).add(M)
+    return Y
+
+
+def static_problems(path):
+    """mover shaders (dyn/dynalpha) on an MD3 that is about to be placed as a static misc_model"""
+    return [sh for sh in SURF.get(path, ()) if sh in REG and REG[sh][1] in STATIC_TWIN]
 
 
 def save_iqm(name, X):

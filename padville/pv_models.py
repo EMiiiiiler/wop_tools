@@ -11,7 +11,7 @@ import math
 import numpy as np
 from PIL import Image, ImageDraw
 from woplib import models as ML, texlib as TL
-from meshlib import Mesh, rbox, tube, revolve, disc, prism, ellipsoid, rot_z, rot_axis
+from meshlib import Mesh, rbox, tube, revolve, disc, prism, ellipsoid, rot_z, rot_axis, sphere
 
 TX = None          # woplib.texlib.Textures, set by setup()
 COLL = {}          # model name -> dict(boxes=[(mn, mx)], cyls=[(cx, cy, r, z0, z1)]) in model space
@@ -1117,4 +1117,197 @@ def bar_stool(seat_h=1240.0, seat_r=280.0, key='stool_seat', name='bar_stool', b
         arc = [((seat_r - 10) * math.cos(t), (seat_r - 10) * math.sin(t), seat_h + 400) for t in np.radians(np.linspace(130, 230, 12))]
         tube(X.mesh(TX['stool_wood']), arc, 34, nseg=8, ry=[60] * 12)
     ML.save(name, X)
+    return X
+
+
+# ================================================================================================ shop row interiors (48u/m)
+def loaf_tex(n=128):
+    a = TL.grime(TL.solid((196, 132, 64), 8, 501, n), 0.2, 502)
+    im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
+    for k in range(4):
+        x = n * (k + 0.5) / 4
+        d.line((x - 10, n * 0.2, x + 10, n * 0.8), fill=(236, 200, 140), width=5)       # scored crust
+    return _arr(im)
+
+
+def stamps_tex(n=256):
+    im = _img(n, n, (110, 76, 46)); d = ImageDraw.Draw(im)
+    for i in range(6):
+        for j in range(4):
+            x0, y0 = 6 + i * 41, 6 + j * 62
+            d.rectangle((x0, y0, x0 + 37, y0 + 58), fill=(60, 40, 24))
+            r = np.random.default_rng(i * 7 + j)
+            for k in range(int(r.integers(0, 4))):
+                c = [(236, 230, 214), (210, 196, 160), (180, 60, 50), (60, 90, 150)][int(r.integers(0, 4))]
+                d.rectangle((x0 + 4 + k * 3, y0 + 8 + k * 10, x0 + 33, y0 + 30 + k * 10), fill=c)
+    return _arr(im)
+
+
+def shop_mats():
+    M = TX.material
+    M('loaf', loaf_tex(), shade=80)
+    M('crust_dark', TL.grime(TL.solid((140, 84, 40), 8, 503, 64), 0.2, 504), shade=80)
+    M('icing_pink', TL.solid((250, 180, 200), 3, 505, 64), shade=80)
+    M('icing_white', TL.solid((250, 248, 240), 2, 506, 64), shade=80)
+    M('cake_sponge', TL.solid((236, 200, 130), 6, 507, 64), shade=80)
+    M('cherry', TL.solid((200, 20, 30), 2, 508, 32), shade=80)
+    M('counter_wood', TL.planks((150, 96, 56), 3, (100, 60, 30), 10, False, True, 509), shade=40)
+    M('counter_top', TL.stone((214, 210, 200), cells=30, edge=(170, 166, 160), edge_w=0.02, seed=510), shade=40)
+    M('display_glass', TL.solid((40, 50, 56), 3, 511, 64), 'glass', c='0.06 0.07 0.08')
+    M('shelf_wood', TL.planks((170, 120, 76), 2, (110, 74, 44), 8, False, True, 512), shade=40)
+    M('toy_red', TL.solid((210, 40, 40), 3, 513, 64), shade=60)
+    M('toy_blue', TL.solid((40, 90, 200), 3, 514, 64), shade=60)
+    M('toy_yellow', TL.solid((240, 200, 40), 3, 515, 64), shade=60)
+    M('toy_green', TL.solid((40, 150, 70), 3, 516, 64), shade=60)
+    M('teddy', TL.fabric((160, 110, 60), 32, 517), shade=80)
+    M('felt_green', TL.fabric((50, 120, 60), 32, 518), shade=40)
+    M('stamps', stamps_tex(), shade=40)
+    M('parcel', TL.grime(TL.solid((190, 150, 100), 6, 519, 64), 0.15, 520), shade=40)
+    M('string', TL.solid((230, 220, 190), 2, 521, 32), shade=40)
+    M('mailsack', TL.fabric((150, 140, 110), 32, 522), shade=80)
+    M('post_red', TL.solid((200, 30, 30), 3, 523, 64), shade=40)
+    M('grille', TL.metal((190, 160, 80), False, 524), 'lms', shade=60, v=0.25)
+    M('flour_sack', TL.fabric((230, 222, 200), 32, 525), shade=80)
+
+
+def _loaf(Mh, x, y, z, L=14.0, w=7.0, h=6.0, a=0.0):
+    tmp = Mesh(); ellipsoid(tmp, (0, 0, 0), L / 2, w / 2, h, nu=12, nv=6, flat_bottom=0.0)
+    Mh.add(tmp, rot_z(a), (x, y, z))
+
+
+def bakery_display(L=130.0, d=36.0, h=44.0):
+    """bakery: glass-fronted display counter with loaves, cakes and buns, and a wall rack of bread behind it (local
+    +y = the wall it stands against, customers at -y). Origin = floor at the counter's centre front."""
+    X = ML.Model()
+    rbox(X.mesh(TX['counter_wood']), (-L / 2, 0, 0), (L / 2, d, h - 18), r=1.5, k=1, tile=96)
+    rbox(X.mesh(TX['counter_top']), (-L / 2 - 2, -2, h - 4), (L / 2 + 2, d + 2, h), r=1, k=1, tile=96)
+    for x in (-L / 2, L / 2 - 2):                                                       # glass case ends
+        rbox(X.mesh(TX['counter_wood']), (x, 0, h - 18), (x + 2, d * 0.7, h - 4), r=0.4, k=1, tile=32)
+    quad = lambda Mh, p: Mh.poly([np.array(q, float) for q in p], (0, -1, 0.3), [(0, 1), (1, 1), (1, 0), (0, 0)])
+    quad(X.mesh(TX['display_glass']), [(-L / 2, 0, h - 18), (L / 2, 0, h - 18), (L / 2, d * 0.7, h - 4), (-L / 2, d * 0.7, h - 4)])
+    for i, x in enumerate(np.linspace(-L / 2 + 12, L / 2 - 12, 8)):                     # loaves + buns inside the case
+        if i % 3 == 2:
+            for k in range(3): sphere(X.mesh(TX['crust_dark']), (x - 4 + 4 * k, d * 0.45, h - 15), 2.6, nu=8, nv=5)
+        else:
+            _loaf(X.mesh(TX['loaf']), x, d * 0.45, h - 18, a=0.3 * (i % 2))
+    for (x, key) in ((-L / 2 + 20, 'icing_pink'), (L / 2 - 22, 'icing_white')):        # cakes on stands on top
+        X.add_model(cake_on_stand(key), np.eye(3), (x, d * 0.75, h))
+    # wall rack: three slatted shelves of bread on the wall behind
+    for z in (64, 92, 120):
+        rbox(X.mesh(TX['shelf_wood']), (-L / 2 + 6, d - 14, z), (L / 2 - 6, d, z + 2.5), r=0.5, k=1, tile=64)
+        for i, x in enumerate(np.linspace(-L / 2 + 16, L / 2 - 16, 7)):
+            _loaf(X.mesh(TX['loaf' if (i + z) % 2 else 'crust_dark']), x, d - 7, z + 2.5, L=13, w=7, h=6, a=0.5 * ((i + z // 28) % 2))
+    for x in (-L / 2 + 4, L / 2 - 8):
+        rbox(X.mesh(TX['shelf_wood']), (x, d - 16, 50), (x + 4, d, 132), r=0.5, k=1, tile=64)
+    ML.save('bakery_display', X)
+    COLL['bakery_display'] = dict(boxes=[((-L / 2, 0, 0), (L / 2, d, h))])
+    return X
+
+
+def cake_on_stand(key='icing_pink'):
+    X = ML.Model()
+    revolve(X.mesh(TX['chrome']), [(7, 0), (2, 1), (2, 8), (9, 9), (0, 9)], n=12)
+    revolve(X.mesh(TX['cake_sponge']), [(8, 9), (8, 14), (0, 14)], n=16)
+    revolve(X.mesh(TX[key]), [(8.4, 13), (8.4, 18), (0, 18)], n=16)
+    sphere(X.mesh(TX['cherry']), (0, 0, 19.5), 1.6, nu=6, nv=4)
+    return X
+
+
+def toy_table(L=120.0, w=60.0, h=30.0):
+    """toy shop display table: green felt top with a little oval train set, a rocking horse, a teddy bear, building
+    blocks and a spinning top (origin = floor at the table centre)"""
+    X = ML.Model()
+    rbox(X.mesh(TX['counter_wood']), (-L / 2, -w / 2, h - 4), (L / 2, w / 2, h), r=1, k=1, tile=96)
+    rbox(X.mesh(TX['felt_green']), (-L / 2 + 2, -w / 2 + 2, h), (L / 2 - 2, w / 2 - 2, h + 0.6), r=0.2, k=1, tile=64, faces='t')
+    for (x, y) in ((-L / 2 + 3, -w / 2 + 3), (L / 2 - 6, -w / 2 + 3), (-L / 2 + 3, w / 2 - 6), (L / 2 - 6, w / 2 - 6)):
+        rbox(X.mesh(TX['counter_wood']), (x, y, 0), (x + 3, y + 3, h - 4), r=0.5, k=1, tile=32)
+    z = h + 0.6
+    oval = [(-L * 0.18 + 16 * math.cos(t) * 1.8, -w * 0.12 + 12 * math.sin(t), z + 0.6) for t in np.linspace(0, 2 * math.pi, 33)]
+    tube(X.mesh(TX['steel']), oval, 0.6, nseg=4)
+    rbox(X.mesh(TX['toy_red']), (-L * 0.18 + 22, -w * 0.12 - 3, z), (-L * 0.18 + 30, -w * 0.12 + 3, z + 5), r=0.6, k=1, tile=16)
+    rbox(X.mesh(TX['toy_blue']), (-L * 0.18 + 10, -w * 0.12 + 8, z), (-L * 0.18 + 17, -w * 0.12 + 13, z + 4), r=0.6, k=1, tile=16)
+    # rocking horse
+    hx, hy = L * 0.22, w * 0.1
+    for s in (-1, 1):
+        tube(X.mesh(TX['toy_red']), [(hx + 12 * math.sin(t), hy + s * 4, z + 3.4 - 3 * math.cos(t)) for t in np.linspace(-1.2, 1.2, 9)], 0.8, nseg=5)
+        for xx in (-6, 6): tube(X.mesh(TX['shelf_wood']), [(hx + xx, hy + s * 4, z + 1.5), (hx + xx * 0.6, hy + s * 2, z + 9)], 0.7, nseg=4)
+    ellipsoid(X.mesh(TX['shelf_wood']), (hx, hy, z + 11), 8, 3.2, 3.4, nu=10, nv=6)
+    tube(X.mesh(TX['shelf_wood']), [(hx + 6, hy, z + 12), (hx + 9, hy, z + 18)], 2.0, nseg=6)
+    ellipsoid(X.mesh(TX['shelf_wood']), (hx + 11, hy, z + 18), 3.5, 1.8, 2, nu=8, nv=5)
+    tube(X.mesh(TX['toy_yellow']), [(hx + 7, hy, z + 19), (hx + 2, hy, z + 15)], 0.9, nseg=4)
+    # teddy bear sitting at the back corner
+    tx, ty = -L * 0.38, w * 0.25
+    sphere(X.mesh(TX['teddy']), (tx, ty, z + 5), 5, nu=10, nv=7)
+    sphere(X.mesh(TX['teddy']), (tx, ty, z + 12.5), 3.6, nu=10, nv=7)
+    for s in (-1, 1):
+        sphere(X.mesh(TX['teddy']), (tx + s * 2.6, ty, z + 15.5), 1.3, nu=6, nv=4)
+        sphere(X.mesh(TX['teddy']), (tx + s * 4.5, ty - 2, z + 6), 1.8, nu=6, nv=4)
+        sphere(X.mesh(TX['teddy']), (tx + s * 2.5, ty - 4, z + 1.5), 1.9, nu=6, nv=4)
+    sphere(X.mesh(TX['ctrl_black']), (tx, ty - 3.4, z + 12), 0.7, nu=6, nv=4)
+    # building blocks and a spinning top
+    for i, (x, y, zz, key) in enumerate(((10, 18, 0, 'toy_red'), (16, 18, 0, 'toy_blue'), (13, 18, 5, 'toy_yellow'), (22, 14, 0, 'toy_green'))):
+        rbox(X.mesh(TX[key]), (x - 2.5, y - 2.5, z + zz), (x + 2.5, y + 2.5, z + zz + 5), r=0.4, k=1, tile=8)
+    revolve(X.mesh(TX['toy_yellow']), [(0.2, z), (5, z + 3), (4, z + 5), (0.8, z + 6), (0.8, z + 9), (0, z + 9)], n=12, cx=-4, cy=w * 0.3)
+    ML.save('toy_table', X)
+    COLL['toy_table'] = dict(boxes=[((-L / 2, -w / 2, 0), (L / 2, w / 2, h))])
+    return X
+
+
+def post_counter(L=144.0, d=24.0, h=44.0):
+    """post office counter with a brass grille, a parcel scale and a stamp drawer unit (customers at -y)"""
+    X = ML.Model()
+    rbox(X.mesh(TX['counter_wood']), (-L / 2, -d / 2, 0), (L / 2, d / 2, h - 4), r=1.5, k=1, tile=96)
+    rbox(X.mesh(TX['counter_top']), (-L / 2 - 2, -d / 2 - 2, h - 4), (L / 2 + 2, d / 2 + 2, h), r=1, k=1, tile=96)
+    rbox(X.mesh(TX['post_red']), (-L / 2 + 6, -d / 2 - 0.5, 8), (L / 2 - 6, -d / 2, 12), r=0.3, k=1, tile=64, faces='s')
+    for x in np.linspace(-L / 2 + 6, L / 2 - 50, 10):                                      # grille bars
+        tube(X.mesh(TX['grille']), [(x, 0, h), (x, 0, h + 30)], 0.6, nseg=4)
+    tube(X.mesh(TX['grille']), [(-L / 2 + 6, 0, h + 30), (L / 2 - 50, 0, h + 30)], 0.9, nseg=4)
+    revolve(X.mesh(TX['chrome']), [(6, h), (6, h + 2), (1.2, h + 3), (1.2, h + 8), (7, h + 9), (7, h + 10), (0, h + 10)], n=14, cx=L / 2 - 30)
+    rbox(X.mesh(TX['parcel']), (L / 2 - 36, -5, h + 10), (L / 2 - 24, 5, h + 18), r=0.5, k=1, tile=16)
+    for x in (L / 2 - 14, ):
+        rbox(X.mesh(TX['post_red']), (x - 6, -4, h), (x + 6, 4, h + 14), r=1, k=1, tile=16)
+    ML.save('post_counter', X)
+    COLL['post_counter'] = dict(boxes=[((-L / 2, -d / 2, 0), (L / 2, d / 2, h))])
+    return X
+
+
+def pigeonholes(L=150.0, h=100.0, d=12.0):
+    """wall of sorting pigeonholes with letters in them (back at local y = 0, against a wall at +y)"""
+    X = ML.Model()
+    rbox(X.mesh(TX['shelf_wood']), (-L / 2, -d, 0), (L / 2, 0, 30), r=1, k=1, tile=64)
+    X.mesh(TX['stamps']).poly([np.array(p, float) for p in ((-L / 2, -d - 0.2, 30), (L / 2, -d - 0.2, 30), (L / 2, -d - 0.2, h), (-L / 2, -d - 0.2, h))],
+                              (0, -1, 0), [(0, 1), (3, 1), (3, 0), (0, 0)])
+    rbox(X.mesh(TX['shelf_wood']), (-L / 2 - 2, -d, h), (L / 2 + 2, 0, h + 3), r=0.5, k=1, tile=64)
+    for x in (-L / 2 - 2, L / 2):
+        rbox(X.mesh(TX['shelf_wood']), (x, -d, 0), (x + 2, 0, h), r=0.4, k=1, tile=32)
+    ML.save('pigeonholes', X)
+    COLL['pigeonholes'] = dict(boxes=[((-L / 2 - 2, -d, 0), (L / 2 + 2, 0, h + 3))])
+    return X
+
+
+def parcel_pile():
+    """parcels tied with string and two mail sacks (cover-sized clutter for a corner)"""
+    X = ML.Model()
+    for (x, y, z, sx, sy, sz, a) in ((0, 0, 0, 14, 10, 10, 0), (2, 1, 10, 10, 8, 7, 20), (24, -4, 0, 9, 9, 12, -10), (-20, 6, 0, 8, 12, 8, 35)):
+        b = Mesh(); rbox(b, (-sx, -sy, 0), (sx, sy, sz), r=0.6, k=1, tile=24)
+        X.mesh(TX['parcel']).add(b, rot_z(a), (x, y, z))
+        s = Mesh(); rbox(s, (-0.5, -sy - 0.3, 0), (0.5, sy + 0.3, sz + 0.3), r=0.1, k=1, tile=8); rbox(s, (-sx - 0.3, -0.5, 0), (sx + 0.3, 0.5, sz + 0.3), r=0.1, k=1, tile=8)
+        X.mesh(TX['string']).add(s, rot_z(a), (x, y, z))
+    for (x, y) in ((-6, 30), (26, 26)):
+        ellipsoid(X.mesh(TX['mailsack']), (x, y, 13), 11, 9, 13, nu=12, nv=7, flat_bottom=-13)
+        tube(X.mesh(TX['string']), [(x, y, 25), (x, y, 30)], 2.2, nseg=6)
+    ML.save('parcel_pile', X)
+    COLL['parcel_pile'] = dict(boxes=[((-30, -14, 0), (38, 40, 26))])
+    return X
+
+
+def flour_store():
+    """bakery store room: stacked flour sacks on a pallet and a sack trolley"""
+    X = ML.Model()
+    rbox(X.mesh(TX['shelf_wood']), (-36, -24, 0), (36, 24, 5), r=0.5, k=1, tile=64)
+    for (x, y, z, a) in ((-18, -11, 5, 0), (18, -11, 5, 0), (-18, 11, 5, 0), (18, 11, 5, 0), (0, -11, 15, 90), (0, 11, 15, 90), (-6, 0, 25, 10)):
+        b = Mesh(); ellipsoid(b, (0, 0, 5), 17, 10, 5.5, nu=10, nv=6, flat_bottom=-5)
+        X.mesh(TX['flour_sack']).add(b, rot_z(a), (x, y, z))
+    ML.save('flour_store', X)
+    COLL['flour_store'] = dict(boxes=[((-36, -24, 0), (36, 24, 34))])
     return X

@@ -594,3 +594,21 @@ def test_audit_trusts_shader_parms_over_texture_names(tmp_path):
         assert A.kind(['common/weapclip']) == 'clip'
     finally:
         A.SHADER_PARMS.clear()
+
+
+def test_static_model_with_mover_shaders_is_refused(tmp_path):
+    """a parked train car saved with 'dyn' shaders and placed as a misc_model drew black in game (padville loco shed)"""
+    from woplib import texlib as TL
+    from meshlib import rbox
+    out = str(tmp_path)
+    ML.configure('t', out); SH.configure('t', 'wop_t', 'T')
+    TX = TL.Textures(ns='t', out=out)
+    sh = TX.material('car', TL.planks(), 'dyn')
+    X = ML.Model(); rbox(X.mesh(sh), (-50, -20, 0), (50, 20, 40), r=2, k=1, tile=64)
+    ML.save('car_dyn', X)
+    K = MapKit('wop_t', 't', 'T', (-1000, -1000, 1000, 1000))
+    with pytest.raises(ValueError): K.custom(ML.PLACE['car_dyn'], 0, 0, 0)
+    ML.save('car_parked', ML.static_copy(X))
+    K.custom(ML.PLACE['car_parked'], 0, 0, 0)
+    kinds = {ML.REG[s][1] for s in ML.SURF[ML.PLACE['car_parked'][0]]}
+    assert kinds == {'lm'}

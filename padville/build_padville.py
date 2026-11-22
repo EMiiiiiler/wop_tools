@@ -551,6 +551,18 @@ def buildings():
     for (y0, y1, key) in ((-790, -560, 'sign_bakery'), (-520, -330, 'sign_toys'), (-300, -165, 'sign_post')):
         K.add(sign_box((-106, y0, 182), (-100, y1, 226), T(key), 1024, 128, facing='w', edge=T('fascia')))
     awning_dress('shop_awnings', -100, [(-790, -560), (-520, -330), (-300, -165)], 172, 'canvas_r')
+    # shop interiors: bakery counter + bread rack (south), toy table against the stair flank (middle), post office
+    # counter, pigeonholes and parcels (north); upstairs the bakery's flour store and the post room's parcels
+    f0 = sh.interior(0)[4]; f1 = sh.interior(1)[4]
+    place('bakery_display', -5, -748, f0, 180)
+    place('toy_table', 48, -500, f0, 90)
+    place('post_counter', 112, -238, f0, 0)
+    place('pigeonholes', 100, -166, f0, 0)
+    place('parcel_pile', -50, -207, f0, 0)
+    place('flour_store', -40, -740, f1, 0)
+    place('parcel_pile', 130, -200, f1, 180)
+    for (x, y, z) in ((-10, -700, f0 + 140), (-20, -480, f0 + 140), (60, -250, f0 + 140), (90, -230, f1 + 130), (-30, -720, f1 + 130)):
+        K.light(x, y, z, 170, '1 0.86 0.66')
     # ---- water mill by the lake
     ml = town.Building(K, 'mill', (-1340, -300, -1120, -40), 0, (176,),
                        mk(ext='stone_ch', int='plaster', trim='timber', floor='boards', roof='tile_red', ceil='plaster', gable='stone_ch'),
@@ -862,6 +874,7 @@ def models():
     PM.mats(); building_mats(); PM.basement_mats(); PM.pad_mats()
     PM.washing_machine(); PM.laundry_basket(); PM.water_boiler(ceil=ZC - VZ); PM.basement_stairs(landing=0)
     PM.house_door(); PM.metal_shelving(); PM.basement_window(); PM.sunbeam(drop=2500, reach=1050); PM.bucket_mop()
+    PM.shop_mats(); PM.bakery_display(); PM.toy_table(); PM.post_counter(); PM.pigeonholes(); PM.parcel_pile(); PM.flour_store()
     PM.gallery_mats(); PM.bar_stool(); PM.bar_stool(key='stool_seat2', name='bar_stool_b')
     PM.bar_stool(key='stool_seat2', name='bar_stool_back', back=True)
     PM.pad_manhole(); PM.pad_vent(); PM.pad_trapdoor(); PM.pad_spring(); PM.pad_button(); PM.pad_sewbutton()
@@ -878,7 +891,7 @@ def models():
     PM.hatch_lid(); PM.mug_lying(); PM.controller(); PM.screwdriver(); PM.glue_tube(); PM.battery9v(); PM.locobox()
     PM.point_motor(); PM.pliers(); PM.saw(); PM.sprue(360, 260); PM.bulb_hanging(); PM.cobweb(); PM.station_sign()
     PM.COLL['sprue'] = dict(boxes=[((-180, -130, 0), (180, 130, 26))])
-    X = PM.loco(); ML.save('loco_static', X)
+    ML.save('loco_static', ML.static_copy(PM.loco()))  # lit twin: dyn shaders draw black baked
     PM.COLL['loco_static'] = dict(boxes=[((-300, -70, 0), (300, 70, 196))])
     # underworld cable runs (world coordinates baked in, placed at the origin)
     for nm, pts, key, r in (('cable_a', [(-1200, -1130, -60), (-1210, -900, -260), (-1200, -700, -300), (-1190, -480, -250), (-1200, -270, -60)], 'cable_red', 14),
