@@ -1,0 +1,60 @@
+{
+ "map": "wop_padplumbing",
+ "ns": "padplumbing",
+ "longname": "Padman's Plumbing",
+ "generator": "build_padplumbing.py",
+ "bounds": [
+  -2048,
+  -1792,
+  2048,
+  1792
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   576
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Plumbing",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1900,-1700,1700,135,-25",
+   "bathroom:1700,400,800,160,-8",
+   "tub:-600,1000,900,130,-15",
+   "vanity:900,900,1100,45,-10",
+   "mirror_top:1340,1300,1800,90,-30",
+   "sewer:-1900,-300,250,-20,-3",
+   "canal:1900,-900,150,180,-2",
+   "crawl:-1900,450,200,20,-3",
+   "tunnel:-1700,1100,110,0,0",
+   "chamber:1350,1620,150,0,-5",
+   "heater:900,-1200,500,-30,-10",
+   "express:-400,-1200,300,85,20",
+   "balcony:0,100,600,90,-10",
+   "vault:0,-350,-1450,90,-12"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "bathroom",
+   "sewer",
+   "crawl",
+   "overview"
+  ]
+ }
+}

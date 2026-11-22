@@ -231,6 +231,11 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   behind it; 400 u/s exit slides the player on). Route endpoints never on a pad.
 - Roof access reads better as a pad than a long brush staircase (user preference), but bots still want 16u stairs or a
   pad; both is best.
+- **MUST: no visible pad discs** (user rule). `K.themed_pad(x, y, z, land, apex, name, dress=ML.PLACE[...])` hides
+  the disc and stands a theme model (rubber duck, soap, valve...) on the pad, turned along the flight; `K.tube_lift`
+  with `top_tex/side_tex=T('nodraw_ns'), glow=False` for pads inside glass pipes.
+- A pad squeezed against a tall cylinder (padplumbing water heater, 230u from the pad to the edge) passed pad_check
+  but bspc's lower flight hit the side at z 398: +340 apex fixed it. Read pad_aas.log, not only pad_check.
 
 ## 8. Movers
 - `misc_model` is static; animated catalog models need `misc_externalmodel` (no modelscale).
@@ -246,6 +251,9 @@ bspc passing a link does not mean bots or players can use it: bot-test.
   192u; cabins on a second bobber with identical keys; bobbers instakill pinned players.
 - func_plat elevator: drawn raised, `height` = travel, 16u pit for the lowered disc. func_train needs an origin brush.
 - Currents: trigger_multiple (wait 0.25-0.5) -> target_push `angles "pitch yaw 0"`; keep zones short, off exits.
+- Shootable switch + gate: `K.shoot_gate(...)` = func_button (health 1, model2 on an origin brush, else the model
+  draws at 0 0 0) -> func_door with a targetname (+ optional target_speaker). Bots seldom shoot it: keep only bonus
+  loot behind the gate (padplumbing valve chamber: Speedy never taken in bot matches, as intended).
 
 ## 9. Water, fog, sky, light (woplib.shaders)
 - `K.water_box(mn, mx, tex, cutters=[...])`: the whole water recipe (one box, carved, top face drawn, the rest nodraw).
