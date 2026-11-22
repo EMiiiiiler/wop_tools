@@ -248,7 +248,7 @@ def tree():
     K.add(tr)
     K.water_box((x0 + SW, y0 + SW, SFL), (x1 - SW, y1 - SW, WTOP), T('water'), cutters=steps + [tr] + screws)
     place('trunk', XM.trunk(ZTOP - SFL - 40), TC[0], TC[1], SFL, occupy=False)
-    K.speaker(0, 860, 300, 'ambient/water_rippling')
+    K.speaker(150, 860, 300, 'ambient/water_rippling')
     # secret: the drain grate on the bowl floor (under water) -> the inside of a present
     g = (240, 820)
     K.add(cyl(g[0], g[1], 40, SFL, SFL + 1, {'top': T('grate'), 'side': T('grate'), 'bot': CAULK}, 12))
@@ -267,6 +267,7 @@ def tree():
 
 
 CANOPY_LIGHTS = []
+RING_LIGHTS = []
 KINDS = ['icicle', 'cane', 'star', 'gingerman', 'bell', 'pinecone', 'icicle', 'star']
 
 
@@ -790,7 +791,6 @@ def more():
         if rot not in ML.PLACE: ML.save(rot, XR.pyramid_rotor())
         assert ML.PLACE[rot][1] == 1 and ML.PLACE[rot][2] == 0, 'rotor must be stored at scale 1 for model2'
         K.rotating_model2(ML.PLACE[rot][0], (pp[0], pp[1], 24), 24)
-        K.light(pp[0], pp[1], 200, 300, '1 0.8 0.5')
     # candy village round the gingerbread house
     for (x, y, h, key) in ((-2380, -1250, 460, 'lolly_swirl'), (-1230, -960, 400, 'lolly_swirl2'), (-2380, -800, 380, 'lolly_swirl2'),
                            (-1180, -1560, 440, 'lolly_swirl')):
@@ -820,8 +820,7 @@ def more():
     place('mouse_hole', XR.mouse_hole(), 640, Y1 - 24, 0, occupy=False)
     K.light(640, Y1 - 120, 60, 90, '1 0.75 0.4')
     # light from the floor strings (a few warm/coloured points low down)
-    for i, p in enumerate(ring[::10]):
-        K.light(p[0], p[1], 60, 160, ['1 0.4 0.35', '0.45 1 0.5', '0.5 0.6 1', '1 0.85 0.4'][i % 4])
+    RING_LIGHTS[:] = ring[::10]                            # lit in lights(), after every prop is placed
 
 
 # ------------------------------------------------------------------------------------------------ loot, spawns
@@ -861,10 +860,12 @@ def items():
 
 
 def lights():
+    for i, p in enumerate(RING_LIGHTS):
+        if K.lift_light(p[0], p[1], 60) != 60: continue      # under a prop: q3map2 would cull it
+        K.light(p[0], p[1], 60, 160, ['1 0.4 0.35', '0.45 1 0.5', '0.5 0.6 1', '1 0.85 0.4'][i % 4])
     for p in CANOPY_LIGHTS[::2]:
         K.light(p[0], p[1], max(p[2], 1150), 650, ['1 0.4 0.35', '0.45 1 0.5', '0.5 0.6 1', '1 0.85 0.4', '1 0.95 0.85'][int(abs(p[0] + p[1])) % 5])
     K.light_grid(X0, Y0, X1, Y1, 600, 512, 1300, '1 0.84 0.62')
-    K.light(0, 600, 700, 600, '1 0.8 0.5')
     # the raised walk surfaces sit above the grid: their own lamps
     S, Ar = XS.SOFA, XS.ARM
     for y in (-500, 200, 900):
