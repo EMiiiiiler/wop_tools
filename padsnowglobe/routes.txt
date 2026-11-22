@@ -1,0 +1,25 @@
+# On-foot routes that must work both ways while standing (aas_check.py --route @routes.txt)
+# name: from x,y,z > to x,y,z   (z = floor height); generated for wop_padsnowglobe
+bandstand_steps:    0,-330,0 > 0,0,32
+chapel_door_s0:     0,1094,0 > 0,1286,4
+chapel_door_e1616:  306,1616,0 > 114,1616,4
+millbase_st1:       1190,230,4 > 1636,230,200
+millbase_roof:      1190,-236,200 > 1650,-236,392
+millbase_door_w0:   1054,0,0 > 1246,0,4
+millbase_door_s1450:1450,-396,0 > 1450,-204,4
+mill_tower_door:    1450,-300,392 > 1450,-60,392
+hill_ramp:          -656,100,0 > -1364,100,256
+toboggan:           -1040,990,0 > -1650,300,256
+hut_door_s1150:     1150,1014,0 > 1150,1206,4
+cabin_st1:          -1160,1395,4 > -760,1395,192
+cabin_door_s-954:   -954,1044,0 > -954,1236,4
+cabin_door_e1256:   -624,1256,0 > -816,1256,4
+bakery_st1:         -1210,-1237,4 > -840,-1237,192
+bakery_door_n-1044: -1044,-884,0 > -1044,-1076,4
+cottage_a_door_e-744:-1304,-744,0 > -1496,-744,4
+toyshop_door_n-1204:-1204,-1304,0 > -1204,-1496,4
+platform:           0,-1880,0 > 0,-2090,32
+station_door_w-1884:264,-1884,0 > 456,-1884,4
+chalet1_door_w-1394:354,-1394,0 > 546,-1394,4
+chalet2_door_e-1444:1496,-1444,0 > 1304,-1444,4
+chalet3_door_s1526: 1526,-1096,0 > 1526,-904,4

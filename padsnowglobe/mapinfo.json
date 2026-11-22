@@ -1,0 +1,56 @@
+{
+ "map": "wop_padsnowglobe",
+ "ns": "padsnowglobe",
+ "longname": "Padman's Snow Globe",
+ "generator": "build_padsnowglobe.py",
+ "bounds": [
+  -2560,
+  -2560,
+  2560,
+  2560
+ ],
+ "arena_types": "ffa lps team ft syc_ffa",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64
+  ],
+  "min": 1800,
+  "target_pct": 4.0
+ },
+ "preview": {
+  "title": "Padman's Snow Globe",
+  "texsize": 192,
+  "bigtex": "",
+  "shots": [
+   "overview:2300,-2300,1900,135,-30",
+   "station:0,-1850,120,90,2",
+   "rink:-700,-700,260,45,-8",
+   "chapel:500,500,300,110,8",
+   "mill:700,-500,400,30,8",
+   "hill:-800,-300,300,170,4",
+   "pond:600,900,200,40,2",
+   "market:300,-700,200,315,-2",
+   "village:-700,-700,200,220,-2",
+   "glass:1600,-1600,140,45,30",
+   "inside_chapel:0,1250,80,90,4",
+   "musicbox:0,-300,-360,90,-6"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "rink",
+   "chapel",
+   "mill"
+  ]
+ }
+}
