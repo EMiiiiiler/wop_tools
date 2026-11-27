@@ -1,0 +1,61 @@
+{
+ "map": "wop_padclock",
+ "ns": "padclock",
+ "longname": "PadClock Tower",
+ "generator": "build_padclock.py",
+ "bounds": [
+  -2048,
+  -1536,
+  2048,
+  1536
+ ],
+ "arena_types": "ffa lps team ft",
+ "light": {
+  "fast": "-fast -samples 2 -filter",
+  "final": "-fast -samples 3 -filter -bounce 2 -bouncegrid"
+ },
+ "bots": {
+  "gametype": 0,
+  "minutes": 3,
+  "bots": 10
+ },
+ "sightlines": {
+  "zmax": [
+   64,
+   704,
+   1344,
+   1984
+  ],
+  "min": 1800,
+  "target_pct": 4.0,
+  "level_target_pct": {
+   "1984": 6.0
+  }
+ },
+ "preview": {
+  "title": "PadClock Tower",
+  "texsize": 256,
+  "bigtex": "",
+  "shots": [
+   "overview:1900,-1450,2600,140,-35",
+   "atrium_up:0,-1300,250,90,35",
+   "dial_balcony:0,-640,2060,270,-4",
+   "deck_bell:950,-650,2350,145,-14",
+   "gear_gallery:-1700,-1300,820,40,-4",
+   "east_wing:1750,-550,1560,145,-10",
+   "chime_house:-850,150,1500,130,-12",
+   "cuckoo_ledge:-800,850,2060,90,-2",
+   "barrel:-850,-650,220,215,-10",
+   "ground_ne:1700,-200,260,110,-6",
+   "vault:0,-400,-1100,90,0"
+  ]
+ },
+ "levelshots": {
+  "cover": "overview",
+  "shots": [
+   "atrium_up",
+   "dial_balcony",
+   "deck_bell"
+  ]
+ }
+}
